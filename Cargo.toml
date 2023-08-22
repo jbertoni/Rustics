@@ -1,0 +1,5 @@
+[package]
+name = "rustics"
+version = "0.1.0"
+authors = ["bertoni <j_bertoni@yahoo.com>"]
+edition = "2021"

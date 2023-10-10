@@ -36,7 +36,8 @@ use std::sync::Mutex;
 use std::sync::Arc;
 use std::any::Any;
 
-pub mod sets;
+pub mod arc_sets;
+pub mod rc_sets;
 
 pub type PrinterBox = Arc<Mutex<dyn Printer>>;
 
@@ -187,7 +188,7 @@ fn create_title(title_prefix: &str, title: &str) -> String {
         if title_prefix.is_empty() {
             // let mut full_title = String::from(title_prefix).to_owned();
             let mut full_title = String::from(title_prefix);
-            full_title.push_str(&" ==> ");
+            full_title.push_str(" ==> ");
             full_title.push_str(title);
             full_title
         } else {
@@ -250,10 +251,10 @@ fn print_float(name: &str, value: f64, printer: &mut dyn Printer) {
 // Print the common integer statistics as passed in a Printable structure.
 
 fn print_common_integer(data: &Printable, printer: &mut dyn Printer) {
-    print_integer(&"Count", data.n as i64, printer);
-    print_integer(&"Minumum", data.min, printer);
-    print_integer(&"Maximum", data.max, printer);
-    print_integer(&"Log Mode", data.log_mode, printer);
+    print_integer("Count", data.n as i64, printer);
+    print_integer("Minumum", data.min, printer);
+    print_integer("Maximum", data.max, printer);
+    print_integer("Log Mode", data.log_mode, printer);
 }
 
 // Print the common computed statistics as passed in a Printable structure.
@@ -261,11 +262,11 @@ fn print_common_integer(data: &Printable, printer: &mut dyn Printer) {
 // value.
 
 fn print_common_float(data: &Printable, printer: &mut dyn Printer) {
-    print_float(&"Mean", data.mean, printer);
-    print_float(&"Std Dev", data.variance.sqrt(), printer);
-    print_float(&"Variance", data.variance, printer);
-    print_float(&"Skewness", data.skewness, printer);
-    print_float(&"Kurtosis", data.kurtosis, printer);
+    print_float("Mean", data.mean, printer);
+    print_float("Std Dev", data.variance.sqrt(), printer);
+    print_float("Variance", data.variance, printer);
+    print_float("Skewness", data.skewness, printer);
+    print_float("Kurtosis", data.kurtosis, printer);
 }
 
 
@@ -556,7 +557,7 @@ impl Rustics for RunningInteger {
     }
 
     fn class(&self) -> &str {
-        &"integer"
+        "integer"
     }
 
     fn count(&self) -> u64 {

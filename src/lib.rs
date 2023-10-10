@@ -12,7 +12,7 @@
 //!     * Integer statistics provide basic parameters, like the mean, and pseudo-log histogram.
 //!     *  For the pseudo-log histogram, the pseudo-log of a negative number n is defines as -log(-n).
 //!
-//! * Integer staticstics
+//! * Integer statistics
 //!     * RunningInteger
 //!
 //!         * This type implements a few simple running statistics for i64 sample values.
@@ -24,12 +24,16 @@
 //!
 //! * Creating Sets
 //!
-//!     * The "sets" module implments a simple feature allowing the creation of sets that accept
+//!     * The "arc_sets" and "rc_sets" modules implement a simple feature allowing the creation of sets that accept
 //!       statistics and subsets as members.
 //!
-//!     * RusticsSet
-//!         * This type functions as a container for sets and subsets that can be printed and
+//!     * RusticsArcSet
+//!         * This type functions as an Arc-based implementation of sets and subsets that can be printed and
 //!           cleared on command.
+//!
+//!     * RusticsRcSet
+//!         * This type functions as an Rc-based implementation of for sets and subsets.  These sets will be
+//!           significantly faster than Arc-based sets, but are not thread-safe.
 //!
 
 use std::sync::Mutex;

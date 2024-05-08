@@ -35,13 +35,18 @@ pub struct RusticsArcSet {
 impl RusticsArcSet {
 
     // Create a new set.
+    //
+    // The "members_hint" and "subsets_hint" parameters are hints as to the number
+    // of elements to be expected.  "members_hint" refers to the number of Rustics
+    // statistics in the set.  These hints can improve performance a bit.  They
+    // might be especially useful in embedded environments.
 
-    pub fn new(name: &str, members: usize, subsets: usize) -> RusticsArcSet {
+    pub fn new(name: &str, members_hint: usize, subsets_hint: usize) -> RusticsArcSet {
         let name = name.to_owned();
         let id = usize::max_value();
         let next_id = 0;
-        let members = Vec::with_capacity(members);
-        let subsets = Vec::with_capacity(subsets);
+        let members = Vec::with_capacity(members_hint);
+        let subsets = Vec::with_capacity(subsets_hint);
         let which = "stdout".to_string();
         let printer = Arc::new(Mutex::new(StdioPrinter { which }));
 

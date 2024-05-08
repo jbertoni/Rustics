@@ -3,23 +3,26 @@
 //  as public domain source where permitted by law.
 //
 
-//! 'rustics' provides a very simple interface for
+//! 'rustics' provides a very simple interface for recording events and printing statistics.
 //!
 //! ## Types
 //!
 //! * Recording Integers
 //!
-//!     * Integer statistics provide basic parameters, like the mean, and pseudo-log histogram.
+//!     * Integer statistics provide basic parameters, like the mean, and a pseudo-log histogram.
 //!     *  For the pseudo-log histogram, the pseudo-log of a negative number n is defines as -log(-n).
+//!        The pseudo-log of 0 is defined as 0, and for convenience, the pseudo-log of -2
+//!        -2^64 is defined as 63.
 //!
 //! * Integer statistics
 //!     * RunningInteger
 //!
-//!         * This type implements a few simple running statistics for i64 sample values.
+//!         * This type implements a few simple running statistics for a series of i64 sample values.
 //!
 //!     * RunningWindow
 //!
-//!         * This type implements a fixed-size window of the last n samples recorded.
+//!         * This type implements a fixed-size window of the last n samples recorded.  Summary
+//!           statistics of the window samples are computed on demand.
 //!         * The histogram counts all samples seen, not just the current window.
 //!
 //! * Creating Sets
@@ -39,11 +42,21 @@
 use std::sync::Mutex;
 use std::sync::Arc;
 use std::any::Any;
+use std::cell::RefCell;
+use std::rc::Rc;
+
+use time::Timer;
 
 pub mod arc_sets;
 pub mod rc_sets;
+pub mod time;
 
 pub type PrinterBox = Arc<Mutex<dyn Printer>>;
+pub type TimerBox = Rc<RefCell<dyn Timer>>;
+
+pub fn timer_box_hz(timer:  &TimerBox) -> u128 {
+    (**timer).borrow().hz()
+}
 
 // Insert commas into a string containing an integer.
 
@@ -58,8 +71,9 @@ pub fn commas(value: &str) -> String {
 
     /*
      *  A string like "-200" shouldn't be printed as "-,200", so detect and
-     *  handle leading signs that'll cause a comma to be added.  The condition
-     * is a string length is 1 mod 3 and the top character is a sign.
+     *  handle leading signs that'll cause a comma to be added.  If the
+     * string length is 1 mod 3 and the top character is a sign, we need to
+     * intervene.
      */
     if value.len() % comma_interval == 1 {
         match value.chars().next().unwrap() {
@@ -106,6 +120,95 @@ pub fn commas_u64(value: u64) -> String {
     commas(&base)
 }
 
+fn print_common_integer_times(data: &Printable, hz: i64, printer: &mut dyn Printer) {
+    print_integer("Count", data.n as i64, printer);
+    print_time("Minumum", data.min as f64, hz, printer);
+    print_time("Maximum", data.max as f64, hz, printer);
+    print_time("Log Mode", data.log_mode as f64, hz, printer);
+}
+
+fn print_common_float_times(data: &Printable, hz: i64, printer: &mut dyn Printer) {
+    print_time("Mean", data.mean, hz, printer);
+    print_time("Std Dev", data.variance.sqrt(), hz, printer);
+    print_time("Variance", data.variance, hz, printer);
+    print_time("Skewness", data.skewness, hz, printer);
+    print_time("Kurtosis", data.kurtosis, hz, printer);
+}
+
+// Format a time value for printing.
+
+//  days
+//  hours
+//  minutes
+//  seconds
+
+pub fn print_time(name: &str, time: f64, hz: i64, printer: &mut dyn Printer) {
+    let microsecond:f64 = 1_000.0;
+    let millisecond = microsecond * 1000.0;
+    let second = millisecond * 1000.0;
+    let minute = 60.0 * second;
+    let hour = 60.0 * minute;
+    let day = hour * 24.0;
+
+    // Convert the time to nanoseconds
+
+    let time = time * (1_000_000_000.0 / hz as f64);
+
+    let unit;
+    let scale;
+    let has_plural;
+
+    if time >= day {
+        unit = "day";
+        scale = day;
+        has_plural = true;
+    } else if time >= hour {
+        unit = "hour";
+        scale = hour;
+        has_plural = true;
+    } else if time >= minute {
+        unit = "minute";
+        scale = minute;
+        has_plural = true;
+    } else if time >= second {
+        unit = "second";
+        scale = second;
+        has_plural = true;
+    } else if time >= millisecond {
+        unit = "ms";
+        scale = millisecond;
+        has_plural = false;
+    } else if time >= microsecond {
+        unit = "us";
+        scale = microsecond;
+        has_plural = false;
+    } else {
+        unit = "ns";
+        scale = 1.0;
+        has_plural = false;
+    }
+
+    let plural = time != scale;
+
+    let suffix =
+        if plural & has_plural {
+            "s"
+        } else {
+            ""
+        };
+
+    let scaled_time =  time / scale;
+    let mut unit = unit.to_string();
+    unit.push_str(suffix);
+
+    if scaled_time > 999999.0 {
+        print_float_unit(name, scaled_time, &unit, printer);
+    } else {
+        let output = format!("    {:<12} {:>12.3} {}", name, scaled_time, unit);
+        printer.print(&output);
+    }
+}
+
 // Compute the sample variance.
 
 pub fn compute_variance(count: u64, moment_2: f64) -> f64 {
@@ -123,10 +226,12 @@ pub fn compute_variance(count: u64, moment_2: f64) -> f64 {
 //
 // This formula is from brownmath.com.
 
-pub fn compute_skewness(count: u64, moment_3: f64, moment_2: f64) -> f64 {
-    if count < 2 || moment_2 == 0.0 {
+pub fn compute_skewness(count: u64, moment_2: f64, moment_3: f64) -> f64 {
+    if count < 3 || moment_2 == 0.0 {
         return 0.0;
     }
+
+    assert!(moment_2 > 0.0);
 
     let n = count as f64;
     let m3 = moment_3 / n;
@@ -160,9 +265,9 @@ pub fn compute_kurtosis(count: u64, moment_2: f64, moment_4: f64) -> f64 {
 // value of its input.  It is intended only for making histograms.
 //
 // The log of a negative integer n is defined as -log(-n) to give
-// a reasonable histogram structure.
+// a reasonable histogram structure.  log(0) is defined as 0.
 
-fn integer_log(value: i64) -> usize {
+fn pseudo_log(value: i64) -> usize {
     let mut place = 1;
     let mut log = 0;
 
@@ -190,13 +295,12 @@ fn integer_log(value: i64) -> usize {
 fn create_title(title_prefix: &str, title: &str) -> String {
     let title =
         if title_prefix.is_empty() {
-            // let mut full_title = String::from(title_prefix).to_owned();
+            title.to_string()
+        } else {
             let mut full_title = String::from(title_prefix);
             full_title.push_str(" ==> ");
             full_title.push_str(title);
             full_title
-        } else {
-            title.to_string()
         };
 
     title
@@ -222,6 +326,10 @@ fn print_integer(name: &str, value: i64, printer: &mut dyn Printer) {
 }
 
 fn print_float(name: &str, value: f64, printer: &mut dyn Printer) {
+    print_float_unit(name, value, "", printer)
+}
+
+fn print_float_unit(name: &str, value: f64, unit: &str, printer: &mut dyn Printer) {
     let value = format!("{:+e}", value)
         .replace('e', " e+")
         .replace("e+-", " e-") ;
@@ -247,7 +355,7 @@ fn print_float(name: &str, value: f64, printer: &mut dyn Printer) {
 
     let mantissa: String = mantissa.into_iter().collect();
     let exponent = value.split(' ').last().unwrap();
-    let output = format!("    {:<13}    {} {}", name, mantissa, exponent);
+    let output = format!("    {:<13}    {} {} {}", name, mantissa, exponent, unit);
 
     printer.print(&output);
 }
@@ -294,43 +402,47 @@ impl LogHistogram {
 
     pub fn record(&mut self, sample: i64) {
         if sample < 0 {
-            self.negative[integer_log(sample)] += 1;
+            self.negative[pseudo_log(sample)] += 1;
         } else {
-            self.positive[integer_log(sample)] += 1;
+            self.positive[pseudo_log(sample)] += 1;
         }
     }
 
     // This helper function prints the negative buckets.
 
     fn print_negative(&self, printer: &mut dyn Printer) {
+        // Skip printing buckets that would appear before the first non-zero bucket.
+        // So find the non-zero bucket with the highest index in the array.
+
         let mut i = self.negative.len() - 1;
 
         while i > 0 && self.negative[i] == 0 {
             i -= 1;
         }
 
+        // If there's nothing to print, just return.
+
         if i == 0 && self.negative[0] == 0 {
             return;
         }
+
+        // Start printing from the highest-index non-zero row.
 
         let start_index = ((i + 4) / 4) * 4 - 1;
         let mut i = start_index + 4;
         let mut rows = (start_index + 1) / 4;
 
         while rows > 0 {
+            assert!(i >= 3 && i < self.negative.len());
             i -= 4;
 
-            if i >= 64 {
-                printer.print(&format!("  {:>3}:    {:>14}", -64, self.negative[64]));
-            } else {
-                printer.print(&format!("  {:>3}:    {:>14}    {:>14}    {:>14}    {:>14}",
-                    -(i as i64) + 3,
-                    commas_u64(self.negative[i - 3]),
-                    commas_u64(self.negative[i - 2]),
-                    commas_u64(self.negative[i - 1]),
-                    commas_u64(self.negative[i])
-                    ));
-            }
+            printer.print(&format!("  {:>3}:    {:>14}    {:>14}    {:>14}    {:>14}",
+                -(i as i64) + 3,
+                commas_u64(self.negative[i - 3]),
+                commas_u64(self.negative[i - 2]),
+                commas_u64(self.negative[i - 1]),
+                commas_u64(self.negative[i])
+                ));
 
             rows -= 1;
         }
@@ -349,16 +461,14 @@ impl LogHistogram {
         let mut i = 0;
 
         while i <= stop_index {
-            if i < 64 {
-                printer.print(&format!("  {:>3}:    {:>14}    {:>14}    {:>14}    {:>14}",
-                    i,
-                    commas_u64(self.positive[i]),
-                    commas_u64(self.positive[i + 1]),
-                    commas_u64(self.positive[i + 2]),
-                    commas_u64(self.positive[i + 3])));
-            } else {
-                printer.print(&format!("  {:>3}:    {:>14}", 64, self.positive[64]));
-            }
+            assert!(i <= self.positive.len() - 4);
+
+            printer.print(&format!("  {:>3}:    {:>14}    {:>14}    {:>14}    {:>14}",
+                i,
+                commas_u64(self.positive[i]),
+                commas_u64(self.positive[i + 1]),
+                commas_u64(self.positive[i + 2]),
+                commas_u64(self.positive[i + 3])));
 
             i += 4;
         }
@@ -388,9 +498,9 @@ impl LogHistogram {
     }
 
     pub fn print(&self, printer: &mut dyn Printer) {
-        printer.print("Log Histogram");
+        printer.print("  Log Histogram");
         self.print_negative(printer);
-        printer.print(" -----------------------");
+        printer.print("  -----------------------");
         self.print_positive(printer);
     }
 
@@ -442,6 +552,11 @@ impl Printer for StdioPrinter {
 pub trait Rustics {
     fn record_i64(&mut self, sample: i64);  // add an i64 sample
     fn record_f64(&mut self, sample: f64);  // add an f64 sample -- not implemented
+    fn record_event(&mut self);
+    fn record_time(&mut self, sample: i64);
+                                            // add a time sample
+    fn record_interval(&mut self, interval: &mut TimerBox);
+                                            // Add a duration sample ending now
 
     fn name(&self) -> String;               // a text (UTF-8) name to print
     fn class(&self) -> &str;                // the type of a sample:  integer or floating
@@ -474,6 +589,7 @@ pub trait Rustics {
     fn id(&self) -> usize;
     fn equals(&self, other: &dyn Rustics) -> bool;
     fn generic(&self) -> &dyn Any;
+    fn histo_log_mode(&self) -> i64;
 }
 
 pub trait Histograms {
@@ -554,6 +670,18 @@ impl Rustics for RunningInteger {
 
     fn record_f64(&mut self, _sample: f64) {
         panic!("Rustics::RunningInteger:  f64 samples are not permitted.");
+    }
+
+    fn record_event(&mut self) {
+        panic!("Rustics::RunningInteger:  event samples are not permitted.");
+    }
+
+    fn record_time(&mut self, _sample: i64) {
+        panic!("Rustics::RunningInteger:  time samples are not permitted.");
+    }
+
+    fn record_interval(&mut self, _interval: &mut TimerBox) {
+        panic!("Rustics::RunningInteger:  time intervals are not permitted.");
     }
 
     fn name(&self) -> String {
@@ -637,6 +765,10 @@ impl Rustics for RunningInteger {
 
     fn generic(&self) -> &dyn Any {
         self as &dyn Any
+    }
+
+    fn histo_log_mode(&self) -> i64 {
+        self.log_histogram.log_mode() as i64
     }
 
     fn print(&self, title_prefix: &str) {
@@ -775,10 +907,13 @@ impl IntegerWindow {
         for sample in self.vector.iter() {
             let distance = *sample as f64 - mean;
             let square = distance * distance;
-            moment_2 += distance * distance;
+            assert!(square >= 0.0);
+            moment_2 += square;
             moment_3 += distance * square;
             moment_4 += square * square;
         }
+
+        assert!(moment_2 >= 0.0);
 
         Crunched { sum, moment_2, moment_3, moment_4 }
     }
@@ -818,6 +953,18 @@ impl Rustics for IntegerWindow {
 
     fn record_f64(&mut self, _sample: f64) {
         panic!("Rustics::IntegerWindow:  f64 samples are not permitted.");
+    }
+
+    fn record_event(&mut self) {
+        panic!("Rustics::IntegerWindow:  event samples are not permitted.");
+    }
+
+    fn record_time(&mut self, _sample: i64) {
+        panic!("Rustics::IntegerWindow:  time samples are not permitted.");
+    }
+
+    fn record_interval(&mut self, _interval: &mut TimerBox) {
+        panic!("Rustics::IntegerWindow:  time intervals are not permitted.");
     }
 
     fn name(&self) -> String {
@@ -967,6 +1114,10 @@ impl Rustics for IntegerWindow {
         self as &dyn Any
     }
 
+    fn histo_log_mode(&self) -> i64 {
+        self.log_histogram.log_mode() as i64
+    }
+
     fn set_id(&mut self, id: usize) {
         self.id = id;
     }
@@ -991,9 +1142,384 @@ impl Histograms for IntegerWindow {
     }
 }
 
+pub struct RunningTime {
+    running_integer:    Box<RunningInteger>,
+    timer:              TimerBox,
+    hz:                 i64,
+
+    title:              String,
+    printer:            PrinterBox,
+}
+
+impl RunningTime {
+    pub fn new(title_in: &str, timer:  TimerBox) -> RunningTime {
+        let id = usize::max_value();
+        let title = String::from(title_in);
+        let which = "stdout".to_string();
+        let printer = Arc::new(Mutex::new(StdioPrinter { which }));
+        let hz = timer_box_hz(&timer);
+
+        if hz > i64::MAX as u128 {
+            panic!("Rustics::RunningTime:  The timer hz value is too large.");
+        }
+
+        let hz = hz as i64;
+
+        let running_integer =
+            Box::new(RunningInteger { title, id, count: 0, mean: 0.0, moment_2: 0.0, moment_3: 0.0,
+                moment_4: 0.0, log_histogram: LogHistogram::new(), min: i64::MAX, max: i64::MIN,
+                printer });
+
+        let title = String::from(title_in);
+        let which = "stdout".to_string();
+        let printer = Arc::new(Mutex::new(StdioPrinter { which }));
+
+        RunningTime { running_integer, timer, hz, title, printer }
+    }
+
+    pub fn hz(&self) -> i64 {
+        self.hz
+    }
+}
+
+impl Rustics for RunningTime {
+    fn record_i64(&mut self, sample: i64) {
+        panic!("Rustics::RunningTime:  i64 events are not permitted.");
+    }
+
+    fn record_f64(&mut self, sample: f64) {
+        panic!("Rustics::RunningTime:  f64 events are not permitted.");
+    }
+
+    fn record_event(&mut self) {
+        panic!("Rustics::RunningTime:  events are not permitted.");
+    }
+
+    fn record_time(&mut self, sample: i64) {
+        assert!(sample >= 0);
+        self.running_integer.record_i64(sample);
+    }
+
+    fn record_interval(&mut self, interval: &mut TimerBox) {
+        let mut timer = (*self.timer).borrow_mut();
+        let interval = timer.finish();
+
+        if interval > i64::MAX as u128 {
+            panic!("RunningTime::record_interval:  The interval is too long.");
+        }
+
+        self.running_integer.record_i64(interval as i64);
+    }
+
+    fn name(&self) -> String {
+        self.running_integer.name()
+    }
+
+    fn class(&self) -> &str {
+        self.running_integer.class()
+    }
+
+    fn count(&self) ->u64 {
+        self.running_integer.count()
+    }
+
+    fn log_mode(&self) -> isize {
+        self.running_integer.log_mode()
+    }
+
+    fn mean(&self) ->f64 {
+        self.running_integer.mean()
+    }
+
+    fn standard_deviation(&self) ->f64 {
+        self.running_integer.standard_deviation()
+    }
+
+    fn variance(&self) ->f64 {
+        self.running_integer.variance()
+    }
+
+    fn skewness(&self) ->f64 {
+        self.running_integer.skewness()
+    }
+
+    fn kurtosis(&self) ->f64 {
+        self.running_integer.kurtosis()
+    }
+
+    fn int_extremes(&self) -> bool {
+        self.running_integer.int_extremes()
+    }
+
+    fn min_i64(&self) -> i64 {
+        self.running_integer.min_i64()
+    }
+
+    fn min_f64(&self) -> f64 {
+        self.running_integer.min_f64()
+    }
+
+    fn max_i64(&self) -> i64 {
+        self.running_integer.max_i64()
+    }
+
+    fn max_f64(&self) -> f64 {
+        self.running_integer.max_f64()
+    }
+
+    fn precompute(&mut self) {
+        self.running_integer.precompute()
+    }
+
+    fn clear(&mut self) {
+        self.running_integer.clear()
+    }
+
+    // Functions for printing
+    //   print          actually prints
+    //   set_printer    supplies a callback to print a single line
+
+    fn print(&self, title_prefix: &str) {
+        let printer = &mut *self.printer.lock().unwrap();
+
+        let title = &create_title(title_prefix, &self.title);
+        let n = self.count();
+        let min = self.min_i64();
+        let max = self.max_i64();
+        let log_mode = self.running_integer.histo_log_mode() as i64;
+        let mean = self.mean();
+        let variance = self.variance();
+        let skewness = self.skewness();
+        let kurtosis = self.kurtosis();
+
+        let printable = Printable { n, min, max, log_mode, mean, variance, skewness, kurtosis };
+
+        printer.print(title);
+        print_common_integer_times(&printable, self.hz, printer);
+        print_common_float_times(&printable, self.hz, printer);
+        self.running_integer.print_histogram();
+    }
+
+    fn set_printer(&mut self, printer: PrinterBox) {
+        self.printer = printer;
+        self.running_integer.set_printer(self.printer.clone());
+    }
+
+    // For internal use only.
+    fn set_id(&mut self, index: usize) {
+        self.running_integer.set_id(index)
+    }
+
+    fn id(&self) -> usize {
+        self.running_integer.id()
+    }
+
+    fn equals(&self, other: &dyn Rustics) -> bool {
+        self.running_integer.equals(other)
+    }
+
+    fn generic(&self) -> &dyn Any {
+        self as &dyn Any
+    }
+
+    fn histo_log_mode(&self) -> i64 {
+        self.running_integer.histo_log_mode()
+    }
+}
+
+pub struct TimeWindow {
+    integer_window:     Box<IntegerWindow>,
+    timer:              TimerBox,
+    hz:                 i64,
+
+    title:              String,
+    printer:            PrinterBox,
+}
+
+impl TimeWindow {
+    pub fn new(title_in: &str, window_size: usize, timer:  TimerBox) -> TimeWindow {
+        let id = usize::max_value();
+        let title = String::from(title_in);
+        let which = "stdout".to_string();
+        let printer = Arc::new(Mutex::new(StdioPrinter { which }));
+        let hz = timer_box_hz(&timer);
+
+        if hz > i64::MAX as u128 {
+            panic!("Rustics::TimeWindow:  The timer hz value is too large.");
+        }
+
+        let hz = hz as i64;
+        let vector = Vec::with_capacity(window_size);
+
+        let integer_window =
+            Box::new(IntegerWindow { title, index: 0, window_size, vector, id, sample_count: 0,
+                stats_valid: false, mean: 0.0, sum: 0.0, moment_2: 0.0, moment_3: 0.0,
+                moment_4: 0.0, log_histogram: LogHistogram::new(), printer });
+
+        let title = String::from(title_in);
+        let which = "stdout".to_string();
+        let printer = Arc::new(Mutex::new(StdioPrinter { which }));
+
+        TimeWindow { integer_window, timer, hz, title, printer }
+    }
+
+    pub fn hz(&self) -> i64 {
+        self.hz
+    }
+}
+
+impl Rustics for TimeWindow {
+    fn record_i64(&mut self, sample: i64) {
+        panic!("Rustics::TimeWindow:  i64 events are not permitted.");
+    }
+
+    fn record_f64(&mut self, sample: f64) {
+        panic!("Rustics::TimeWindow:  f64 events are not permitted.");
+    }
+
+    fn record_event(&mut self) {
+        panic!("Rustics::TimeWindow:  events are not permitted.");
+    }
+
+    fn record_time(&mut self, sample: i64) {
+        assert!(sample >= 0);
+        self.integer_window.record_i64(sample);
+    }
+
+    fn record_interval(&mut self, interval: &mut TimerBox) {
+        let mut timer = (*self.timer).borrow_mut();
+        let interval = timer.finish();
+
+        if interval > i64::MAX as u128 {
+            panic!("TimeWindow::record_interval:  The interval is too long.");
+        }
+
+        self.integer_window.record_i64(interval as i64);
+    }
+
+    fn name(&self) -> String {
+        self.integer_window.name()
+    }
+
+    fn class(&self) -> &str {
+        self.integer_window.class()
+    }
+
+    fn count(&self) ->u64 {
+        self.integer_window.count()
+    }
+
+    fn log_mode(&self) -> isize {
+        self.integer_window.log_mode()
+    }
+
+    fn mean(&self) ->f64 {
+        self.integer_window.mean()
+    }
+
+    fn standard_deviation(&self) ->f64 {
+        self.integer_window.standard_deviation()
+    }
+
+    fn variance(&self) ->f64 {
+        self.integer_window.variance()
+    }
+
+    fn skewness(&self) ->f64 {
+        self.integer_window.skewness()
+    }
+
+    fn kurtosis(&self) ->f64 {
+        self.integer_window.kurtosis()
+    }
+
+    fn int_extremes(&self) -> bool {
+        self.integer_window.int_extremes()
+    }
+
+    fn min_i64(&self) -> i64 {
+        self.integer_window.min_i64()
+    }
+
+    fn min_f64(&self) -> f64 {
+        self.integer_window.min_f64()
+    }
+
+    fn max_i64(&self) -> i64 {
+        self.integer_window.max_i64()
+    }
+
+    fn max_f64(&self) -> f64 {
+        self.integer_window.max_f64()
+    }
+
+    fn precompute(&mut self) {
+        self.integer_window.precompute()
+    }
+
+    fn clear(&mut self) {
+        self.integer_window.clear()
+    }
+
+    // Functions for printing
+    //   print          actually prints
+    //   set_printer    supplies a callback to print a single line
+
+    fn print(&self, title_prefix: &str) {
+        let printer = &mut *self.printer.lock().unwrap();
+
+        let title = &create_title(title_prefix, &self.title);
+        let crunched = self.integer_window.crunch();
+
+        let n = self.integer_window.count();
+        let min = self.integer_window.min_i64();
+        let max = self.integer_window.max_i64();
+        let log_mode = self.integer_window.histo_log_mode() as i64;
+
+        let mean = crunched.sum / n as f64;
+        let variance = compute_variance(n, crunched.moment_2);
+        let skewness = compute_skewness(n, crunched.moment_2, crunched.moment_3);
+        let kurtosis = compute_kurtosis(n, crunched.moment_2, crunched.moment_4);
+
+        let printable = Printable { n, min, max, log_mode, mean, variance, skewness, kurtosis };
+
+        printer.print(title);
+        print_common_integer_times(&printable, self.hz, printer);
+        print_common_float_times(&printable, self.hz, printer);
+        self.integer_window.print_histogram();
+    }
+
+    fn set_printer(&mut self, printer: PrinterBox) {
+        self.printer = printer;
+        self.integer_window.set_printer(self.printer.clone());
+    }
+
+    // For internal use only.
+    fn set_id(&mut self, index: usize) {
+        self.integer_window.set_id(index)
+    }
+
+    fn id(&self) -> usize {
+        self.integer_window.id()
+    }
+
+    fn equals(&self, other: &dyn Rustics) -> bool {
+        self.integer_window.equals(other)
+    }
+
+    fn generic(&self) -> &dyn Any {
+        self as &dyn Any
+    }
+
+    fn histo_log_mode(&self) -> i64 {
+        self.integer_window.histo_log_mode()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rand::Rng;
 
     pub fn test_commas() {
         let test = [ 123456, 12, -1, -1234, 4000000, -200, -2000, -20000 ];
@@ -1032,15 +1558,15 @@ mod tests {
         histogram.print(printer);
     }
 
-    pub fn test_integer_log() {
+    pub fn test_pseudo_log() {
         let test = [ 1,   0, -1, -4, -3, i64::MIN, 3, 4, 5, 8, i64::MAX ];
         let expect = [ 0, 0,  0,  2,  2,       63, 2, 2, 3, 3,       63 ];
 
         let mut i = 0;
 
         for sample in test.iter() {
-            println!("integer_log({}) = {}", *sample, integer_log(*sample));
-            assert_eq!(integer_log(*sample), expect[i]);
+            println!("pseudo_log({}) = {}", *sample, pseudo_log(*sample));
+            assert_eq!(pseudo_log(*sample), expect[i]);
             i += 1;
         }
     }
@@ -1077,7 +1603,7 @@ mod tests {
             stats.record_i64(sample);
         }
 
-        assert!(stats.log_mode() as usize == integer_log(stats.max_i64()));
+        assert!(stats.log_mode() as usize == pseudo_log(stats.max_i64()));
         stats.print(&"");
         let sample = 100;
 
@@ -1087,15 +1613,244 @@ mod tests {
 
         stats.print(&"");
         assert!(stats.mean() == sample as f64);
-        assert!(stats.log_mode() as usize == integer_log(sample));
+        assert!(stats.log_mode() as usize == pseudo_log(sample));
+    }
+
+    static global_next: Mutex<u128> = Mutex::new(0 as u128);
+
+    fn get_global_next() -> u128 {
+        *(global_next.lock().unwrap())
+    }
+
+    fn set_global_next(value: u128) {
+        *(global_next.lock().unwrap()) = value;
+    }
+
+    struct TestTimer {
+        start: u128,
+        hz: u128,
+    }
+
+    impl TestTimer {
+        fn new(hz: u128) -> TestTimer {
+            let start = 0;
+
+            TestTimer { start, hz }
+        }
+    }
+
+    impl Timer for TestTimer {
+        fn start(&mut self) {
+            assert!(get_global_next() > 0);
+            self.start = get_global_next();
+        }
+
+        fn finish(&mut self) -> u128 {
+            assert!(self.start > 0);
+            assert!(get_global_next() >= self.start);
+            let elapsed_time = get_global_next() - self.start;
+            self.start = 0;
+            set_global_next(0);
+            elapsed_time
+        }
+
+        fn hz(&self) -> u128 {
+            self.hz
+        }
+    }
+
+    fn setup_elapsed_time(timer: &mut TimerBox, ticks: i64) {
+        assert!(ticks >= 0);
+        let mut timer = (**timer).borrow_mut();
+        set_global_next(1);
+        timer.start();
+        set_global_next(ticks as u128 + 1);
+    }
+
+    fn test_simple_running_time() {
+        println!("Testing running time statistics.");
+        let hz = 1_000_000_000;
+        let mut timer: TimerBox = Rc::from(RefCell::new(TestTimer::new(hz)));
+        let mut time_stat = RunningTime::new("Test Running Time 1", timer.clone());
+
+        setup_elapsed_time(&mut timer, i64::MAX);
+        time_stat.record_interval(&mut timer);
+
+        assert!(time_stat.min_i64() == i64::MAX);
+        assert!(time_stat.max_i64() == i64::MAX);
+
+        setup_elapsed_time(&mut timer, 0);
+        time_stat.record_interval(&mut timer);
+
+        assert!(time_stat.min_i64() == 0);
+        assert!(time_stat.max_i64() == i64::MAX);
+
+        let mut rng = rand::thread_rng();
+
+        // Let the random number generator run wild.
+
+        for _i in 1..100 {
+            let random: i32 = rng.gen();
+
+            let interval =
+                if random >= 0 {
+                    random as i64
+                } else {
+                    -(random + 1) as i64
+                };
+
+            setup_elapsed_time(&mut timer, interval);
+            time_stat.record_interval(&mut timer);
+        }
+
+        time_stat.print("Test Output");
+
+        // Okay, use a more restricted range of times.
+
+        let mut timer: TimerBox = Rc::from(RefCell::new(TestTimer::new(1_000_000_000)));
+        let mut time_stat = RunningTime::new("Test Running Time 2", timer.clone());
+
+        let limit = 99;
+
+        for i in 0..limit + 1 {
+            let interval = i * i * i;
+            setup_elapsed_time(&mut timer, interval);
+            time_stat.record_interval(&mut timer);
+        }
+
+        assert!(time_stat.min_i64() == 0);
+        assert!(time_stat.max_i64() == limit * limit * limit);
+            
+        time_stat.print("Test Output");
+
+        // Get a sample with easily calculated summary statistics
+
+        let mut timer: TimerBox = Rc::from(RefCell::new(TestTimer::new(1_000_000_000)));
+        let mut time_stat = RunningTime::new("Test Running Time => 1..100", timer.clone());
+
+        for i in 1..101 {
+            setup_elapsed_time(&mut timer, i);
+            time_stat.record_interval(&mut timer);
+        }
+
+        time_stat.print("Test Output");
+
+        // Cover all the scales.
+
+        let mut timer: TimerBox = Rc::from(RefCell::new(TestTimer::new(1_000_000_000)));
+        let mut time_stat = RunningTime::new("Test Running Time => Scale Test", timer.clone());
+
+        let mut time = 1;
+        let printer = &mut StdioPrinter { which: "stdout".to_string() };
+
+        for _i in 1..16 {
+            setup_elapsed_time(&mut timer, time);
+            time_stat.record_interval(&mut timer);
+            let header = format!("{} => ", commas_i64(time));
+            print_time(&header, time as f64, hz as i64, printer);
+
+            time *= 10;
+        }
+
+        time_stat.print("Test Output");
+    }
+
+    fn test_simple_time_window() {
+        println!("Testing time windows.");
+        let hz = 1_000_000_000;
+        let mut timer: TimerBox = Rc::from(RefCell::new(TestTimer::new(hz)));
+        let mut time_stat = TimeWindow::new("Test Time Window 1", 50, timer.clone());
+
+        setup_elapsed_time(&mut timer, i64::MAX);
+        time_stat.record_interval(&mut timer);
+
+        assert!(time_stat.min_i64() == i64::MAX);
+        assert!(time_stat.max_i64() == i64::MAX);
+
+        setup_elapsed_time(&mut timer, 0);
+        time_stat.record_interval(&mut timer);
+
+        assert!(time_stat.min_i64() == 0);
+        assert!(time_stat.max_i64() == i64::MAX);
+
+        let mut rng = rand::thread_rng();
+
+        // Let the random number generator run wild.
+
+        for _i in 1..100 {
+            let random: i32 = rng.gen();
+
+            let interval =
+                if random >= 0 {
+                    random as i64
+                } else {
+                    -(random + 1) as i64
+                };
+
+            setup_elapsed_time(&mut timer, interval);
+            time_stat.record_interval(&mut timer);
+        }
+
+        time_stat.print("Test Output");
+
+        // Okay, use a more restricted range of times.
+
+        let mut timer: TimerBox = Rc::from(RefCell::new(TestTimer::new(1_000_000_000)));
+        let mut time_stat = RunningTime::new("Test Time Window 2", timer.clone());
+
+        let limit = 99;
+
+        for i in 0..limit + 1 {
+            let interval = i * i * i;
+            setup_elapsed_time(&mut timer, interval);
+            time_stat.record_interval(&mut timer);
+        }
+
+        assert!(time_stat.min_i64() == 0);
+        assert!(time_stat.max_i64() == limit * limit * limit);
+            
+        time_stat.print("Test Output");
+
+        // Get a sample with easily calculated summary statistics
+
+        let mut timer: TimerBox = Rc::from(RefCell::new(TestTimer::new(1_000_000_000)));
+        let mut time_stat = RunningTime::new("Test Time Window => 1..100", timer.clone());
+
+        for i in 1..101 {
+            setup_elapsed_time(&mut timer, i);
+            time_stat.record_interval(&mut timer);
+        }
+
+        time_stat.print("Test Time Value Output Patterns");
+
+        // Cover all the scales.
+
+        let mut timer: TimerBox = Rc::from(RefCell::new(TestTimer::new(1_000_000_000)));
+        let mut time_stat = RunningTime::new("Test Time => Scale Test", timer.clone());
+
+        let mut time = 1;
+        let printer = &mut StdioPrinter { which: "stdout".to_string() };
+
+        for _i in 1..16 {
+            setup_elapsed_time(&mut timer, time);
+            time_stat.record_interval(&mut timer);
+            let header = format!("{} => ", commas_i64(time));
+            print_time(&header, time as f64, hz as i64, printer);
+
+            time *= 10;
+        }
+
+        time_stat.print("Test Output");
     }
 
     #[test]
     pub fn run_basic_tests() {
         test_commas();
         test_log_histogram();
-        test_integer_log();
+        test_pseudo_log();
         test_simple_running_integer();
         test_simple_integer_window();
+        test_simple_running_time();
+        test_simple_time_window();
     }
 }

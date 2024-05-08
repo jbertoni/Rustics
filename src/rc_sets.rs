@@ -37,6 +37,11 @@ pub struct RusticsRcSet {
 impl RusticsRcSet {
 
     // Create a new set.
+    //
+    // The "members_hint" and "subsets_hint" parameters are hints as to the number
+    // of elements to be expected.  "members_hint" refers to the number of Rustics
+    // statistics in the set.  These hints can improve performance a bit.  They
+    // might be especially useful in embedded environments.
 
     pub fn new(name: &str, members: usize, subsets: usize) -> RusticsRcSet {
         let name = name.to_owned();

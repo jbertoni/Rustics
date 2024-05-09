@@ -1,6 +1,6 @@
 [package]
 name = "rustics"
-version = "0.3.1"
+version = "0.4.0"
 authors = ["bertoni"]
 edition = "2021"
 include = ["Cargo.toml", "src/*.rs", "README"]
@@ -12,4 +12,6 @@ description = "simple statistic library for performance analysis"
 repository = "https://github.com/jbertoni/Rustics"
 
 [dependencies]
+
+# rand is used only for testing
 rand = "0.8"

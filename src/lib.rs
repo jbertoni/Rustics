@@ -576,9 +576,9 @@ pub trait Rustics {
     fn record_i64(&mut self, sample: i64);  // add an i64 sample
     fn record_f64(&mut self, sample: f64);  // add an f64 sample -- not implemented
     fn record_event(&mut self);
-    fn record_time(&mut self, sample: i64);
-                                            // add a time sample
-    fn record_interval(&mut self, interval: &mut TimerBox);
+    fn record_time(&mut self, sample: i64); // add a time sample
+
+    fn record_interval(&mut self);
                                             // Add a duration sample ending now
 
     fn name(&self) -> String;               // a text (UTF-8) name to print
@@ -592,9 +592,9 @@ pub trait Rustics {
     fn kurtosis(&self) -> f64;
 
     fn int_extremes(&self) -> bool;         // does this statistic implement integer extremes?
-    fn min_i64(&self) -> i64;
+    fn min_i64(&self) -> i64;               // return the minimum sample value seen
     fn min_f64(&self) -> f64;
-    fn max_i64(&self) -> i64;
+    fn max_i64(&self) -> i64;               // return the maximum sample value seen
     fn max_f64(&self) -> f64;
 
     fn precompute(&mut self);               // precompute the various statistics for printing
@@ -703,7 +703,7 @@ impl Rustics for RunningInteger {
         panic!("Rustics::RunningInteger:  time samples are not permitted.");
     }
 
-    fn record_interval(&mut self, _interval: &mut TimerBox) {
+    fn record_interval(&mut self) {
         panic!("Rustics::RunningInteger:  time intervals are not permitted.");
     }
 
@@ -986,7 +986,7 @@ impl Rustics for IntegerWindow {
         panic!("Rustics::IntegerWindow:  time samples are not permitted.");
     }
 
-    fn record_interval(&mut self, _interval: &mut TimerBox) {
+    fn record_interval(&mut self) {
         panic!("Rustics::IntegerWindow:  time intervals are not permitted.");
     }
 
@@ -1206,11 +1206,11 @@ impl RunningTime {
 }
 
 impl Rustics for RunningTime {
-    fn record_i64(&mut self, sample: i64) {
+    fn record_i64(&mut self, _sample: i64) {
         panic!("Rustics::RunningTime:  i64 events are not permitted.");
     }
 
-    fn record_f64(&mut self, sample: f64) {
+    fn record_f64(&mut self, _sample: f64) {
         panic!("Rustics::RunningTime:  f64 events are not permitted.");
     }
 
@@ -1223,7 +1223,7 @@ impl Rustics for RunningTime {
         self.running_integer.record_i64(sample);
     }
 
-    fn record_interval(&mut self, interval: &mut TimerBox) {
+    fn record_interval(&mut self) {
         let mut timer = (*self.timer).borrow_mut();
         let interval = timer.finish();
 
@@ -1392,11 +1392,11 @@ impl TimeWindow {
 }
 
 impl Rustics for TimeWindow {
-    fn record_i64(&mut self, sample: i64) {
+    fn record_i64(&mut self, _sample: i64) {
         panic!("Rustics::TimeWindow:  i64 events are not permitted.");
     }
 
-    fn record_f64(&mut self, sample: f64) {
+    fn record_f64(&mut self, _sample: f64) {
         panic!("Rustics::TimeWindow:  f64 events are not permitted.");
     }
 
@@ -1409,7 +1409,7 @@ impl Rustics for TimeWindow {
         self.integer_window.record_i64(sample);
     }
 
-    fn record_interval(&mut self, interval: &mut TimerBox) {
+    fn record_interval(&mut self) {
         let mut timer = (*self.timer).borrow_mut();
         let interval = timer.finish();
 
@@ -1697,13 +1697,13 @@ mod tests {
         let mut time_stat = RunningTime::new("Test Running Time 1", timer.clone());
 
         setup_elapsed_time(&mut timer, i64::MAX);
-        time_stat.record_interval(&mut timer);
+        time_stat.record_interval();
 
         assert!(time_stat.min_i64() == i64::MAX);
         assert!(time_stat.max_i64() == i64::MAX);
 
         setup_elapsed_time(&mut timer, 0);
-        time_stat.record_interval(&mut timer);
+        time_stat.record_interval();
 
         assert!(time_stat.min_i64() == 0);
         assert!(time_stat.max_i64() == i64::MAX);
@@ -1723,7 +1723,7 @@ mod tests {
                 };
 
             setup_elapsed_time(&mut timer, interval);
-            time_stat.record_interval(&mut timer);
+            time_stat.record_interval();
         }
 
         time_stat.print("Test Output");
@@ -1738,7 +1738,7 @@ mod tests {
         for i in 0..limit + 1 {
             let interval = i * i * i;
             setup_elapsed_time(&mut timer, interval);
-            time_stat.record_interval(&mut timer);
+            time_stat.record_interval();
         }
 
         assert!(time_stat.min_i64() == 0);
@@ -1753,7 +1753,7 @@ mod tests {
 
         for i in 1..101 {
             setup_elapsed_time(&mut timer, i);
-            time_stat.record_interval(&mut timer);
+            time_stat.record_interval();
         }
 
         time_stat.print("Test Output");
@@ -1768,7 +1768,7 @@ mod tests {
 
         for _i in 1..16 {
             setup_elapsed_time(&mut timer, time);
-            time_stat.record_interval(&mut timer);
+            time_stat.record_interval();
             let header = format!("{} => ", commas_i64(time));
             print_time(&header, time as f64, hz as i64, printer);
 
@@ -1785,13 +1785,13 @@ mod tests {
         let mut time_stat = TimeWindow::new("Test Time Window 1", 50, timer.clone());
 
         setup_elapsed_time(&mut timer, i64::MAX);
-        time_stat.record_interval(&mut timer);
+        time_stat.record_interval();
 
         assert!(time_stat.min_i64() == i64::MAX);
         assert!(time_stat.max_i64() == i64::MAX);
 
         setup_elapsed_time(&mut timer, 0);
-        time_stat.record_interval(&mut timer);
+        time_stat.record_interval();
 
         assert!(time_stat.min_i64() == 0);
         assert!(time_stat.max_i64() == i64::MAX);
@@ -1811,7 +1811,7 @@ mod tests {
                 };
 
             setup_elapsed_time(&mut timer, interval);
-            time_stat.record_interval(&mut timer);
+            time_stat.record_interval();
         }
 
         time_stat.print("Test Output");
@@ -1826,7 +1826,7 @@ mod tests {
         for i in 0..limit + 1 {
             let interval = i * i * i;
             setup_elapsed_time(&mut timer, interval);
-            time_stat.record_interval(&mut timer);
+            time_stat.record_interval();
         }
 
         assert!(time_stat.min_i64() == 0);
@@ -1841,7 +1841,7 @@ mod tests {
 
         for i in 1..101 {
             setup_elapsed_time(&mut timer, i);
-            time_stat.record_interval(&mut timer);
+            time_stat.record_interval();
         }
 
         time_stat.print("Test Time Value Output Patterns");
@@ -1856,7 +1856,7 @@ mod tests {
 
         for _i in 1..16 {
             setup_elapsed_time(&mut timer, time);
-            time_stat.record_interval(&mut timer);
+            time_stat.record_interval();
             let header = format!("{} => ", commas_i64(time));
             print_time(&header, time as f64, hz as i64, printer);
 

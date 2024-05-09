@@ -3,36 +3,41 @@
 //  as public domain source where permitted by law.
 //
 
-//! 'rustics' provides a very simple interface for recording events and printing statistics.
+//! 'Rustics' provides a very simple interface for recording events and printing statistics.
 //!
 //! ## Types
 //!
 //! * Recording Integers
 //!
 //!     * Integer statistics provide basic parameters, like the mean, and a pseudo-log histogram.
-//!     *  For the pseudo-log histogram, the pseudo-log of a negative number n is defines as -log(-n).
-//!        The pseudo-log of 0 is defined as 0, and for convenience, the pseudo-log of -2
-//!        -2^64 is defined as 63.
+//!     * For the pseudo-log histogram, the pseudo-log of a negative number n is defines as -log(-n).
+//!       The pseudo-log of 0 is defined as 0, and for convenience, the pseudo-log of -(2^64) is defined
+//!       as 63.  Logs are computed by rounding up any fractional part, so the pseudo-log of 5 is 3.
 //!
 //! * Integer statistics
 //!     * RunningInteger
-//!
-//!         * This type implements a few simple running statistics for a series of i64 sample values.
+//!         * This type implements a few running statistics for a series of i64 sample values.
 //!
 //!     * RunningWindow
-//!
 //!         * This type implements a fixed-size window of the last n samples recorded.  Summary
 //!           statistics of the window samples are computed on demand.
 //!         * The histogram counts all samples seen, not just the current window.
 //!
+//!     * RunningTime
+//!         * This type uses the RunningInteger code to handle time intervals.  Values will be
+//!           printed using units of time.
+//!
+//!     * TimeWindow
+//!         * This type uses the IntegerWindow code to handle time intervals.
+//!
 //! * Creating Sets
 //!
-//!     * The "arc_sets" and "rc_sets" modules implement a simple feature allowing the creation of sets that accept
-//!       statistics and subsets as members.
+//!     * The "arc_sets" and "rc_sets" modules implement a simple feature allowing the creation of sets
+//!       that accept statistics and subsets as members.
 //!
 //!     * RusticsArcSet
-//!         * This type functions as an Arc-based implementation of sets and subsets that can be printed and
-//!           cleared on command.
+//!         * This type functions as an Arc-based implementation of sets and subsets that can be printed
+//!           and cleared on command.
 //!
 //!     * RusticsRcSet
 //!         * This type functions as an Rc-based implementation of for sets and subsets.  These sets will be
@@ -158,6 +163,8 @@ pub fn print_time(name: &str, time: f64, hz: i64, printer: &mut dyn Printer) {
     let scale;
     let has_plural;
 
+    // Decide what units to use.
+
     if time >= day {
         unit = "day";
         scale = day;
@@ -252,6 +259,8 @@ pub fn compute_kurtosis(count: u64, moment_2: f64, moment_4: f64) -> f64 {
         return 0.0;
     }
 
+    assert!(moment_2 >= 0.0 && moment_4 >= 0.0);
+
     let n = count as f64;
     let kurtosis = moment_4 / (moment_2.powf(2.0) / n) - 3.0;
     let correction = (n - 1.0) / ((n - 2.0) * (n - 3.0));
@@ -261,13 +270,27 @@ pub fn compute_kurtosis(count: u64, moment_2: f64, moment_4: f64) -> f64 {
     sample_excess_kurtosis
 }
 
-// This implements a simple log-like function of the absolute
-// value of its input.  It is intended only for making histograms.
-//
-// The log of a negative integer n is defined as -log(-n) to give
-// a reasonable histogram structure.  log(0) is defined as 0.
 
-fn pseudo_log(value: i64) -> usize {
+// This function returns an array index to record a log value
+// in a histogram.  Callers are expected to use two arrays,
+// one for positive and one for negative values, so this routine
+// ignores the sign of its input.
+//
+// The algorithm implements a simple log-like function of the
+// absolute value of its input.  It is intended only for making
+// histograms.
+//
+// The pseudo-log of most negative integers n is defined as -log(-n)
+// to give a reasonable histogram structure.  The pseudo-log of
+// i64::MIN is defined as 63 for convenience.  This routine always
+// returns a positive index for an array, so the return value is
+// pseudo-log(-n).  The calling routine handles the negation by using
+// separate arrays for positive and negative pseudo-log values.
+//
+// In addition, pseudo-log(0) is defined as 0.
+//
+
+fn pseudo_log_index(value: i64) -> usize {
     let mut place = 1;
     let mut log = 0;
 
@@ -289,8 +312,8 @@ fn pseudo_log(value: i64) -> usize {
     log
 }
 
-// Insert a delimiter and concatenate the parent and child names  when creating
-// a hierarchical title.
+// Insert a delimiter and concatenate the parent and child names
+// when creating a hierarchical title.
 
 fn create_title(title_prefix: &str, title: &str) -> String {
     let title =
@@ -402,9 +425,9 @@ impl LogHistogram {
 
     pub fn record(&mut self, sample: i64) {
         if sample < 0 {
-            self.negative[pseudo_log(sample)] += 1;
+            self.negative[pseudo_log_index(sample)] += 1;
         } else {
-            self.positive[pseudo_log(sample)] += 1;
+            self.positive[pseudo_log_index(sample)] += 1;
         }
     }
 
@@ -1559,14 +1582,14 @@ mod tests {
     }
 
     pub fn test_pseudo_log() {
-        let test = [ 1,   0, -1, -4, -3, i64::MIN, 3, 4, 5, 8, i64::MAX ];
+        let test =   [ 1, 0, -1, -4, -3, i64::MIN, 3, 4, 5, 8, i64::MAX ];
         let expect = [ 0, 0,  0,  2,  2,       63, 2, 2, 3, 3,       63 ];
 
         let mut i = 0;
 
         for sample in test.iter() {
-            println!("pseudo_log({}) = {}", *sample, pseudo_log(*sample));
-            assert_eq!(pseudo_log(*sample), expect[i]);
+            println!("pseudo_log_index({}) = {}", *sample, pseudo_log_index(*sample));
+            assert_eq!(pseudo_log_index(*sample), expect[i]);
             i += 1;
         }
     }
@@ -1603,7 +1626,7 @@ mod tests {
             stats.record_i64(sample);
         }
 
-        assert!(stats.log_mode() as usize == pseudo_log(stats.max_i64()));
+        assert!(stats.log_mode() as usize == pseudo_log_index(stats.max_i64()));
         stats.print(&"");
         let sample = 100;
 
@@ -1613,7 +1636,7 @@ mod tests {
 
         stats.print(&"");
         assert!(stats.mean() == sample as f64);
-        assert!(stats.log_mode() as usize == pseudo_log(sample));
+        assert!(stats.log_mode() as usize == pseudo_log_index(sample));
     }
 
     static global_next: Mutex<u128> = Mutex::new(0 as u128);

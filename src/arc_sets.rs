@@ -131,7 +131,8 @@ impl RusticsArcSet {
 
     // Create a IntegerWindow statistics object and add it to the set.
 
-    pub fn add_integer_window(&mut self, window_size: usize, title: &str, printer: Option<PrinterBox>) -> &RusticsBox {
+    pub fn add_integer_window(&mut self, window_size: usize, title: &str, printer: Option<PrinterBox>)
+            -> &RusticsBox {
         self.members.push(Arc::from(Mutex::new(IntegerWindow::new(title, window_size))));
         let result = self.members.last().unwrap();
         let mut stat = result.lock().unwrap();
@@ -239,7 +240,7 @@ mod tests {
 
     fn add_stats(parent: &Mutex<RusticsArcSet>) {
         for _i in 0..4 {
-            let lower = -64;
+            let lower = -64;    // Just define the range for the test samples.
             let upper = 64;
             let parent = &mut parent.lock().unwrap();
             let mut subset = parent.add_subset("generated subset", 4, 4).lock().unwrap();

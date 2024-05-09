@@ -7,7 +7,8 @@ use std::time::Instant;
 //  Rust Duration type, which returns wall-clock time.
 //
 //  The start method starts a timing interval.  It may be called
-//  multiple times on a single strucure.
+//  multiple times on a single structure.  The last invocation of
+//  the start method overrides any previous calls.
 //
 //  The finish routine is used at the end of a sample interval.  It
 //  returns the interval time in nanoseconds and also starts a new
@@ -20,7 +21,7 @@ use std::time::Instant;
 pub trait Timer {
     fn start(&mut self);            // start or restart a timer
     fn finish(&mut self) -> u128;   // get the elapsed time
-    fn hz(&self) -> u128;       // get the clock hz rating
+    fn hz(&self) -> u128;           // get the clock hz rating
 }
 
 
@@ -60,6 +61,8 @@ impl DurationTimer {
 }
 
 //  This trait can be implemented for platform-specific clocks.
+//  The structures can then be wrapped in a ClockTimer struct.
+//  See the test routine "simple_test_clock" for an example.
 
 pub trait SimpleClock {
     fn get_time(&mut self) -> u128;
@@ -67,7 +70,8 @@ pub trait SimpleClock {
 }
 
 //  This is a wrapper class for platform-specific clocks that
-//  would be useful to support.
+//  would be useful to support.  It is useful for hertz rates
+//  up to 2-3 gHz or so.
 //
 //  For efficiency, using 64-bit math internally might be useful.
 //  On the other hand, using femtoseconds might be useful for
@@ -89,7 +93,8 @@ impl Timer for ClockTimer {
         let ticks = end_time - self.start;
         self.start = end_time;
 
-        // Round the picoseconds up to nanoseconds.
+        // Compute the picoseconds, then round the picoseconds
+        // up to nanoseconds.
 
         let result = (ticks * self.hz_factor + 500) / 1000;
         result

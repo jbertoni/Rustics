@@ -26,8 +26,8 @@ hierarchical names for objects.  Each set or statistic typically will have a
 single element name given by the user, and the string "==>" will be used to
 create a hierarchical name in the manner of a Unix filesystem by concatenating
 the names as the print process descends the tree.  For example, if a tree has
-one set named "Everything" and that set contains one statistics named "Lonely",
-the title printed will be "Everything ==> Lonely".
+one set named "Everything" and that set contains one statistics object named
+"Lonely", the title printed will be "Everything ==> Lonely".
 
 Statistics and sets can be deleted, but the code uses simple algorithms that
 are linear in the number of elements of a set to do searching for items to be

@@ -126,7 +126,8 @@ impl RusticsSet {
 
     // Create a IntegerWindow statistics object and add it to the set.
 
-    pub fn add_integer_window(&mut self, window_size: usize, title: &str, printer: Option<PrinterBox>) -> &RusticsBox {
+    pub fn add_integer_window(&mut self, window_size: usize, title: &str, printer: Option<PrinterBox>)
+            -> &RusticsBox {
         self.members.push(Arc::from(Mutex::new(IntegerWindow::new(title, window_size))));
         let result = self.members.last().unwrap();
         let mut stat = result.lock().unwrap();

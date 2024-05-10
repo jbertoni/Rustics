@@ -16,12 +16,12 @@ use std::time::Instant;
 //  can be called multiple times after a "start" invocation to return
 //  the times for a sequence of events.
 //
-//  hz returns the hz rating of the underlying clock.
+//  hz returns the herz of the underlying clock.
 
 pub trait Timer {
     fn start(&mut self);            // start or restart a timer
     fn finish(&mut self) -> u128;   // get the elapsed time
-    fn hz(&self) -> u128;           // get the clock hz rating
+    fn hz(&self) -> u128;           // get the clock hz
 }
 
 
@@ -76,15 +76,13 @@ pub trait SimpleClock {
 }
 
 //  This is a wrapper class for platform-specific clocks that
-//  would be useful to support.  It is useful for hertz rates
-//  up to 2-3 gHz or so.
+//  would be useful to support.
 //
 //  For efficiency, using 64-bit math internally might be useful.
 //  On the other hand, using femtoseconds might be useful for
 //  particularly hostile hz ratings.
 
 pub struct ClockTimer {
-    hz_factor:  u128,  // hz_factor converts to picoseconds
     start:      u128,
     clock:      Box<dyn SimpleClock>,
 }
@@ -98,12 +96,7 @@ impl Timer for ClockTimer {
         let end_time = self.clock.get_time();
         let ticks = end_time - self.start;
         self.start = end_time;
-
-        // Compute the picoseconds, then round the picoseconds
-        // up to nanoseconds.
-
-        let result = (ticks * self.hz_factor + 500) / 1000;
-        result
+        ticks
     }
 
     fn hz(&self) -> u128 {
@@ -112,12 +105,10 @@ impl Timer for ClockTimer {
 }
 
 impl ClockTimer {
-    pub fn new(clock: Box<dyn SimpleClock>) -> ClockTimer {
-        let hz = clock.hz();
-        let hz_factor = 1_000_000_000_000 / hz;
-        let start = 0;
+    pub fn new(mut clock: Box<dyn SimpleClock>) -> ClockTimer {
+        let start = clock.get_time();
 
-        ClockTimer { hz_factor, start, clock }
+        ClockTimer { start, clock }
     }
 }
 
@@ -126,9 +117,6 @@ mod tests {
     use super::*;
     use std::thread::sleep;
     use std::time::Duration;
-
-    fn pause() {
-    }
 
     #[test]
     pub fn simple_test_duration() {
@@ -168,19 +156,25 @@ mod tests {
     #[test]
     pub fn simple_test_clock() {
         let current = 0;
-        let mut increment = 3000;
+        let mut increment = 1500;
         let simple_clock = Box::new(TestSimpleClock { current, increment });
         let mut clock = ClockTimer::new(simple_clock);
+
+        // Creating the clock invokes get_time, so the increment in the
+        // test clock increases.  Keep ours in sync with it.
+
+        increment = increment * 2;
 
         assert!(clock.hz() == 1_000_000_000);
 
         clock.start();
 
         for _i in 1..5 {
-            pause();
             let interval = clock.finish();
             println!("  result {} == predict {}", interval, increment);
             assert!(interval == increment);
+
+            // Keep our increment in sync with the test clock.
             increment = increment * 2;
         }
     }

@@ -124,7 +124,8 @@ impl RusticsRcSet {
 
     // Create a IntegerWindow statistics object and add it to the set.
 
-    pub fn add_integer_window(&mut self, window_size: usize, title: &str, printer: Option<PrinterBox>) -> &RusticsBox {
+    pub fn add_integer_window(&mut self, window_size: usize, title: &str, printer: Option<PrinterBox>)
+            -> &RusticsBox {
         self.members.push(Rc::from(RefCell::new(IntegerWindow::new(title, window_size))));
         let result = self.members.last().unwrap();
         let mut member = (**result).borrow_mut();

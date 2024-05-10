@@ -30,6 +30,6 @@ one set named "Everything" and that set contains one statistics object named
 "Lonely", the title printed will be "Everything ==> Lonely".
 
 Statistics and sets can be deleted, but the code uses simple algorithms that
-are linear in the number of elements of a set to do searching for items to be
-deleted, so sets with a very high number of subsets or statistics can require a
-long time to process a deletion.
+are linear in the number of elements of the parent set, so sets with a very
+high number of subsets or statistics can require a long time to process a
+deletion.

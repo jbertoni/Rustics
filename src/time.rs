@@ -60,6 +60,12 @@ impl DurationTimer {
     }
 }
 
+impl Default for DurationTimer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 //  This trait can be implemented for platform-specific clocks.
 //  The structures can then be wrapped in a ClockTimer struct.
 //  See the test routine "simple_test_clock" for an example.

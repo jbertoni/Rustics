@@ -1309,7 +1309,7 @@ impl Rustics for RunningTime {
         let n = self.count();
         let min = self.min_i64();
         let max = self.max_i64();
-        let log_mode = self.running_integer.histo_log_mode() as i64;
+        let log_mode = self.running_integer.histo_log_mode();
         let mean = self.mean();
         let variance = self.variance();
         let skewness = self.skewness();
@@ -1497,7 +1497,7 @@ impl Rustics for TimeWindow {
         let n = self.integer_window.count();
         let min = self.integer_window.min_i64();
         let max = self.integer_window.max_i64();
-        let log_mode = self.integer_window.histo_log_mode() as i64;
+        let log_mode = self.integer_window.histo_log_mode();
 
         let mean = crunched.sum / n as f64;
         let variance = compute_variance(n, crunched.moment_2);

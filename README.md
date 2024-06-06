@@ -17,7 +17,7 @@ This library also implements sets, which contain statistics that are printed
 and manipulated together.  It provides sets contained in Arc structures and Rc
 structures.  The two set modules are otherwise identical.  The implementations
 are simple and will not scale to handle a single set with a very large number
-of elements, especially if these elements are added or deleted frequently.
+of elements.
 
 Sets are recursive:  a set can have a set as a member.  A set hierarchy can be
 printed with a single procedure call, and the contained statistics object can

@@ -540,6 +540,10 @@ impl Default for LogHistogram {
 }
 
 // Define a Printer trait to allow a custom stream for print() operations.
+//
+// This routine is invoked for each line to be printed.  The print() member
+// is responsible for adding the newline, either via println!() or some
+// other mechanism.
 
 pub trait Printer {
     fn print(&self, output: &str);
@@ -601,7 +605,8 @@ pub trait Rustics {
     fn clear(&mut self);                    // clear all the statistics
 
     // Functions for printing
-    //   print          actually prints
+    //   print          prints the statistics and pseudo-log histogram
+    //                      The first argument is an optional title prefix.
     //   set_printer    supplies a callback to print a single line
 
     fn print(&self, title_prefix: &str);
@@ -930,13 +935,10 @@ impl IntegerWindow {
         for sample in self.vector.iter() {
             let distance = *sample as f64 - mean;
             let square = distance * distance;
-            assert!(square >= 0.0);
             moment_2 += square;
             moment_3 += distance * square;
             moment_4 += square * square;
         }
-
-        assert!(moment_2 >= 0.0);
 
         Crunched { sum, moment_2, moment_3, moment_4 }
     }

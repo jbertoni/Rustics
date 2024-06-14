@@ -44,7 +44,7 @@ impl RusticsRcSet {
 
     pub fn new(name: &str, members: usize, subsets: usize) -> RusticsRcSet {
         let name = name.to_owned();
-        let id = usize::max_value();
+        let id = usize::MAX;
         let next_id = 0;
         let members = Vec::with_capacity(members);
         let subsets = Vec::with_capacity(subsets);

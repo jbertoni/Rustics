@@ -43,7 +43,7 @@ impl RusticsArcSet {
 
     pub fn new(name: &str, members_hint: usize, subsets_hint: usize) -> RusticsArcSet {
         let name = name.to_owned();
-        let id = usize::max_value();
+        let id = usize::MAX;
         let next_id = 0;
         let members = Vec::with_capacity(members_hint);
         let subsets = Vec::with_capacity(subsets_hint);

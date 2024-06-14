@@ -647,7 +647,7 @@ pub struct RunningInteger {
 
 impl RunningInteger {
     pub fn new(title: &str) -> RunningInteger {
-        let id = usize::max_value();
+        let id = usize::MAX;
         let title = String::from(title);
         let which = "stdout".to_string();
         let printer = Arc::new(Mutex::new(StdioPrinter { which }));
@@ -891,7 +891,7 @@ impl IntegerWindow {
         }
 
         let title = String::from(title);
-        let id = usize::max_value();
+        let id = usize::MAX;
         let vector = Vec::with_capacity(window_size);
         let index = 0;
         let sample_count = 0;
@@ -1178,7 +1178,7 @@ pub struct RunningTime {
 
 impl RunningTime {
     pub fn new(title_in: &str, timer:  TimerBox) -> RunningTime {
-        let id = usize::max_value();
+        let id = usize::MAX;
         let title = String::from(title_in);
         let which = "stdout".to_string();
         let printer = Arc::new(Mutex::new(StdioPrinter { which }));
@@ -1363,7 +1363,7 @@ pub struct TimeWindow {
 
 impl TimeWindow {
     pub fn new(title_in: &str, window_size: usize, timer:  TimerBox) -> TimeWindow {
-        let id = usize::max_value();
+        let id = usize::MAX;
         let title = String::from(title_in);
         let which = "stdout".to_string();
         let printer = Arc::new(Mutex::new(StdioPrinter { which }));

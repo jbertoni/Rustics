@@ -28,7 +28,8 @@
 //!           printed using units of time.
 //!
 //!     * TimeWindow
-//!         * This type uses the IntegerWindow code to handle time intervals.
+//!         * This type uses the IntegerWindow code to handle time intervals.  As with the
+//!           RunningTime type, values are printed in units of time.
 //!
 //! * Creating Sets
 //!
@@ -55,6 +56,7 @@ use time::Timer;
 pub mod arc_sets;
 pub mod rc_sets;
 pub mod time;
+pub mod sum;
 
 pub type PrinterBox = Arc<Mutex<dyn Printer>>;
 pub type TimerBox = Rc<RefCell<dyn Timer>>;
@@ -259,7 +261,7 @@ pub fn compute_kurtosis(count: u64, moment_2: f64, moment_4: f64) -> f64 {
         return 0.0;
     }
 
-    assert!(moment_2 >= 0.0 && moment_4 >= 0.0);
+    assert!(moment_2 > 0.0 && moment_4 >= 0.0);
 
     let n = count as f64;
     let kurtosis = moment_4 / (moment_2.powf(2.0) / n) - 3.0;
@@ -315,7 +317,7 @@ fn pseudo_log_index(value: i64) -> usize {
 // Insert a delimiter and concatenate the parent and child names
 // when creating a hierarchical title.
 
-fn create_title(title_prefix: &str, title: &str) -> String {
+pub fn create_title(title_prefix: &str, title: &str) -> String {
     let title =
         if title_prefix.is_empty() {
             title.to_string()
@@ -353,6 +355,8 @@ fn print_float(name: &str, value: f64, printer: &mut dyn Printer) {
 }
 
 fn print_float_unit(name: &str, value: f64, unit: &str, printer: &mut dyn Printer) {
+    assert!(!value.is_nan());
+
     let value = format!("{:+e}", value)
         .replace('e', " e+")
         .replace("e+-", " e-") ;
@@ -393,7 +397,7 @@ fn print_common_integer(data: &Printable, printer: &mut dyn Printer) {
 }
 
 // Print the common computed statistics as passed in a Printable structure.
-// This includes values like the mean, which should be limited to aninteger
+// This includes values like the mean, which should be limited to an integer
 // value.
 
 fn print_common_float(data: &Printable, printer: &mut dyn Printer) {
@@ -579,13 +583,14 @@ impl Printer for StdioPrinter {
 pub trait Rustics {
     fn record_i64(&mut self, sample: i64);  // add an i64 sample
     fn record_f64(&mut self, sample: f64);  // add an f64 sample -- not implemented
-    fn record_event(&mut self);
+    fn record_event(&mut self);             // implementation-specific record
     fn record_time(&mut self, sample: i64); // add a time sample
 
-    fn record_interval(&mut self);
+    fn record_interval(&mut self, timer: &mut TimerBox);
                                             // Add a duration sample ending now
 
     fn name(&self) -> String;               // a text (UTF-8) name to print
+    fn title(&self) -> String;              // a text (UTF-8) name to print
     fn class(&self) -> &str;                // the type of a sample:  integer or floating
     fn count(&self) -> u64;                 // the current sample count
     fn log_mode(&self) -> isize;            // the most common pseudo-log
@@ -607,12 +612,11 @@ pub trait Rustics {
     // Functions for printing
     //   print          prints the statistics and pseudo-log histogram
     //                      The first argument is an optional title prefix.
-    //   set_printer    supplies a callback to print a single line
 
-    fn print(&self, title_prefix: &str);
-    fn set_printer(&mut self, printer: PrinterBox);
+    fn print(&self, printer: Option<PrinterBox>);
 
     // For internal use only.
+    fn set_title(&mut self, title: &str);
     fn set_id(&mut self, index: usize);
     fn id(&self) -> usize;
     fn equals(&self, other: &dyn Rustics) -> bool;
@@ -628,6 +632,7 @@ pub trait Histograms {
 // Define the implementation of a very simple running integer sample space.
 
 pub struct RunningInteger {
+    name:       String,
     title:      String,
     id:         usize,
 
@@ -646,13 +651,14 @@ pub struct RunningInteger {
 }
 
 impl RunningInteger {
-    pub fn new(title: &str) -> RunningInteger {
+    pub fn new(name_in: &str) -> RunningInteger {
         let id = usize::MAX;
-        let title = String::from(title);
+        let name = String::from(name_in);
+        let title = String::from(name_in);
         let which = "stdout".to_string();
         let printer = Arc::new(Mutex::new(StdioPrinter { which }));
 
-        RunningInteger { title, id, count: 0, mean: 0.0, moment_2: 0.0, moment_3: 0.0,
+        RunningInteger { name, title, id, count: 0, mean: 0.0, moment_2: 0.0, moment_3: 0.0,
             moment_4: 0.0, log_histogram: LogHistogram::new(), min: i64::MAX, max: i64::MIN,
             printer }
     }
@@ -708,11 +714,15 @@ impl Rustics for RunningInteger {
         panic!("Rustics::RunningInteger:  time samples are not permitted.");
     }
 
-    fn record_interval(&mut self) {
+    fn record_interval(&mut self, _timer: &mut TimerBox) {
         panic!("Rustics::RunningInteger:  time intervals are not permitted.");
     }
 
     fn name(&self) -> String {
+        self.name.clone()
+    }
+
+    fn title(&self) -> String {
         self.title.clone()
     }
 
@@ -799,10 +809,17 @@ impl Rustics for RunningInteger {
         self.log_histogram.log_mode() as i64
     }
 
-    fn print(&self, title_prefix: &str) {
-        let printer = &mut *self.printer.lock().unwrap();
+    fn print(&self, printer: Option<PrinterBox>) {
+        let printer_box =
+            if let Some(printer) = printer {
+                printer.clone()
+            } else {
+                self.printer.clone()
+            };
 
-        let title = &create_title(title_prefix, &self.title);
+        let printer = &mut *printer_box.lock().unwrap();
+
+        let title = &self.title;
         let n = self.count;
         let min = self.min;
         let max = self.max;
@@ -820,8 +837,8 @@ impl Rustics for RunningInteger {
         self.log_histogram.print(printer);
     }
 
-    fn set_printer(&mut self, printer: PrinterBox) {
-        self.printer = printer;
+    fn set_title(&mut self, title: &str) {
+        self.title = String::from(title)
     }
 
     fn set_id(&mut self, id: usize) {
@@ -847,14 +864,20 @@ impl Histograms for RunningInteger {
 // Define the implementation of a very simple running integer window sample.
 
 pub struct IntegerWindow {
+    name:           String,
     title:          String,
-    index:          usize,
     window_size:    usize,
     vector:         Vec<i64>,
     id:             usize,
-    sample_count:   u64,
 
+    //  These fields must be zeroed or reset in clear():
+
+    index:          usize,
+    sample_count:   u64,
     stats_valid:    bool,
+
+    //  These fields are computed when stats_valid is false
+
     mean:           f64,
     sum:            f64,
     moment_2:       f64,
@@ -867,6 +890,7 @@ pub struct IntegerWindow {
 }
 
 struct Crunched {
+    mean:       f64,
     sum:        f64,
     moment_2:   f64,
     moment_3:   f64,
@@ -874,23 +898,25 @@ struct Crunched {
 }
 
 impl Crunched {
-    pub fn _new() -> Crunched {
+    pub fn new() -> Crunched {
+        let mean = 0.0;
         let sum = 0.0;
         let moment_2 = 0.0;
         let moment_3 = 0.0;
         let moment_4 = 0.0;
 
-        Crunched { sum, moment_2, moment_3, moment_4 }
+        Crunched { mean, sum, moment_2, moment_3, moment_4 }
     }
 }
 
 impl IntegerWindow {
-    pub fn new(title: &str, window_size: usize) -> IntegerWindow {
+    pub fn new(name_in: &str, window_size: usize) -> IntegerWindow {
         if window_size == 0 {
             panic!("The window size is zero.");
         }
 
-        let title = String::from(title);
+        let name = String::from(name_in);
+        let title = String::from(name_in);
         let id = usize::MAX;
         let vector = Vec::with_capacity(window_size);
         let index = 0;
@@ -905,7 +931,7 @@ impl IntegerWindow {
         let which = "stdout".to_string();
         let printer = Arc::new(Mutex::new(StdioPrinter { which }));
 
-        IntegerWindow { title, id, window_size, vector, index, sample_count, stats_valid,
+        IntegerWindow { name, title, id, window_size, vector, index, sample_count, stats_valid,
             mean, sum, moment_2, moment_3, moment_4, log_histogram, printer }
     }
 
@@ -920,6 +946,10 @@ impl IntegerWindow {
     }
 
     fn crunch(&self) -> Crunched {
+        if self.vector.is_empty() {
+            return Crunched::new();
+        }
+
         let mut sum = 0.0;
 
         for sample in self.vector.iter() {
@@ -927,7 +957,6 @@ impl IntegerWindow {
         }
 
         let mean = sum / self.vector.len() as f64;
-
         let mut moment_2 = 0.0;
         let mut moment_3 = 0.0;
         let mut moment_4 = 0.0;
@@ -940,7 +969,7 @@ impl IntegerWindow {
             moment_4 += square * square;
         }
 
-        Crunched { sum, moment_2, moment_3, moment_4 }
+        Crunched { mean, sum, moment_2, moment_3, moment_4 }
     }
 
     fn compute_min(&self) -> i64 {
@@ -988,11 +1017,15 @@ impl Rustics for IntegerWindow {
         panic!("Rustics::IntegerWindow:  time samples are not permitted.");
     }
 
-    fn record_interval(&mut self) {
+    fn record_interval(&mut self, _timer: &mut TimerBox) {
         panic!("Rustics::IntegerWindow:  time intervals are not permitted.");
     }
 
     fn name(&self) -> String {
+        self.name.clone()
+    }
+
+    fn title(&self) -> String {
         self.title.clone()
     }
 
@@ -1009,7 +1042,7 @@ impl Rustics for IntegerWindow {
     }
 
     fn mean(&self) -> f64 {
-        if self.sample_count == 0 {
+        if self.vector.is_empty() {
             return 0.0;
         }
 
@@ -1027,6 +1060,7 @@ impl Rustics for IntegerWindow {
 
     fn variance(&self) -> f64 {
         let count = self.vector.len() as u64;
+
         let variance =
             if self.stats_valid {
                 compute_variance(count, self.moment_2)
@@ -1077,7 +1111,7 @@ impl Rustics for IntegerWindow {
 
         let crunched = self.crunch();
 
-        self.mean = crunched.sum / self.vector.len() as f64;
+        self.mean = crunched.mean;
         self.sum = crunched.sum;
         self.moment_2 = crunched.moment_2;
         self.moment_3 = crunched.moment_3;
@@ -1087,13 +1121,24 @@ impl Rustics for IntegerWindow {
 
     fn clear(&mut self) {
         self.vector.clear();
+        self.sample_count = 0;
         self.index = 0;
+        self.log_histogram.clear();
+
         self.stats_valid = false;
     }
 
-    fn print(&self, title_prefix: &str) {
-        let printer = &mut *self.printer.lock().unwrap();
-        let title = &create_title(title_prefix, &self.title);
+    fn print(&self, printer: Option<PrinterBox>) {
+        let printer_box =
+            if let Some(printer) = printer {
+                printer.clone()
+            } else {
+                self.printer.clone()
+            };
+
+        let printer = &mut *printer_box.lock().unwrap();
+
+        let title = &self.title;
         let n = self.vector.len() as u64;
 
         let min = self.compute_min();
@@ -1113,7 +1158,7 @@ impl Rustics for IntegerWindow {
         } else {
             let crunched = self.crunch();
 
-            mean = crunched.sum / n as f64;
+            mean     = crunched.mean;
             variance = compute_variance(n, crunched.moment_2);
             skewness = compute_skewness(n, crunched.moment_2, crunched.moment_3);
             kurtosis = compute_kurtosis(n, crunched.moment_2, crunched.moment_4);
@@ -1143,16 +1188,16 @@ impl Rustics for IntegerWindow {
         self.log_histogram.log_mode() as i64
     }
 
+    fn set_title(&mut self, title: &str) {
+        self.title = String::from(title)
+    }
+
     fn set_id(&mut self, id: usize) {
         self.id = id;
     }
 
     fn id(&self) -> usize {
         self.id
-    }
-
-    fn set_printer(&mut self, printer: PrinterBox) {
-        self.printer = printer;
     }
 }
 
@@ -1168,21 +1213,23 @@ impl Histograms for IntegerWindow {
 }
 
 pub struct RunningTime {
+    // name:               String,
+    // title:              String,
+    printer:            PrinterBox,
+
     running_integer:    Box<RunningInteger>,
     timer:              TimerBox,
     hz:                 i64,
-
-    title:              String,
-    printer:            PrinterBox,
 }
 
 impl RunningTime {
-    pub fn new(title_in: &str, timer:  TimerBox) -> RunningTime {
-        let id = usize::MAX;
-        let title = String::from(title_in);
-        let which = "stdout".to_string();
+    pub fn new(name_in: &str, timer: TimerBox) -> RunningTime {
+        let id      = usize::MAX;
+        let name    = String::from(name_in);
+        let title   = String::from(name_in);
+        let which   = "stdout".to_string();
         let printer = Arc::new(Mutex::new(StdioPrinter { which }));
-        let hz = timer_box_hz(&timer);
+        let hz      = timer_box_hz(&timer);
 
         if hz > i64::MAX as u128 {
             panic!("Rustics::RunningTime:  The timer hz value is too large.");
@@ -1191,15 +1238,16 @@ impl RunningTime {
         let hz = hz as i64;
 
         let running_integer =
-            Box::new(RunningInteger { title, id, count: 0, mean: 0.0, moment_2: 0.0, moment_3: 0.0,
+            Box::new(RunningInteger { name, title, id, count: 0, mean: 0.0, moment_2: 0.0, moment_3: 0.0,
                 moment_4: 0.0, log_histogram: LogHistogram::new(), min: i64::MAX, max: i64::MIN,
                 printer });
 
-        let title = String::from(title_in);
-        let which = "stdout".to_string();
+        // let name    = String::from(name_in);
+        // let title   = String::from(name_in);
+        let which   = "stdout".to_string();
         let printer = Arc::new(Mutex::new(StdioPrinter { which }));
 
-        RunningTime { running_integer, timer, hz, title, printer }
+        RunningTime { /* name, title, */  printer, running_integer, timer, hz }
     }
 
     pub fn hz(&self) -> i64 {
@@ -1216,17 +1264,24 @@ impl Rustics for RunningTime {
         panic!("Rustics::RunningTime:  f64 events are not permitted.");
     }
 
-    fn record_event(&mut self) {
-        panic!("Rustics::RunningTime:  events are not permitted.");
-    }
+    fn record_event(&mut self) {            
+        let mut timer = (*self.timer).borrow_mut();
+        let interval = timer.finish();  // read and restart the timer
+    
+        if interval > i64::MAX as u128 {
+            panic!("RunningTime::record_interval:  The interval is too long.");
+        }
+    
+        self.running_integer.record_i64(interval as i64);
+    }   
 
     fn record_time(&mut self, sample: i64) {
         assert!(sample >= 0);
         self.running_integer.record_i64(sample);
     }
 
-    fn record_interval(&mut self) {
-        let mut timer = (*self.timer).borrow_mut();
+    fn record_interval(&mut self, timer: &mut TimerBox) {
+        let mut timer = (*timer).borrow_mut();
         let interval = timer.finish();
 
         if interval > i64::MAX as u128 {
@@ -1238,6 +1293,10 @@ impl Rustics for RunningTime {
 
     fn name(&self) -> String {
         self.running_integer.name()
+    }
+
+    fn title(&self) -> String {
+        self.running_integer.title()
     }
 
     fn class(&self) -> &str {
@@ -1302,12 +1361,17 @@ impl Rustics for RunningTime {
 
     // Functions for printing
     //   print          actually prints
-    //   set_printer    supplies a callback to print a single line
 
-    fn print(&self, title_prefix: &str) {
-        let printer = &mut *self.printer.lock().unwrap();
+    fn print(&self, printer: Option<PrinterBox>) {
+        let printer_box =
+            if let Some(printer) = printer {
+                printer.clone()
+            } else {
+                self.printer.clone()
+            };
 
-        let title = &create_title(title_prefix, &self.title);
+        let printer = &mut *printer_box.lock().unwrap();
+        let title = &self.running_integer.title();
         let n = self.count();
         let min = self.min_i64();
         let max = self.max_i64();
@@ -1322,15 +1386,15 @@ impl Rustics for RunningTime {
         printer.print(title);
         print_common_integer_times(&printable, self.hz, printer);
         print_common_float_times(&printable, self.hz, printer);
+
         self.running_integer.print_histogram();
     }
 
-    fn set_printer(&mut self, printer: PrinterBox) {
-        self.printer = printer;
-        self.running_integer.set_printer(self.printer.clone());
+    // For internal use only.
+    fn set_title(&mut self, title: &str) {
+        self.running_integer.set_title(title);
     }
 
-    // For internal use only.
     fn set_id(&mut self, index: usize) {
         self.running_integer.set_id(index)
     }
@@ -1353,21 +1417,23 @@ impl Rustics for RunningTime {
 }
 
 pub struct TimeWindow {
+    printer:            PrinterBox,
+
     integer_window:     Box<IntegerWindow>,
     timer:              TimerBox,
     hz:                 i64,
-
-    title:              String,
-    printer:            PrinterBox,
 }
 
 impl TimeWindow {
-    pub fn new(title_in: &str, window_size: usize, timer:  TimerBox) -> TimeWindow {
-        let id = usize::MAX;
-        let title = String::from(title_in);
-        let which = "stdout".to_string();
-        let printer = Arc::new(Mutex::new(StdioPrinter { which }));
-        let hz = timer_box_hz(&timer);
+    pub fn new(name_in: &str, window_size: usize, timer:  TimerBox) -> TimeWindow {
+        let id            = usize::MAX;
+        let name          = String::from(name_in);
+        let title         = String::from(name_in);
+        let which         = "stdout".to_string();
+        let printer       = Arc::new(Mutex::new(StdioPrinter { which }));
+        let hz            = timer_box_hz(&timer);
+        let log_histogram = LogHistogram::new();
+        let stats_valid   = false;
 
         if hz > i64::MAX as u128 {
             panic!("Rustics::TimeWindow:  The timer hz value is too large.");
@@ -1377,15 +1443,28 @@ impl TimeWindow {
         let vector = Vec::with_capacity(window_size);
 
         let integer_window =
-            Box::new(IntegerWindow { title, index: 0, window_size, vector, id, sample_count: 0,
-                stats_valid: false, mean: 0.0, sum: 0.0, moment_2: 0.0, moment_3: 0.0,
-                moment_4: 0.0, log_histogram: LogHistogram::new(), printer });
+            Box::new(IntegerWindow { 
+                name,
+                title,
+                index: 0,
+                window_size,
+                vector,
+                id,
+                sample_count: 0,
+                stats_valid,
+                mean: 0.0,
+                sum: 0.0,
+                moment_2: 0.0,
+                moment_3: 0.0,
+                moment_4: 0.0,
+                log_histogram,
+                printer
+            });
 
-        let title = String::from(title_in);
-        let which = "stdout".to_string();
-        let printer = Arc::new(Mutex::new(StdioPrinter { which }));
+        let which    = "stdout".to_string();
+        let printer  = Arc::new(Mutex::new(StdioPrinter { which }));
 
-        TimeWindow { integer_window, timer, hz, title, printer }
+        TimeWindow { printer, integer_window, timer, hz }
     }
 
     pub fn hz(&self) -> i64 {
@@ -1403,7 +1482,13 @@ impl Rustics for TimeWindow {
     }
 
     fn record_event(&mut self) {
-        panic!("Rustics::TimeWindow:  events are not permitted.");
+        let interval = (*self.timer).borrow_mut().finish();
+        
+        if interval > i64::MAX as u128 {
+            panic!("TimeWindow::record_interval:  The interval is too long.");
+        }
+        
+        self.integer_window.record_i64(interval as i64);
     }
 
     fn record_time(&mut self, sample: i64) {
@@ -1411,8 +1496,8 @@ impl Rustics for TimeWindow {
         self.integer_window.record_i64(sample);
     }
 
-    fn record_interval(&mut self) {
-        let mut timer = (*self.timer).borrow_mut();
+    fn record_interval(&mut self, timer: &mut TimerBox) {
+        let mut timer = (*timer).borrow_mut();
         let interval = timer.finish();
 
         if interval > i64::MAX as u128 {
@@ -1424,6 +1509,10 @@ impl Rustics for TimeWindow {
 
     fn name(&self) -> String {
         self.integer_window.name()
+    }
+
+    fn title(&self) -> String {
+        self.integer_window.title()
     }
 
     fn class(&self) -> &str {
@@ -1488,12 +1577,18 @@ impl Rustics for TimeWindow {
 
     // Functions for printing
     //   print          actually prints
-    //   set_printer    supplies a callback to print a single line
 
-    fn print(&self, title_prefix: &str) {
-        let printer = &mut *self.printer.lock().unwrap();
+    fn print(&self, printer: Option<PrinterBox>) {
+        let printer_box =
+            if let Some(printer) = printer {
+                printer.clone()
+            } else {
+                self.printer.clone()
+            };
 
-        let title = &create_title(title_prefix, &self.title);
+        let printer = &mut *printer_box.lock().unwrap();
+
+        let title = self.integer_window.title();
         let crunched = self.integer_window.crunch();
 
         let n = self.integer_window.count();
@@ -1501,25 +1596,26 @@ impl Rustics for TimeWindow {
         let max = self.integer_window.max_i64();
         let log_mode = self.integer_window.histo_log_mode();
 
-        let mean = crunched.sum / n as f64;
+        let mean = crunched.mean;
         let variance = compute_variance(n, crunched.moment_2);
         let skewness = compute_skewness(n, crunched.moment_2, crunched.moment_3);
         let kurtosis = compute_kurtosis(n, crunched.moment_2, crunched.moment_4);
 
         let printable = Printable { n, min, max, log_mode, mean, variance, skewness, kurtosis };
 
-        printer.print(title);
+        printer.print(&title);
         print_common_integer_times(&printable, self.hz, printer);
         print_common_float_times(&printable, self.hz, printer);
-        self.integer_window.print_histogram();
-    }
 
-    fn set_printer(&mut self, printer: PrinterBox) {
-        self.printer = printer;
-        self.integer_window.set_printer(self.printer.clone());
+        self.integer_window.print_histogram();
+
     }
 
     // For internal use only.
+    fn set_title(&mut self, title: &str) {
+        self.integer_window.set_title(title)
+    }
+
     fn set_id(&mut self, index: usize) {
         self.integer_window.set_id(index)
     }
@@ -1613,30 +1709,27 @@ mod tests {
             stats.record_i64(sample);
         }
 
-        stats.print(&"");
-
-        stats.set_printer(Arc::new(Mutex::new(TestPrinter { test_output: &"RunningInteger Output" })));
-        stats.print(&"Dynamic Printing");
+        let printer = Arc::new(Mutex::new(TestPrinter { test_output: "test header ======" } ));
+        stats.print(Some(printer));
     }
 
     pub fn test_simple_integer_window() {
         let window_size = 100;
         let mut stats = IntegerWindow::new(&"Test Statistics", window_size);
-        stats.set_printer(Arc::new(Mutex::new(TestPrinter { test_output: &"IntegerWindow Output" })));
 
         for sample in -256..512 {
             stats.record_i64(sample);
         }
 
         assert!(stats.log_mode() as usize == pseudo_log_index(stats.max_i64()));
-        stats.print(&"");
+        stats.print(None);
         let sample = 100;
 
         for _i in 0..2 * window_size {
             stats.record_i64(sample);
         }
 
-        stats.print(&"");
+        stats.print(None);
         assert!(stats.mean() == sample as f64);
         assert!(stats.log_mode() as usize == pseudo_log_index(sample));
     }
@@ -1699,13 +1792,13 @@ mod tests {
         let mut time_stat = RunningTime::new("Test Running Time 1", timer.clone());
 
         setup_elapsed_time(&mut timer, i64::MAX);
-        time_stat.record_interval();
+        time_stat.record_event();
 
         assert!(time_stat.min_i64() == i64::MAX);
         assert!(time_stat.max_i64() == i64::MAX);
 
         setup_elapsed_time(&mut timer, 0);
-        time_stat.record_interval();
+        time_stat.record_event();
 
         assert!(time_stat.min_i64() == 0);
         assert!(time_stat.max_i64() == i64::MAX);
@@ -1725,10 +1818,10 @@ mod tests {
                 };
 
             setup_elapsed_time(&mut timer, interval);
-            time_stat.record_interval();
+            time_stat.record_event();
         }
 
-        time_stat.print("Test Output");
+        time_stat.print(None);
 
         // Okay, use a more restricted range of times.
 
@@ -1740,13 +1833,18 @@ mod tests {
         for i in 0..limit + 1 {
             let interval = i * i * i;
             setup_elapsed_time(&mut timer, interval);
-            time_stat.record_interval();
+        
+            if i & 1 != 0 {
+                time_stat.record_event();
+            } else {
+                time_stat.record_interval(&mut timer);
+            }
         }
 
         assert!(time_stat.min_i64() == 0);
         assert!(time_stat.max_i64() == limit * limit * limit);
             
-        time_stat.print("Test Output");
+        time_stat.print(None);
 
         // Get a sample with easily calculated summary statistics
 
@@ -1755,10 +1853,10 @@ mod tests {
 
         for i in 1..101 {
             setup_elapsed_time(&mut timer, i);
-            time_stat.record_interval();
+            time_stat.record_event();
         }
 
-        time_stat.print("Test Output");
+        time_stat.print(None);
 
         // Cover all the scales.
 
@@ -1768,16 +1866,23 @@ mod tests {
         let mut time = 1;
         let printer = &mut StdioPrinter { which: "stdout".to_string() };
 
-        for _i in 1..16 {
+        for i in 1..16 {
             setup_elapsed_time(&mut timer, time);
-            time_stat.record_interval();
+
+            if i & 1 != 0 {
+                time_stat.record_event();
+            } else {
+                time_stat.record_interval(&mut timer);
+            }
+
+
             let header = format!("{} => ", commas_i64(time));
             print_time(&header, time as f64, hz as i64, printer);
 
             time *= 10;
         }
 
-        time_stat.print("Test Output");
+        time_stat.print(None);
     }
 
     fn test_simple_time_window() {
@@ -1787,13 +1892,13 @@ mod tests {
         let mut time_stat = TimeWindow::new("Test Time Window 1", 50, timer.clone());
 
         setup_elapsed_time(&mut timer, i64::MAX);
-        time_stat.record_interval();
+        time_stat.record_event();
 
         assert!(time_stat.min_i64() == i64::MAX);
         assert!(time_stat.max_i64() == i64::MAX);
 
         setup_elapsed_time(&mut timer, 0);
-        time_stat.record_interval();
+        time_stat.record_event();
 
         assert!(time_stat.min_i64() == 0);
         assert!(time_stat.max_i64() == i64::MAX);
@@ -1813,10 +1918,10 @@ mod tests {
                 };
 
             setup_elapsed_time(&mut timer, interval);
-            time_stat.record_interval();
+            time_stat.record_event();
         }
 
-        time_stat.print("Test Output");
+        time_stat.print(None);
 
         // Okay, use a more restricted range of times.
 
@@ -1828,13 +1933,13 @@ mod tests {
         for i in 0..limit + 1 {
             let interval = i * i * i;
             setup_elapsed_time(&mut timer, interval);
-            time_stat.record_interval();
+            time_stat.record_event();
         }
 
         assert!(time_stat.min_i64() == 0);
         assert!(time_stat.max_i64() == limit * limit * limit);
             
-        time_stat.print("Test Output");
+        time_stat.print(None);
 
         // Get a sample with easily calculated summary statistics
 
@@ -1843,10 +1948,10 @@ mod tests {
 
         for i in 1..101 {
             setup_elapsed_time(&mut timer, i);
-            time_stat.record_interval();
+            time_stat.record_event();
         }
 
-        time_stat.print("Test Time Value Output Patterns");
+        time_stat.print(None);
 
         // Cover all the scales.
 
@@ -1858,14 +1963,14 @@ mod tests {
 
         for _i in 1..16 {
             setup_elapsed_time(&mut timer, time);
-            time_stat.record_interval();
+            time_stat.record_event();
             let header = format!("{} => ", commas_i64(time));
             print_time(&header, time as f64, hz as i64, printer);
 
             time *= 10;
         }
 
-        time_stat.print("Test Output");
+        time_stat.print(None);
     }
 
     #[test]

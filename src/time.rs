@@ -14,13 +14,14 @@ use std::time::Instant;
 //  returns the interval time in nanoseconds and also starts a new
 //  interval, since the restart cost is nearly zero.  Thus, "finish"
 //  can be called multiple times after a "start" invocation to return
-//  the times for a sequence of events.
+//  the times for a sequence of events.  If a more precise timing is
+//  required, "start" will start an interval.
 //
 //  hz returns the herz of the underlying clock.
 
 pub trait Timer {
     fn start(&mut self);            // start or restart a timer
-    fn finish(&mut self) -> u128;   // get the elapsed time
+    fn finish(&mut self) -> u128;   // get the elapsed time and set a new start time
     fn hz(&self) -> u128;           // get the clock hz
 }
 
@@ -118,7 +119,6 @@ mod tests {
     use std::thread::sleep;
     use std::time::Duration;
 
-    #[test]
     pub fn simple_test_duration() {
         let mut clock = DurationTimer::new();
         clock.start();
@@ -153,7 +153,6 @@ mod tests {
         }
     }
 
-    #[test]
     pub fn simple_test_clock() {
         let current = 0;
         let mut increment = 1500;
@@ -177,5 +176,11 @@ mod tests {
             // Keep our increment in sync with the test clock.
             increment = increment * 2;
         }
+    }
+
+    #[test]
+    pub fn simple_tests() {
+        simple_test_duration();
+        simple_test_clock();
     }
 }

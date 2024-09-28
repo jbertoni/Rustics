@@ -8,8 +8,10 @@ use std::sync::Arc;
 use super::Rustics;
 use super::RunningInteger;
 use super::IntegerWindow;
+use super::RunningTime;
+use super::TimeWindow;
+use super::TimerBox;
 use super::Printer;
-use super::StdioPrinter;
 use super::create_title;
 
 pub type RusticsBox = Arc<Mutex<dyn Rustics>>;
@@ -25,11 +27,11 @@ pub trait ArcTraverser {
 
 pub struct RusticsArcSet {
     name:       String,
+    title:      String,
     id:         usize,
     next_id:    usize,
     members:    Vec<RusticsBox>,
     subsets:    Vec<RusticsArcSetBox>,
-    printer:    PrinterBox,
 }
 
 impl RusticsArcSet {
@@ -41,16 +43,15 @@ impl RusticsArcSet {
     // statistics in the set.  These hints can improve performance a bit.  They
     // might be especially useful in embedded environments.
 
-    pub fn new(name: &str, members_hint: usize, subsets_hint: usize) -> RusticsArcSet {
-        let name = name.to_owned();
+    pub fn new(name_in: &str, members_hint: usize, subsets_hint: usize) -> RusticsArcSet {
+        let name = String::from(name_in);
+        let title = String::from(name_in);
         let id = usize::MAX;
         let next_id = 0;
         let members = Vec::with_capacity(members_hint);
         let subsets = Vec::with_capacity(subsets_hint);
-        let which = "stdout".to_string();
-        let printer = Arc::new(Mutex::new(StdioPrinter { which }));
 
-        RusticsArcSet { name, id, next_id, members, subsets, printer }
+        RusticsArcSet { name, title, id, next_id, members, subsets }
     }
 
     // Returns the name of the set.
@@ -78,19 +79,17 @@ impl RusticsArcSet {
 
     // Print the set and all its constituents (subsets and statistics).
 
-    pub fn print(&self, title_prefix: &str) {
-        let title = create_title(title_prefix, &self.name);
-
+    pub fn print(&self, printer: Option<PrinterBox>) {
         for mutex in self.members.iter() {
             let member = mutex.lock().unwrap();
 
-            member.print(&title);
+            member.print(printer.clone());
         }
 
         for mutex in self.subsets.iter() {
             let subset = mutex.lock().unwrap();
 
-            subset.print(&title);
+            subset.print(printer.clone());
         }
     }
 
@@ -113,36 +112,34 @@ impl RusticsArcSet {
 
     // Create a RunningInteger statistics object and add it to the set.
 
-    pub fn add_running_integer(&mut self, title: &str, printer: Option<PrinterBox>) -> &RusticsBox {
-        self.members.push(Arc::from(Mutex::new(RunningInteger::new(title))));
-        let result = self.members.last().unwrap();
-        let mut stat = result.lock().unwrap();
-
-        if let Some(printer) = printer {
-            stat.set_printer(printer);
-        } else {
-            stat.set_printer(self.printer.clone());
-        }
-
-        stat.set_id(self.next_id);
-        self.next_id += 1;
-        result
+    pub fn add_running_integer(&mut self, name: &str) -> &RusticsBox {
+        self.members.push(Arc::from(Mutex::new(RunningInteger::new(name))));
+        self.common_add()
     }
 
     // Create a IntegerWindow statistics object and add it to the set.
 
-    pub fn add_integer_window(&mut self, window_size: usize, title: &str, printer: Option<PrinterBox>)
-            -> &RusticsBox {
+    pub fn add_integer_window(&mut self, window_size: usize, title: &str) -> &RusticsBox {
         self.members.push(Arc::from(Mutex::new(IntegerWindow::new(title, window_size))));
+        self.common_add()
+    }
+
+    pub fn add_running_time(&mut self, title: &str, timer: TimerBox) -> &RusticsBox {
+        self.members.push(Arc::from(Mutex::new(RunningTime::new(title, timer))));
+        self.common_add()
+    }
+
+    pub fn add_time_window(&mut self, title: &str, window_size: usize, timer: TimerBox) -> &RusticsBox {
+        self.members.push(Arc::from(Mutex::new(TimeWindow::new(title, window_size, timer))));
+        self.common_add()
+    }
+
+    fn common_add(&mut self) -> &RusticsBox {
         let result = self.members.last().unwrap();
         let mut stat = result.lock().unwrap();
+        let title = create_title(&self.title, &stat.name());
 
-        if let Some(printer) = printer {
-            stat.set_printer(printer);
-        } else {
-            stat.set_printer(self.printer.clone());
-        }
-        
+        stat.set_title(&title);
         stat.set_id(self.next_id);
         self.next_id += 1;
         result
@@ -183,7 +180,8 @@ impl RusticsArcSet {
         self.subsets.push(Arc::from(Mutex::new(RusticsArcSet::new(name, members, subsets))));
         let result = self.subsets.last().unwrap();
         let mut subset = result.lock().unwrap();
-        subset.set_printer(self.printer.clone());
+        let title = create_title(&self.title, name);
+        subset.set_title(&title);
         subset.set_id(self.next_id);
         self.next_id += 1;
 
@@ -219,11 +217,16 @@ impl RusticsArcSet {
         found
     }
 
-    pub fn set_printer(&mut self, printer: PrinterBox) {
-        self.printer = printer;
+    // The following functions are for internal use only.
+
+    fn set_title(&mut self, title: &str) {
+        self.title = String::from(title);
     }
 
-    // The following functions are for internal use only.
+    #[cfg(test)]
+    fn title(&self) -> String {
+        self.title.clone()
+    }
 
     fn set_id(&mut self, id: usize) {
         self.id = id;
@@ -237,6 +240,9 @@ impl RusticsArcSet {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::cell::RefCell;
+    use std::rc::Rc;
+    use crate::time::Timer;
 
     fn add_stats(parent: &Mutex<RusticsArcSet>) {
         for _i in 0..4 {
@@ -245,8 +251,8 @@ mod tests {
             let parent = &mut parent.lock().unwrap();
             let mut subset = parent.add_subset("generated subset", 4, 4).lock().unwrap();
                 
-            let window_mutex = subset.add_integer_window(32, "generated subset window", None).clone();
-            let running_mutex = subset.add_running_integer("generated subset running", None).clone();
+            let window_mutex = subset.add_integer_window(32, "generated subset window").clone();
+            let running_mutex = subset.add_running_integer("generated subset running").clone();
 
             let mut window = window_mutex.lock().unwrap();
             let mut running = running_mutex.lock().unwrap();
@@ -258,32 +264,152 @@ mod tests {
         }
     }
 
+    static global_next: Mutex<u128> = Mutex::new(0 as u128);
+
+    fn get_global_next() -> u128 {
+        *(global_next.lock().unwrap())
+    }
+
+    fn set_global_next(value: u128) {
+        *(global_next.lock().unwrap()) = value;
+    }
+
+    struct TestTimer {
+        start: u128,
+        hz: u128,
+    }
+
+    impl TestTimer {
+        fn new(hz: u128) -> TestTimer {
+            let start = 0;
+
+            TestTimer { start, hz }
+        }
+    }
+
+    impl Timer for TestTimer {
+        fn start(&mut self) {
+            assert!(get_global_next() > 0);
+            self.start = get_global_next();
+        }
+
+        fn finish(&mut self) -> u128 {
+            assert!(self.start > 0);
+            assert!(get_global_next() >= self.start);
+            let elapsed_time = get_global_next() - self.start;
+            self.start = 0;
+            set_global_next(0);
+            elapsed_time
+        }
+
+        fn hz(&self) -> u128 {
+            self.hz
+        }
+    }
+
+    fn setup_elapsed_time(timer: &mut TimerBox, ticks: i64) {
+        assert!(ticks >= 0);
+        let mut timer = (**timer).borrow_mut();
+        set_global_next(1);
+        timer.start();
+        set_global_next(ticks as u128 + 1);
+    }
+
+    // Define a simple timer for testing that just counts up by 1000 ticks
+    // for each event interval.
+
+    struct ContinuingTimer {
+        time: u128,
+        hz:   u128,
+    }
+
+    impl ContinuingTimer {
+        pub fn new(hz: u128) -> ContinuingTimer {
+            let time = 0;
+
+            ContinuingTimer { time, hz }
+        }
+    }
+
+    impl Timer for ContinuingTimer {
+        fn start(&mut self) {
+            self.time = 0;
+        }
+
+        fn finish(&mut self) -> u128 {
+            self.time += 1000;
+            self.time
+        }
+
+        fn hz(&self) -> u128 {
+            self.hz
+        }
+    }
+
     #[test]
     pub fn simple_test() {
         let lower = -32;
         let upper = 32;
         let mut set = RusticsArcSet::new("parent set", 4, 4);
-            
-        let window_mutex = set.add_integer_window(32, "parent window", None).clone();
-        let running_mutex = set.add_running_integer("parent running", None).clone();
 
-        let mut window = window_mutex.lock().unwrap();
-        let mut running = running_mutex.lock().unwrap();
+        let window_timer:  TimerBox = Rc::from(RefCell::new(ContinuingTimer::new(1_000_000_000)));
+        let running_timer: TimerBox = Rc::from(RefCell::new(ContinuingTimer::new(1_000_000_000)));
+
+        let window_mutex       = set.add_integer_window(32, "window").clone();
+        let running_mutex      = set.add_running_integer("running").clone();
+        let time_window_mutex  = set.add_time_window("time window", 32, window_timer).clone();
+        let running_time_mutex = set.add_running_time("running time", running_timer).clone();
+
+        let mut window         = window_mutex.lock().unwrap();
+        let mut running        = running_mutex.lock().unwrap();
+
+        let mut time_window    = time_window_mutex.lock().unwrap();
+        let mut running_time   = running_time_mutex.lock().unwrap();
+
+        let mut running_interval: TimerBox = Rc::from(RefCell::new(TestTimer::new(1_000_000_000)));
+        let mut window_interval:  TimerBox = Rc::from(RefCell::new(TestTimer::new(1_000_000_000)));
 
         for i in lower..upper {
             window.record_i64(i);
             running.record_i64(i);
+
+            running_time.record_event();
+            time_window.record_event();
+
+            setup_elapsed_time(&mut running_interval, 10 + i.abs() * 10);
+            running_time.record_interval(&mut running_interval);
+
+            setup_elapsed_time(&mut window_interval, 1000 + i.abs() * 10000);
+            time_window.record_interval(&mut window_interval);
         }
 
+        let set_title = set.title();
+
+        assert!(set_title == "parent set");
+        assert!(running_time.title() == create_title(&"parent set", &"running time"));
+        assert!(time_window.title() == create_title(&"parent set", &"time window"));
+        assert!(running.title() == create_title(&"parent set", &"running"));
+        assert!(window.title() == create_title(&"parent set", &"window"));
+
+        let mut subset = set.add_subset("subset", 0, 0).lock().unwrap();
+        let subset_stat_mutex = subset.add_running_integer("subset stat").clone();
+        let subset_stat   = subset_stat_mutex.lock().unwrap();
+
+        assert!(subset.title() == create_title(&set_title, "subset"));
+        assert!(subset_stat.title() == create_title(&subset.title(), &"subset stat"));
+
+        drop(subset);
+        drop(subset_stat);
         drop(window);
         drop(running);
-        set.print("Test Set");
+        drop(running_time);
+        drop(time_window);
 
-        let printer = Arc::new(Mutex::new(TestPrinter { test_output: &"Sets Output" }));
-        let mut traverser = TestTraverser::new(printer.clone());
+        set.print(None);
+
+        let mut traverser = TestTraverser::new();
 
         set.traverse(&mut traverser);
-        set.set_printer(printer);
 
         let subset_1 = set.add_subset("subset 1", 4, 4).clone();
         let subset_2 = set.add_subset("subset 2", 4, 4).clone();
@@ -291,8 +417,7 @@ mod tests {
         add_stats(&subset_1);
         add_stats(&subset_2);
 
-        println!("=========== Hierarchical Print");
-        set.print("Test Hierarchy");
+        set.print(None);
 
         // Remove a subset and check that it goes away.
 
@@ -321,33 +446,20 @@ mod tests {
         assert!(!found);
     }
 
-    struct TestPrinter {
-        test_output: &'static str,
-    }
-
-    impl Printer for TestPrinter {
-        fn print(&self, output: &str) {
-            println!("{}:  {}", self.test_output, output);
-        }
-    }
-
     struct TestTraverser {
-        printer:  Arc<Mutex<dyn Printer>>,
     }
 
     impl TestTraverser {
-        pub fn new(printer: Arc<Mutex<dyn Printer>>) -> TestTraverser {
-            TestTraverser { printer }
+        pub fn new() -> TestTraverser {
+            TestTraverser { }
         }
     }
 
     impl ArcTraverser for TestTraverser {
-        fn visit_member(&mut self, member: &mut dyn Rustics) {
-            member.set_printer(self.printer.clone());
+        fn visit_member(&mut self, _member: &mut dyn Rustics) {
         }
 
-        fn visit_set(&mut self, set: &mut RusticsArcSet) {
-            set.set_printer(self.printer.clone());
+        fn visit_set(&mut self, _set: &mut RusticsArcSet) {
         }
     }
 }

@@ -16,7 +16,7 @@ use super::TimerBox;
 use super::Printer;
 use super::create_title;
 
-pub type RusticsBox = Rc<RefCell<dyn Rustics>>;
+pub type RusticsRc = Rc<RefCell<dyn Rustics>>;
 pub type RusticsRcSetBox = Rc<RefCell<RusticsRcSet>>;
 pub type PrinterBox = Arc<Mutex<dyn Printer>>;
 
@@ -32,7 +32,7 @@ pub struct RusticsRcSet {
     title:      String,
     id:         usize,
     next_id:    usize,
-    members:    Vec<RusticsBox>,
+    members:    Vec<RusticsRc>,
     subsets:    Vec<RusticsRcSetBox>,
 }
 
@@ -105,45 +105,45 @@ impl RusticsRcSet {
 
     // Create a RunningInteger statistics object and add it to the set.
 
-    pub fn add_running_integer(&mut self, title: &str) -> &RusticsBox {
+    pub fn add_running_integer(&mut self, title: &str) -> RusticsRc {
         self.members.push(Rc::from(RefCell::new(RunningInteger::new(title))));
         self.common_add()
     }
 
     // Create a IntegerWindow statistics object and add it to the set.
 
-    pub fn add_integer_window(&mut self, window_size: usize, title: &str) -> &RusticsBox {
+    pub fn add_integer_window(&mut self, window_size: usize, title: &str) -> RusticsRc {
         self.members.push(Rc::from(RefCell::new(IntegerWindow::new(title, window_size))));
         self.common_add()
     }
 
-    pub fn add_running_time(&mut self, title: &str, timer: TimerBox) -> &RusticsBox {
+    pub fn add_running_time(&mut self, title: &str, timer: TimerBox) -> RusticsRc {
         self.members.push(Rc::from(RefCell::new(RunningTime::new(title, timer))));
         self.common_add()
     }
 
-    pub fn add_time_window(&mut self, title: &str, window_size: usize, timer: TimerBox) -> &RusticsBox {
+    pub fn add_time_window(&mut self, title: &str, window_size: usize, timer: TimerBox) -> RusticsRc {
         self.members.push(Rc::from(RefCell::new(TimeWindow::new(title, window_size, timer))));
         self.common_add()
     }
 
-    fn common_add(&mut self) -> &RusticsBox {
-        let result = self.members.last().unwrap();
-        let mut member = (**result).borrow_mut();
+    fn common_add(&mut self) -> RusticsRc {
+        let last = self.members.last().unwrap();
+        let mut member = (**last).borrow_mut();
 
         let title = create_title(&self.title, &member.name());
         member.set_title(&title);
         member.set_id(self.next_id);
         self.next_id += 1;
-        result
+        last.clone()
     }
 
     // Remove a statistic from the set.
 
-    pub fn remove_stat(&mut self, target: &RusticsBox) -> bool {
+    pub fn remove_stat(&mut self, target: RusticsRc) -> bool {
         let mut found = false;
         let mut i = 0;
-        let member = (**target).borrow_mut();
+        let member = (*target).borrow_mut();
         let target_id = member.id();
         drop(member);
 
@@ -168,16 +168,16 @@ impl RusticsRcSet {
 
     // Create a new subset and add it to the set.
 
-    pub fn add_subset(&mut self, name: &str, members: usize, subsets: usize) -> &RusticsRcSetBox {
+    pub fn add_subset(&mut self, name: &str, members: usize, subsets: usize) -> RusticsRcSetBox {
         self.subsets.push(Rc::from(RefCell::new(RusticsRcSet::new(name, members, subsets))));
-        let result = self.subsets.last().unwrap();
-        let mut subset = (**result).borrow_mut();
+        let last = self.subsets.last().unwrap();
+        let mut subset = (**last).borrow_mut();
         let title = create_title(&self.title, name);
         subset.set_title(&title);
         subset.set_id(self.next_id);
         self.next_id += 1;
 
-        result
+        last.clone()
     }
 
     // Remove a subset from the set.
@@ -256,10 +256,10 @@ mod tests {
             let lower = -64;
             let upper = 64;
             let subset = parent_set.add_subset("generated subset", 4, 4);
-            let mut subset = (**subset).borrow_mut();
+            let mut subset = (*subset).borrow_mut();
                 
-            let window = subset.add_integer_window(32, "generated subset window").clone();
-            let running = subset.add_running_integer("generated subset running").clone();
+            let window = subset.add_integer_window(32, "generated subset window");
+            let running = subset.add_running_integer("generated subset running");
 
             let mut window = (*window).borrow_mut();
             let mut running = (*running).borrow_mut();
@@ -307,16 +307,16 @@ mod tests {
         let upper = 32;
         let mut set = RusticsRcSet::new("parent set", 4, 4);
 
-        let window = set.add_integer_window(32, "window").clone();
-        let running = set.add_running_integer("running").clone();
+        let window = set.add_integer_window(32, "window");
+        let running = set.add_running_integer("running");
 
         println!(" *** finished first add_* stats");
 
         let window_timer:  TimerBox = Rc::from(RefCell::new(ContinuingTimer::new(1_000_000_000)));
         let running_timer: TimerBox = Rc::from(RefCell::new(ContinuingTimer::new(1_000_000_000)));
             
-        let time_window = set.add_time_window("time window", 32, window_timer).clone();
-        let running_time = set.add_running_time("running time", running_timer).clone();
+        let time_window = set.add_time_window("time window", 32, window_timer);
+        let running_time = set.add_running_time("running time", running_timer);
 
         println!(" *** finished first timer add_* stats");
 
@@ -342,11 +342,11 @@ mod tests {
         assert!(window_stat.title() == create_title(&"parent set", &"window"));
 
         let subset = set.add_subset("subset", 0, 0);
-        let mut subset = (**subset).borrow_mut();
+        let mut subset = (*subset).borrow_mut();
         let subset_title = subset.title();
 
         let subset_stat = subset.add_running_integer("subset stat");
-        let subset_stat = (**subset_stat).borrow_mut();
+        let subset_stat = (*subset_stat).borrow_mut();
 
         assert!(subset_title == create_title(&set_title, "subset"));
         assert!(subset_stat.title() == create_title(&subset_title, &"subset stat"));
@@ -369,8 +369,8 @@ mod tests {
 
         println!(" *** finished set_traver");
 
-        let subset_1 = set.add_subset("subset 1", 4, 4).clone();
-        let subset_2 = set.add_subset("subset 2", 4, 4).clone();
+        let subset_1 = set.add_subset("subset 1", 4, 4);
+        let subset_2 = set.add_subset("subset 2", 4, 4);
 
         add_stats(&mut (*subset_1).borrow_mut());
         add_stats(&mut (*subset_2).borrow_mut());
@@ -390,22 +390,23 @@ mod tests {
 
         // Remove two stats and check that they go away.
         //
-        // First, do the remove operations.
+        // First, do the remove operations.  We must clone the
+        // rc objects since the call moves them.
 
-        let found = set.remove_stat(&window);
+        let found = set.remove_stat(window.clone());
         assert!(found);
 
-        let found = set.remove_stat(&running);
+        let found = set.remove_stat(running.clone());
         assert!(found);
 
         println!(" *** removed two stats");
 
         // Now check that the stats went away
 
-        let found = set.remove_stat(&window);
+        let found = set.remove_stat(window);
         assert!(!found);
 
-        let found = set.remove_stat(&running);
+        let found = set.remove_stat(running);
         assert!(!found);
     }
 
@@ -413,20 +414,41 @@ mod tests {
         // The last two parameters to new() and add_subset are size hints.
         // They are only hints.
 
-        let mut set     = RusticsRcSet::new("parent", 0, 0);
+        let mut set     = RusticsRcSet::new("sample usage parent", 0, 0);
+
+        // Add a subset.
+
         let     subset  = set.add_subset("subset", 0, 0);
-        let mut subset  = (**subset).borrow_mut();
+        let mut subset  = (*subset).borrow_mut();
+
+        // Create a running integer statistic.
+
         let     running = subset.add_running_integer("generated subset running");
-        let mut running = (**running).borrow_mut();
+        let mut running = (*running).borrow_mut();
+
+        // Now try a timer window.
+
+        let     window_timer = Rc::from(RefCell::new(ContinuingTimer::new(1_000_000_000)));
+        let     time_window  = set.add_time_window("time window", 32, window_timer);
+        let mut time_window  = (*time_window).borrow_mut();
+        
+        let mut timer: TimerBox = Rc::from(RefCell::new(ContinuingTimer::new(1_000_000_000)));
+
+        (*timer).borrow_mut().start();
+
+        println!(" *** finished first timer add_* stats");
 
         for i in -32..64 {
             running.record_i64(i);
+            time_window.record_event();
+            time_window.record_interval(&mut timer);
         }
 
         // Drop the locks before trying to print.
 
         drop(running);
         drop(subset);
+        drop(time_window);
 
         set.print(None);
     }

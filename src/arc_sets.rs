@@ -14,7 +14,7 @@ use super::TimerBox;
 use super::Printer;
 use super::create_title;
 
-pub type RusticsBox = Arc<Mutex<dyn Rustics>>;
+pub type RusticsArc = Arc<Mutex<dyn Rustics>>;
 pub type RusticsArcSetBox = Arc<Mutex<RusticsArcSet>>;
 pub type PrinterBox = Arc<Mutex<dyn Printer>>;
 
@@ -30,7 +30,7 @@ pub struct RusticsArcSet {
     title:      String,
     id:         usize,
     next_id:    usize,
-    members:    Vec<RusticsBox>,
+    members:    Vec<RusticsArc>,
     subsets:    Vec<RusticsArcSetBox>,
 }
 
@@ -112,42 +112,42 @@ impl RusticsArcSet {
 
     // Create a RunningInteger statistics object and add it to the set.
 
-    pub fn add_running_integer(&mut self, name: &str) -> &RusticsBox {
+    pub fn add_running_integer(&mut self, name: &str) -> RusticsArc {
         self.members.push(Arc::from(Mutex::new(RunningInteger::new(name))));
         self.common_add()
     }
 
     // Create a IntegerWindow statistics object and add it to the set.
 
-    pub fn add_integer_window(&mut self, window_size: usize, title: &str) -> &RusticsBox {
+    pub fn add_integer_window(&mut self, window_size: usize, title: &str) -> RusticsArc {
         self.members.push(Arc::from(Mutex::new(IntegerWindow::new(title, window_size))));
         self.common_add()
     }
 
-    pub fn add_running_time(&mut self, title: &str, timer: TimerBox) -> &RusticsBox {
+    pub fn add_running_time(&mut self, title: &str, timer: TimerBox) -> RusticsArc {
         self.members.push(Arc::from(Mutex::new(RunningTime::new(title, timer))));
         self.common_add()
     }
 
-    pub fn add_time_window(&mut self, title: &str, window_size: usize, timer: TimerBox) -> &RusticsBox {
+    pub fn add_time_window(&mut self, title: &str, window_size: usize, timer: TimerBox) -> RusticsArc {
         self.members.push(Arc::from(Mutex::new(TimeWindow::new(title, window_size, timer))));
         self.common_add()
     }
 
-    fn common_add(&mut self) -> &RusticsBox {
-        let result = self.members.last().unwrap();
-        let mut stat = result.lock().unwrap();
+    fn common_add(&mut self) -> RusticsArc {
+        let last = self.members.last().unwrap();
+        let mut stat = last.lock().unwrap();
         let title = create_title(&self.title, &stat.name());
 
         stat.set_title(&title);
         stat.set_id(self.next_id);
         self.next_id += 1;
-        result
+        last.clone()
     }
 
     // Remove a statistic from the set.
 
-    pub fn remove_stat(&mut self, target_box: &RusticsBox) -> bool {
+    pub fn remove_stat(&mut self, target_box: RusticsArc) -> bool {
         let mut found = false;
         let mut i = 0;
         let target_stat = target_box.lock().unwrap();
@@ -176,21 +176,21 @@ impl RusticsArcSet {
 
     // Create a new subset and add it to the set.
 
-    pub fn add_subset(&mut self, name: &str, members: usize, subsets: usize) -> &RusticsArcSetBox {
+    pub fn add_subset(&mut self, name: &str, members: usize, subsets: usize) -> RusticsArcSetBox {
         self.subsets.push(Arc::from(Mutex::new(RusticsArcSet::new(name, members, subsets))));
-        let result = self.subsets.last().unwrap();
-        let mut subset = result.lock().unwrap();
+        let last = self.subsets.last().unwrap();
+        let mut subset = last.lock().unwrap();
         let title = create_title(&self.title, name);
         subset.set_title(&title);
         subset.set_id(self.next_id);
         self.next_id += 1;
 
-        result
+        last.clone()
     }
 
     // Remove a subset from the set.
 
-    pub fn remove_subset(&mut self, target_box: &RusticsArcSetBox) -> bool {
+    pub fn remove_subset(&mut self, target_box: RusticsArcSetBox) -> bool {
         let mut found = false;
         let mut i = 0;
         let target_subset = target_box.lock().unwrap();
@@ -249,10 +249,11 @@ mod tests {
             let lower = -64;    // Just define the range for the test samples.
             let upper = 64;
             let parent = &mut parent.lock().unwrap();
-            let mut subset = parent.add_subset("generated subset", 4, 4).lock().unwrap();
+            let     subset = parent.add_subset("generated subset", 4, 4);
+            let mut subset = subset.lock().unwrap();
                 
-            let window_mutex = subset.add_integer_window(32, "generated subset window").clone();
-            let running_mutex = subset.add_running_integer("generated subset running").clone();
+            let window_mutex = subset.add_integer_window(32, "generated subset window");
+            let running_mutex = subset.add_running_integer("generated subset running");
 
             let mut window = window_mutex.lock().unwrap();
             let mut running = running_mutex.lock().unwrap();
@@ -354,10 +355,10 @@ mod tests {
         let window_timer:  TimerBox = Rc::from(RefCell::new(ContinuingTimer::new(1_000_000_000)));
         let running_timer: TimerBox = Rc::from(RefCell::new(ContinuingTimer::new(1_000_000_000)));
 
-        let window_mutex       = set.add_integer_window(32, "window").clone();
-        let running_mutex      = set.add_running_integer("running").clone();
-        let time_window_mutex  = set.add_time_window("time window", 32, window_timer).clone();
-        let running_time_mutex = set.add_running_time("running time", running_timer).clone();
+        let window_mutex       = set.add_integer_window(32, "window");
+        let running_mutex      = set.add_running_integer("running");
+        let time_window_mutex  = set.add_time_window("time window", 32, window_timer);
+        let running_time_mutex = set.add_running_time("running time", running_timer);
 
         let mut window         = window_mutex.lock().unwrap();
         let mut running        = running_mutex.lock().unwrap();
@@ -390,8 +391,9 @@ mod tests {
         assert!(running.title() == create_title(&"parent set", &"running"));
         assert!(window.title() == create_title(&"parent set", &"window"));
 
-        let mut subset = set.add_subset("subset", 0, 0).lock().unwrap();
-        let subset_stat_mutex = subset.add_running_integer("subset stat").clone();
+        let     subset = set.add_subset("subset", 0, 0);
+        let mut subset = subset.lock().unwrap();
+        let subset_stat_mutex = subset.add_running_integer("subset stat");
         let subset_stat   = subset_stat_mutex.lock().unwrap();
 
         assert!(subset.title() == create_title(&set_title, "subset"));
@@ -410,8 +412,8 @@ mod tests {
 
         set.traverse(&mut traverser);
 
-        let subset_1 = set.add_subset("subset 1", 4, 4).clone();
-        let subset_2 = set.add_subset("subset 2", 4, 4).clone();
+        let subset_1 = set.add_subset("subset 1", 4, 4);
+        let subset_2 = set.add_subset("subset 2", 4, 4);
 
         add_stats(&subset_1);
         add_stats(&subset_2);
@@ -420,29 +422,38 @@ mod tests {
 
         // Remove a subset and check that it goes away.
 
-        let found = set.remove_subset(&subset_1);
+        let found = set.remove_subset(subset_1.clone());
         assert!(found);
 
-        let found = set.remove_subset(&subset_1);
+        let found = set.remove_subset(subset_1);
         assert!(!found);
 
         // Remove two stats and check that they go away.
         //
         // First, do the remove operations.
 
-        let found = set.remove_stat(&window_mutex);
+        let found = set.remove_stat(window_mutex.clone());
         assert!(found);
 
-        let found = set.remove_stat(&running_mutex);
+        let found = set.remove_stat(running_mutex.clone());
         assert!(found);
 
         // Now check that the stats went away
 
-        let found = set.remove_stat(&window_mutex);
+        let found = set.remove_stat(window_mutex);
         assert!(!found);
 
-        let found = set.remove_stat(&running_mutex);
+        let found = set.remove_stat(running_mutex);
         assert!(!found);
+    }
+
+    struct CustomPrinter {
+    }
+
+    impl Printer for CustomPrinter {
+        fn print(&self, output: &str) {
+            println!("CustomPrinter:  {}", output);
+        }
     }
 
     fn sample_usage() {
@@ -462,9 +473,11 @@ mod tests {
         drop(running);
         drop(subset);
 
-        // Don't use a custom printer.
+        // Try a custom printer.
 
-        set.print(None);
+        let printer = Arc::new(Mutex::new(CustomPrinter { }));
+
+        set.print(Some(printer));
     }
 
     #[test]

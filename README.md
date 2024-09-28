@@ -7,6 +7,9 @@ measuring performance parameters.  It provides statistics objects that
 collect data and compute various statistical characterizations of the data,
 such as the mean and variance.
 
+The testing modules for arc_sets.rs and rc_sets.rs contain very simple example
+routines called "sample_usage".
+
 At this time, statistics can be gathered for i64 values and for time values.
 They can be collected as a running total of all samples recorded, or as a
 window covering the last N events, for a programmable N.  The interface does

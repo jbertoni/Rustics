@@ -346,7 +346,6 @@ mod tests {
         }
     }
 
-    #[test]
     pub fn simple_test() {
         let lower = -32;
         let upper = 32;
@@ -445,6 +444,35 @@ mod tests {
         let found = set.remove_stat(&running_mutex);
         assert!(!found);
     }
+
+    fn sample_usage() {
+        // The last two parameters to new() are size hints, and need not be correct.
+        // The same is true for add_subset.
+
+        let mut  set     = RusticsArcSet::new("parent set", 0, 1);
+        let      subset  = set.add_subset("subset", 1, 0);
+        let mut  subset  = subset.lock().unwrap();
+        let      running = subset.add_running_integer("running");
+        let mut  running = running.lock().unwrap();
+
+        for i in 0..64 {
+            running.record_i64(i);
+        }
+
+        drop(running);
+        drop(subset);
+
+        // Don't use a custom printer.
+
+        set.print(None);
+    }
+
+    #[test]
+    pub fn run_tests() {
+        simple_test();
+        sample_usage();
+    }
+
 
     struct TestTraverser {
     }

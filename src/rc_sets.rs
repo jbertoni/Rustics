@@ -302,7 +302,6 @@ mod tests {
         }
     }
 
-    #[test]
     pub fn simple_test() {
         let lower = -32;
         let upper = 32;
@@ -408,5 +407,33 @@ mod tests {
 
         let found = set.remove_stat(&running);
         assert!(!found);
+    }
+
+    fn sample_usage() {
+        // The last two parameters to new() and add_subset are size hints.
+        // They are only hints.
+
+        let mut set     = RusticsRcSet::new("parent", 0, 0);
+        let     subset  = set.add_subset("subset", 0, 0);
+        let mut subset  = (**subset).borrow_mut();
+        let     running = subset.add_running_integer("generated subset running");
+        let mut running = (**running).borrow_mut();
+
+        for i in -32..64 {
+            running.record_i64(i);
+        }
+
+        // Drop the locks before trying to print.
+
+        drop(running);
+        drop(subset);
+
+        set.print(None);
+    }
+
+    #[test]
+    pub fn run_tests() {
+        simple_test();
+        sample_usage();
     }
 }

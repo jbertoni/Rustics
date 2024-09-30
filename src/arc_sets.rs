@@ -96,6 +96,14 @@ impl RusticsArcSet {
         }
     }
 
+    pub fn title(&self) -> String {
+        self.title.clone()
+    }
+
+    pub fn set_title(&mut self, title: &str) {
+        self.title = String::from(title);
+    }
+
     // Do a recursive clear of all statistics in the set and its
     // entire subset hierarachy.
 
@@ -228,15 +236,6 @@ impl RusticsArcSet {
     }
 
     // The following functions are for internal use only.
-
-    fn set_title(&mut self, title: &str) {
-        self.title = String::from(title);
-    }
-
-    #[cfg(test)]
-    fn title(&self) -> String {
-        self.title.clone()
-    }
 
     fn set_id(&mut self, id: usize) {
         self.id = id;

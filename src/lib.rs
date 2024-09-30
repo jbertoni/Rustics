@@ -23,6 +23,10 @@
 //!           statistics of the window samples are computed on demand.
 //!         * The histogram counts all samples seen, not just the current window.
 //!
+//!     * Counter
+//!         * This type implements a simple counter that generates no further statistics.  It
+//!           can be used for counting events, for example.
+//!
 //!     * RunningTime
 //!         * This type uses the RunningInteger code to handle time intervals.  Values will be
 //!           printed using units of time.
@@ -613,10 +617,10 @@ pub trait Rustics {
     //   print          prints the statistics and pseudo-log histogram
     //                      The first argument is an optional title prefix.
 
-    fn print(&self, printer: Option<PrinterBox>);
+    fn print(&self, printer: Option<PrinterBox>);   // print the statistics
+    fn set_title(&mut self, title: &str);           // set the title for printing
 
     // For internal use only.
-    fn set_title(&mut self, title: &str);
     fn set_id(&mut self, index: usize);
     fn id(&self) -> usize;
     fn equals(&self, other: &dyn Rustics) -> bool;

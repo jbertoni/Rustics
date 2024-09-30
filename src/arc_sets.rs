@@ -15,9 +15,9 @@ use super::Counter;
 use super::Printer;
 use super::create_title;
 
-pub type RusticsArc = Arc<Mutex<dyn Rustics>>;
+pub type RusticsArc       = Arc<Mutex<dyn Rustics>>;
 pub type RusticsArcSetBox = Arc<Mutex<RusticsArcSet>>;
-pub type PrinterBox = Arc<Mutex<dyn Printer>>;
+pub type PrinterBox       = Arc<Mutex<dyn Printer>>;
 
 // Define the trait for traversing a set and its hierarchy.
 
@@ -65,6 +65,8 @@ impl RusticsArcSet {
     // user-defined callback.
 
     pub fn traverse(&mut self, traverser: &mut dyn ArcTraverser) {
+        traverser.visit_set(self);
+
         for mutex in self.members.iter() {
             let mut member = mutex.lock().unwrap();
 
@@ -74,7 +76,7 @@ impl RusticsArcSet {
         for mutex in self.subsets.iter() {
             let mut subset = mutex.lock().unwrap();
 
-            traverser.visit_set(&mut subset);
+            subset.traverse(traverser);
         }
     }
 
@@ -184,9 +186,11 @@ impl RusticsArcSet {
 
     pub fn add_subset(&mut self, name: &str, members: usize, subsets: usize) -> RusticsArcSetBox {
         self.subsets.push(Arc::from(Mutex::new(RusticsArcSet::new(name, members, subsets))));
-        let last = self.subsets.last().unwrap();
+
+        let     last   = self.subsets.last().unwrap();
         let mut subset = last.lock().unwrap();
-        let title = create_title(&self.title, name);
+        let     title  = create_title(&self.title, name);
+
         subset.set_title(&title);
         subset.set_id(self.next_id);
         self.next_id += 1;
@@ -253,18 +257,26 @@ mod tests {
     //  Add statistics to a set.
 
     fn add_stats(parent: &Mutex<RusticsArcSet>) {
-        for _i in 0..4 {
-            let lower = -64;    // Just define the range for the test samples.
-            let upper = 64;
-            let parent = &mut parent.lock().unwrap();
-            let     subset = parent.add_subset("generated subset", 4, 4);
-            let mut subset = subset.lock().unwrap();
-                
-            let window_mutex = subset.add_integer_window(32, "generated subset window");
-            let running_mutex = subset.add_running_integer("generated subset running");
+        for i in 0..4 {
+            let lower             = -64;    // Just define the range for the test samples.
+            let upper             = 64;
 
-            let mut window = window_mutex.lock().unwrap();
-            let mut running = running_mutex.lock().unwrap();
+            let     parent        = &mut parent.lock().unwrap();
+            let     name          = format!("generated subset {}", i);
+            let     subset        = parent.add_subset(&name, 4, 4);
+            let mut subset        = subset.lock().unwrap();
+                
+            let     window_name   = format!("generated window {}", i);
+            let     running_name  = format!("generated running {}", i);
+            let     window_mutex  = subset.add_integer_window(32, &window_name);
+            let     running_mutex = subset.add_running_integer(&running_name);
+
+            let mut window         = window_mutex.lock().unwrap();
+            let mut running        = running_mutex.lock().unwrap();
+
+            println!(" *** made {}", subset.title());
+            println!(" *** made {}", window.title());
+            println!(" *** made {}", running.title());
 
             for i in lower..upper {
                 window.record_i64(i);
@@ -445,11 +457,15 @@ mod tests {
 
         set.print(None);
 
-        //  Do a test of the partially-implemeted traverser.
+        //  Do a test of the traverser.
 
         let mut traverser = TestTraverser::new();
 
         set.traverse(&mut traverser);
+        println!(" *** members {}, sets {}", traverser.members, traverser.sets);
+
+        assert!(traverser.members == 5);
+        assert!(traverser.sets == 2);
 
         //  Now test removing statistics.
 
@@ -458,6 +474,18 @@ mod tests {
 
         add_stats(&subset_1);
         add_stats(&subset_2);
+
+        // Before testing remove operations, traverse again...
+
+        let mut traverser = TestTraverser::new();
+
+        set.traverse(&mut traverser);
+        println!(" *** members {}, sets {}", traverser.members, traverser.sets);
+
+        assert!(traverser.members == 21);
+        assert!(traverser.sets == 12);
+
+        // Print the set, as well.
 
         set.print(None);
 
@@ -553,21 +581,27 @@ mod tests {
         sample_usage();
     }
 
-
     struct TestTraverser {
+        pub members:  i64,
+        pub sets:     i64,
     }
 
     impl TestTraverser {
         pub fn new() -> TestTraverser {
-            TestTraverser { }
+            println!(" *** making a traverser");
+            TestTraverser { members:  0, sets:  0 }
         }
     }
 
     impl ArcTraverser for TestTraverser {
-        fn visit_member(&mut self, _member: &mut dyn Rustics) {
+        fn visit_member(&mut self, member: &mut dyn Rustics) {
+            println!(" *** visiting arc member {}", member.name());
+            self.members += 1;
         }
 
-        fn visit_set(&mut self, _set: &mut RusticsArcSet) {
+        fn visit_set(&mut self, set: &mut RusticsArcSet) {
+            println!(" *** visiting arc set {}", set.name());
+            self.sets += 1;
         }
     }
 }

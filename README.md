@@ -16,6 +16,10 @@ window covering the last N events, for a programmable N.  The interface does
 support a "clear" function to discard all gather statistics.  See the time.rs
 file for information on timers and to see some sample implementations.
 
+In addition to the more detailed, the library supports a simple counter for
+which no other statistics are generated.  This can be useful for counting
+events.
+
 This library also implements sets, which contain statistics that are printed
 and manipulated together.  It provides sets contained in Arc structures and Rc
 structures.  The two set modules are otherwise identical.  The implementations

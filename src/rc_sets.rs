@@ -66,12 +66,16 @@ impl RusticsRcSet {
     // user-defined callback.
 
     pub fn traverse(&mut self, traverser: &mut dyn RcTraverser) {
+        traverser.visit_set(self);
+
         for member in self.members.iter() {
             traverser.visit_member(&mut *((**member).borrow_mut()));
         }
 
         for subset in self.subsets.iter() {
-            traverser.visit_set(&mut (**subset).borrow_mut());
+            let mut subset = (**subset).borrow_mut();
+
+            subset.traverse(traverser);
         }
     }
 
@@ -239,19 +243,25 @@ mod tests {
     use crate::time::Timer;
 
     struct TestTraverser {
+        pub members:  i64,
+        pub sets:     i64,
     }
 
     impl TestTraverser {
         pub fn new() -> TestTraverser {
-            TestTraverser { }
+            TestTraverser { members:  0, sets:  0 }
         }
     }
 
     impl RcTraverser for TestTraverser {
-        fn visit_member(&mut self, _member: &mut dyn Rustics) {
+        fn visit_member(&mut self, member: &mut dyn Rustics) {
+            println!(" *** visiting rc member {}", member.name());
+            self.members += 1;
         }
 
-        fn visit_set(&mut self, _set: &mut RusticsRcSet) {
+        fn visit_set(&mut self, set: &mut RusticsRcSet) {
+            println!(" *** visiting rc set {}", set.name());
+            self.sets += 1;
         }
     }
 
@@ -387,6 +397,10 @@ mod tests {
         let mut traverser = TestTraverser::new();
 
         set.traverse(&mut traverser);
+        println!(" *** members {}, sets {}", traverser.members, traverser.sets);
+
+        assert!(traverser.members == 5);
+        assert!(traverser.sets == 2);
 
         // Add more subsets to test removal operations.
 

@@ -1,3 +1,9 @@
+//
+//  This code is available under the Berkeley 2-Clause, Berkely 2-clause,
+//  and MIT licenses.  It is also available as public domain source where
+//  permitted by law.
+//
+
 use std::time::Instant;
 
 //  A Timer is an abstraction of a clock to be used for performance

@@ -1,6 +1,7 @@
 //
-//  This code is available under the Berkeley 2-Clause license.  It is also available
-//  as public domain source where permitted by law.
+//  This code is available under the Berkeley 2-Clause, Berkely 2-clause,
+//  and MIT licenses.  It is also available as public domain source where 
+//  permitted by law.
 //
 
 use std::sync::Arc;
@@ -46,9 +47,9 @@ impl RusticsRcSet {
     // statistics in the set.  These hints can improve performance a bit.
 
     pub fn new(name_in: &str, members: usize, subsets: usize) -> RusticsRcSet {
-        let name = String::from(name_in);
-        let title = String::from(name_in);
-        let id = usize::MAX;
+        let name    = String::from(name_in);
+        let title   = String::from(name_in);
+        let id      = usize::MAX;
         let next_id = 0;
         let members = Vec::with_capacity(members);
         let subsets = Vec::with_capacity(subsets);
@@ -69,7 +70,9 @@ impl RusticsRcSet {
         traverser.visit_set(self);
 
         for member in self.members.iter() {
-            traverser.visit_member(&mut *((**member).borrow_mut()));
+            let member = &mut *((**member).borrow_mut());
+
+            traverser.visit_member(member);
         }
 
         for subset in self.subsets.iter() {
@@ -146,10 +149,10 @@ impl RusticsRcSet {
     }
 
     fn common_add(&mut self) -> RusticsRc {
-        let last = self.members.last().unwrap();
+        let     last   = self.members.last().unwrap();
         let mut member = (**last).borrow_mut();
+        let     title  = create_title(&self.title, &member.name());
 
-        let title = create_title(&self.title, &member.name());
         member.set_title(&title);
         member.set_id(self.next_id);
         self.next_id += 1;
@@ -159,10 +162,10 @@ impl RusticsRcSet {
     // Remove a statistic from the set.
 
     pub fn remove_stat(&mut self, target: RusticsRc) -> bool {
-        let mut found = false;
-        let mut i = 0;
-        let member = (*target).borrow_mut();
-        let target_id = member.id();
+        let mut found     = false;
+        let mut i         = 0;
+        let     member    = (*target).borrow_mut();
+        let     target_id = member.id();
         drop(member);
 
         for rc in self.members.iter() {
@@ -188,9 +191,11 @@ impl RusticsRcSet {
 
     pub fn add_subset(&mut self, name: &str, members: usize, subsets: usize) -> RusticsRcSetBox {
         self.subsets.push(Rc::from(RefCell::new(RusticsRcSet::new(name, members, subsets))));
-        let last = self.subsets.last().unwrap();
+
+        let     last   = self.subsets.last().unwrap();
         let mut subset = (**last).borrow_mut();
-        let title = create_title(&self.title, name);
+        let     title  = create_title(&self.title, name);
+
         subset.set_title(&title);
         subset.set_id(self.next_id);
         self.next_id += 1;
@@ -201,10 +206,10 @@ impl RusticsRcSet {
     // Remove a subset from the set.
 
     pub fn remove_subset(&mut self, target: &RusticsRcSetBox) -> bool {
-        let mut found = false;
-        let mut i = 0;
-        let subset = (**target).borrow_mut();
-        let target_id = subset.id();
+        let mut found     = false;
+        let mut i         = 0;
+        let     subset    = (**target).borrow_mut();
+        let     target_id = subset.id();
 
         drop(subset);
 
@@ -249,18 +254,19 @@ mod tests {
 
     impl TestTraverser {
         pub fn new() -> TestTraverser {
+            println!(" *** making an rc traverser");
             TestTraverser { members:  0, sets:  0 }
         }
     }
 
     impl RcTraverser for TestTraverser {
         fn visit_member(&mut self, member: &mut dyn Rustics) {
-            println!(" *** visiting rc member {}", member.name());
+            println!(" *** visiting rc member  \"{}\"", member.name());
             self.members += 1;
         }
 
         fn visit_set(&mut self, set: &mut RusticsRcSet) {
-            println!(" *** visiting rc set {}", set.name());
+            println!(" *** visiting rc set     \"{}\"", set.name());
             self.sets += 1;
         }
     }
@@ -272,13 +278,13 @@ mod tests {
         let parent_set = parent;
 
         for _i in 0..4 {
-            let subset = parent_set.add_subset("generated subset", 4, 4);
+            let     subset = parent_set.add_subset("generated subset", 4, 4);
             let mut subset = (*subset).borrow_mut();
                 
-            let window = subset.add_integer_window(32, "generated subset window");
+            let window  = subset.add_integer_window(32, "generated subset window");
             let running = subset.add_running_integer("generated subset running");
 
-            let mut window = (*window).borrow_mut();
+            let mut window  = (*window).borrow_mut();
             let mut running = (*running).borrow_mut();
 
             for i in lower..upper {
@@ -397,7 +403,7 @@ mod tests {
         let mut traverser = TestTraverser::new();
 
         set.traverse(&mut traverser);
-        println!(" *** members {}, sets {}", traverser.members, traverser.sets);
+        println!(" *** rc members {}, sets {}", traverser.members, traverser.sets);
 
         assert!(traverser.members == 5);
         assert!(traverser.sets == 2);

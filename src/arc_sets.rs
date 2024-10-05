@@ -1,6 +1,7 @@
 //
-//  This code is available under the Berkeley 2-Clause license.  It is also available
-//  as public domain source where permitted by law.
+//  This code is available under the Berkeley 2-Clause, Berkely 2-clause,
+//  and MIT licenses.  It is also available as public domain source where
+//  permitted by law.
 //
 
 use std::sync::Mutex;
@@ -45,9 +46,9 @@ impl RusticsArcSet {
     // might be especially useful in embedded environments.
 
     pub fn new(name_in: &str, members_hint: usize, subsets_hint: usize) -> RusticsArcSet {
-        let name = String::from(name_in);
-        let title = String::from(name_in);
-        let id = usize::MAX;
+        let name    = String::from(name_in);
+        let title   = String::from(name_in);
+        let id      = usize::MAX;
         let next_id = 0;
         let members = Vec::with_capacity(members_hint);
         let subsets = Vec::with_capacity(subsets_hint);
@@ -151,9 +152,9 @@ impl RusticsArcSet {
     }
 
     fn common_add(&mut self) -> RusticsArc {
-        let last = self.members.last().unwrap();
-        let mut stat = last.lock().unwrap();
-        let title = create_title(&self.title, &stat.name());
+        let     last  = self.members.last().unwrap();
+        let mut stat  = last.lock().unwrap();
+        let     title = create_title(&self.title, &stat.name());
 
         stat.set_title(&title);
         stat.set_id(self.next_id);
@@ -164,10 +165,10 @@ impl RusticsArcSet {
     // Remove a statistic from the set.
 
     pub fn remove_stat(&mut self, target_box: RusticsArc) -> bool {
-        let mut found = false;
-        let mut i = 0;
-        let target_stat = target_box.lock().unwrap();
-        let target_id = target_stat.id();
+        let mut found       = false;
+        let mut i           = 0;
+        let     target_stat = target_box.lock().unwrap();
+        let     target_id   = target_stat.id();
 
         // We have to unlock the target_box or we'll hang in the loop.
         drop(target_stat);
@@ -209,10 +210,10 @@ impl RusticsArcSet {
     // Remove a subset from the set.
 
     pub fn remove_subset(&mut self, target_box: RusticsArcSetBox) -> bool {
-        let mut found = false;
-        let mut i = 0;
-        let target_subset = target_box.lock().unwrap();
-        let target_id = target_subset.id();
+        let mut found         = false;
+        let mut i             = 0;
+        let     target_subset = target_box.lock().unwrap();
+        let     target_id     = target_subset.id();
 
         // We have to unlock the target_box or we'll hang in the loop.
         drop(target_subset);
@@ -273,9 +274,9 @@ mod tests {
             let mut window         = window_mutex.lock().unwrap();
             let mut running        = running_mutex.lock().unwrap();
 
-            println!(" *** made {}", subset.title());
-            println!(" *** made {}", window.title());
-            println!(" *** made {}", running.title());
+            println!(" *** made arc \"{}\"", subset.title());
+            println!(" *** made arc \"{}\"", window.title());
+            println!(" *** made arc \"{}\"", running.title());
 
             for i in lower..upper {
                 window.record_i64(i);
@@ -461,7 +462,7 @@ mod tests {
         let mut traverser = TestTraverser::new();
 
         set.traverse(&mut traverser);
-        println!(" *** members {}, sets {}", traverser.members, traverser.sets);
+        println!(" *** arc members {}, sets {}", traverser.members, traverser.sets);
 
         assert!(traverser.members == 5);
         assert!(traverser.sets == 2);
@@ -479,7 +480,7 @@ mod tests {
         let mut traverser = TestTraverser::new();
 
         set.traverse(&mut traverser);
-        println!(" *** members {}, sets {}", traverser.members, traverser.sets);
+        println!(" *** arc members {}, sets {}", traverser.members, traverser.sets);
 
         assert!(traverser.members == 21);
         assert!(traverser.sets == 12);
@@ -587,19 +588,19 @@ mod tests {
 
     impl TestTraverser {
         pub fn new() -> TestTraverser {
-            println!(" *** making a traverser");
+            println!(" *** making an arc traverser");
             TestTraverser { members:  0, sets:  0 }
         }
     }
 
     impl ArcTraverser for TestTraverser {
         fn visit_member(&mut self, member: &mut dyn Rustics) {
-            println!(" *** visiting arc member {}", member.name());
+            println!(" *** visiting arc member  \"{}\"", member.name());
             self.members += 1;
         }
 
         fn visit_set(&mut self, set: &mut RusticsArcSet) {
-            println!(" *** visiting arc set {}", set.name());
+            println!(" *** visiting arc set     \"{}\"", set.name());
             self.sets += 1;
         }
     }

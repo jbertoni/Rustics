@@ -18,11 +18,13 @@
 //! * Integer statistics structs
 //!     * RunningInteger
 //!         * This type implements a few running statistics for a series of i64 sample values.
+//!         * It also provides a pseudo-log histogram.
 //!
 //!     * RunningWindow
 //!         * This type implements a fixed-size window of the last n samples recorded.  Summary
 //!           statistics of the window samples are computed on demand.
-//!         * The histogram counts all samples seen, not just the current window.
+//!         * It also provides a pseudo-log historgram.  The histogram counts all samples seen,
+//!           not just the current window.
 //!
 //!     * Counter
 //!         * This type implements a simple counter that generates no further statistics.  It

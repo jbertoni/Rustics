@@ -15,7 +15,7 @@
 //!       The pseudo-log of 0 is defined as 0, and for convenience, the pseudo-log of -(2^64) is defined
 //!       as 63.  Logs are computed by rounding up any fractional part, so the pseudo-log of 5 is 3.
 //!
-//! * Integer statistics
+//! * Integer statistics structs
 //!     * RunningInteger
 //!         * This type implements a few running statistics for a series of i64 sample values.
 //!
@@ -28,7 +28,7 @@
 //!         * This type implements a simple counter that generates no further statistics.  It
 //!           can be used for counting events, for example.
 //!
-//! * Time statistics
+//! * Time statistics structs
 //!     * RunningTime
 //!         * This type uses the RunningInteger code to handle time intervals.  Values will be
 //!           printed using units of time.
@@ -47,7 +47,7 @@
 //!           and cleared on command.
 //!
 //!     * RusticsRcSet
-//!         * This type functions as an Rc-based implementation of for sets and subsets.  These sets will be
+//!         * This type functions as an Rc-based implementation of sets and subsets.  These sets will be
 //!           significantly faster than Arc-based sets, but are not thread-safe.
 //!
 //! * Timers
@@ -61,12 +61,15 @@
 //!           wall clock time.
 //!
 //!     *  ClockTimer
-//!         * This implementation is a wrapper for a simple time counter that returns an integer
-//!           corresponding to the current "time" value.  For example, a cycle counter could be
-//!           wrapped to produce a Timer.  This wrapper can be used with with a platform-specific
-//!           counter such as the Linux clock_* functions.  The wrapper implementation provides
-//!           the "start" and "finish" methods, along with initialization, so the wrapped counter 
-//!           can be very simple.
+//!         * This implementation is a wrapper for a simple time counter (trait SimpleClock) that
+//!           returns an integer corresponding to the current "time" value.  For example, a cycle
+//!           counter could be wrapped to produce a Timer.  This wrapper can be used with with a
+//!           platform-specific counter such as the Linux clock_* functions.  The wrapper
+//!           implementation provides the "start" and "finish" methods, along with initialization,
+//!           so the wrapped counter can be very simple.
+//!
+//!     *  SimpleClock
+//!         * This trait defines the interface used by ClockTimer to query a clock.
 //!
 
 use std::sync::Mutex;
@@ -577,26 +580,29 @@ pub trait Printer {
     fn print(&self, output: &str);
 }
 
-// Define a printer that will send output to stdout or stderr, as
+// Define a printer that will send output to Stdout or Stderr, as
 // configured.
 
 pub struct StdioPrinter {
-    which: String,
+    which: StreamKind,
+}
+
+pub enum StreamKind {
+    Stdout,
+    Stderr,
 }
 
 impl StdioPrinter {
-    pub fn new(which: &str) -> StdioPrinter {
-        let which = which.to_string();
+    pub fn new(which: StreamKind) -> StdioPrinter {
         StdioPrinter { which }
     }
 }
 
 impl Printer for StdioPrinter {
     fn print(&self, output: &str) {
-        match self.which.as_str() {
-            "stdout" => println!("{}", output),
-            "stderr" => eprintln!("{}", output),
-            _ => println!("{}", output),
+        match self.which {
+            StreamKind::Stdout => println!("{}", output),
+            StreamKind::Stderr => eprintln!("{}", output),
         }
     }
 }
@@ -679,8 +685,7 @@ impl RunningInteger {
         let id = usize::MAX;
         let name = String::from(name_in);
         let title = String::from(name_in);
-        let which = "stdout".to_string();
-        let printer = Arc::new(Mutex::new(StdioPrinter { which }));
+        let printer = Arc::new(Mutex::new(StdioPrinter::new(StreamKind::Stdout)));
 
         RunningInteger { name, title, id, count: 0, mean: 0.0, moment_2: 0.0, moment_3: 0.0,
             moment_4: 0.0, log_histogram: LogHistogram::new(), min: i64::MAX, max: i64::MIN,
@@ -949,8 +954,7 @@ impl IntegerWindow {
         let moment_3 = 0.0;
         let moment_4 = 0.0;
         let log_histogram = LogHistogram::new();
-        let which = "stdout".to_string();
-        let printer = Arc::new(Mutex::new(StdioPrinter { which }));
+        let printer = Arc::new(Mutex::new(StdioPrinter::new(StreamKind::Stdout)));
 
         IntegerWindow {
             name,
@@ -1259,8 +1263,7 @@ impl RunningTime {
         let id      = usize::MAX;
         let name    = String::from(name_in);
         let title   = String::from(name_in);
-        let which   = "stdout".to_string();
-        let printer = Arc::new(Mutex::new(StdioPrinter { which }));
+        let printer = Arc::new(Mutex::new(StdioPrinter::new(StreamKind::Stdout)));
         let hz      = timer_box_hz(&timer);
 
         if hz > i64::MAX as u128 {
@@ -1285,8 +1288,7 @@ impl RunningTime {
                 printer
             });
 
-        let which   = "stdout".to_string();
-        let printer = Arc::new(Mutex::new(StdioPrinter { which }));
+        let printer = Arc::new(Mutex::new(StdioPrinter::new(StreamKind::Stdout)));
 
         RunningTime { printer, running_integer, timer, hz }
     }
@@ -1470,8 +1472,7 @@ impl TimeWindow {
         let id            = usize::MAX;
         let name          = String::from(name_in);
         let title         = String::from(name_in);
-        let which         = "stdout".to_string();
-        let printer       = Arc::new(Mutex::new(StdioPrinter { which }));
+        let printer       = Arc::new(Mutex::new(StdioPrinter::new(StreamKind::Stdout)));
         let hz            = timer_box_hz(&timer);
         let log_histogram = LogHistogram::new();
         let stats_valid   = false;
@@ -1501,8 +1502,7 @@ impl TimeWindow {
                 printer
             });
 
-        let which    = "stdout".to_string();
-        let printer  = Arc::new(Mutex::new(StdioPrinter { which }));
+        let printer  = Arc::new(Mutex::new(StdioPrinter::new(StreamKind::Stdout)));
 
         TimeWindow { printer, integer_window, timer, hz }
     }
@@ -1690,7 +1690,7 @@ impl Counter {
         let title   = name.clone();
         let count   = 0;
         let id      = 0;
-        let printer = StdioPrinter::new("stdio");
+        let printer = StdioPrinter::new(StreamKind::Stdout);
         let printer = Arc::new(Mutex::new(printer));
 
         Counter { name, title, count, id, printer }
@@ -2065,7 +2065,7 @@ mod tests {
         let mut time_stat = RunningTime::new("Test Running Time => Scale Test", timer.clone());
 
         let mut time = 1;
-        let printer = &mut StdioPrinter { which: "stdout".to_string() };
+        let printer = &mut StdioPrinter::new(StreamKind::Stdout);
 
         for i in 1..16 {
             setup_elapsed_time(&mut timer, time);
@@ -2160,7 +2160,7 @@ mod tests {
         let mut time_stat = RunningTime::new("Test Time => Scale Test", timer.clone());
 
         let mut time = 1;
-        let printer = &mut StdioPrinter { which: "stdout".to_string() };
+        let printer = &mut StdioPrinter::new(StreamKind::Stdout);
 
         for _i in 1..16 {
             setup_elapsed_time(&mut timer, time);

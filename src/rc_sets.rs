@@ -119,6 +119,19 @@ impl RusticsRcSet {
         }
     }
 
+    // Add a member
+    pub fn add_member(&mut self, member: RusticsRc) {
+        self.members.push(member);
+
+        let     last   = self.members.last().unwrap();
+        let mut member = (**last).borrow_mut();
+        let     title  = create_title(&self.title, &member.name());
+
+        member.set_title(&title);
+        member.set_id(self.next_id);
+        self.next_id += 1;
+    }
+
     // Create a RunningInteger statistics object and add it to the set.
 
     pub fn add_running_integer(&mut self, name: &str) -> RusticsRc {
@@ -487,6 +500,11 @@ mod tests {
         drop(running);
         drop(subset);
         drop(time_window);
+
+        // Do a minimal test of "add".
+
+        let member = Rc::from(RefCell::new(RunningInteger::new("added as member")));
+        set.add_member(member);
 
         set.print(None);
     }

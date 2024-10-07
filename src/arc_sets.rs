@@ -122,6 +122,19 @@ impl RusticsArcSet {
         }
     }
 
+    // Add a member statistic.
+
+    pub fn add_member(&mut self, member: RusticsArc) {
+        self.members.push(member);
+        let     last  = self.members.last().unwrap();
+        let mut stat  = last.lock().unwrap();
+        let     title = create_title(&self.title, &stat.name());
+
+        stat.set_title(&title);
+        stat.set_id(self.next_id);
+        self.next_id += 1;
+    }
+
     // Create a RunningInteger statistics object and add it to the set.
 
     pub fn add_running_integer(&mut self, name: &str) -> RusticsArc {
@@ -559,18 +572,22 @@ mod tests {
         let     limit       = 20;
 
         for _i in 1..limit + 1 {
-            counter.record_event(); // increment by 1
+            counter.record_event();    // increment by 1
+            counter.record_i64(1);     // increment by 1
         }
 
         //  Check the counter value.
 
-        assert!(counter.count() == limit as u64);
+        assert!(counter.count() == 2 * limit as u64);
 
         //  Drop the lock before printing.
 
         drop(counter);
 
         //  print should still work.
+
+        let member = Arc::from(Mutex::new(RunningInteger::new("added as member")));
+        set.add_member(member);
 
         set.print(Some(printer.clone()));
     }

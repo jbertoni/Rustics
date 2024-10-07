@@ -156,17 +156,22 @@ pub fn commas_u64(value: u64) -> String {
 
 fn print_common_integer_times(data: &Printable, hz: i64, printer: &mut dyn Printer) {
     print_integer("Count", data.n as i64, printer);
-    print_time("Minumum", data.min as f64, hz, printer);
-    print_time("Maximum", data.max as f64, hz, printer);
-    print_time("Log Mode", data.log_mode as f64, hz, printer);
+
+    if data.n > 0 {
+        print_time("Minumum",  data.min as f64,      hz, printer);
+        print_time("Maximum",  data.max as f64,      hz, printer);
+        print_time("Log Mode", data.log_mode as f64, hz, printer);
+    }
 }
 
 fn print_common_float_times(data: &Printable, hz: i64, printer: &mut dyn Printer) {
-    print_time("Mean", data.mean, hz, printer);
-    print_time("Std Dev", data.variance.sqrt(), hz, printer);
-    print_time("Variance", data.variance, hz, printer);
-    print_time("Skewness", data.skewness, hz, printer);
-    print_time("Kurtosis", data.kurtosis, hz, printer);
+    if data.n > 0 {
+        print_time("Mean",     data.mean,            hz, printer);
+        print_time("Std Dev",  data.variance.sqrt(), hz, printer);
+        print_time("Variance", data.variance,        hz, printer);
+        print_time("Skewness", data.skewness,        hz, printer);
+        print_time("Kurtosis", data.kurtosis,        hz, printer);
+    }
 }
 
 // Format a time value for printing.
@@ -418,9 +423,12 @@ fn print_float_unit(name: &str, value: f64, unit: &str, printer: &mut dyn Printe
 
 fn print_common_integer(data: &Printable, printer: &mut dyn Printer) {
     print_integer("Count", data.n as i64, printer);
-    print_integer("Minumum", data.min, printer);
-    print_integer("Maximum", data.max, printer);
-    print_integer("Log Mode", data.log_mode, printer);
+
+    if data.n > 0 {
+        print_integer("Minumum",  data.min,      printer);
+        print_integer("Maximum",  data.max,      printer);
+        print_integer("Log Mode", data.log_mode, printer);
+    }
 }
 
 // Print the common computed statistics as passed in a Printable structure.
@@ -428,11 +436,13 @@ fn print_common_integer(data: &Printable, printer: &mut dyn Printer) {
 // value.
 
 fn print_common_float(data: &Printable, printer: &mut dyn Printer) {
-    print_float("Mean", data.mean, printer);
-    print_float("Std Dev", data.variance.sqrt(), printer);
-    print_float("Variance", data.variance, printer);
-    print_float("Skewness", data.skewness, printer);
-    print_float("Kurtosis", data.kurtosis, printer);
+    if data.n > 0 {
+        print_float("Mean",     data.mean,            printer);
+        print_float("Std Dev",  data.variance.sqrt(), printer);
+        print_float("Variance", data.variance,        printer);
+        print_float("Skewness", data.skewness,        printer);
+        print_float("Kurtosis", data.kurtosis,        printer);
+    }
 }
 
 

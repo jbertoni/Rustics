@@ -28,6 +28,7 @@
 //!         * This type implements a simple counter that generates no further statistics.  It
 //!           can be used for counting events, for example.
 //!
+//! * Time statistics
 //!     * RunningTime
 //!         * This type uses the RunningInteger code to handle time intervals.  Values will be
 //!           printed using units of time.
@@ -48,6 +49,24 @@
 //!     * RusticsRcSet
 //!         * This type functions as an Rc-based implementation of for sets and subsets.  These sets will be
 //!           significantly faster than Arc-based sets, but are not thread-safe.
+//!
+//! * Timers
+//!     *  Timer
+//!         * This trait is the basic abstract timer.  A timer has a frequency and returns
+//!           an integer duration in units of that frequency.  The Timer interface provides
+//!           "start" and "finish" methods to bound intervals.
+//!
+//!     *  DurationTimer
+//!         * This implementation of a timer uses the Rust "Duration" implementation, which measures
+//!           wall clock time.
+//!
+//!     *  ClockTimer
+//!         * This implementation is a wrapper for a simple time counter that returns an integer
+//!           corresponding to the current "time" value.  For example, a cycle counter could be
+//!           wrapped to produce a Timer.  This wrapper can be used with with a platform-specific
+//!           counter such as the Linux clock_* functions.  The wrapper implementation provides
+//!           the "start" and "finish" methods, along with initialization, so the wrapped counter 
+//!           can be very simple.
 //!
 
 use std::sync::Mutex;

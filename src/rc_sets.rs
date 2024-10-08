@@ -4,8 +4,6 @@
 //  permitted by law.
 //
 
-use std::sync::Arc;
-use std::sync::Mutex;
 use std::rc::Rc;
 use std::cell::RefCell;
 use super::Rustics;
@@ -13,14 +11,13 @@ use super::RunningInteger;
 use super::IntegerWindow;
 use super::RunningTime;
 use super::TimeWindow;
+use super::PrinterBox;
 use super::TimerBox;
 use super::Counter;
-use super::Printer;
 use super::create_title;
 
 pub type RusticsRc = Rc<RefCell<dyn Rustics>>;
 pub type RusticsRcSetBox = Rc<RefCell<RusticsRcSet>>;
-pub type PrinterBox = Arc<Mutex<dyn Printer>>;
 
 // Define the trait for traversing a set and its hierarchy.
 
@@ -179,6 +176,7 @@ impl RusticsRcSet {
         let mut i         = 0;
         let     member    = (*target).borrow_mut();
         let     target_id = member.id();
+
         drop(member);
 
         for rc in self.members.iter() {
@@ -291,11 +289,11 @@ mod tests {
         let parent_set = parent;
 
         for _i in 0..4 {
-            let     subset = parent_set.add_subset("generated subset", 4, 4);
-            let mut subset = (*subset).borrow_mut();
+            let     subset  = parent_set.add_subset("generated subset", 4, 4);
+            let mut subset  = (*subset).borrow_mut();
                 
-            let window  = subset.add_integer_window(32, "generated subset window");
-            let running = subset.add_running_integer("generated subset running");
+            let window      = subset.add_integer_window(32, "generated subset window");
+            let running     = subset.add_running_integer("generated subset running");
 
             let mut window  = (*window).borrow_mut();
             let mut running = (*running).borrow_mut();
@@ -356,21 +354,21 @@ mod tests {
 
         // Add integer statistics, both a running total and a window.
 
-        let window = set.add_integer_window(32, "window");
+        let window  = set.add_integer_window(32, "window");
         let running = set.add_running_integer("running");
 
         let window_timer:  TimerBox = Rc::from(RefCell::new(ContinuingTimer::new(test_hz)));
         let running_timer: TimerBox = Rc::from(RefCell::new(ContinuingTimer::new(test_hz)));
             
-        let time_window = set.add_time_window("time window", 32, window_timer);
+        let time_window  = set.add_time_window("time window", 32, window_timer);
         let running_time = set.add_running_time("running time", running_timer);
 
         // Now test recording data.
 
-        let mut window_stat = (*window).borrow_mut();
-        let mut running_stat = (*running).borrow_mut();
+        let mut window_stat       = (*window).borrow_mut();
+        let mut running_stat      = (*running).borrow_mut();
 
-        let mut time_window_stat = (*time_window).borrow_mut();
+        let mut time_window_stat  = (*time_window).borrow_mut();
         let mut running_time_stat = (*running_time).borrow_mut();
 
         for i in lower..upper {
@@ -392,12 +390,12 @@ mod tests {
 
         //  Test subset titles.
 
-        let subset = set.add_subset("subset", 0, 0);
-        let mut subset = (*subset).borrow_mut();
-        let subset_title = subset.title();
+        let     subset       = set.add_subset("subset", 0, 0);
+        let mut subset       = (*subset).borrow_mut();
+        let     subset_title = subset.title();
 
-        let subset_stat = subset.add_running_integer("subset stat");
-        let subset_stat = (*subset_stat).borrow_mut();
+        let     subset_stat  = subset.add_running_integer("subset stat");
+        let     subset_stat  = (*subset_stat).borrow_mut();
 
         assert!(subset_title == create_title(&set_title, "subset"));
         assert!(subset_stat.title() == create_title(&subset_title, &"subset stat"));
@@ -479,10 +477,9 @@ mod tests {
 
         // Now try a timer window.
 
-        let     window_timer = Rc::from(RefCell::new(ContinuingTimer::new(test_hz)));
-        let     time_window  = set.add_time_window("time window", 32, window_timer);
-        let mut time_window  = (*time_window).borrow_mut();
-        
+        let     window_timer    = Rc::from(RefCell::new(ContinuingTimer::new(test_hz)));
+        let     time_window     = set.add_time_window("time window", 32, window_timer);
+        let mut time_window     = (*time_window).borrow_mut();
         let mut timer: TimerBox = Rc::from(RefCell::new(ContinuingTimer::new(test_hz)));
 
         (*timer).borrow_mut().start();

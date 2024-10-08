@@ -48,7 +48,8 @@ impl Timer for DurationTimer {
 
     fn finish(&mut self) -> u128 {
         let end_time = self.start.elapsed().as_nanos();
-        let result = end_time - self.previous;
+        let result   = end_time - self.previous;
+
         self.previous = end_time;
         result
     }
@@ -60,7 +61,7 @@ impl Timer for DurationTimer {
 
 impl DurationTimer {
     pub fn new() -> DurationTimer {
-        let start = Instant::now();
+        let start    = Instant::now();
         let previous = 0;
 
         DurationTimer { start, previous }
@@ -101,7 +102,8 @@ impl Timer for ClockTimer {
 
     fn finish(&mut self) -> u128 {
         let end_time = self.clock.get_time();
-        let ticks = end_time - self.start;
+        let ticks    = end_time - self.start;
+
         self.start = end_time;
         ticks
     }
@@ -126,11 +128,12 @@ mod tests {
     use std::time::Duration;
 
     pub fn simple_test_duration() {
-        let mut clock = DurationTimer::new();
+        let mut clock         = DurationTimer::new();
+        let     seconds       = 1;
+        let     sleep_time    = Duration::new(seconds, 0);
+        let     base_interval = seconds as u128 * clock.hz() as u128;
+
         clock.start();
-        let seconds = 1;
-        let sleep_time = Duration::new(seconds, 0);
-        let base_interval = seconds as u128 * clock.hz() as u128;
 
         for i in 1..10 {
             sleep(sleep_time);
@@ -149,7 +152,8 @@ mod tests {
     impl SimpleClock for TestSimpleClock {
         fn get_time(&mut self) -> u128 {
             let result = self.current;
-            self.current = self.current + self.increment;
+
+            self.current   = self.current + self.increment;
             self.increment = self.increment * 2;
             result
         }
@@ -160,10 +164,10 @@ mod tests {
     }
 
     pub fn simple_test_clock() {
-        let current = 0;
-        let mut increment = 1500;
-        let simple_clock = Box::new(TestSimpleClock { current, increment });
-        let mut clock = ClockTimer::new(simple_clock);
+        let     current      = 0;
+        let mut increment    = 1500;
+        let     simple_clock = Box::new(TestSimpleClock { current, increment });
+        let mut clock        = ClockTimer::new(simple_clock);
 
         // Creating the clock invokes get_time, so the increment in the
         // test clock increases.  Keep ours in sync with it.

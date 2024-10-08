@@ -13,12 +13,11 @@ use super::RunningTime;
 use super::TimeWindow;
 use super::TimerBox;
 use super::Counter;
-use super::Printer;
+use super::PrinterBox;
 use super::create_title;
 
 pub type RusticsArc       = Arc<Mutex<dyn Rustics>>;
 pub type RusticsArcSetBox = Arc<Mutex<RusticsArcSet>>;
-pub type PrinterBox       = Arc<Mutex<dyn Printer>>;
 
 // Define the trait for traversing a set and its hierarchy.
 
@@ -126,6 +125,7 @@ impl RusticsArcSet {
 
     pub fn add_member(&mut self, member: RusticsArc) {
         self.members.push(member);
+
         let     last  = self.members.last().unwrap();
         let mut stat  = last.lock().unwrap();
         let     title = create_title(&self.title, &stat.name());
@@ -263,6 +263,7 @@ impl RusticsArcSet {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::Printer;
     use std::cell::RefCell;
     use std::rc::Rc;
     use crate::time::Timer;
@@ -389,8 +390,8 @@ mod tests {
     }
 
     pub fn simple_test() {
-        let lower = -32;
-        let upper = 32;
+        let lower   = -32;
+        let upper   = 32;
         let test_hz = 1_000_000_000;
 
         //  Create the parent set for our test statistics.

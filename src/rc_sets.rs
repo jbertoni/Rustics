@@ -16,7 +16,7 @@ use super::TimerBox;
 use super::Counter;
 use super::create_title;
 
-pub type RusticsRc = Rc<RefCell<dyn Rustics>>;
+pub type RusticsRc       = Rc<RefCell<dyn Rustics>>;
 pub type RusticsRcSetBox = Rc<RefCell<RusticsRcSet>>;
 
 // Define the trait for traversing a set and its hierarchy.

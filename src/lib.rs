@@ -182,12 +182,7 @@ fn print_common_float_times(data: &Printable, hz: i64, printer: &mut dyn Printer
 
 // Format a time value for printing.
 
-//  days
-//  hours
-//  minutes
-//  seconds
-
-pub fn print_time(name: &str, time: f64, hz: i64, printer: &mut dyn Printer) {
+pub fn scale_time(time: f64, hz: i64) -> (f64, String) {
     let microsecond:f64 = 1_000.0;
     let millisecond     = microsecond * 1000.0;
     let second          = millisecond * 1000.0;
@@ -248,6 +243,13 @@ pub fn print_time(name: &str, time: f64, hz: i64, printer: &mut dyn Printer) {
     let mut unit        = unit.to_string();
 
     unit.push_str(suffix);
+
+    (scaled_time, unit)
+}
+
+
+fn print_time(name: &str, time: f64, hz: i64, printer: &mut dyn Printer) {
+    let (scaled_time, unit) = scale_time(time, hz);
 
     if scaled_time > 999999.0 {
         print_float_unit(name, scaled_time, &unit, printer);
@@ -672,7 +674,7 @@ pub trait Rustics {
     fn histo_log_mode(&self)              -> i64;
 }
 
-pub trait Histograms {
+pub trait Histogram {
     fn log_histogram(&self) -> LogHistogram;
     fn print_histogram(&self);
 }
@@ -896,7 +898,7 @@ impl Rustics for RunningInteger {
     }
 }
 
-impl Histograms for RunningInteger {
+impl Histogram for RunningInteger {
     fn log_histogram(&self) -> LogHistogram {
         self.log_histogram.clone()
     }
@@ -1255,7 +1257,7 @@ impl Rustics for IntegerWindow {
     }
 }
 
-impl Histograms for IntegerWindow {
+impl Histogram for IntegerWindow {
     fn log_histogram(&self) -> LogHistogram {
         self.log_histogram.clone()
     }

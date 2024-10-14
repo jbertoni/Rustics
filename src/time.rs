@@ -189,7 +189,7 @@ mod tests {
     }
 
     #[test]
-    pub fn simple_tests() {
+    pub fn run_tests() {
         simple_test_duration();
         simple_test_clock();
     }

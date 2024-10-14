@@ -82,17 +82,21 @@ impl RusticsArcSet {
 
     // Print the set and all its constituents (subsets and statistics).
 
-    pub fn print(&self, printer: Option<PrinterBox>) {
+    pub fn print(&self) {
+        self.print_opts(None, None);
+    }
+
+    pub fn print_opts(&self, printer: Option<PrinterBox>, title: Option<&str>) {
         for mutex in self.members.iter() {
             let member = mutex.lock().unwrap();
 
-            member.print(printer.clone());
+            member.print_opts(printer.clone(), title);
         }
 
         for mutex in self.subsets.iter() {
             let subset = mutex.lock().unwrap();
 
-            subset.print(printer.clone());
+            subset.print_opts(printer.clone(), title);
         }
     }
 
@@ -279,7 +283,7 @@ mod tests {
             let     name          = format!("generated subset {}", i);
             let     subset        = parent.add_subset(&name, 4, 4);
             let mut subset        = subset.lock().unwrap();
-                
+
             let     window_name   = format!("generated window {}", i);
             let     running_name  = format!("generated running {}", i);
             let     window_mutex  = subset.add_integer_window(32, &window_name);
@@ -469,7 +473,7 @@ mod tests {
 
         //  Make sure that print completes.
 
-        set.print(None);
+        set.print();
 
         //  Do a test of the traverser.
 
@@ -501,7 +505,7 @@ mod tests {
 
         // Print the set, as well.
 
-        set.print(None);
+        set.print();
 
         // Remove a subset and check that it goes away.
 
@@ -564,8 +568,8 @@ mod tests {
 
         let printer = Arc::new(Mutex::new(CustomPrinter { }));
 
-        set.print(Some(printer.clone()));
-        
+        set.print_opts(Some(printer.clone()), None);
+
         // Add a counter.
 
         let     counter_arc = set.add_counter("test counter");
@@ -590,7 +594,7 @@ mod tests {
         let member = Arc::from(Mutex::new(RunningInteger::new("added as member")));
         set.add_member(member);
 
-        set.print(Some(printer.clone()));
+        set.print_opts(Some(printer.clone()), None);
     }
 
     #[test]

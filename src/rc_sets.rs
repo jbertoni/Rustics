@@ -1,6 +1,6 @@
 //
 //  This code is available under the Berkeley 2-Clause, Berkely 2-clause,
-//  and MIT licenses.  It is also available as public domain source where 
+//  and MIT licenses.  It is also available as public domain source where
 //  permitted by law.
 //
 
@@ -81,15 +81,19 @@ impl RusticsRcSet {
 
     // Print the set and all its constituents (subsets and statistics).
 
-    pub fn print(&self, printer: Option<PrinterBox>) {
+    pub fn print(&self) {
+        self.print_opts(None, None);
+    }
+
+    pub fn print_opts(&self, printer: Option<PrinterBox>, title: Option<&str>) {
         for member in self.members.iter() {
             let member = (**member).borrow();
-            member.print(printer.clone());
+            member.print_opts(printer.clone(), title);
         }
 
         for subset in self.subsets.iter() {
             let subset = (**subset).borrow();
-            subset.print(printer.clone());
+            subset.print_opts(printer.clone(), title);
         }
     }
 
@@ -291,7 +295,7 @@ mod tests {
         for _i in 0..4 {
             let     subset  = parent_set.add_subset("generated subset", 4, 4);
             let mut subset  = (*subset).borrow_mut();
-                
+
             let window      = subset.add_integer_window(32, "generated subset window");
             let running     = subset.add_running_integer("generated subset running");
 
@@ -359,7 +363,7 @@ mod tests {
 
         let window_timer:  TimerBox = Rc::from(RefCell::new(ContinuingTimer::new(test_hz)));
         let running_timer: TimerBox = Rc::from(RefCell::new(ContinuingTimer::new(test_hz)));
-            
+
         let time_window  = set.add_time_window("time window", 32, window_timer);
         let running_time = set.add_running_time("running time", running_timer);
 
@@ -409,7 +413,7 @@ mod tests {
         drop(time_window_stat);
         drop(running_time_stat);
 
-        set.print(None);
+        set.print();
 
         let mut traverser = TestTraverser::new();
 
@@ -428,7 +432,7 @@ mod tests {
         add_stats(&mut (*subset_2).borrow_mut());
 
         println!("=========== Hierarchical Print");
-        set.print(None);
+        set.print();
 
         // Remove a subset and check that it goes away.
 
@@ -503,7 +507,7 @@ mod tests {
         let member = Rc::from(RefCell::new(RunningInteger::new("added as member")));
         set.add_member(member);
 
-        set.print(None);
+        set.print();
     }
 
     #[test]

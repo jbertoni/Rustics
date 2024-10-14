@@ -1,6 +1,6 @@
 //
 //  This code is available under the Berkeley 2-Clause, Berkely 2-clause,
-//  and MIT licenses.  It is also available as public domain source where 
+//  and MIT licenses.  It is also available as public domain source where
 //  permitted by law.
 //
 
@@ -8,12 +8,13 @@
 //!
 //! ## Types
 //!
-//! * Recording Integers
-//!
+//! * Statistics for Integer Values
 //!     * Integer statistics provide basic parameters, like the mean, and a pseudo-log histogram.
 //!     * For the pseudo-log histogram, the pseudo-log of a negative number n is defines as -log(-n).
 //!       The pseudo-log of 0 is defined as 0, and for convenience, the pseudo-log of -(2^64) is defined
-//!       as 63.  Logs are computed by rounding up any fractional part, so the pseudo-log of 5 is 3.
+//!       as 63.  Logs of positive values are computed by rounding up any fractional part, so the
+//!       pseudo-log of 5 is 3.  From the definition, the pseudo-log of -5 is -3.
+//!     * The values can be interpreted as time periods with a given hertz.
 //!
 //! * Integer statistics structs
 //!     * RunningInteger
@@ -39,8 +40,28 @@
 //!         * This type uses the IntegerWindow code to handle time intervals.  As with the
 //!           RunningTime type, values are printed in units of time.
 //!
-//! * Creating Sets
+//! * Hierarchial Statistics
+//!     * Hierarchical statistics contain sums of integer statistics objects, and can be
+//!       multi-level.  Values are recorded into an integer statistic of some kind.  When
+//!       the hierarchical struct receives a request to advance to a new statistics object,
+//!       the current statistic that is collecting data is pushed into a window, and a new
+//!       statistics object will be created to hold any new values to be recorded.
 //!
+//!     * When a programmable number of statistics objects have been pushed into a window,
+//!       these statistics are summed and the sum placed in a high level window.  The
+//!       summation is done recursively up to a programmed number of levels.  Each level
+//!       has a parameter specifying the number of objects to be summed.
+//!
+//!     * The lowest level, the one to which statistical data is recorded, can be configured
+//!       to push the current object and start a new one after a certain number of samples
+//!       have been recorded, or the advance() method can be invoked to move to a new
+//!       statistics object.
+//!
+//!     * Each level of statistics has a programmable "live" count that gives the number of
+//!       objects that are summed and pushed to the higher level, and a retention window, so
+//!       that statistics are kept for some time period after being summed.
+//!
+//! * Creating Sets
 //!     * The "arc_sets" and "rc_sets" modules implement a simple feature allowing the creation of sets
 //!       that accept statistics and subsets as members.
 //!
@@ -84,6 +105,8 @@ use time::Timer;
 
 pub mod arc_sets;
 pub mod rc_sets;
+pub mod hier;
+pub mod window;
 pub mod time;
 pub mod sum;
 
@@ -183,12 +206,12 @@ fn print_common_float_times(data: &Printable, hz: i64, printer: &mut dyn Printer
 // Format a time value for printing.
 
 pub fn scale_time(time: f64, hz: i64) -> (f64, String) {
-    let microsecond:f64 = 1_000.0;
-    let millisecond     = microsecond * 1000.0;
-    let second          = millisecond * 1000.0;
-    let minute          = 60.0 * second;
-    let hour            = 60.0 * minute;
-    let day             = hour * 24.0;
+    let microsecond = 1_000.0;
+    let millisecond = microsecond * 1000.0;
+    let second      = millisecond * 1000.0;
+    let minute      = 60.0 * second;
+    let hour        = 60.0 * minute;
+    let day         = hour * 24.0;
 
     // Convert the time to nanoseconds
 
@@ -551,8 +574,8 @@ impl LogHistogram {
     // Find the most common "log" bucket
 
     pub fn log_mode(&self) -> isize {
-        let mut mode: isize = 0;
-        let mut max: u64 = 0;
+        let mut mode = 0;
+        let mut max  =  0;
 
         for i in 0..self.negative.len() {
             if self.negative[i] > max {
@@ -663,8 +686,9 @@ pub trait Rustics {
     //   print          prints the statistics and pseudo-log histogram
     //                      The first argument is an optional title prefix.
 
-    fn print(&self, printer: Option<PrinterBox>);   // print the statistics
-    fn set_title(&mut self, title: &str);           // set the title for printing
+    fn print(&self);
+    fn print_opts(&self, printer: Option<PrinterBox>, title: Option<&str>);
+    fn set_title(&mut self, title: &str);
 
     // For internal use only.
     fn set_id(&mut self, index: usize);
@@ -681,6 +705,7 @@ pub trait Histogram {
 
 // Define the implementation of a very simple running integer sample space.
 
+#[derive(Clone)]
 pub struct RunningInteger {
     name:       String,
     title:      String,
@@ -858,7 +883,11 @@ impl Rustics for RunningInteger {
         self.log_histogram.log_mode() as i64
     }
 
-    fn print(&self, printer: Option<PrinterBox>) {
+    fn print(&self) {
+        self.print_opts(None, None);
+    }
+
+    fn print_opts(&self, printer: Option<PrinterBox>, title: Option<&str>) {
         let printer_box =
             if let Some(printer) = printer {
                 printer.clone()
@@ -866,7 +895,14 @@ impl Rustics for RunningInteger {
                 self.printer.clone()
             };
 
-        let printer = &mut *printer_box.lock().unwrap();
+        let title =
+            if let Some(title) = title {
+                title
+            } else {
+                &self.title
+            };
+
+        let printer  = &mut *printer_box.lock().unwrap();
 
         let n        = self.count;
         let min      = self.min;
@@ -879,7 +915,7 @@ impl Rustics for RunningInteger {
 
         let printable = Printable { n, min, max, log_mode, mean, variance, skewness, kurtosis };
 
-        printer.print(&self.title);
+        printer.print(title);
         print_common_integer(&printable, printer);
         print_common_float(&printable, printer);
         self.log_histogram.print(printer);
@@ -1186,12 +1222,23 @@ impl Rustics for IntegerWindow {
         self.stats_valid = false;
     }
 
-    fn print(&self, printer: Option<PrinterBox>) {
+    fn print(&self) {
+        self.print_opts(None, None);
+    }
+
+    fn print_opts(&self, printer: Option<PrinterBox>, title: Option<&str>) {
         let printer_box =
             if let Some(printer) = printer {
                 printer.clone()
             } else {
                 self.printer.clone()
+            };
+
+        let title =
+            if let Some(title) = title {
+                title
+            } else {
+                &self.title
             };
 
         let printer = &mut *printer_box.lock().unwrap();
@@ -1222,7 +1269,7 @@ impl Rustics for IntegerWindow {
 
         let printable = Printable { n, min, max, log_mode, mean, variance, skewness, kurtosis };
 
-        printer.print(&self.title);
+        printer.print(title);
         print_common_integer(&printable, printer);
         print_common_float(&printable, printer);
         self.log_histogram.print(printer);
@@ -1268,9 +1315,8 @@ impl Histogram for IntegerWindow {
     }
 }
 
+#[derive(Clone)]
 pub struct RunningTime {
-    // name:               String,
-    // title:              String,
     printer:            PrinterBox,
 
     running_integer:    Box<RunningInteger>,
@@ -1423,9 +1469,12 @@ impl Rustics for RunningTime {
     }
 
     // Functions for printing
-    //   print          actually prints
 
-    fn print(&self, printer: Option<PrinterBox>) {
+    fn print(&self) {
+        self.print_opts(None, None);
+    }
+
+    fn print_opts(&self, printer: Option<PrinterBox>, title: Option<&str>) {
         let printer_box =
             if let Some(printer) = printer {
                 printer.clone()
@@ -1433,8 +1482,14 @@ impl Rustics for RunningTime {
                 self.printer.clone()
             };
 
+        let title =
+            if let Some(title) = title {
+                title
+            } else {
+                &self.running_integer.title()
+            };
+
         let printer  = &mut *printer_box.lock().unwrap();
-        let title    = &self.running_integer.title();
         let n        = self.count();
         let min      = self.min_i64();
         let max      = self.max_i64();
@@ -1636,9 +1691,12 @@ impl Rustics for TimeWindow {
     }
 
     // Functions for printing
-    //   print          actually prints
 
-    fn print(&self, printer: Option<PrinterBox>) {
+    fn print(&self) {
+        self.print_opts(None, None);
+    }
+
+    fn print_opts(&self, printer: Option<PrinterBox>, title: Option<&str>) {
         let printer_box =
             if let Some(printer) = printer {
                 printer.clone()
@@ -1646,9 +1704,13 @@ impl Rustics for TimeWindow {
                 self.printer.clone()
             };
 
-        let printer   = &mut *printer_box.lock().unwrap();
+        let title =
+            if let Some(title) = title {
+                title
+            } else {
+                &self.integer_window.title()
+            };
 
-        let title     = self.integer_window.title();
         let crunched  = self.integer_window.crunch();
 
         let n         = self.integer_window.count();
@@ -1663,7 +1725,9 @@ impl Rustics for TimeWindow {
 
         let printable = Printable { n, min, max, log_mode, mean, variance, skewness, kurtosis };
 
-        printer.print(&title);
+        let printer   = &mut *printer_box.lock().unwrap();
+
+        printer.print(title);
         print_common_integer_times(&printable, self.hz, printer);
         print_common_float_times(&printable, self.hz, printer);
 
@@ -1809,11 +1873,12 @@ impl Rustics for Counter {
     }
 
     // Functions for printing:
-    //   print          prints the statistics and pseudo-log histogram
-    //                      The first argument is an optional title prefix.
-    //   set_title      sets the hierarchical title to be printed
 
-    fn print(&self, printer: Option<PrinterBox>) {
+    fn print(&self) {
+        self.print_opts(None, None);
+    }
+
+    fn print_opts(&self, printer: Option<PrinterBox>, title: Option<&str>) {
         let printer_box =
             if let Some(printer) = printer {
                 printer.clone()
@@ -1821,9 +1886,16 @@ impl Rustics for Counter {
                 self.printer.clone()
             };
 
+        let title =
+            if let Some(title) = title {
+                title
+            } else {
+                &self.title
+            };
+
         let printer = &mut *printer_box.lock().unwrap();
 
-        printer.print(&self.title);
+        printer.print(title);
         print_integer("Count", self.count, printer);
     }
 
@@ -1929,7 +2001,7 @@ mod tests {
         }
 
         let printer = Arc::new(Mutex::new(TestPrinter { test_output: "test header ======" } ));
-        stats.print(Some(printer));
+        stats.print_opts(Some(printer), None);
     }
 
     pub fn test_simple_integer_window() {
@@ -1941,14 +2013,14 @@ mod tests {
         }
 
         assert!(stats.log_mode() as usize == pseudo_log_index(stats.max_i64()));
-        stats.print(None);
+        stats.print();
         let sample = 100;
 
         for _i in 0..2 * window_size {
             stats.record_i64(sample);
         }
 
-        stats.print(None);
+        stats.print();
         assert!(stats.mean() == sample as f64);
         assert!(stats.log_mode() as usize == pseudo_log_index(sample));
     }
@@ -2041,7 +2113,7 @@ mod tests {
             time_stat.record_event();
         }
 
-        time_stat.print(None);
+        time_stat.print();
 
         // Okay, use a more restricted range of times.
 
@@ -2064,7 +2136,7 @@ mod tests {
         assert!(time_stat.min_i64() == 0);
         assert!(time_stat.max_i64() == limit * limit * limit);
 
-        time_stat.print(None);
+        time_stat.print();
 
         // Get a sample with easily calculated summary statistics
 
@@ -2076,7 +2148,7 @@ mod tests {
             time_stat.record_event();
         }
 
-        time_stat.print(None);
+        time_stat.print();
 
         // Cover all the scales.
 
@@ -2102,7 +2174,7 @@ mod tests {
             time *= 10;
         }
 
-        time_stat.print(None);
+        time_stat.print();
     }
 
     fn test_simple_time_window() {
@@ -2142,7 +2214,7 @@ mod tests {
             time_stat.record_event();
         }
 
-        time_stat.print(None);
+        time_stat.print();
 
         // Okay, use a more restricted range of times.
 
@@ -2160,7 +2232,7 @@ mod tests {
         assert!(time_stat.min_i64() == 0);
         assert!(time_stat.max_i64() == limit * limit * limit);
 
-        time_stat.print(None);
+        time_stat.print();
 
         // Get a sample with easily calculated summary statistics
 
@@ -2172,7 +2244,7 @@ mod tests {
             time_stat.record_event();
         }
 
-        time_stat.print(None);
+        time_stat.print();
 
         // Cover all the scales.
 
@@ -2191,7 +2263,7 @@ mod tests {
             time *= 10;
         }
 
-        time_stat.print(None);
+        time_stat.print();
     }
 
     fn test_simple_count() {
@@ -2209,18 +2281,18 @@ mod tests {
 
         assert!(counter.count == expected);
 
-        counter.print(None);
+        counter.print();
     }
 
     #[test]
-    pub fn run_basic_tests() {
+    pub fn run_tests() {
         test_commas();
         test_log_histogram();
         test_pseudo_log();
         test_simple_running_integer();
         test_simple_integer_window();
-        test_simple_running_time();
         test_simple_time_window();
+        test_simple_running_time();
         test_simple_count();
     }
 }

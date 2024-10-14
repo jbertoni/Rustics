@@ -7,7 +7,7 @@
 //  Sort a set by absolute value to improve the accuracy of summation.
 
 pub fn sort(input: &mut [f64]) {
-    input.sort_by(|a, b| a.abs().partial_cmp(&b.abs()).unwrap())    
+    input.sort_by(|a, b| a.abs().partial_cmp(&b.abs()).unwrap())
 }
 
 // Implement a Kahan-Babushka-Klein summation routine.  Add a
@@ -25,7 +25,7 @@ pub fn sum(input:  &mut [f64]) -> f64 {
     for i in 0..input.len() {
         let mut t = sum + input[i];
 
-        let c = 
+        let c =
             if sum.abs() >= input[i].abs() {
                 (sum - t) + input[i]
             } else {
@@ -54,7 +54,7 @@ mod tests {
     use super::*;
 
     #[test]
-    pub fn simple_test() {
+    pub fn run_tests() {
         let     limit  = 16;
         let mut inputs = Vec::<f64>::new();
 

@@ -489,9 +489,9 @@ impl Hier for HierInteger {
 mod tests {
     use super::*;
 
-    fn make_hier_integer(name: &str, window_0_size: usize) -> HierInteger {
-        let     levels      = 3;
-        let     dimension   = HierDimension::new(window_0_size, 3 * window_0_size);
+    fn make_hier_integer(name: &str, level_0_period: usize, auto_next: usize) -> HierInteger {
+        let     levels      = 4;
+        let     dimension   = HierDimension::new(level_0_period, 3 * level_0_period);
         let mut dimensions  = Vec::<HierDimension>::with_capacity(levels);
 
         // Push the level 0 descriptor.
@@ -500,38 +500,42 @@ mod tests {
 
         // Create a hierarchy.
 
-        let mut window_size = 4;
+        let mut period = 4;
 
         for _i in 1..levels {
-            let dimension = HierDimension::new(window_size, 3 * window_size);
+            let dimension = HierDimension::new(period, 3 * period);
 
             dimensions.push(dimension);
 
-            window_size += 2;
+            period += 2;
         }
 
-        // Create the descriptor, and set auto_advance to match the level 0
-        // window size.  A different value might make for better testing.
-
-        let descriptor = HierDescriptor::new(dimensions, Some(window_0_size));
+        let descriptor = HierDescriptor::new(dimensions, Some(auto_next));
 
         HierInteger::new(name, descriptor).unwrap()
     }
 
+    // This is a fairly straightforward test that just pushes a lot of
+    // values into a HierInteger struct.  It is long because it takes a
+    // fair number of operations to force higer-level statistics into
+    // use.
+
     fn simple_hier_test() {
-        let     window_size    = 4;
-        let     signed_window  = window_size as i64;
-        let     expected_count = window_size as u64;
+        let     auto_next      = 4;
+        let     level_0_period = 4;
+        let     signed_window  = auto_next as i64;
         let mut events         = 0;
         let mut sum_of_events  = 0;
-        let mut hier_integer   = make_hier_integer("hier test 1", window_size);
+
+        let mut hier_integer   = make_hier_integer("hier test 1", level_0_period, auto_next);
 
         // Check that the struct matches our expectations.
 
-        let auto_next = hier_integer.auto_next;
-
+        assert!(auto_next == hier_integer.auto_next);
         assert!(hier_integer.stats[0].len() == 1);
-        assert!(auto_next == window_size);
+        assert!(hier_integer.dimensions[0].period == level_0_period);
+
+        let expected_count = auto_next as u64;
 
         for i in 0..signed_window {
             hier_integer.record_i64(i);
@@ -610,7 +614,7 @@ mod tests {
         assert!(hier_integer.mean()    == expected_mean           );
 
         // Compute the size of level 1.  We push a new stat onto
-        // level zero every window_size events.  From then on,
+        // level zero every auto_next events.  From then on,
         // the period at the level defines what we do.
 
         let level_0_period     = hier_integer.dimensions[0].period;
@@ -629,7 +633,7 @@ mod tests {
         for i in 0..(auto_next * level_0_period) as i64 {
             hier_integer.record_i64(i);
             hier_integer.record_i64(-i);
-            
+
             events += 2;
             // sum_of_events += i + -i;
         }
@@ -689,9 +693,44 @@ mod tests {
         assert!(stat.mean() == expected_mean);
     }
 
+    // Shove enough events into the stat to get a level 3 entry.  Check that
+    // the count and the mean of the level 3 stat match our expectations.
+
+    fn long_test() {
+        let     auto_next      = 2;
+        let     level_0_period = 4;
+        let mut hier_integer   = make_hier_integer("long test", level_0_period, auto_next);
+        let mut events         = 0;
+
+        while hier_integer.stats[3].len() == 0 {
+            events += 1;
+            hier_integer.record_i64(events);
+        }
+
+        let     dimensions         = &hier_integer.dimensions;
+        let mut events_per_level_3 = auto_next;
+
+        for i in 0..dimensions.len() - 1 {
+            events_per_level_3 *= dimensions[i].period;
+        }
+
+        let stat = hier_integer.stats[3].newest().unwrap();
+
+        let events_in_stat = (events - 1) as f64;
+        let sum            = (events_in_stat * (events_in_stat + 1.0)) / 2.0;
+        let mean           = sum / events_in_stat;
+
+        println!("stats.mean() {}, expected {}", stat.mean(), mean);
+
+        assert!(stat.count() as i64 == events - 1               );
+        assert!(stat.count() as i64 == events_per_level_3 as i64);
+        assert!(stat.mean()         == mean                     );
+    }
+
     #[test]
     fn run_tests() {
         println!("Running the hierarchical stats tests.");
         simple_hier_test();
+        long_test();
     }
 }

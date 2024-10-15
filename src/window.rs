@@ -281,7 +281,7 @@ impl<'a, T> WindowIterator<'a, T> {
 
         // Now compute the first index.  Make a first guess.
 
-        let index = 
+        let index =
             match scan_type {
                 ScanType::All  => {
                     if window_not_full {
@@ -306,7 +306,7 @@ impl<'a, T> WindowIterator<'a, T> {
                     }
                 }
             };
-                        
+
         assert!(index < window.data.len());
 
         WindowIterator { window, index, remaining }

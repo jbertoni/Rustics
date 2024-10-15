@@ -766,7 +766,7 @@ pub fn sum_running(exports: &Vec::<RunningImport>) -> RunningImport {
         count    += export.count;
         min       = std::cmp::min(min, export.min);
         max       = std::cmp::max(max, export.max);
-        
+
         sum_log_histogram(&mut log_histogram, &export.log_histogram);
 
         mean_vec.push(export.mean * export.count as f64);

@@ -511,10 +511,10 @@ impl Hier for HierInteger {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::*;
 
-    fn make_hier_integer(name: &str, level_0_period: usize, auto_next: usize) -> HierInteger {
+    pub fn make_hier_integer(name: &str, level_0_period: usize, auto_next: usize) -> HierInteger {
         let     levels      = 4;
         let     dimension   = HierDimension::new(level_0_period, 3 * level_0_period);
         let mut dimensions  = Vec::<HierDimension>::with_capacity(levels);

@@ -267,6 +267,7 @@ impl RusticsArcSet {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::hier::HierInteger;
     use crate::Printer;
     use std::cell::RefCell;
     use std::rc::Rc;
@@ -545,6 +546,10 @@ mod tests {
         }
     }
 
+    fn new_hier_integer() -> HierInteger {
+        crate::hier::tests::make_hier_integer("arc test", 4, 8)
+    }
+
     fn sample_usage() {
         // The last two parameters to new() are size hints, and need not be correct.
         // The same is true for add_subset.
@@ -595,6 +600,15 @@ mod tests {
         set.add_member(member);
 
         set.print_opts(Some(printer.clone()), None);
+
+        // Try adding a hierarchical statistic.
+
+        let hier_integer = new_hier_integer();
+        let member       = Arc::from(Mutex::new(hier_integer));
+
+        set.add_member(member);
+
+        set.print();
     }
 
     #[test]

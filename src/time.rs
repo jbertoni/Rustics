@@ -135,10 +135,10 @@ mod tests {
 
         clock.start();
 
-        for i in 1..10 {
+        for _i in 1..10 {
             sleep(sleep_time);
             let interval = clock.finish();
-            println!(" interval {} = {}", i, interval);
+
             assert!(interval >= base_interval);
             assert!(interval < base_interval + (base_interval / 20));
         }
@@ -180,7 +180,6 @@ mod tests {
 
         for _i in 1..5 {
             let interval = clock.finish();
-            println!("  result {} == predict {}", interval, increment);
             assert!(interval == increment);
 
             // Keep our increment in sync with the test clock.

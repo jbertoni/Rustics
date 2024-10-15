@@ -69,7 +69,7 @@ pub trait Hier {
     fn print_all(&self, printer: Option<PrinterBox>, title: Option<&str>);
             // Print the entire statistics array.
 
-    fn traverse(&mut self, traverser: &mut dyn HierTraverser);
+    fn traverse_live(&mut self, traverser: &mut dyn HierTraverser);
             // Traverse the statistics.
 
     fn advance(&mut self);
@@ -453,7 +453,7 @@ impl Hier for HierInteger {
 
     // Traverse the live statistics.
 
-    fn traverse(&mut self, traverser: &mut dyn HierTraverser) {
+    fn traverse_live(&mut self, traverser: &mut dyn HierTraverser) {
         for level in &self.stats {
             for i in 0..level.live_len() {
                 if let Some(stat) = level.index_live(i) {
@@ -779,8 +779,29 @@ mod tests {
         let stat = hier_integer.stats[2].newest().unwrap();
 
         stat.print();
+        hier_integer.print_all(None, None);
+
         assert!(stat.mean() == expected_mean);
+
         println!("simple_hier_test:  {} events, sum {}", events, sum_of_events);
+    }
+
+    struct TestTraverser {
+        count:  i64,
+    }
+
+    impl TestTraverser {
+        pub fn new() -> TestTraverser {
+            let count = 0;
+
+            TestTraverser { count }
+        }
+    }
+
+    impl HierTraverser for TestTraverser {
+        fn visit(&mut self, _member: &dyn Rustics) {
+            self.count += 1;
+        }
     }
 
     // Shove enough events into the stat to get a level 3 entry.  Check that
@@ -812,11 +833,28 @@ mod tests {
         let sum            = (events_in_stat * (events_in_stat + 1.0)) / 2.0;
         let mean           = sum / events_in_stat;
 
-        println!("stats.mean() {}, expected {}", stat.mean(), mean);
+        println!("long_test:  stats.mean() {}, expected {}", stat.mean(), mean);
 
         assert!(stat.count() as i64 == events - 1               );
         assert!(stat.count() as i64 == events_per_level_3 as i64);
         assert!(stat.mean()         == mean                     );
+
+        hier_integer.print_all(None, None);
+
+        // Do a quick test of the traverser.
+
+        let mut traverser = TestTraverser::new();
+        let mut predicted = 0;
+
+        hier_integer.traverse_live(&mut traverser);
+
+        for level in 0..hier_integer.dimensions.len() {
+            predicted += hier_integer.live_len(level) as i64;
+        }
+
+        println!("long_test:  traversed {} stats structs, predicted {}",
+            traverser.count, predicted);
+        assert!(traverser.count == predicted);
     }
 
     #[test]

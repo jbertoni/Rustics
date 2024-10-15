@@ -62,11 +62,7 @@ impl<T> Window<T> {
         self.data.is_empty()
     }
 
-    pub fn len(&self) -> usize {
-        self.data.len()
-    }
-
-    pub fn index_newest(&self) -> usize {
+    fn index_newest(&self) -> usize {
         assert!(!self.data.is_empty());
 
         let result =
@@ -294,12 +290,12 @@ impl<'a, T> WindowIterator<'a, T> {
                     if partial_scan {
                         0
                     } else if window_not_full {
-                        window.len() - scan_limit
+                        window.all_len() - scan_limit
                     } else {
                         let mut result = window.current_index + retain_limit;
 
-                        if result >= window.len() {
-                            result -= window.len();
+                        if result >= window.all_len() {
+                            result -= window.all_len();
                         }
 
                         result

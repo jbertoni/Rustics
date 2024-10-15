@@ -46,21 +46,24 @@ impl HierDescriptor {
 }
 
 pub struct HierIndex {
+    set:   HierSet,
     level: usize,
     which: usize,
 }
 
+pub enum HierSet {
+    All,
+    Live,
+}
+
 impl HierIndex {
-    pub fn new(level: usize, which: usize) -> HierIndex {
-        HierIndex { level, which }
+    pub fn new(set: HierSet, level: usize, which: usize) -> HierIndex {
+        HierIndex { set, level, which }
     }
 }
 
 pub trait Hier {
-    fn print_lowest(&self);
-            // Print the newest element of the lowest level
-
-    fn print_lowest_opts(&self, index: HierIndex, printer: Option<PrinterBox>, title: Option<&str>);
+    fn print_index_opts(&self, index: HierIndex, printer: Option<PrinterBox>, title: Option<&str>);
             // Print a member of the statistics matrix
 
     fn print_all(&self, printer: Option<PrinterBox>, title: Option<&str>);
@@ -71,6 +74,9 @@ pub trait Hier {
 
     fn advance(&mut self);
             // sum the live elements of the given level into the next level up.
+
+    fn live_len(&self, level: usize) -> usize;
+    fn all_len (&self, level: usize) -> usize;
 }
 
 pub trait HierTraverser {
@@ -179,7 +185,13 @@ impl HierInteger {
                 &self.title
             };
 
-        let title = format!("{}[{}][{}]", title, level, which);
+        let set =
+            match index.set {
+                HierSet::Live => { "live" }
+                HierSet::All  => { "all"  }
+            };
+
+        let title = format!("{}[{}].{}[{}]", title, level, set, which);
 
         let printer_box =
             if let Some(printer) = printer_opt.clone() {
@@ -196,14 +208,19 @@ impl HierInteger {
             return;
         }
 
-        let target = self.stats[level].index_all(which);
+
+        let target =
+            match index.set {
+                HierSet::Live => { self.stats[level].index_live(which) }
+                HierSet::All  => { self.stats[level].index_all (which) }
+            };
 
         let target =
             if let Some(target) = target {
                 target
             } else {
                 printer.print(&title);
-                printer.print(&format!("  That level has only {} entries.", self.stats[level].len()));
+                printer.print("  That index is out of bounds.");
                 return;
             };
 
@@ -354,11 +371,15 @@ impl Rustics for HierInteger {
     //                      specified
 
     fn print(&self) {
-        self.current().print_opts(None, None);
+        let index = HierIndex::new(HierSet::Live, 0, self.live_len(0) - 1);
+
+        self.local_print(index, None, None);
     }
 
     fn print_opts(&self, printer: Option<PrinterBox>, title: Option<&str>) {
-        self.local_print(HierIndex::new(0, 0), printer, title);
+        let index = HierIndex::new(HierSet::Live, 0, self.live_len(0) - 1);
+
+        self.local_print(index, printer, title);
     }
 
     fn set_title(&mut self, title: &str) {
@@ -398,11 +419,7 @@ impl Rustics for HierInteger {
 impl Hier for HierInteger {
     // Print a member of the statistics matrix
 
-    fn print_lowest(&self) {
-        self.local_print(HierIndex::new(0, 0), None, None);
-    }
-
-    fn print_lowest_opts(&self, index: HierIndex, printer: Option<PrinterBox>, title: Option<&str>) {
+    fn print_index_opts(&self, index: HierIndex, printer: Option<PrinterBox>, title: Option<&str>) {
         self.local_print(index, printer, title);
     }
 
@@ -419,8 +436,8 @@ impl Hier for HierInteger {
         for i in 0..self.stats.len() {
             let level = &self.stats[i];
 
-            for j in 0..level.len() {
-                let title = format!("{}[{}][{}]", base_title, i, j);
+            for j in 0..level.all_len() {
+                let title = format!("{}[{}].all[{}]", base_title, i, j);
 
                 let stat =
                     if let Some(element) = self.stats[i].index_all(j) {
@@ -483,6 +500,14 @@ impl Hier for HierInteger {
 
         self.stats[0].push(RunningInteger::new(&self.name));
     }
+
+    fn all_len(&self, level: usize) -> usize {
+        self.stats[level].all_len()
+    }
+
+    fn live_len(&self, level: usize) -> usize {
+        self.stats[level].live_len()
+    }
 }
 
 #[cfg(test)]
@@ -515,6 +540,75 @@ mod tests {
         HierInteger::new(name, descriptor).unwrap()
     }
 
+    fn compute_events_per_entry(hier_integer: &HierInteger, level: usize) -> i64 {
+        let mut result = hier_integer.auto_next as i64;
+
+        assert!(result > 0);
+
+        for i in 0..level {
+            result *= hier_integer.dimensions[i].period as i64;
+        }
+
+        result
+    }
+
+    fn roundup(value: i64, multiple: i64) -> i64 {
+        (((value + multiple - 1) / multiple)) * multiple
+    }
+
+    fn compute_len(hier_integer: &HierInteger, level: usize, set: HierSet, events: i64) -> usize {
+        assert!(events > 0);
+
+        let recorded_events =
+            if level == 0 {
+                let auto_next = hier_integer.auto_next as i64;
+                
+                roundup(events, auto_next)
+            } else {
+                events - 1
+            };
+
+        let     events_per_entry = compute_events_per_entry(&hier_integer, level);
+        let     pushes           = recorded_events / events_per_entry;
+        let     period           = hier_integer.dimensions[level].period as i64;
+        let     size_limit       = hier_integer.dimensions[level].retention as i64;
+
+        let mut length = 
+            match set {
+                HierSet::Live => { std::cmp::min(pushes, period    ) }
+                HierSet::All  => { std::cmp::min(pushes, size_limit) }
+            };
+
+        if length == 0 && level == 0 {
+            length = 1;
+        }
+
+        length as usize
+    }
+
+    fn check_sizes(hier_integer: &HierInteger, events: i64, verbose: bool) {
+        for level in 0..hier_integer.stats.len() {
+            let expected_all_len  = compute_len(hier_integer, level, HierSet::All,  events);
+            let expected_live_len = compute_len(hier_integer, level, HierSet::Live, events);
+
+            let actual_all_len    = hier_integer.stats[level].all_len();
+            let actual_live_len   = hier_integer.stats[level].live_len();
+
+            if verbose {
+                println!("check_sizes:  at level {}, events {}", level, events);
+
+                println!("    expected_all {}, expected_live {}",
+                    expected_all_len, expected_live_len);
+
+                println!("    actual_all {}, actual_live {}",
+                    actual_all_len, actual_live_len);
+            }
+
+            assert!(actual_all_len  == expected_all_len );
+            assert!(actual_live_len == expected_live_len);
+        }
+    }
+
     // This is a fairly straightforward test that just pushes a lot of
     // values into a HierInteger struct.  It is long because it takes a
     // fair number of operations to force higer-level statistics into
@@ -523,7 +617,7 @@ mod tests {
     fn simple_hier_test() {
         let     auto_next      = 4;
         let     level_0_period = 4;
-        let     signed_window  = auto_next as i64;
+        let     signed_auto    = auto_next as i64;
         let mut events         = 0;
         let mut sum_of_events  = 0;
 
@@ -532,101 +626,95 @@ mod tests {
         // Check that the struct matches our expectations.
 
         assert!(auto_next == hier_integer.auto_next);
-        assert!(hier_integer.stats[0].len() == 1);
+        assert!(hier_integer.stats[0].all_len() == 1);
         assert!(hier_integer.dimensions[0].period == level_0_period);
 
         let expected_count = auto_next as u64;
 
-        for i in 0..signed_window {
+        for i in 0..signed_auto {
             hier_integer.record_i64(i);
 
             events        += 1;
             sum_of_events += i;
 
-            if i < signed_window - 1 {
+            if i < signed_auto - 1 {
                 let mean  = sum_of_events as f64 / (i + 1) as f64;
 
-                assert!(hier_integer.stats[0].len() == 1    );
-                assert!(hier_integer.count() as i64 == i + 1);
-                assert!(hier_integer.min_i64()      == 0    );
-                assert!(hier_integer.max_i64()      == i    );
-                assert!(hier_integer.mean()         == mean );
+                let all_len_0 = hier_integer.stats[0].all_len();
+                let count     = (i + 1) as u64;
+
+                assert!(all_len_0              == 1    );
+                assert!(hier_integer.count()   == count);
+                assert!(hier_integer.min_i64() == 0    );
+                assert!(hier_integer.max_i64() == i    );
+                assert!(hier_integer.mean()    == mean );
+
+                check_sizes(&hier_integer, events, false);
             }
         }
 
         let mean = sum_of_events as f64 / events as f64;
 
-        assert!(hier_integer.stats[0].len() == 1                );
-        assert!(hier_integer.count() as i64 == signed_window    );
-        assert!(hier_integer.min_i64()      == 0                );
-        assert!(hier_integer.max_i64()      == signed_window - 1);
-        assert!(hier_integer.mean()         == mean             );
+        assert!(hier_integer.count() as i64 == signed_auto    );
+        assert!(hier_integer.min_i64()      == 0              );
+        assert!(hier_integer.max_i64()      == signed_auto - 1);
+        assert!(hier_integer.mean()         == mean           );
+
+        check_sizes(&hier_integer, events, false);
         hier_integer.print();
 
-        assert!(hier_integer.count() == events);
+        assert!(hier_integer.count() == events as u64);
 
         let mut sum = 0;
 
-        for i in 0..signed_window {
-            let value = signed_window + i;
+        for i in 0..signed_auto {
+            let value = signed_auto + i;
 
             hier_integer.record_i64(value);
             sum           += value;
             events        += 1;
             sum_of_events += value;
+
+            check_sizes(&hier_integer, events, false);
         }
 
 
-        assert!(hier_integer.stats[0].len() == 2);
+        assert!(hier_integer.stats[0].all_len() == 2);
         hier_integer.print();
 
-        let floating_window = signed_window as f64;
+        let floating_window = signed_auto as f64;
         let expected_mean   = (sum as f64) / floating_window;
 
-        assert!(hier_integer.count()   == expected_count       );
-        assert!(hier_integer.min_i64() == signed_window        );
-        assert!(hier_integer.max_i64() == 2 * signed_window - 1);
-        assert!(hier_integer.mean()    == expected_mean        );
+        assert!(hier_integer.count()   == expected_count     );
+        assert!(hier_integer.min_i64() == signed_auto        );
+        assert!(hier_integer.max_i64() == 2 * signed_auto - 1);
+        assert!(hier_integer.mean()    == expected_mean      );
 
         let mut sum = 0;
 
-        for i in 0..2 * signed_window {
+        for i in 0..2 * signed_auto {
             let value = -i;
 
             hier_integer.record_i64(value);
 
-            if i >= signed_window {
+            if i >= signed_auto {
                 sum += value;
             }
 
             events        += 1;
             sum_of_events += value;
+
+            check_sizes(&hier_integer, events, false);
         }
 
-        assert!(hier_integer.stats[0].len() == 4);
         hier_integer.print();
 
         let expected_mean = sum as f64 / floating_window;
 
-        assert!(hier_integer.count()   == expected_count          );
-        assert!(hier_integer.min_i64() == -(2 * signed_window - 1));
-        assert!(hier_integer.max_i64() == -signed_window          );
-        assert!(hier_integer.mean()    == expected_mean           );
-
-        // Compute the size of level 1.  We push a new stat onto
-        // level zero every auto_next events.  From then on,
-        // the period at the level defines what we do.
-
-        let level_0_period     = hier_integer.dimensions[0].period;
-        let level_1_period     = hier_integer.dimensions[1].period;
-
-        let events_per_level_0 = auto_next;
-        let events_per_level_1 = events_per_level_0 * level_0_period;
-        let events_per_level_2 = events_per_level_0 * level_0_period * level_1_period;
-
-        let expected_len       = (events as usize - 1) / events_per_level_1;
-
-        assert!(hier_integer.stats[1].len() == expected_len);
+        assert!(hier_integer.count()   == expected_count        );
+        assert!(hier_integer.min_i64() == -(2 * signed_auto - 1));
+        assert!(hier_integer.max_i64() == -signed_auto          );
+        assert!(hier_integer.mean()    == expected_mean         );
 
         // Now force a level 1 stat object.
 
@@ -636,33 +724,33 @@ mod tests {
 
             events += 2;
             // sum_of_events += i + -i;
+
+            check_sizes(&hier_integer, events, false);
         }
 
-        let expected_len = (events as usize - 1) / events_per_level_1;
+        let expected_len = compute_len(&hier_integer, 1, HierSet::All,  events);
+        let actual_len   = hier_integer.stats[1].all_len();
 
-        assert!(hier_integer.stats[1].len() == expected_len);
+        assert!(expected_len > 0);
+        assert!(actual_len == expected_len);
 
         for i in 0..(auto_next * level_0_period / 2) as i64 {
             hier_integer.record_i64(i);
 
             events        += 1;
             sum_of_events += i;
+
+            check_sizes(&hier_integer, events, false);
         }
-
-        let expected_len = (events as usize - 1) / events_per_level_1;
-
-        assert!(hier_integer.stats[1].len() == expected_len);
 
         for i in 0..(auto_next * level_0_period / 2) as i64 {
             hier_integer.record_i64(i);
 
             events        += 1;
             sum_of_events += i;
+
+            check_sizes(&hier_integer, events, false);
         }
-
-        let expected_len = (events as usize - 1) / events_per_level_1;
-
-        assert!(hier_integer.stats[1].len() == expected_len);
 
         // Compute the expected mean once we force level 0 to
         // be summed.
@@ -679,18 +767,20 @@ mod tests {
         events        += 1;
         sum_of_events += value;
 
-        let expected_len = (events as usize - 1) / events_per_level_2;
+        let expected_len = compute_len(&hier_integer, 2, HierSet::All, events);
+
+        assert!(expected_len == 1);
 
         // Check the length.  Use a hardcode value, too, to check the
         // sanity of the preceding code.
 
-        assert!(hier_integer.stats[2].len() == expected_len);
-        assert!(expected_len == 1);
+        assert!(hier_integer.stats[2].all_len() == expected_len);
 
         let stat = hier_integer.stats[2].newest().unwrap();
 
         stat.print();
         assert!(stat.mean() == expected_mean);
+        println!("simple_hier_test:  {} events, sum {}", events, sum_of_events);
     }
 
     // Shove enough events into the stat to get a level 3 entry.  Check that
@@ -702,9 +792,11 @@ mod tests {
         let mut hier_integer   = make_hier_integer("long test", level_0_period, auto_next);
         let mut events         = 0;
 
-        while hier_integer.stats[3].len() == 0 {
+        while hier_integer.stats[3].all_len()  == 0 {
             events += 1;
             hier_integer.record_i64(events);
+
+            check_sizes(&hier_integer, events, false);
         }
 
         let     dimensions         = &hier_integer.dimensions;

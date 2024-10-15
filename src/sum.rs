@@ -15,7 +15,7 @@ pub fn sort(input: &mut [f64]) {
 // in cost.  See the Wikipedia page on Kahan summation for
 // details.
 
-pub fn sum(input:  &mut [f64]) -> f64 {
+pub fn kbk_sum(input: &mut [f64]) -> f64 {
     sort(input);
 
     let mut sum = 0.0;
@@ -62,7 +62,7 @@ mod tests {
             inputs.push(i as f64);
         }
 
-        let result = sum(&mut inputs);
+        let result = kbk_sum(&mut inputs);
         println!("vector sum 1:  {}", result);
 
         //  Compute the expected value of the sum
@@ -79,7 +79,7 @@ mod tests {
             inputs.push(-i as f64);
         }
 
-        let result = sum(&mut inputs);
+        let result = kbk_sum(&mut inputs);
         println!("vector sum 2:  {}", result);
 
         assert!(result == 0.0);
@@ -95,7 +95,7 @@ mod tests {
         inputs.push(1.0);
         inputs.push(-large);
 
-        let result = sum(&mut inputs);
+        let result = kbk_sum(&mut inputs);
 
         println!("vector sum 3:  {}", result);
         assert!(result == 2.0);

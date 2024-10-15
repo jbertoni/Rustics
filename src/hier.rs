@@ -10,7 +10,9 @@ use super::Rustics;
 use super::window::Window;
 use super::PrinterBox;
 use super::RunningInteger;
+use super::RunningImport;
 use super::stdout_printer;
+use super::sum_running;
 use crate::TimerBox;
 
 #[derive(Clone, Copy)]
@@ -37,12 +39,7 @@ pub struct HierDescriptor {
 
 impl HierDescriptor {
     pub fn new(dimensions: Vec<HierDimension>, auto_next: Option<usize>) -> HierDescriptor {
-        let auto_next =
-            if let Some(auto_next) = auto_next {
-                auto_next
-            } else {
-                0
-            };
+        let auto_next = auto_next.unwrap_or(0);
 
         HierDescriptor { dimensions, auto_next }
     }
@@ -72,7 +69,7 @@ pub trait Hier {
     fn traverse(&mut self, traverser: &mut dyn HierTraverser);
             // Traverse the statistics.
 
-    fn advance(&mut self, level: usize);
+    fn advance(&mut self);
             // sum the live elements of the given level into the next level up.
 }
 
@@ -88,6 +85,8 @@ pub struct HierInteger {
     id:            usize,
     dimensions:    Vec<HierDimension>,
     auto_next:     usize,
+    event_count:   usize,
+    advance_count: usize,
 
     stats:         Stats,
 
@@ -112,8 +111,10 @@ impl HierInteger {
         let title         = name.clone();
         let id            = 0;
         let dimensions    = dimensions.to_vec();
-        let printer       = stdout_printer();
         let auto_next     = descriptor.auto_next;
+        let event_count   = 0;
+        let advance_count = 0;
+        let printer       = stdout_printer();
 
         // Create the initial statistics array.
 
@@ -121,7 +122,11 @@ impl HierInteger {
 
         stats[0].push(RunningInteger::new(&name));
 
-        let new = HierInteger { name, title, id, dimensions, auto_next, stats, printer };
+        let new = HierInteger {
+            name,           title,      id,
+            dimensions,     auto_next,  event_count,
+            advance_count,  stats,      printer
+        };
 
         Some(new)
     }
@@ -197,21 +202,44 @@ impl HierInteger {
 
         target.print_opts(printer_opt, title_opt);
     }
+
+    fn exports(&self, level: usize) -> Vec<RunningImport> {
+        let mut exports = Vec::<RunningImport>::new();
+        let     level   = &self.stats[level];
+
+        // Gather the statistics to sum.
+
+        for stat in level.iter_live() {
+            exports.push(stat.export());
+        }
+
+        exports
+    }
+
+    fn new_from_exports(&self, exports: &Vec<RunningImport>) -> RunningInteger {
+        let name    = &self.name;
+        let title   = &self.title;
+        let printer = self.printer.clone();
+        let sum     = sum_running(exports);
+
+        RunningInteger::new_import(name, title, printer, sum)
+    }
 }
 
 impl Rustics for HierInteger {
     fn record_i64(&mut self, sample: i64) {
-        let auto_next  = self.auto_next;
-        // let dimensions = self.dimensions[0];
-        let current    = self.current_mut();
+        let current = self.current_mut();
 
         current.record_i64(sample);
 
+        // Push a new statistic if we've reached the event limit
+        // for the current one.
+
         if
-            auto_next != 0
-        &&  current.count() % self.auto_next as u64 == 0
-        &&  self.stats.len() > 1 {
-            self.advance(0);
+            self.auto_next != 0
+        &&  self.stats.len() > 1
+        &&  self.event_count % self.auto_next == 0 {
+            self.advance();
         }
     }
 
@@ -346,6 +374,10 @@ impl Rustics for HierInteger {
     fn histo_log_mode(&self) -> i64 {
         self.current().histo_log_mode()
     }
+
+    fn to_running_integer(&mut self) -> Option<&mut RunningInteger> {
+        None
+    }
 }
 
 impl Hier for HierInteger {
@@ -398,27 +430,29 @@ impl Hier for HierInteger {
     // onto the higher level.  That level might need to be summed,
     // as well.
 
-    fn advance(&mut self, level: usize) {
-        if level >= self.stats.len() - 1 {
-            panic!("HierInteger::advance:  Level {} is too high", level);
-        }
+    fn advance(&mut self) {
+        // Create the summary statistics struct.
 
-        for _stat in self.stats[level].iter_live() {
-        }
-        // let sum = self.sum_level(level);
-        // push the sum
+        let exports  = self.exports(0);
+        let new_stat = self.new_from_exports(&exports);
 
-        // if 
-        //     level < self.stats.len() - 1
-        // &&  self.dimensions[level + 1].auto_advance {
-        // &&  self.level[level + 1].push_count %
-        // )
-        
-        self.advance(level + 1);
+        self.stats[0].push(new_stat);
 
-        if level == 0 {
-            self.stats[0].push(RunningInteger::new(&self.name));
-            // self.stats[0].newest().set_title();
+        self.advance_count += 1;
+
+        let mut advance_point = self.dimensions[0].period;
+
+        for i in 1..self.dimensions.len() - 1 {
+            advance_point *= self.dimensions[i].period;
+
+            if self.advance_count % advance_point == 0 {
+                let exports  = self.exports(i);
+                let new_stat = self.new_from_exports(&exports);
+
+                self.stats[i + 1].push(new_stat);
+            } else {
+                break;
+            }
         }
     }
 }

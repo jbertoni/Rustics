@@ -100,6 +100,8 @@ use std::sync::Arc;
 use std::any::Any;
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::cmp::min;
+use std::cmp::max;
 
 use time::Timer;
 
@@ -109,6 +111,8 @@ pub mod hier;
 pub mod window;
 pub mod time;
 pub mod sum;
+
+use sum::kbk_sum;
 
 pub type PrinterBox = Arc<Mutex<dyn Printer>>;
 pub type TimerBox = Rc<RefCell<dyn Timer>>;
@@ -683,8 +687,6 @@ pub trait Rustics {
     fn clear(&mut self);                     // clear all the statistics
 
     // Functions for printing
-    //   print          prints the statistics and pseudo-log histogram
-    //                      The first argument is an optional title prefix.
 
     fn print(&self);
     fn print_opts(&self, printer: Option<PrinterBox>, title: Option<&str>);
@@ -696,6 +698,7 @@ pub trait Rustics {
     fn equals(&self, other: &dyn Rustics) -> bool;
     fn generic(&self)                     -> &dyn Any;
     fn histo_log_mode(&self)              -> i64;
+    fn to_running_integer(&mut self)      -> Option<&mut RunningInteger>;
 }
 
 pub trait Histogram {
@@ -725,16 +728,120 @@ pub struct RunningInteger {
     printer:    PrinterBox,
 }
 
+pub struct RunningImport {
+    pub count:      u64,
+    pub mean:       f64,
+    pub moment_2:   f64,
+    pub moment_3:   f64,
+    pub moment_4:   f64,
+
+    pub min:        i64,
+    pub max:        i64,
+
+    pub log_histogram:    LogHistogram,
+}
+
+pub fn sum_log_histogram(sum:  &mut LogHistogram, addend: &LogHistogram) {
+    for i in 0..sum.negative.len() {
+        sum.negative[i] += addend.negative[i];
+    }
+
+    for i in 0..sum.positive.len() {
+        sum.positive[i] += addend.positive[i];
+    }
+}
+
+pub fn sum_running(exports: &Vec::<RunningImport>) -> RunningImport {
+    let mut count          = 0;
+    let mut min            = i64::MAX;
+    let mut max            = i64::MIN;
+    let mut log_histogram  = LogHistogram::new();
+
+    let mut mean_vec       = Vec::with_capacity(exports.len());
+    let mut moment_2_vec   = Vec::with_capacity(exports.len());
+    let mut moment_3_vec   = Vec::with_capacity(exports.len());
+    let mut moment_4_vec   = Vec::with_capacity(exports.len());
+
+    for export in exports {
+        count    += export.count;
+        min       = std::cmp::min(min, export.min);
+        max       = std::cmp::max(max, export.max);
+        
+        sum_log_histogram(&mut log_histogram, &export.log_histogram);
+
+        mean_vec.push(export.mean * export.count as f64);
+        moment_2_vec.push(export.moment_2);
+        moment_3_vec.push(export.moment_3);
+        moment_4_vec.push(export.moment_4);
+    }
+
+    let mean     = kbk_sum(&mut mean_vec[..]) / count as f64;
+    let moment_2 = kbk_sum(&mut moment_2_vec[..]);
+    let moment_3 = kbk_sum(&mut moment_3_vec[..]);
+    let moment_4 = kbk_sum(&mut moment_4_vec[..]);
+
+    RunningImport { count, mean, moment_2, moment_3, moment_4, min, max, log_histogram }
+}
+
 impl RunningInteger {
     pub fn new(name_in: &str) -> RunningInteger {
-        let id      = usize::MAX;
-        let name    = String::from(name_in);
-        let title   = String::from(name_in);
-        let printer = stdout_printer();
+        let name            = String::from(name_in);
+        let title           = String::from(name_in);
+        let id              = usize::MAX;
+        let count           = 0;
+        let mean            = 0.0;
+        let moment_2        = 0.0;
+        let moment_3        = 0.0;
+        let moment_4        = 0.0;
+        let min             = i64::MAX;
+        let max             = i64::MIN;
+        let log_histogram   = LogHistogram::new();
+        let printer         = stdout_printer();
 
-        RunningInteger { name, title, id, count: 0, mean: 0.0, moment_2: 0.0, moment_3: 0.0,
-            moment_4: 0.0, log_histogram: LogHistogram::new(), min: i64::MAX, max: i64::MIN,
-            printer }
+        RunningInteger {
+            name,       title,      id,
+            count,      mean,       moment_2,
+            moment_3,   moment_4,   log_histogram,
+            min,        max,        printer
+        }
+    }
+
+    pub fn new_import(name: &str, title: &str, printer: PrinterBox, import: RunningImport) -> RunningInteger {
+        let name            = String::from(name);
+        let title           = String::from(title);
+        let id              = usize::MAX;
+        let count           = import.count;
+        let mean            = import.mean;
+        let moment_2        = import.moment_2;
+        let moment_3        = import.moment_3;
+        let moment_4        = import.moment_4;
+        let min             = import.min;
+        let max             = import.max;
+        let log_histogram   = import.log_histogram;
+
+        RunningInteger {
+            name,       title,      id,
+            count,      mean,       moment_2,
+            moment_3,   moment_4,   log_histogram,
+            min,        max,        printer
+        }
+    }
+
+    pub fn export(&self) -> RunningImport {
+        let count           = self.count;
+        let mean            = self.mean;
+        let moment_2        = self.moment_2;
+        let moment_3        = self.moment_3;
+        let moment_4        = self.moment_4;
+        let log_histogram   = self.log_histogram.clone();
+        let min             = self.min;
+        let max             = self.max;
+
+        RunningImport {
+            count,      mean,       moment_2,
+            moment_3,   moment_4,   log_histogram,
+            min,        max
+        }
     }
 }
 
@@ -766,13 +873,12 @@ impl Rustics for RunningInteger {
             let new_moment_3      = self.moment_3 + cube_estimate;
             let new_moment_4      = self.moment_4 + square_estimate * square_estimate;
 
-            self.mean     = new_mean;
-            self.moment_2 = new_moment_2;
-            self.moment_3 = new_moment_3;
-            self.moment_4 = new_moment_4;
-
-            self.min = std::cmp::min(self.min, sample);
-            self.max = std::cmp::max(self.max, sample);
+            self.mean             = new_mean;
+            self.moment_2         = new_moment_2;
+            self.moment_3         = new_moment_3;
+            self.moment_4         = new_moment_4;
+            self.min              = min(self.min, sample);
+            self.max              = max(self.max, sample);
         }
     }
 
@@ -931,6 +1037,10 @@ impl Rustics for RunningInteger {
 
     fn id(&self) -> usize {
         self.id
+    }
+
+    fn to_running_integer(&mut self) -> Option<&mut RunningInteger> {
+        Some(self)
     }
 }
 
@@ -1302,6 +1412,10 @@ impl Rustics for IntegerWindow {
     fn id(&self) -> usize {
         self.id
     }
+
+    fn to_running_integer(&mut self) -> Option<&mut RunningInteger> {
+        None
+    }
 }
 
 impl Histogram for IntegerWindow {
@@ -1532,6 +1646,10 @@ impl Rustics for RunningTime {
     fn histo_log_mode(&self) -> i64 {
         self.running_integer.histo_log_mode()
     }
+
+    fn to_running_integer(&mut self) -> Option<&mut RunningInteger> {
+        self.running_integer.to_running_integer()
+    }
 }
 
 pub struct TimeWindow {
@@ -1758,6 +1876,10 @@ impl Rustics for TimeWindow {
     fn histo_log_mode(&self) -> i64 {
         self.integer_window.histo_log_mode()
     }
+
+    fn to_running_integer(&mut self) -> Option<&mut RunningInteger> {
+        None
+    }
 }
 
 pub struct Counter {
@@ -1926,6 +2048,10 @@ impl Rustics for Counter {
 
     fn histo_log_mode(&self) -> i64 {
         panic!("Counter::histo_log_mode:  not supported");
+    }
+
+    fn to_running_integer(&mut self) -> Option<&mut RunningInteger> {
+        None
     }
 }
 

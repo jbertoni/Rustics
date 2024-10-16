@@ -13,7 +13,7 @@ use super::RunningTime;
 use super::TimeWindow;
 use super::TimerBox;
 use super::Counter;
-use super::PrinterBox;
+use super::PrinterOption;
 use super::create_title;
 
 pub type RusticsArc       = Arc<Mutex<dyn Rustics>>;
@@ -86,7 +86,7 @@ impl RusticsArcSet {
         self.print_opts(None, None);
     }
 
-    pub fn print_opts(&self, printer: Option<PrinterBox>, title: Option<&str>) {
+    pub fn print_opts(&self, printer: PrinterOption, title: Option<&str>) {
         for mutex in self.members.iter() {
             let member = mutex.lock().unwrap();
 
@@ -142,7 +142,7 @@ impl RusticsArcSet {
     // Create a RunningInteger statistics object and add it to the set.
 
     pub fn add_running_integer(&mut self, name: &str) -> RusticsArc {
-        self.members.push(Arc::from(Mutex::new(RunningInteger::new(name))));
+        self.members.push(Arc::from(Mutex::new(RunningInteger::new(name, None))));
         self.common_add()
     }
 
@@ -596,7 +596,7 @@ mod tests {
 
         //  print should still work.
 
-        let member = Arc::from(Mutex::new(RunningInteger::new("added as member")));
+        let member = Arc::from(Mutex::new(RunningInteger::new("added as member", None),));
         set.add_member(member);
 
         set.print_opts(Some(printer.clone()), None);

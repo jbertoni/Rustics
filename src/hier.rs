@@ -9,6 +9,7 @@ use std::any::Any;
 use super::Rustics;
 use super::window::Window;
 use super::PrinterBox;
+use super::PrinterOption;
 use super::RunningInteger;
 use super::RunningImport;
 use super::stdout_printer;
@@ -63,10 +64,10 @@ impl HierIndex {
 }
 
 pub trait Hier {
-    fn print_index_opts(&self, index: HierIndex, printer: Option<PrinterBox>, title: Option<&str>);
+    fn print_index_opts(&self, index: HierIndex, printer: PrinterOption, title: Option<&str>);
             // Print a member of the statistics matrix
 
-    fn print_all(&self, printer: Option<PrinterBox>, title: Option<&str>);
+    fn print_all(&self, printer: PrinterOption, title: Option<&str>);
             // Print the entire statistics array.
 
     fn traverse_live(&mut self, traverser: &mut dyn HierTraverser);
@@ -133,7 +134,7 @@ impl HierInteger {
             stats.push(window);
         }
 
-        stats[0].push(RunningInteger::new(&name));
+        stats[0].push(RunningInteger::new(&name, None));
 
         let new = HierInteger {
             name,           title,      id,
@@ -174,7 +175,7 @@ impl HierInteger {
         result
     }
 
-    fn local_print(&self, index: HierIndex, printer_opt: Option<PrinterBox>, title_opt: Option<&str>) {
+    fn local_print(&self, index: HierIndex, printer_opt: PrinterOption, title_opt: Option<&str>) {
         let level = index.level;
         let which = index.which;
 
@@ -200,14 +201,13 @@ impl HierInteger {
                 self.printer.clone()
             };
 
-        let printer  = &mut *printer_box.lock().unwrap();
+        let printer = &mut *printer_box.lock().unwrap();
 
         if level >= self.stats.len() {
             printer.print(&title);
             printer.print(&format!("  This configuration has only {} levels.", self.stats.len()));
             return;
         }
-
 
         let target =
             match index.set {
@@ -243,7 +243,7 @@ impl HierInteger {
     fn new_from_exports(&self, exports: &Vec<RunningImport>) -> RunningInteger {
         let name    = &self.name;
         let title   = &self.title;
-        let printer = self.printer.clone();
+        let printer = Some(self.printer.clone());
         let sum     = sum_running(exports);
 
         RunningInteger::new_import(name, title, printer, sum)
@@ -361,7 +361,7 @@ impl Rustics for HierInteger {
 
         // Push the initial statistics struct.
 
-        self.stats[0].push(RunningInteger::new(&self.name));
+        self.stats[0].push(RunningInteger::new(&self.name, None));
     }
 
     // Functions for printing
@@ -376,7 +376,7 @@ impl Rustics for HierInteger {
         self.local_print(index, None, None);
     }
 
-    fn print_opts(&self, printer: Option<PrinterBox>, title: Option<&str>) {
+    fn print_opts(&self, printer: PrinterOption, title: Option<&str>) {
         let index = HierIndex::new(HierSet::Live, 0, self.live_len(0) - 1);
 
         self.local_print(index, printer, title);
@@ -410,22 +410,18 @@ impl Rustics for HierInteger {
     fn histo_log_mode(&self) -> i64 {
         self.current().histo_log_mode()
     }
-
-    fn to_running_integer(&mut self) -> Option<&mut RunningInteger> {
-        None
-    }
 }
 
 impl Hier for HierInteger {
     // Print a member of the statistics matrix
 
-    fn print_index_opts(&self, index: HierIndex, printer: Option<PrinterBox>, title: Option<&str>) {
+    fn print_index_opts(&self, index: HierIndex, printer: PrinterOption, title: Option<&str>) {
         self.local_print(index, printer, title);
     }
 
     // Print the statistics array.
 
-    fn print_all(&self, printer: Option<PrinterBox>, title: Option<&str>) {
+    fn print_all(&self, printer: PrinterOption, title: Option<&str>) {
         let base_title =
             if let Some(title) = title {
                 title
@@ -498,7 +494,7 @@ impl Hier for HierInteger {
         // Create the summary statistics struct and push it onto the
         // level zero stack.
 
-        self.stats[0].push(RunningInteger::new(&self.name));
+        self.stats[0].push(RunningInteger::new(&self.name, None));
     }
 
     fn all_len(&self, level: usize) -> usize {

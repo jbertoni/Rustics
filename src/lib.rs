@@ -108,14 +108,24 @@ use time::Timer;
 pub mod arc_sets;
 pub mod rc_sets;
 pub mod hier;
+pub mod gen_hier;
 pub mod window;
 pub mod time;
 pub mod sum;
 
 use sum::kbk_sum;
+use gen_hier::Hier;
+use gen_hier::HierDescriptor;
+use gen_hier::HierConfig;
+use gen_hier::HierGenerator;
+use gen_hier::HierExporter;
+use gen_hier::HierMember;
+use gen_hier::ExporterRc;
+use gen_hier::MemberRc;
 
-pub type PrinterBox = Arc<Mutex<dyn Printer>>;
-pub type TimerBox = Rc<RefCell<dyn Timer>>;
+pub type PrinterBox    = Arc<Mutex<dyn Printer>>;
+pub type PrinterOption = Option<Arc<Mutex<dyn Printer>>>;
+pub type TimerBox      = Rc<RefCell<dyn Timer>>;
 
 pub fn timer_box_hz(timer:  &TimerBox) -> u128 {
     (**timer).borrow().hz()
@@ -689,7 +699,7 @@ pub trait Rustics {
     // Functions for printing
 
     fn print(&self);
-    fn print_opts(&self, printer: Option<PrinterBox>, title: Option<&str>);
+    fn print_opts(&self, printer: PrinterOption, title: Option<&str>);
     fn set_title(&mut self, title: &str);
 
     // For internal use only.
@@ -698,7 +708,6 @@ pub trait Rustics {
     fn equals(&self, other: &dyn Rustics) -> bool;
     fn generic(&self)                     -> &dyn Any;
     fn histo_log_mode(&self)              -> i64;
-    fn to_running_integer(&mut self)      -> Option<&mut RunningInteger>;
 }
 
 pub trait Histogram {
@@ -726,6 +735,43 @@ pub struct RunningInteger {
     pub log_histogram:    LogHistogram,
 
     printer:    PrinterBox,
+}
+
+pub struct RunningExporter {
+    name:    String,
+    addends: Vec<RunningImport>,
+}
+
+impl RunningExporter {
+    fn new(name: &str) -> RunningExporter {
+        let name    = name.to_string();
+        let addends = Vec::new();
+
+        RunningExporter { name, addends }
+    }
+
+    fn push(&mut self, addend: RunningImport) {
+        self.addends.push(addend);
+    }
+
+    fn make_member(&mut self, printer: PrinterBox) -> RunningInteger {
+        let name    = &self.name;
+        let title   = &self.name;
+        let sum     = sum_running(&self.addends);
+        let printer = Some(printer);
+
+        RunningInteger::new_import(name, title, printer, sum)
+    }
+}
+
+impl HierExporter for RunningExporter {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
+    }
 }
 
 pub struct RunningImport {
@@ -783,8 +829,74 @@ pub fn sum_running(exports: &Vec::<RunningImport>) -> RunningImport {
     RunningImport { count, mean, moment_2, moment_3, moment_4, min, max, log_histogram }
 }
 
+pub struct RunningGenerator {
+    name:     String,
+    printer:  PrinterBox,
+}
+
+impl RunningGenerator {
+    pub fn new(name: &str, printer: PrinterOption) -> RunningGenerator  {
+        let name = name.to_string();
+
+        let printer =
+            if let Some(printer) = printer {
+                printer
+            } else {
+                stdout_printer()
+            };
+
+        RunningGenerator { name, printer }
+    }
+
+    pub fn new_hier(name: &str, descriptor: HierDescriptor, printer: PrinterOption) -> Hier {
+        let generator = RunningGenerator::new(name, printer);
+        let generator = Rc::from(RefCell::new(generator));
+        let class     = "integer".to_string();
+
+        let config = HierConfig { descriptor, generator, class };
+
+        Hier::new(config)
+    }
+}
+
+impl HierGenerator for RunningGenerator {
+    fn make_member(&self, printer: PrinterOption) -> MemberRc {
+        let member = RunningInteger::new(&self.name, printer);
+
+        Rc::from(RefCell::new(member))
+    }
+
+    fn make_from_exporter(&self, exporter: ExporterRc) -> MemberRc {
+        let mut exporter_borrow = exporter.borrow_mut();
+        let     exporter_impl   = exporter_borrow.as_any_mut().downcast_mut::<RunningExporter>().unwrap();
+        let     member          = exporter_impl.make_member(self.printer.clone());
+
+        Rc::from(RefCell::new(member))
+    }
+
+    fn make_exporter(&self) -> ExporterRc {
+        let exporter = RunningExporter::new(&self.name);
+
+        Rc::from(RefCell::new(exporter))
+    }
+
+    fn push(&self, exporter: ExporterRc, member_rc: MemberRc) {
+        let mut exporter_borrow = exporter.borrow_mut();
+        let     exporter_impl   = exporter_borrow.as_any_mut().downcast_mut::<RunningExporter>().unwrap();
+
+        let     member_borrow = member_rc.borrow();
+        let     member_impl   = member_borrow.as_any().downcast_ref::<RunningInteger>().unwrap();
+
+        exporter_impl.push(member_impl.export());
+    }
+
+    fn printer(&self) -> PrinterBox {
+        self.printer.clone()
+    }
+}
+
 impl RunningInteger {
-    pub fn new(name_in: &str) -> RunningInteger {
+    pub fn new(name_in: &str, printer: PrinterOption) -> RunningInteger {
         let name            = String::from(name_in);
         let title           = String::from(name_in);
         let id              = usize::MAX;
@@ -796,7 +908,13 @@ impl RunningInteger {
         let min             = i64::MAX;
         let max             = i64::MIN;
         let log_histogram   = LogHistogram::new();
-        let printer         = stdout_printer();
+
+        let printer =
+            if let Some(printer) = printer {
+                printer
+            } else {
+                stdout_printer()
+            };
 
         RunningInteger {
             name,       title,      id,
@@ -806,7 +924,7 @@ impl RunningInteger {
         }
     }
 
-    pub fn new_import(name: &str, title: &str, printer: PrinterBox, import: RunningImport) -> RunningInteger {
+    pub fn new_import(name: &str, title: &str, printer: PrinterOption, import: RunningImport) -> RunningInteger {
         let name            = String::from(name);
         let title           = String::from(title);
         let id              = usize::MAX;
@@ -818,6 +936,13 @@ impl RunningInteger {
         let min             = import.min;
         let max             = import.max;
         let log_histogram   = import.log_histogram;
+
+        let printer =
+            if let Some(printer) = printer {
+                printer
+            } else {
+                stdout_printer()
+            };
 
         RunningInteger {
             name,       title,      id,
@@ -993,7 +1118,7 @@ impl Rustics for RunningInteger {
         self.print_opts(None, None);
     }
 
-    fn print_opts(&self, printer: Option<PrinterBox>, title: Option<&str>) {
+    fn print_opts(&self, printer: PrinterOption, title: Option<&str>) {
         let printer_box =
             if let Some(printer) = printer {
                 printer.clone()
@@ -1008,8 +1133,6 @@ impl Rustics for RunningInteger {
                 &self.title
             };
 
-        let printer  = &mut *printer_box.lock().unwrap();
-
         let n        = self.count;
         let min      = self.min;
         let max      = self.max;
@@ -1020,6 +1143,10 @@ impl Rustics for RunningInteger {
         let kurtosis = self.kurtosis();
 
         let printable = Printable { n, min, max, log_mode, mean, variance, skewness, kurtosis };
+
+        println!("print_opts:  getting printer lock");
+        let printer  = &mut *printer_box.lock().unwrap();
+        println!("print_opts:  got printer lock");
 
         printer.print(title);
         print_common_integer(&printable, printer);
@@ -1038,9 +1165,23 @@ impl Rustics for RunningInteger {
     fn id(&self) -> usize {
         self.id
     }
+}
 
-    fn to_running_integer(&mut self) -> Option<&mut RunningInteger> {
-        Some(self)
+impl HierMember for RunningInteger {
+    fn to_rustics(&self) -> &dyn Rustics {
+        self
+    }
+
+    fn to_rustics_mut(&mut self) -> &mut dyn Rustics {
+        self
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
     }
 }
 
@@ -1336,7 +1477,7 @@ impl Rustics for IntegerWindow {
         self.print_opts(None, None);
     }
 
-    fn print_opts(&self, printer: Option<PrinterBox>, title: Option<&str>) {
+    fn print_opts(&self, printer: PrinterOption, title: Option<&str>) {
         let printer_box =
             if let Some(printer) = printer {
                 printer.clone()
@@ -1411,10 +1552,6 @@ impl Rustics for IntegerWindow {
 
     fn id(&self) -> usize {
         self.id
-    }
-
-    fn to_running_integer(&mut self) -> Option<&mut RunningInteger> {
-        None
     }
 }
 
@@ -1588,7 +1725,7 @@ impl Rustics for RunningTime {
         self.print_opts(None, None);
     }
 
-    fn print_opts(&self, printer: Option<PrinterBox>, title: Option<&str>) {
+    fn print_opts(&self, printer: PrinterOption, title: Option<&str>) {
         let printer_box =
             if let Some(printer) = printer {
                 printer.clone()
@@ -1645,10 +1782,6 @@ impl Rustics for RunningTime {
 
     fn histo_log_mode(&self) -> i64 {
         self.running_integer.histo_log_mode()
-    }
-
-    fn to_running_integer(&mut self) -> Option<&mut RunningInteger> {
-        self.running_integer.to_running_integer()
     }
 }
 
@@ -1814,7 +1947,7 @@ impl Rustics for TimeWindow {
         self.print_opts(None, None);
     }
 
-    fn print_opts(&self, printer: Option<PrinterBox>, title: Option<&str>) {
+    fn print_opts(&self, printer: PrinterOption, title: Option<&str>) {
         let printer_box =
             if let Some(printer) = printer {
                 printer.clone()
@@ -1875,10 +2008,6 @@ impl Rustics for TimeWindow {
 
     fn histo_log_mode(&self) -> i64 {
         self.integer_window.histo_log_mode()
-    }
-
-    fn to_running_integer(&mut self) -> Option<&mut RunningInteger> {
-        None
     }
 }
 
@@ -2000,7 +2129,7 @@ impl Rustics for Counter {
         self.print_opts(None, None);
     }
 
-    fn print_opts(&self, printer: Option<PrinterBox>, title: Option<&str>) {
+    fn print_opts(&self, printer: PrinterOption, title: Option<&str>) {
         let printer_box =
             if let Some(printer) = printer {
                 printer.clone()
@@ -2049,16 +2178,13 @@ impl Rustics for Counter {
     fn histo_log_mode(&self) -> i64 {
         panic!("Counter::histo_log_mode:  not supported");
     }
-
-    fn to_running_integer(&mut self) -> Option<&mut RunningInteger> {
-        None
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use rand::Rng;
+    use crate::gen_hier::*;
 
     pub fn test_commas() {
         let test = [ 123456, 12, -1, -1234, 4000000, -200, -2000, -20000 ];
@@ -2120,7 +2246,7 @@ mod tests {
     }
 
     pub fn test_simple_running_integer() {
-        let mut stats = RunningInteger::new(&"Test Statistics");
+        let mut stats = RunningInteger::new(&"Test Statistics", None);
 
         for sample in -256..512 {
             stats.record_i64(sample);
@@ -2410,9 +2536,96 @@ mod tests {
         counter.print();
     }
 
+    fn make_hier_gen(generator:  GeneratorRc) -> Hier {
+        let     auto_next      = 4;
+        let     levels         = 4;
+        let     level_0_period = 8;
+        let     dimension      = HierDimension::new(level_0_period, 3 * level_0_period);
+        let mut dimensions     = Vec::<HierDimension>::with_capacity(levels);
+        let     class          = "integer".to_string();
+
+        // Push the level 0 descriptor.
+
+        dimensions.push(dimension);
+
+        // Create a hierarchy.
+
+        let mut period = 4;
+
+        for _i in 1..levels {
+            let dimension = HierDimension::new(period, 3 * period);
+
+            dimensions.push(dimension);
+
+            period += 2;
+        }
+
+        let descriptor    = HierDescriptor::new(dimensions, Some(auto_next));
+        let configuration = HierConfig { descriptor, generator, class };
+
+        Hier::new(configuration)
+    }
+
+    // Do a minimal liveness test of the generic hier implementation.
+
+    fn test_running_generator() {
+        //  First, just make a generator and a member, then record one event.
+
+        let generator        = RunningGenerator::new("test generator", None);
+        let     member_rc    = generator.make_member(None);
+        let     member_clone = member_rc.clone();
+        let mut member       = member_clone.borrow_mut();
+        let     value        = 42;
+
+        member.to_rustics_mut().record_i64(value);
+
+        assert!(member.to_rustics().count() == 1);
+        assert!(member.to_rustics().mean()  == value as f64);
+
+        // Drop the lock on the member.
+
+        drop(member);
+
+        // Now try try making an exporter and check basic sanity of as_any_mut.
+
+        let exporter_rc     = generator.make_exporter();
+        let exporter_clone  = exporter_rc.clone();
+
+        // Push the member's numbers onto the exporter.
+
+        generator.push(exporter_clone, member_rc);
+
+        let new_member_rc = generator.make_from_exporter(exporter_rc);
+
+        // See that the new member matches expectations.
+
+        let new_member = new_member_rc.borrow();
+
+        assert!(new_member.to_rustics().count() == 1);
+        assert!(new_member.to_rustics().mean()  == value as f64);
+
+        // Now make an actual hier struct.
+
+        let     generator     = Rc::from(RefCell::new(generator));
+        let mut hier          = make_hier_gen(generator);
+
+        let mut events = 0;
+
+        for i in 0..100 {
+            hier.record_i64(i);
+
+            events += 1;
+        }
+
+        assert!(hier.event_count() == events);
+        hier.print();
+    }
+
     #[test]
     pub fn run_tests() {
+        test_running_generator();
         test_commas();
+        test_log_histogram();
         test_log_histogram();
         test_pseudo_log();
         test_simple_running_integer();

@@ -11,7 +11,7 @@ use super::RunningInteger;
 use super::IntegerWindow;
 use super::RunningTime;
 use super::TimeWindow;
-use super::PrinterBox;
+use super::PrinterOption;
 use super::TimerBox;
 use super::Counter;
 use super::create_title;
@@ -85,7 +85,7 @@ impl RusticsRcSet {
         self.print_opts(None, None);
     }
 
-    pub fn print_opts(&self, printer: Option<PrinterBox>, title: Option<&str>) {
+    pub fn print_opts(&self, printer: PrinterOption, title: Option<&str>) {
         for member in self.members.iter() {
             let member = (**member).borrow();
             member.print_opts(printer.clone(), title);
@@ -136,7 +136,7 @@ impl RusticsRcSet {
     // Create a RunningInteger statistics object and add it to the set.
 
     pub fn add_running_integer(&mut self, name: &str) -> RusticsRc {
-        self.members.push(Rc::from(RefCell::new(RunningInteger::new(name))));
+        self.members.push(Rc::from(RefCell::new(RunningInteger::new(name, None))));
         self.common_add()
     }
 
@@ -508,7 +508,7 @@ mod tests {
 
         // Do a minimal test of "add".
 
-        let member = Rc::from(RefCell::new(RunningInteger::new("added as member")));
+        let member = Rc::from(RefCell::new(RunningInteger::new("added as member", None)));
         set.add_member(member);
 
         set.print();

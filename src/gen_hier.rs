@@ -80,10 +80,10 @@ pub trait HierTraverser {
 }
 
 pub trait HierGenerator {
-    fn make_member       (&self, printer: PrinterOption)  -> MemberRc;
-    fn make_from_exporter(&self, exports: ExporterRc)     -> MemberRc;
-    fn make_exporter     (&self)                          -> ExporterRc;
-    fn printer           (&self)                          -> PrinterBox;
+    fn make_from_exporter(&self, name: &str, printer: PrinterBox, exports: ExporterRc) -> MemberRc;
+
+    fn make_member       (&self, name: &str, printer: PrinterBox)  -> MemberRc;
+    fn make_exporter     (&self)                                   -> ExporterRc;
 
     fn push              (&self, exports: ExporterRc, member: MemberRc);
 }
@@ -99,26 +99,38 @@ pub struct Hier {
     dimensions:     Vec<HierDimension>,
     generator:      GeneratorRc,
     stats:          Vec<Window<MemberRc>>,
+    name:           String,
+    title:          String,
+    id:             usize,
     class:          String,
     auto_next:      i64,
     advance_count:  i64,
     event_count:    i64,
+    printer:        PrinterBox,
 }
 
 pub struct HierConfig {
     pub descriptor:  HierDescriptor,
     pub generator:   GeneratorRc,
     pub class:       String,
+    pub name:        String,
+    pub title:       String,
+    pub printer:     PrinterBox,
 }
 
 impl Hier {
     pub fn new(configuration: HierConfig) -> Hier {
         let     descriptor    = configuration.descriptor;
+        let     generator     = configuration.generator;
+        let     name          = configuration.name;
+        let     title         = configuration.title;
+        let     printer       = configuration.printer;
+        let     class         = configuration.class;
+
         let     auto_next     = descriptor.auto_next;
         let     dimensions    = descriptor.dimensions;
+        let     id            = 0;
         let mut stats         = Vec::with_capacity(dimensions.len());
-        let     class         = configuration.class;
-        let     generator     = configuration.generator;
         let     advance_count = 0;
         let     event_count   = 0;
 
@@ -126,11 +138,16 @@ impl Hier {
             stats.push(Window::new(dimension.retention, dimension.period));
         }
 
-        let member = generator.borrow_mut().make_member(None);
+        let member = generator.borrow_mut().make_member(&name, printer.clone());
 
         stats[0].push(member);
 
-        Hier { dimensions, generator, stats, class, auto_next, advance_count, event_count }
+        Hier {
+            dimensions,   generator,  stats,
+            name,         title,      id,
+            class,        auto_next,  advance_count,
+            event_count,  printer
+        }
     }
 
     pub fn current(&self) -> MemberRc {
@@ -155,6 +172,19 @@ impl Hier {
         }
     }
 
+    pub fn clear_all(&mut self) {
+        for i in 0..self.stats.len() {
+            let level = &self.stats[i];
+
+            for j in 0..level.all_len() {
+                let     target = self.stats[i].index_all(j);
+                let mut target = target.unwrap().borrow_mut();
+
+                target.to_rustics_mut().clear();
+            }
+        }
+    }
+
     pub fn traverse_live(&mut self, traverser: &mut dyn HierTraverser) {
         for level in &mut self.stats {
             for member in level.iter_live() {
@@ -169,7 +199,7 @@ impl Hier {
     pub fn advance(&mut self) {
         if self.stats.len() == 1 {
             let generator = self.generator.borrow();
-            let member    = generator.make_member(None);
+            let member    = generator.make_member(&self.name, self.printer.clone());
 
             self.stats[0].push(member);
             return;
@@ -189,7 +219,7 @@ impl Hier {
 
             if self.advance_count % advance_point == 0 {
                 let exporter = self.make_exporter(i);
-                let new_stat = generator.make_from_exporter(exporter);
+                let new_stat = generator.make_from_exporter(&self.name, self.printer.clone(), exporter);
 
                 self.stats[i + 1].push(new_stat);
             } else {
@@ -200,7 +230,7 @@ impl Hier {
         // Create the summary statistics struct and push it onto the
         // level zero stack.
 
-        let member = generator.make_member(None);
+        let member = generator.make_member(&self.name, self.printer.clone());
 
         self.stats[0].push(member);
     }
@@ -225,7 +255,7 @@ impl Hier {
             if let Some(title) = title_opt {
                 title
             } else {
-                &self.title()
+                &self.title
             };
 
         let set =
@@ -240,9 +270,7 @@ impl Hier {
             if let Some(printer) = printer_opt.clone() {
                 printer.clone()
             } else {
-                let generator = self.generator.borrow();
-
-                generator.printer()
+                self.printer.clone()
             };
 
         if level >= self.stats.len() {
@@ -286,10 +314,8 @@ impl Hier {
 
         exporter_rc
     }
-}
 
-impl Rustics for Hier {
-    fn record_i64(&mut self, value: i64) {
+    fn check_advance(&mut self) {
         // Push a new statistic if we've reached the event limit
         // for the current one.  Do this before push the next
         // event so that users see an empty current statistic only
@@ -302,8 +328,16 @@ impl Rustics for Hier {
         &&  self.event_count % self.auto_next == 0 {
             self.advance();
         }
+        
+        // advance the event count...
 
         self.event_count += 1;
+    }
+}
+
+impl Rustics for Hier {
+    fn record_i64(&mut self, value: i64) {
+        self.check_advance();
 
         let     member  = self.stats[0].newest_mut().unwrap();
         let mut borrow  = member.borrow_mut();
@@ -314,6 +348,8 @@ impl Rustics for Hier {
     }
 
     fn record_f64(&mut self, sample: f64) {
+        self.check_advance();
+
         let     current = self.current();
         let mut borrow  = current.borrow_mut();
         let     rustics = borrow.to_rustics_mut();
@@ -322,14 +358,12 @@ impl Rustics for Hier {
     }
 
     fn record_event(&mut self) {
-        let     current = self.current();
-        let mut borrow  = current.borrow_mut();
-        let     rustics = borrow.to_rustics_mut();
-
-        rustics.record_event();
+        self.record_i64(1);
     }
 
     fn record_time(&mut self, sample: i64) {
+        self.check_advance();
+
         let     current = self.current();
         let mut borrow  = current.borrow_mut();
         let     rustics = borrow.to_rustics_mut();
@@ -338,6 +372,8 @@ impl Rustics for Hier {
     }
 
     fn record_interval(&mut self, timer: &mut TimerBox) {
+        self.check_advance();
+
         let     current = self.current();
         let mut borrow  = current.borrow_mut();
         let     rustics = borrow.to_rustics_mut();
@@ -346,19 +382,11 @@ impl Rustics for Hier {
     }
 
     fn name(&self) -> String {
-        let current = self.current();
-        let borrow  = current.borrow();
-        let rustics = borrow.to_rustics();
-
-        rustics.name().clone()
+        self.name.clone()
     }
 
     fn title(&self) -> String {
-        let current = self.current();
-        let borrow  = current.borrow();
-        let rustics = borrow.to_rustics();
-
-        rustics.title().clone()
+        self.title.clone()
     }
 
     fn class(&self) -> &str {
@@ -470,21 +498,15 @@ impl Rustics for Hier {
     }
 
     fn clear(&mut self) {
-        let     current = self.current();
-        let mut borrow  = current.borrow_mut();
-        let     rustics = borrow.to_rustics_mut();
-
-        rustics.clear();
+        self.clear_all();
     }
 
     // Functions for printing
 
     fn print(&self) {
-        let current = self.current();
-        let borrow  = current.borrow();
-        let rustics = borrow.to_rustics();
+        let index = HierIndex::new(HierSet::Live, 0, self.live_len(0) - 1);
 
-        rustics.print();
+        self.local_print(index, None, None);
     }
 
     fn print_opts(&self, printer: PrinterOption, title: Option<&str>) {
@@ -504,19 +526,11 @@ impl Rustics for Hier {
     }
 
     fn set_id(&mut self, index: usize) {
-        let     current = self.current();
-        let mut borrow  = current.borrow_mut();
-        let     rustics = borrow.to_rustics_mut();
-
-        rustics.set_id(index);
+        self.id = index;
     }
 
     fn id(&self) -> usize {
-        let current = self.current();
-        let borrow  = current.borrow();
-        let rustics = borrow.to_rustics();
-
-        rustics.id()
+        self.id
     }
 
     fn equals(&self, other: &dyn Rustics) -> bool {
@@ -543,6 +557,7 @@ impl Rustics for Hier {
 #[cfg(test)]
 pub mod tests {
     use super::*;
+    use crate::stdout_printer;
     use crate::RunningGenerator;
 
     pub fn make_hier(generator: GeneratorRc, level_0_period: usize, auto_next: usize) -> Hier {
@@ -569,7 +584,12 @@ pub mod tests {
         let auto_next     = Some(auto_next as i64);
         let descriptor    = HierDescriptor::new(dimensions, auto_next);
         let class         = "integer".to_string();
-        let configuration = HierConfig { descriptor, generator, class };
+        let name          = "hier".to_string();
+        let title         = "hier title".to_string();
+        let printer       = stdout_printer();
+
+        let configuration =
+            HierConfig { descriptor, generator, class, name, title, printer };
 
         Hier::new(configuration)
     }
@@ -653,7 +673,7 @@ pub mod tests {
         let     signed_auto    = auto_next as i64;
         let mut events         = 0;
         let mut sum_of_events  = 0;
-        let     generator      = RunningGenerator::new("hier test 1", None);
+        let     generator      = RunningGenerator::new();
         let     generator      = Rc::from(RefCell::new(generator));
         let mut hier_integer   = make_hier(generator, level_0_period, auto_next);
 
@@ -697,6 +717,7 @@ pub mod tests {
         check_sizes(&hier_integer, events, false);
         println!("simple_hier_test:  print 1 at {}", events);
         hier_integer.print();
+        println!("simple_hier_test:  print 1.5 at {}", events);
 
         assert!(hier_integer.count() == events as u64);
 
@@ -850,7 +871,7 @@ pub mod tests {
     fn long_test() {
         let     auto_next      = 2;
         let     level_0_period = 4;
-        let     generator      = RunningGenerator::new("long test", None);
+        let     generator      = RunningGenerator::new();
         let     generator      = Rc::from(RefCell::new(generator));
         let mut hier_integer   = make_hier(generator, level_0_period, auto_next);
         let mut events         = 0;

@@ -738,25 +738,22 @@ pub struct RunningInteger {
 }
 
 pub struct RunningExporter {
-    name:    String,
     addends: Vec<RunningImport>,
 }
 
 impl RunningExporter {
-    fn new(name: &str) -> RunningExporter {
-        let name    = name.to_string();
+    fn new() -> RunningExporter {
         let addends = Vec::new();
 
-        RunningExporter { name, addends }
+        RunningExporter { addends }
     }
 
     fn push(&mut self, addend: RunningImport) {
         self.addends.push(addend);
     }
 
-    fn make_member(&mut self, printer: PrinterBox) -> RunningInteger {
-        let name    = &self.name;
-        let title   = &self.name;
+    fn make_member(&mut self, name: &str, printer: PrinterBox) -> RunningInteger {
+        let title   = name;
         let sum     = sum_running(&self.addends);
         let printer = Some(printer);
 
@@ -829,53 +826,65 @@ pub fn sum_running(exports: &Vec::<RunningImport>) -> RunningImport {
     RunningImport { count, mean, moment_2, moment_3, moment_4, min, max, log_histogram }
 }
 
+#[derive(Default)]
 pub struct RunningGenerator {
-    name:     String,
-    printer:  PrinterBox,
+}
+
+pub struct RunningHierConfig {
+    pub descriptor:  HierDescriptor,
+    pub name:        String,
+    pub title:       String,
+    pub printer:     PrinterBox,
 }
 
 impl RunningGenerator {
-    pub fn new(name: &str, printer: PrinterOption) -> RunningGenerator  {
-        let name = name.to_string();
-
+    //pub fn new(printer: PrinterOption) -> RunningGenerator  {
+    pub fn new() -> RunningGenerator  {
+/*
         let printer =
             if let Some(printer) = printer {
                 printer
             } else {
                 stdout_printer()
             };
+*/
 
-        RunningGenerator { name, printer }
+        RunningGenerator { }
     }
 
-    pub fn new_hier(name: &str, descriptor: HierDescriptor, printer: PrinterOption) -> Hier {
-        let generator = RunningGenerator::new(name, printer);
-        let generator = Rc::from(RefCell::new(generator));
-        let class     = "integer".to_string();
+    pub fn new_hier(configuration: RunningHierConfig) -> Hier {
+        let generator  = RunningGenerator::new();
+        let generator  = Rc::from(RefCell::new(generator));
+        let class      = "integer".to_string();
 
-        let config = HierConfig { descriptor, generator, class };
+        let descriptor = configuration.descriptor;
+        let name       = configuration.name;
+        let title      = configuration.title;
+        let printer    = configuration.printer;
+
+        let config = HierConfig { descriptor, generator, name, title, class, printer };
 
         Hier::new(config)
     }
 }
 
 impl HierGenerator for RunningGenerator {
-    fn make_member(&self, printer: PrinterOption) -> MemberRc {
-        let member = RunningInteger::new(&self.name, printer);
+    fn make_member(&self, name: &str, printer: PrinterBox) -> MemberRc {
+        let member = RunningInteger::new(name, Some(printer));
 
         Rc::from(RefCell::new(member))
     }
 
-    fn make_from_exporter(&self, exporter: ExporterRc) -> MemberRc {
+    fn make_from_exporter(&self, name: &str, printer: PrinterBox, exporter: ExporterRc) -> MemberRc {
         let mut exporter_borrow = exporter.borrow_mut();
         let     exporter_impl   = exporter_borrow.as_any_mut().downcast_mut::<RunningExporter>().unwrap();
-        let     member          = exporter_impl.make_member(self.printer.clone());
+        let     member          = exporter_impl.make_member(name, printer);
 
         Rc::from(RefCell::new(member))
     }
 
     fn make_exporter(&self) -> ExporterRc {
-        let exporter = RunningExporter::new(&self.name);
+        let exporter = RunningExporter::new();
 
         Rc::from(RefCell::new(exporter))
     }
@@ -888,10 +897,6 @@ impl HierGenerator for RunningGenerator {
         let     member_impl   = member_borrow.as_any().downcast_ref::<RunningInteger>().unwrap();
 
         exporter_impl.push(member_impl.export());
-    }
-
-    fn printer(&self) -> PrinterBox {
-        self.printer.clone()
     }
 }
 
@@ -2561,7 +2566,11 @@ mod tests {
         }
 
         let descriptor    = HierDescriptor::new(dimensions, Some(auto_next));
-        let configuration = HierConfig { descriptor, generator, class };
+        let name          = "test hier".to_string();
+        let title         = "test hier".to_string();
+        let printer       = stdout_printer();
+
+        let configuration = HierConfig { descriptor, generator, class, name, title, printer };
 
         Hier::new(configuration)
     }
@@ -2571,8 +2580,9 @@ mod tests {
     fn test_running_generator() {
         //  First, just make a generator and a member, then record one event.
 
-        let generator        = RunningGenerator::new("test generator", None);
-        let     member_rc    = generator.make_member(None);
+        let     generator    = RunningGenerator::new();
+        let     printer      = stdout_printer();
+        let     member_rc    = generator.make_member("test member", printer);
         let     member_clone = member_rc.clone();
         let mut member       = member_clone.borrow_mut();
         let     value        = 42;
@@ -2595,7 +2605,8 @@ mod tests {
 
         generator.push(exporter_clone, member_rc);
 
-        let new_member_rc = generator.make_from_exporter(exporter_rc);
+        let new_member_rc = generator.make_from_exporter("member export", stdout_printer(), exporter_rc);
+
 
         // See that the new member matches expectations.
 

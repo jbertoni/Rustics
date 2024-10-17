@@ -11,6 +11,7 @@ use std::cmp::max;
 use super::Rustics;
 use super::Histogram;
 use super::TimerBox;
+use super::Printer;
 use super::PrinterBox;
 use super::PrinterOption;
 use super::printable::Printable;
@@ -390,20 +391,17 @@ impl Rustics for RunningInteger {
                 &self.title
             };
 
-        let n        = self.count;
-        let min      = self.min;
-        let max      = self.max;
-        let log_mode = self.log_histogram.log_mode() as i64;
-        let mean     = self.mean;
-        let variance = self.variance();
-        let skewness = self.skewness();
-        let kurtosis = self.kurtosis();
-
+        let n         = self.count;
+        let min       = self.min;
+        let max       = self.max;
+        let log_mode  = self.log_histogram.log_mode() as i64;
+        let mean      = self.mean;
+        let variance  = self.variance();
+        let skewness  = self.skewness();
+        let kurtosis  = self.kurtosis();
         let printable = Printable { n, min, max, log_mode, mean, variance, skewness, kurtosis };
 
-        println!("print_opts:  getting printer lock");
-        let printer  = &mut *printer_box.lock().unwrap();
-        println!("print_opts:  got printer lock");
+        let printer   = &mut *printer_box.lock().unwrap();
 
         printer.print(title);
         printable.print_common_integer(printer);
@@ -429,8 +427,7 @@ impl Histogram for RunningInteger {
         self.log_histogram.clone()
     }
 
-    fn print_histogram(&self) {
-        let printer = &mut *self.printer.lock().unwrap();
+    fn print_histogram(&self, printer: &mut dyn Printer) {
         self.log_histogram.print(printer);
     }
 }

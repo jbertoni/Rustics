@@ -191,8 +191,7 @@ impl Rustics for TimeWindow {
         printer.print(title);
         printable.print_common_integer_times(self.hz, printer);
         printable.print_common_float_times(self.hz, printer);
-
-        self.integer_window.print_histogram();
+        self.integer_window.print_histogram(printer);
     }
 
     // For internal use only.

@@ -9,6 +9,7 @@ use std::cell::RefCell;
 use super::Rustics;
 use super::PrinterOption;
 use super::TimerBox;
+use super::stdout_printer;
 use super::counter::Counter;
 use super::create_title;
 
@@ -152,7 +153,9 @@ impl RusticsRcSet {
     }
 
     pub fn add_running_time(&mut self, name: &str, timer: TimerBox) -> RusticsRc {
-        self.members.push(Rc::from(RefCell::new(RunningTime::new(name, timer))));
+        let printer = Some(stdout_printer());
+
+        self.members.push(Rc::from(RefCell::new(RunningTime::new(name, timer, printer))));
         self.common_add()
     }
 

@@ -15,6 +15,7 @@ use super::TimerBox;
 use super::timer_box_hz;
 use super::printable::Printable;
 use super::running_integer::RunningInteger;
+use super::running_integer::RunningExport;
 
 #[derive(Clone)]
 pub struct RunningTime {
@@ -26,7 +27,7 @@ pub struct RunningTime {
 }
 
 impl RunningTime {
-    pub fn new(name_in: &str, timer: TimerBox) -> RunningTime {
+    pub fn new(name_in: &str, timer: TimerBox, printer: PrinterOption) -> RunningTime {
         let hz = timer_box_hz(&timer);
 
         if hz > i64::MAX as u128 {
@@ -34,15 +35,24 @@ impl RunningTime {
         }
 
         let hz              = hz as i64;
-        let printer         = stdout_printer();
-        let running_integer = Box::new(RunningInteger::new(name_in, Some(printer)));
-        let printer         = stdout_printer();
+        let running_integer = Box::new(RunningInteger::new(name_in, printer.clone()));
+
+        let printer =
+            if let Some(printer) = printer {
+                printer
+            } else {
+                stdout_printer()
+            };
 
         RunningTime { printer, running_integer, timer, hz }
     }
 
     pub fn hz(&self) -> i64 {
         self.hz
+    }
+
+    pub fn export(&self) -> RunningExport {
+        self.running_integer.export()
     }
 }
 
@@ -171,7 +181,6 @@ impl Rustics for RunningTime {
                 &self.running_integer.title()
             };
 
-        let printer  = &mut *printer_box.lock().unwrap();
         let n        = self.count();
         let min      = self.min_i64();
         let max      = self.max_i64();
@@ -182,12 +191,12 @@ impl Rustics for RunningTime {
         let kurtosis = self.kurtosis();
 
         let printable = Printable { n, min, max, log_mode, mean, variance, skewness, kurtosis };
+        let printer  = &mut *printer_box.lock().unwrap();
 
         printer.print(title);
         printable.print_common_integer_times(self.hz, printer);
         printable.print_common_float_times(self.hz, printer);
-
-        self.running_integer.print_histogram();
+        self.running_integer.print_histogram(printer);
     }
 
     // For internal use only.

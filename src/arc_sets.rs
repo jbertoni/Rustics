@@ -11,6 +11,7 @@ use super::running_integer::RunningInteger;
 use super::running_time::RunningTime;
 use super::integer_window::IntegerWindow;
 use super::time_window::TimeWindow;
+use super::stdout_printer;
 use super::counter::Counter;
 use super::TimerBox;
 use super::PrinterOption;
@@ -158,7 +159,9 @@ impl RusticsArcSet {
     }
 
     pub fn add_running_time(&mut self, name: &str, timer: TimerBox) -> RusticsArc {
-        self.members.push(Arc::from(Mutex::new(RunningTime::new(name, timer))));
+        let printer = Some(stdout_printer());
+
+        self.members.push(Arc::from(Mutex::new(RunningTime::new(name, timer, printer))));
         self.common_add()
     }
 
@@ -269,7 +272,7 @@ impl RusticsArcSet {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::*;
     use crate::hier::Hier;
     use crate::Printer;
@@ -370,7 +373,7 @@ mod tests {
     // Define a simple timer for testing that just counts up by 1000 ticks
     // for each event interval.
 
-    struct ContinuingTimer {
+    pub struct ContinuingTimer {
         time: u128,
         hz:   u128,
     }

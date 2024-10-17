@@ -7,6 +7,7 @@
 use std::any::Any;
 
 use super::Rustics;
+use super::Printer;
 use super::PrinterBox;
 use super::PrinterOption;
 use super::TimerBox;
@@ -316,8 +317,6 @@ impl Rustics for IntegerWindow {
                 &self.title
             };
 
-        let printer = &mut *printer_box.lock().unwrap();
-
         let n        = self.vector.len() as u64;
         let min      = self.compute_min();
         let max      = self.compute_max();
@@ -343,6 +342,7 @@ impl Rustics for IntegerWindow {
         }
 
         let printable = Printable { n, min, max, log_mode, mean, variance, skewness, kurtosis };
+        let printer   = &mut *printer_box.lock().unwrap();
 
         printer.print(title);
         printable.print_common_integer(printer);
@@ -384,8 +384,7 @@ impl Histogram for IntegerWindow {
         self.log_histogram.clone()
     }
 
-    fn print_histogram(&self) {
-        let printer = &mut *self.printer.lock().unwrap();
+    fn print_histogram(&self, printer: &mut dyn Printer) {
         self.log_histogram.print(printer);
     }
 }

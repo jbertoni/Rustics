@@ -108,20 +108,19 @@ use time::Timer;
 pub mod arc_sets;
 pub mod rc_sets;
 pub mod hier;
-pub mod gen_hier;
 pub mod window;
 pub mod time;
 pub mod sum;
 
 use sum::kbk_sum;
-use gen_hier::Hier;
-use gen_hier::HierDescriptor;
-use gen_hier::HierConfig;
-use gen_hier::HierGenerator;
-use gen_hier::HierExporter;
-use gen_hier::HierMember;
-use gen_hier::ExporterRc;
-use gen_hier::MemberRc;
+use hier::Hier;
+use hier::HierDescriptor;
+use hier::HierConfig;
+use hier::HierGenerator;
+use hier::HierExporter;
+use hier::HierMember;
+use hier::ExporterRc;
+use hier::MemberRc;
 
 pub type PrinterBox    = Arc<Mutex<dyn Printer>>;
 pub type PrinterOption = Option<Arc<Mutex<dyn Printer>>>;
@@ -838,17 +837,7 @@ pub struct RunningHierConfig {
 }
 
 impl RunningGenerator {
-    //pub fn new(printer: PrinterOption) -> RunningGenerator  {
     pub fn new() -> RunningGenerator  {
-/*
-        let printer =
-            if let Some(printer) = printer {
-                printer
-            } else {
-                stdout_printer()
-            };
-*/
-
         RunningGenerator { }
     }
 
@@ -2189,7 +2178,7 @@ impl Rustics for Counter {
 mod tests {
     use super::*;
     use rand::Rng;
-    use crate::gen_hier::*;
+    use crate::hier::*;
 
     pub fn test_commas() {
         let test = [ 123456, 12, -1, -1234, 4000000, -200, -2000, -20000 ];

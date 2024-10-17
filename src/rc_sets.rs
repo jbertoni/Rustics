@@ -261,7 +261,7 @@ impl RusticsRcSet {
 mod tests {
     use super::*;
     use crate::time::Timer;
-    use crate::hier::HierInteger;
+    use crate::hier::Hier;
 
     struct TestTraverser {
         pub members:  i64,
@@ -463,9 +463,10 @@ mod tests {
         assert!(!found);
     }
 
-    fn new_hier_integer() -> HierInteger {
-        crate::hier::tests::make_hier_integer("arc test", 4, 8)
+    fn new_hier_integer() -> Hier {
+        crate::hier::tests::make_hier(4, 8)
     }
+
     fn sample_usage() {
         let test_hz = 1_000_000_000;
 

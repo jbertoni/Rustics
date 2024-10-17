@@ -4,22 +4,49 @@
 //  permitted by law.
 //
 
-use std::any::Any;
-
 use super::Rustics;
-use super::window::Window;
 use super::PrinterBox;
 use super::PrinterOption;
-use super::RunningInteger;
-use super::RunningImport;
-use super::stdout_printer;
-use super::sum_running;
-use crate::TimerBox;
+use super::TimerBox;
+use super::window::Window;
+use std::cell::RefCell;
+use std::rc::Rc;
+use std::any::Any;
+
+pub type MemberRc    = Rc<RefCell<dyn HierMember   >>;
+pub type GeneratorRc = Rc<RefCell<dyn HierGenerator>>;
+pub type ExporterRc  = Rc<RefCell<dyn HierExporter >>;
+
+#[derive(Clone)]
+pub struct HierDescriptor {
+    dimensions:     Vec<HierDimension>,
+    auto_next:      i64,
+}
+
+impl HierDescriptor {
+    pub fn new(dimensions: Vec<HierDimension>, auto_next: Option<i64>) -> HierDescriptor {
+        let auto_next = auto_next.unwrap_or(0);
+
+        if auto_next < 0 {
+            panic!("HierDescriptor::new:  The auto_next value can't be negative.");
+        }
+
+        HierDescriptor { dimensions, auto_next }
+    }
+}
+
+// This struct is used to describe one level of the statistics
+// hierarchy.  "period" specifies the number of pushes into this
+// window before a sum statistic is pushed to the upper level.
+//
+// "retention" specifies the total number of statistics to keep
+// around for queries.  It must be at least "period" elements, but
+// can be more to keep more history.
 
 #[derive(Clone, Copy)]
 pub struct HierDimension {
-    period:        usize,
-    retention:     usize,
+    period:        usize,   // the number of statistics to be summed for the next level
+    retention:     usize,   // the number of statistics to retain for queries.
 }
 
 impl HierDimension {
@@ -32,26 +59,14 @@ impl HierDimension {
     }
 }
 
-#[derive(Clone)]
-pub struct HierDescriptor {
-    dimensions:  Vec<HierDimension>,
-    auto_next:   usize,
-}
-
-impl HierDescriptor {
-    pub fn new(dimensions: Vec<HierDimension>, auto_next: Option<usize>) -> HierDescriptor {
-        let auto_next = auto_next.unwrap_or(0);
-
-        HierDescriptor { dimensions, auto_next }
-    }
-}
-
+#[derive(Clone, Copy)]
 pub struct HierIndex {
     set:   HierSet,
     level: usize,
     which: usize,
 }
 
+#[derive(Clone, Copy)]
 pub enum HierSet {
     All,
     Live,
@@ -63,117 +78,252 @@ impl HierIndex {
     }
 }
 
-pub trait Hier {
-    fn print_index_opts(&self, index: HierIndex, printer: PrinterOption, title: Option<&str>);
-            // Print a member of the statistics matrix
+// The exporter needs to be downcasted to be used, so
+// provide that interface.
 
-    fn print_all(&self, printer: PrinterOption, title: Option<&str>);
-            // Print the entire statistics array.
-
-    fn traverse_live(&mut self, traverser: &mut dyn HierTraverser);
-            // Traverse the statistics.
-
-    fn advance(&mut self);
-            // sum the live elements of the given level into the next level up.
-
-    fn live_len(&self, level: usize) -> usize;
-    fn all_len (&self, level: usize) -> usize;
+pub trait HierExporter {
+    fn as_any    (&self)     -> &dyn Any;
+    fn as_any_mut(&mut self) -> &mut dyn Any;
 }
 
 pub trait HierTraverser {
-    fn visit(&mut self, member: &dyn Rustics);
+    fn visit(&mut self, member: &mut dyn Rustics);
 }
 
-type Stats = Vec<Window<RunningInteger>>;
+//
+// HierGenerator is implemented for a type implementing
+// Rustics.  This interfaces with the struct Hier coder
+// to provide hierarchical statistics.  This trait
+// provides functions needed by the Hier code that are
+// not bound to a specific instance of a Rustics object,
+// and so can't be in trait Rustics.  It is an abstraction
+// and extension of the impl code of the type that
+// implements Rustics.  For example, there is a
+// HierGenerator implementation for the RunningInteger
+// type.
+//
 
-pub struct HierInteger {
-    name:          String,
-    title:         String,
-    id:            usize,
-    dimensions:    Vec<HierDimension>,
-    auto_next:     usize,
-    event_count:   usize,
-    advance_count: usize,
+pub trait HierGenerator {
+    fn make_from_exporter(&self, name: &str, printer: PrinterBox, exports: ExporterRc) -> MemberRc;
 
-    stats:         Stats,
+    fn make_member       (&self, name: &str, printer: PrinterBox)  -> MemberRc;
+    fn make_exporter     (&self)                                   -> ExporterRc;
 
-    printer:       PrinterBox,
+    fn push              (&self, exports: ExporterRc, member: MemberRc);
 }
 
-impl HierInteger {
-    pub fn new(name: &str, descriptor: HierDescriptor) -> Option<HierInteger> {
-        let dimensions = descriptor.dimensions;
+//
+//  The HierMember trait is used to extend a specific object
+//  implementing the Rustics trait to work with the Hier
+//  type.  The code for the Hier type and the HierGenerator
+//  just need to be able to upcast and downcast into the member types.
+//  It is thus a very rough abstraction of a Rustics struct.
+//  The as_any* function actually are available via the Rustics
+//  trait, but it's easier to use them without that step.
+//
 
-        if dimensions.is_empty() {
-            return None;
-        }
+pub trait HierMember {
+    fn to_rustics    (&self    ) -> &dyn Rustics;
+    fn to_rustics_mut(&mut self) -> &mut dyn Rustics;
+    fn as_any        (&self    ) -> &dyn Any;
+    fn as_any_mut    (&mut self) -> &mut dyn Any;
+}
+
+//
+// This structure implements an implementation of hierarchical
+// statistics using a HierGenerator object and HierMember
+// structs.
+//
+
+pub struct Hier {
+    dimensions:     Vec<HierDimension>,
+    generator:      GeneratorRc,
+    stats:          Vec<Window<MemberRc>>,
+    name:           String,
+    title:          String,
+    id:             usize,
+    class:          String,
+    auto_next:      i64,
+    advance_count:  i64,
+    event_count:    i64,
+    printer:        PrinterBox,
+}
+
+pub struct HierConfig {
+    pub descriptor:  HierDescriptor,
+    pub generator:   GeneratorRc,
+    pub class:       String,
+    pub name:        String,
+    pub title:       String,
+    pub printer:     PrinterBox,
+}
+
+impl Hier {
+    pub fn new(configuration: HierConfig) -> Hier {
+        let     descriptor    = configuration.descriptor;
+        let     generator     = configuration.generator;
+        let     name          = configuration.name;
+        let     title         = configuration.title;
+        let     printer       = configuration.printer;
+        let     class         = configuration.class;
+
+        let     auto_next     = descriptor.auto_next;
+        let     dimensions    = descriptor.dimensions;
+        let     id            = 0;
+        let     advance_count = 0;
+        let     event_count   = 0;
+        let mut stats         = Vec::with_capacity(dimensions.len());
+
+        //
+        // Create the set of windows that we use to hold all
+        // the actual statistics objects.
+        //
 
         for dimension in &dimensions {
-            if dimension.retention < dimension.period {
-                return None;
+            stats.push(Window::new(dimension.retention, dimension.period));
+        }
+
+        //
+        // Make the first statistics so that we are ready to record data.
+        //
+
+        let member = generator.borrow_mut().make_member(&name, printer.clone());
+
+        stats[0].push(member);
+
+        Hier {
+            dimensions,   generator,  stats,
+            name,         title,      id,
+            class,        auto_next,  advance_count,
+            event_count,  printer
+        }
+    }
+
+    // Returns the newest statistic at the lowest level, which
+    // is the only statistic that records data.  The other
+    // members are all read-only.
+
+    pub fn current(&self) -> MemberRc {
+        let member = self.stats[0].newest().unwrap();
+
+        member.clone()
+    }
+
+    // Print the given element in the statistics matrix.
+
+    pub fn print_index_opts(&self, index: HierIndex, printer: PrinterOption, title: Option<&str>) {
+        self.local_print(index, printer, title);
+    }
+
+    // Print all members in this object.
+
+    pub fn print_all(&self, printer: PrinterOption, title: Option<&str>) {
+        for i in 0..self.stats.len() {
+            let level = &self.stats[i];
+
+            for j in 0..level.all_len() {
+                let index = HierIndex::new(HierSet::All, i, j);
+
+                self.local_print(index, printer.clone(), title)
+            }
+        }
+    }
+
+    // Clear all the statistics from the windows.  Reset the
+    // event and advance counters. Finally, push a new level 0
+    // statistic to receive data.
+    //
+    // This operation sets the struct back to its initial state.
+
+    pub fn clear_all(&mut self) {
+        self.advance_count = 0;
+        self.event_count   = 0;
+
+        for i in 0..self.stats.len() {
+            let level = &self.stats[i];
+
+            for j in 0..level.all_len() {
+                let     target = self.stats[i].index_all(j);
+                let mut target = target.unwrap().borrow_mut();
+
+                target.to_rustics_mut().clear();
+            }
+        }
+    }
+
+    // Provide a traverser for users to look at the that are live.
+
+    pub fn traverse_live(&mut self, traverser: &mut dyn HierTraverser) {
+        for level in &mut self.stats {
+            for member in level.iter_live() {
+                let mut borrow  = member.borrow_mut();
+                let     rustics = borrow.to_rustics_mut();
+
+                traverser.visit(rustics);
+            }
+        }
+    }
+
+    // Push a new level 0 statistics into the level 0 window.
+    // Update the upper levels as needed.  The user can
+    // call this directly, use auto_advance, or do both.
+
+    pub fn advance(&mut self) {
+        // Increment the advance op count.  This counts the
+        // number of statistics objects pushed, and thus tells
+        // us when we need to push a new higher-level object.
+
+        self.advance_count += 1;
+
+        // Now move up the stack.
+
+        let mut advance_point = 1;
+        let     generator     = self.generator.borrow();
+
+        // Check whether we have enough new objects at a given level
+        // to push a new sum of those statistics to a higher level.
+
+        for i in 0..self.dimensions.len() - 1 {
+            advance_point *= self.dimensions[i].period as i64;
+
+            if self.advance_count % advance_point == 0 {
+                let exporter = self.make_exporter(i);
+                let new_stat = generator.make_from_exporter(&self.name, self.printer.clone(), exporter);
+
+                self.stats[i + 1].push(new_stat);
+            } else {
+                break;
             }
         }
 
-        let name          = name.to_string();
-        let title         = name.clone();
-        let id            = 0;
-        let dimensions    = dimensions.to_vec();
-        let auto_next     = descriptor.auto_next;
-        let event_count   = 0;
-        let advance_count = 0;
-        let printer       = stdout_printer();
+        // Create the new statistic to collect data and push it into the
+        // level zero window.
 
-        // Create the initial statistics array and populate the first
-        // statistics struct.
+        let member = generator.make_member(&self.name, self.printer.clone());
 
-        let mut stats: Stats = Vec::with_capacity(dimensions[0].retention);
-
-        for dimension in &dimensions {
-            let window = Window::new(dimension.retention, dimension.period);
-
-            stats.push(window);
-        }
-
-        stats[0].push(RunningInteger::new(&name, None));
-
-        let new = HierInteger {
-            name,           title,      id,
-            dimensions,     auto_next,  event_count,
-            advance_count,  stats,      printer
-        };
-
-        Some(new)
+        self.stats[0].push(member);
     }
 
-    pub fn current(&self) -> &RunningInteger {
-        if self.stats[0].is_empty() {
-            panic!("HierInteger:  The stats array is empty.");
-        }
-
-        let result =
-            if let Some(result) = self.stats[0].newest() {
-                result
-            } else {
-                panic!("HierInteger::current:  No data?");
-            };
-
-        result
+    pub fn live_len(&self, level: usize) -> usize {
+        self.stats[level].live_len()
     }
 
-    pub fn current_mut(&mut self) -> &mut RunningInteger {
-        if self.stats[0].is_empty() {
-            panic!("HierInteger:  The stats array is empty.");
-        }
-
-        let result =
-            if let Some(result) = self.stats[0].newest_mut() {
-                result
-            } else {
-                panic!("HierInteger::current_mut:  No data?");
-            };
-
-        result
+    pub fn all_len(&self, level: usize) -> usize {
+        self.stats[level].all_len()
     }
+
+    // Return the total number of statistics events seen by
+    // all the statistics seen by this window since its
+    // create or the last clear_all invocation, whichever
+    // is later.
+
+    pub fn event_count(&self) -> i64 {
+        self.event_count
+    }
+
+    // Print one statistics object using the Rustics trait.
+    // We always append the indices to the title that is
+    // given.
 
     fn local_print(&self, index: HierIndex, printer_opt: PrinterOption, title_opt: Option<&str>) {
         let level = index.level;
@@ -201,9 +351,8 @@ impl HierInteger {
                 self.printer.clone()
             };
 
-        let printer = &mut *printer_box.lock().unwrap();
-
         if level >= self.stats.len() {
+            let printer = &mut *printer_box.lock().unwrap();
             printer.print(&title);
             printer.print(&format!("  This configuration has only {} levels.", self.stats.len()));
             return;
@@ -219,39 +368,42 @@ impl HierInteger {
             if let Some(target) = target {
                 target
             } else {
+                let printer = &mut *printer_box.lock().unwrap();
                 printer.print(&title);
-                printer.print("  That index is out of bounds.");
+                printer.print(&format!("  That index ({}) is out of bounds.", which));
                 return;
             };
 
-        target.print_opts(printer_opt, title_opt);
+        // Downcast to the Rustics level and print.
+
+        let target = target.borrow();
+        target.to_rustics().print_opts(printer_opt, title_opt);
     }
 
-    fn exports(&self, level: usize) -> Vec<RunningImport> {
-        let mut exports = Vec::<RunningImport>::new();
-        let     level   = &self.stats[level];
+    // Create an exporter for when we need to sum a group of
+    // statistics.  The exporter accumulates the sums of all
+    // the data necessary for the actual Rustics implementation.
+
+    fn make_exporter(&self, level: usize) -> ExporterRc {
+        let generator    = self.generator.borrow();
+        let exporter_rc  = generator.make_exporter();
+
+        let level = &self.stats[level];
 
         // Gather the statistics to sum.
 
         for stat in level.iter_live() {
-            exports.push(stat.export());
+            generator.push(exporter_rc.clone(), stat.clone());
         }
 
-        exports
+        exporter_rc
     }
 
-    fn new_from_exports(&self, exports: &Vec<RunningImport>) -> RunningInteger {
-        let name    = &self.name;
-        let title   = &self.title;
-        let printer = Some(self.printer.clone());
-        let sum     = sum_running(exports);
+    // Check the event count to see whether it's time to
+    // push a new level 0 statistics.  This routine
+    // implements the auto_next feature.
 
-        RunningInteger::new_import(name, title, printer, sum)
-    }
-}
-
-impl Rustics for HierInteger {
-    fn record_i64(&mut self, sample: i64) {
+    fn check_and_advance(&mut self) {
         // Push a new statistic if we've reached the event limit
         // for the current one.  Do this before push the next
         // event so that users see an empty current statistic only
@@ -264,28 +416,65 @@ impl Rustics for HierInteger {
         &&  self.event_count % self.auto_next == 0 {
             self.advance();
         }
+        
+        // Advance the event count.  This routine should only be
+        // called when a statistical value is being recorded.
 
-        let current = self.current_mut();
-
-        current.record_i64(sample);
         self.event_count += 1;
     }
+}
 
-    fn record_f64(&mut self, _sample: f64) {
-        panic!("HierInteger:  record_f64 is not supported.");
+// Implement the Rustics trait for the Hier object.  It
+// returns data mostly from the newest level 0 object,
+// which is the only one receiving data.
+
+impl Rustics for Hier {
+    fn record_i64(&mut self, value: i64) {
+        self.check_and_advance();
+
+        let     member  = self.stats[0].newest_mut().unwrap();
+        let mut borrow  = member.borrow_mut();
+        let     rustics = borrow.to_rustics_mut();
+
+        rustics.record_i64(value)
+    }
+
+    fn record_f64(&mut self, sample: f64) {
+        self.check_and_advance();
+
+        let     current = self.current();
+        let mut borrow  = current.borrow_mut();
+        let     rustics = borrow.to_rustics_mut();
+
+        rustics.record_f64(sample);
     }
 
     fn record_event(&mut self) {
-        panic!("HierInteger:  record_event is not supported.");
+        self.record_i64(1);
     }
 
-    fn record_time(&mut self, _sample: i64) {
-        panic!("HierInteger:  record_time is not supported.");
+    fn record_time(&mut self, sample: i64) {
+        self.check_and_advance();
+
+        let     current = self.current();
+        let mut borrow  = current.borrow_mut();
+        let     rustics = borrow.to_rustics_mut();
+
+        rustics.record_time(sample);
     }
 
-    fn record_interval(&mut self, _timer: &mut TimerBox) {
-        panic!("HierInteger:  record_integer is not supported.");
+    fn record_interval(&mut self, timer: &mut TimerBox) {
+        self.check_and_advance();
+
+        let     current = self.current();
+        let mut borrow  = current.borrow_mut();
+        let     rustics = borrow.to_rustics_mut();
+
+        rustics.record_interval(timer);
     }
+
+    // We return the name and title of the Hier structure itself.
+    // We do the same for class, as well.
 
     fn name(&self) -> String {
         self.name.clone()
@@ -296,79 +485,118 @@ impl Rustics for HierInteger {
     }
 
     fn class(&self) -> &str {
-        "integer"
+        &self.class
     }
 
     fn count(&self) -> u64 {
-        self.current().count()
+        let current = self.current();
+        let borrow  = current.borrow();
+        let rustics = borrow.to_rustics();
+
+        rustics.count()
     }
 
     fn log_mode(&self) -> isize {
-        self.current().log_mode()
+        let current = self.current();
+        let borrow  = current.borrow();
+        let rustics = borrow.to_rustics();
+
+        rustics.log_mode()
     }
 
     fn mean(&self) -> f64 {
-        self.current().mean()
+        let current = self.current();
+        let borrow  = current.borrow();
+        let rustics = borrow.to_rustics();
+
+        rustics.mean()
     }
 
     fn standard_deviation(&self) -> f64 {
-        self.current().standard_deviation()
+        let current = self.current();
+        let borrow  = current.borrow();
+        let rustics = borrow.to_rustics();
+
+        rustics.standard_deviation()
     }
 
     fn variance(&self) -> f64 {
-        self.current().variance()
+        let current = self.current();
+        let borrow  = current.borrow();
+        let rustics = borrow.to_rustics();
+
+        rustics.variance()
     }
 
     fn skewness(&self) -> f64 {
-        self.current().skewness()
+        let current = self.current();
+        let borrow  = current.borrow();
+        let rustics = borrow.to_rustics();
+
+        rustics.skewness()
     }
 
     fn kurtosis(&self) -> f64 {
-        self.current().kurtosis()
+        let current = self.current();
+        let borrow  = current.borrow();
+        let rustics = borrow.to_rustics();
+
+        rustics.kurtosis()
     }
 
     fn int_extremes(&self) -> bool {
-        true
+        let current = self.current();
+        let borrow  = current.borrow();
+        let rustics = borrow.to_rustics();
+
+        rustics.int_extremes()
     }
 
-    fn min_i64(&self) -> i64 {
-        self.current().min_i64()
+    fn min_i64(&self) -> i64  {
+        let current = self.current();
+        let borrow  = current.borrow();
+        let rustics = borrow.to_rustics();
+
+        rustics.min_i64()
     }
 
     fn min_f64(&self) -> f64 {
-        panic!("Hier:  min_f64 is not implemented.");
+        let current = self.current();
+        let borrow  = current.borrow();
+        let rustics = borrow.to_rustics();
+
+        rustics.min_f64()
     }
 
     fn max_i64(&self) -> i64 {
-        self.current().max_i64()
+        let current = self.current();
+        let borrow  = current.borrow();
+        let rustics = borrow.to_rustics();
+
+        rustics.max_i64()
     }
 
     fn max_f64(&self) -> f64 {
-        panic!("Hier:  max_f64 is not implemented.");
+        let current = self.current();
+        let borrow  = current.borrow();
+        let rustics = borrow.to_rustics();
+
+        rustics.max_f64()
     }
 
-
     fn precompute(&mut self) {
-        self.current_mut().precompute();
+        let     current = self.current();
+        let mut borrow  = current.borrow_mut();
+        let     rustics = borrow.to_rustics_mut();
+
+        rustics.precompute();
     }
 
     fn clear(&mut self) {
-        // Delete all the statistics that have been gathered.
-
-        for level in &mut self.stats {
-            level.clear();
-        }
-
-        // Push the initial statistics struct.
-
-        self.stats[0].push(RunningInteger::new(&self.name, None));
+        self.clear_all();
     }
 
     // Functions for printing
-    //   print          prints the current statistic bucket
-    //
-    //   print_opts     prints the current statistics bucket with the options
-    //                      specified
 
     fn print(&self) {
         let index = HierIndex::new(HierSet::Live, 0, self.live_len(0) - 1);
@@ -377,18 +605,21 @@ impl Rustics for HierInteger {
     }
 
     fn print_opts(&self, printer: PrinterOption, title: Option<&str>) {
-        let index = HierIndex::new(HierSet::Live, 0, self.live_len(0) - 1);
+        let current = self.current();
+        let borrow  = current.borrow();
+        let rustics = borrow.to_rustics();
 
-        self.local_print(index, printer, title);
+        rustics.print_opts(printer, title);
     }
+
+    // The title is kept in the Hier object.
 
     fn set_title(&mut self, title: &str) {
         self.title = title.to_string();
     }
 
-    // For internal use only.
-    fn set_id(&mut self, id: usize) {
-        self.id = id;
+    fn set_id(&mut self, index: usize) {
+        self.id = index;
     }
 
     fn id(&self) -> usize {
@@ -396,11 +627,11 @@ impl Rustics for HierInteger {
     }
 
     fn equals(&self, other: &dyn Rustics) -> bool {
-        if let Some(other) = <dyn Any>::downcast_ref::<HierInteger>(other.generic()) {
-            std::ptr::eq(self, other)
-        } else {
-            false
-        }
+        let current = self.current();
+        let borrow  = current.borrow();
+        let rustics = borrow.to_rustics();
+
+        rustics.equals(other)
     }
 
     fn generic(&self) -> &dyn Any {
@@ -408,109 +639,27 @@ impl Rustics for HierInteger {
     }
 
     fn histo_log_mode(&self) -> i64 {
-        self.current().histo_log_mode()
-    }
-}
+        let current = self.current();
+        let borrow  = current.borrow();
+        let rustics = borrow.to_rustics();
 
-impl Hier for HierInteger {
-    // Print a member of the statistics matrix
-
-    fn print_index_opts(&self, index: HierIndex, printer: PrinterOption, title: Option<&str>) {
-        self.local_print(index, printer, title);
-    }
-
-    // Print the statistics array.
-
-    fn print_all(&self, printer: PrinterOption, title: Option<&str>) {
-        let base_title =
-            if let Some(title) = title {
-                title
-            } else {
-                &self.title
-            };
-
-        for i in 0..self.stats.len() {
-            let level = &self.stats[i];
-
-            for j in 0..level.all_len() {
-                let title = format!("{}[{}].all[{}]", base_title, i, j);
-
-                let stat =
-                    if let Some(element) = self.stats[i].index_all(j) {
-                        element
-                    } else {
-                        panic!("HierInteger::print_all:  The index_all failed.");
-                    };
-
-                stat.print_opts(printer.clone(), Some(&title));
-            }
-        }
-    }
-
-    // Traverse the live statistics.
-
-    fn traverse_live(&mut self, traverser: &mut dyn HierTraverser) {
-        for level in &self.stats {
-            for i in 0..level.live_len() {
-                if let Some(stat) = level.index_live(i) {
-                    traverser.visit(stat);
-                } else {
-                    panic!("HierInteger::traverse:  Index {} failed.", i)
-                }
-            }
-        }
-    }
-
-    // Sum the live statistics at the given level and push the sum
-    // onto the higher level.  That level might need to be summed,
-    // as well.
-
-    fn advance(&mut self) {
-        if self.stats.len() == 1 {
-            return;
-        }
-
-        // Increment the advance op count.
-
-        self.advance_count += 1;
-
-        // Now move up the stack.
-
-        let mut advance_point = 1;
-
-        for i in 0..self.dimensions.len() - 1 {
-            advance_point *= self.dimensions[i].period;
-
-            if self.advance_count % advance_point == 0 {
-                let exports  = self.exports(i);
-                let new_stat = self.new_from_exports(&exports);
-
-                self.stats[i + 1].push(new_stat);
-            } else {
-                break;
-            }
-        }
-
-        // Create the summary statistics struct and push it onto the
-        // level zero stack.
-
-        self.stats[0].push(RunningInteger::new(&self.name, None));
-    }
-
-    fn all_len(&self, level: usize) -> usize {
-        self.stats[level].all_len()
-    }
-
-    fn live_len(&self, level: usize) -> usize {
-        self.stats[level].live_len()
+        rustics.histo_log_mode()
     }
 }
 
 #[cfg(test)]
 pub mod tests {
     use super::*;
+    use crate::stdout_printer;
+    use crate::RunningGenerator;
+    use crate::RunningHierConfig;
 
-    pub fn make_hier_integer(name: &str, level_0_period: usize, auto_next: usize) -> HierInteger {
+    // Make a Hier struct for testing.  The tests use the RunningInteger
+    // implementation.
+
+    // Make a 4-level hierarchical statistic for testing.
+
+    pub fn make_hier(level_0_period: usize, auto_next: usize) -> Hier {
         let     levels      = 4;
         let     dimension   = HierDimension::new(level_0_period, 3 * level_0_period);
         let mut dimensions  = Vec::<HierDimension>::with_capacity(levels);
@@ -519,7 +668,11 @@ pub mod tests {
 
         dimensions.push(dimension);
 
-        // Create a hierarchy.
+        // Create a hierarchy.  Use a period of 4 level at level 1,
+        // and just add 2 as we go up.  This will keep all the
+        // periods distinct.  We force the total window size to
+        // 3 times the period, which is fine for testing.  That
+        // might become too costly in actual usage.
 
         let mut period = 4;
 
@@ -531,12 +684,28 @@ pub mod tests {
             period += 2;
         }
 
-        let descriptor = HierDescriptor::new(dimensions, Some(auto_next));
+        // Finish creating the Hier description structure.  This
+        // just describes the windows and how the statistics
+        // structures are advanced.
 
-        HierInteger::new(name, descriptor).unwrap()
+        let auto_next     = Some(auto_next as i64);
+        let descriptor    = HierDescriptor::new(dimensions, auto_next);
+
+        // Now create the RunningInteger-based Hier struct via
+        // RunningGenerator, which does some of the work for
+        // us.
+
+        let name          = "hier".to_string();
+        let title         = "hier title".to_string();
+        let printer       = stdout_printer();
+
+        let configuration =
+            RunningHierConfig { descriptor, name, title, printer };
+
+        RunningGenerator::new_hier(configuration)
     }
 
-    fn compute_events_per_entry(hier_integer: &HierInteger, level: usize) -> i64 {
+    fn compute_events_per_entry(hier_integer: &Hier, level: usize) -> i64 {
         let mut result = hier_integer.auto_next as i64;
 
         assert!(result > 0);
@@ -552,7 +721,7 @@ pub mod tests {
         (((value + multiple - 1) / multiple)) * multiple
     }
 
-    fn compute_len(hier_integer: &HierInteger, level: usize, set: HierSet, events: i64) -> usize {
+    fn compute_len(hier_integer: &Hier, level: usize, set: HierSet, events: i64) -> usize {
         assert!(events > 0);
 
         let recorded_events =
@@ -582,7 +751,7 @@ pub mod tests {
         length as usize
     }
 
-    fn check_sizes(hier_integer: &HierInteger, events: i64, verbose: bool) {
+    fn check_sizes(hier_integer: &Hier, events: i64, verbose: bool) {
         for level in 0..hier_integer.stats.len() {
             let expected_all_len  = compute_len(hier_integer, level, HierSet::All,  events);
             let expected_live_len = compute_len(hier_integer, level, HierSet::Live, events);
@@ -593,11 +762,11 @@ pub mod tests {
             if verbose {
                 println!("check_sizes:  at level {}, events {}", level, events);
 
-                println!("    expected_all {}, expected_live {}",
-                    expected_all_len, expected_live_len);
+                println!("    live {} == {}",
+                    actual_live_len, expected_live_len);
 
-                println!("    actual_all {}, actual_live {}",
-                    actual_all_len, actual_live_len);
+                println!("    all {} == {}",
+                    actual_all_len, expected_all_len);
             }
 
             assert!(actual_all_len  == expected_all_len );
@@ -606,9 +775,8 @@ pub mod tests {
     }
 
     // This is a fairly straightforward test that just pushes a lot of
-    // values into a HierInteger struct.  It is long because it takes a
-    // fair number of operations to force higer-level statistics into
-    // use.
+    // values into a Hier struct.  It is long because it takes a fair
+    // number of operations to force higer-level statistics into existence.
 
     fn simple_hier_test() {
         let     auto_next      = 4;
@@ -616,16 +784,24 @@ pub mod tests {
         let     signed_auto    = auto_next as i64;
         let mut events         = 0;
         let mut sum_of_events  = 0;
-
-        let mut hier_integer   = make_hier_integer("hier test 1", level_0_period, auto_next);
+        let mut hier_integer   = make_hier(level_0_period, auto_next);
 
         // Check that the struct matches our expectations.
 
-        assert!(auto_next == hier_integer.auto_next);
-        assert!(hier_integer.stats[0].all_len() == 1);
-        assert!(hier_integer.dimensions[0].period == level_0_period);
+        let live_len  = hier_integer.stats[0].live_len();
+        let all_len   = hier_integer.stats[0].all_len();
+        let period    = hier_integer.dimensions[0].period;
+
+        assert!(signed_auto == hier_integer.auto_next);
+        assert!(all_len     == 1                     );
+        assert!(live_len    == 1                     );
+        assert!(period      == level_0_period        );
 
         let expected_count = auto_next as u64;
+
+        // Push one full window and see whether the data
+        // and structure matches what we expect as we
+        // record each event.
 
         for i in 0..signed_auto {
             hier_integer.record_i64(i);
@@ -636,10 +812,12 @@ pub mod tests {
             if i < signed_auto - 1 {
                 let mean  = sum_of_events as f64 / (i + 1) as f64;
 
-                let all_len_0 = hier_integer.stats[0].all_len();
-                let count     = (i + 1) as u64;
+                let live_len_0 = hier_integer.stats[0].live_len();
+                let all_len_0  = hier_integer.stats[0].all_len();
+                let count      = (i + 1) as u64;
 
                 assert!(all_len_0              == 1    );
+                assert!(live_len_0             == 1    );
                 assert!(hier_integer.count()   == count);
                 assert!(hier_integer.min_i64() == 0    );
                 assert!(hier_integer.max_i64() == i    );
@@ -657,7 +835,9 @@ pub mod tests {
         assert!(hier_integer.mean()         == mean           );
 
         check_sizes(&hier_integer, events, false);
+        println!("simple_hier_test:  print 1 at {}", events);
         hier_integer.print();
+        println!("simple_hier_test:  print 1.5 at {}", events);
 
         assert!(hier_integer.count() == events as u64);
 
@@ -674,8 +854,8 @@ pub mod tests {
             check_sizes(&hier_integer, events, false);
         }
 
-
         assert!(hier_integer.stats[0].all_len() == 2);
+        println!("simple_hier_test:  print 2 at {}", events);
         hier_integer.print();
 
         let floating_window = signed_auto as f64;
@@ -685,6 +865,13 @@ pub mod tests {
         assert!(hier_integer.min_i64() == signed_auto        );
         assert!(hier_integer.max_i64() == 2 * signed_auto - 1);
         assert!(hier_integer.mean()    == expected_mean      );
+
+
+        // Record two windows worth of events and check that
+        // our size expectations are correct.  Also, keep the
+        // sum of the last "window" of events so that we can
+        // check the mean.  Only the lawt "window" events should
+        // be used to compute the mean.
 
         let mut sum = 0;
 
@@ -703,6 +890,7 @@ pub mod tests {
             check_sizes(&hier_integer, events, false);
         }
 
+        println!("simple_hier_test:  print 3 at {}", events);
         hier_integer.print();
 
         let expected_mean = sum as f64 / floating_window;
@@ -724,15 +912,19 @@ pub mod tests {
             check_sizes(&hier_integer, events, false);
         }
 
+        // Check that we have at least one level 1 object.  This
+        // is a test of the test itself, for the most part.
+
         let expected_len = compute_len(&hier_integer, 1, HierSet::All,  events);
         let actual_len   = hier_integer.stats[1].all_len();
 
         assert!(expected_len > 0);
         assert!(actual_len == expected_len);
 
+        // Now force a level 2 statistics.
+
         for i in 0..(auto_next * level_0_period / 2) as i64 {
             hier_integer.record_i64(i);
-
             events        += 1;
             sum_of_events += i;
 
@@ -772,9 +964,13 @@ pub mod tests {
 
         assert!(hier_integer.stats[2].all_len() == expected_len);
 
-        let stat = hier_integer.stats[2].newest().unwrap();
+        let stat_rc      = hier_integer.stats[2].newest().unwrap();
+        let stat_borrow  = stat_rc.borrow();
+        let stat         = stat_borrow.to_rustics();
 
+        println!("simple_hier_test:  print 4 at {}", events);
         stat.print();
+
         hier_integer.print_all(None, None);
 
         assert!(stat.mean() == expected_mean);
@@ -795,7 +991,7 @@ pub mod tests {
     }
 
     impl HierTraverser for TestTraverser {
-        fn visit(&mut self, _member: &dyn Rustics) {
+        fn visit(&mut self, _member: &mut dyn Rustics) {
             self.count += 1;
         }
     }
@@ -806,8 +1002,10 @@ pub mod tests {
     fn long_test() {
         let     auto_next      = 2;
         let     level_0_period = 4;
-        let mut hier_integer   = make_hier_integer("long test", level_0_period, auto_next);
+        let mut hier_integer   = make_hier(level_0_period, auto_next);
         let mut events         = 0;
+
+        // Record data until there's a level 3 sum statistic.
 
         while hier_integer.stats[3].all_len()  == 0 {
             events += 1;
@@ -816,6 +1014,9 @@ pub mod tests {
             check_sizes(&hier_integer, events, false);
         }
 
+        // Now see that all the sizes, etc, match what we
+        // expect.
+
         let     dimensions         = &hier_integer.dimensions;
         let mut events_per_level_3 = auto_next;
 
@@ -823,21 +1024,26 @@ pub mod tests {
             events_per_level_3 *= dimensions[i].period;
         }
 
-        let stat = hier_integer.stats[3].newest().unwrap();
+        {
+            let stat_rc        = hier_integer.stats[3].newest().unwrap();
+            let stat_borrow    = stat_rc.borrow();
+            let stat           = stat_borrow.to_rustics();
 
-        let events_in_stat = (events - 1) as f64;
-        let sum            = (events_in_stat * (events_in_stat + 1.0)) / 2.0;
-        let mean           = sum / events_in_stat;
+            let events_in_stat = (events - 1) as f64;
+            let sum            = (events_in_stat * (events_in_stat + 1.0)) / 2.0;
+            let mean           = sum / events_in_stat;
 
-        println!("long_test:  stats.mean() {}, expected {}", stat.mean(), mean);
+            println!("long_test:  stats.mean() {}, expected {}", stat.mean(), mean);
 
-        assert!(stat.count() as i64 == events - 1               );
-        assert!(stat.count() as i64 == events_per_level_3 as i64);
-        assert!(stat.mean()         == mean                     );
+            assert!(stat.count() as i64 == events - 1               );
+            assert!(stat.count() as i64 == events_per_level_3 as i64);
+            assert!(stat.mean()         == mean                     );
 
-        hier_integer.print_all(None, None);
+            hier_integer.print_all(None, None);
+        }
 
-        // Do a quick test of the traverser.
+        // Do a quick test of the traverser.  It should see each
+        // statistic in the matrix.
 
         let mut traverser = TestTraverser::new();
         let mut predicted = 0;
@@ -853,10 +1059,25 @@ pub mod tests {
         assert!(traverser.count == predicted);
     }
 
+    fn sample_usage() {
+        let     auto_next      = 100;
+        let     level_0_period = 10;
+        let mut hier_integer   = make_hier(level_0_period, auto_next);
+        let mut events         = 0;
+
+        for _i in  0..1000 {
+            events += 1;
+            hier_integer.record_i64(events);
+        }
+
+        assert!(hier_integer.event_count() == events);
+    }
+
     #[test]
     fn run_tests() {
         println!("Running the hierarchical stats tests.");
         simple_hier_test();
+        sample_usage();
         long_test();
     }
 }

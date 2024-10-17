@@ -1,3 +1,9 @@
+//
+//  This code is available under the Berkeley 2-Clause, Berkely 2-clause,
+//  and MIT licenses.  It is also available as public domain source where
+//  permitted by law.
+//
+
 // Implement a structure for the pseudo-log histograms.
 
 use super::Printer;

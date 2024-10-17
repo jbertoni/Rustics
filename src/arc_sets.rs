@@ -7,10 +7,10 @@
 use std::sync::Mutex;
 use std::sync::Arc;
 use super::Rustics;
-use super::RunningInteger;
-use super::IntegerWindow;
-use super::RunningTime;
-use super::TimeWindow;
+use super::running_integer::RunningInteger;
+use super::running_time::RunningTime;
+use super::integer_window::IntegerWindow;
+use super::time_window::TimeWindow;
 use super::TimerBox;
 use super::Counter;
 use super::PrinterOption;

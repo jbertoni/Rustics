@@ -7,14 +7,15 @@
 use std::rc::Rc;
 use std::cell::RefCell;
 use super::Rustics;
-use super::RunningInteger;
-use super::IntegerWindow;
-use super::RunningTime;
-use super::TimeWindow;
 use super::PrinterOption;
 use super::TimerBox;
 use super::Counter;
 use super::create_title;
+
+use super::running_integer::RunningInteger;
+use super::running_time::RunningTime;
+use super::integer_window::IntegerWindow;
+use super::time_window::TimeWindow;
 
 pub type RusticsRc       = Rc<RefCell<dyn Rustics>>;
 pub type RusticsRcSetBox = Rc<RefCell<RusticsRcSet>>;

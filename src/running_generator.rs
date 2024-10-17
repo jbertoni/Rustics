@@ -15,8 +15,8 @@ use std::rc::Rc;
 
 use super::Rustics;
 use super::PrinterBox;
-use super::RunningInteger;
-use super::RunningExporter;
+use super::running_integer::RunningInteger;
+use crate::running_integer::RunningExporter;
 
 use crate::Hier;
 use crate::HierDescriptor;

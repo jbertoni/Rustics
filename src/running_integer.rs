@@ -46,9 +46,12 @@ pub struct RunningInteger {
     printer:    PrinterBox,
 }
 
-// RunningExporter structs are used to export statistics from a RunningInteger
-// struct so that multiple structures can be summed.  The RunningTime code use
-// a RunningInteger struct underneath a wrapper, so it uses this code, too.
+// RunningExporter structs are used to export statistics from a
+// RunningInteger struct so that multiple structures can be summed.
+// This is used by IntegerHier to implement a Hier struct that uses
+// RunningInteger statistics.  The RunningTime code uses a
+// RunningInteger struct underneath a wrapper, so TimeHier uses this
+// code.
 
 #[derive(Default)]
 pub struct RunningExporter {

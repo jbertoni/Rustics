@@ -17,29 +17,29 @@ use super::TimerBox;
 use super::PrinterOption;
 use super::create_title;
 
-pub type RusticsArc       = Arc<Mutex<dyn Rustics>>;
-pub type RusticsArcSetBox = Arc<Mutex<RusticsArcSet>>;
+pub type RusticsArc = Arc<Mutex<dyn Rustics>>;
+pub type ArcSetBox  = Arc<Mutex<ArcSet>>;
 
 // Define the trait for traversing a set and its hierarchy.
 
 pub trait ArcTraverser {
-    fn visit_set(&mut self, set: &mut RusticsArcSet);
+    fn visit_set(&mut self, set: &mut ArcSet);
     fn visit_member(&mut self, member: &mut dyn Rustics);
 }
 
 // Define the set type.  A set can contain statistics and
-// subsets of type RusticsArcSet.
+// subsets of type ArcSet.
 
-pub struct RusticsArcSet {
+pub struct ArcSet {
     name:       String,
     title:      String,
     id:         usize,
     next_id:    usize,
     members:    Vec<RusticsArc>,
-    subsets:    Vec<RusticsArcSetBox>,
+    subsets:    Vec<ArcSetBox>,
 }
 
-impl RusticsArcSet {
+impl ArcSet {
 
     // Create a new set.
     //
@@ -48,7 +48,7 @@ impl RusticsArcSet {
     // statistics in the set.  These hints can improve performance a bit.  They
     // might be especially useful in embedded environments.
 
-    pub fn new(name_in: &str, members_hint: usize, subsets_hint: usize) -> RusticsArcSet {
+    pub fn new(name_in: &str, members_hint: usize, subsets_hint: usize) -> ArcSet {
         let name    = String::from(name_in);
         let title   = String::from(name_in);
         let id      = usize::MAX;
@@ -56,7 +56,7 @@ impl RusticsArcSet {
         let members = Vec::with_capacity(members_hint);
         let subsets = Vec::with_capacity(subsets_hint);
 
-        RusticsArcSet { name, title, id, next_id, members, subsets }
+        ArcSet { name, title, id, next_id, members, subsets }
     }
 
     // Returns the name of the set.
@@ -217,8 +217,8 @@ impl RusticsArcSet {
 
     // Create a new subset and add it to the set.
 
-    pub fn add_subset(&mut self, name: &str, members: usize, subsets: usize) -> RusticsArcSetBox {
-        self.subsets.push(Arc::from(Mutex::new(RusticsArcSet::new(name, members, subsets))));
+    pub fn add_subset(&mut self, name: &str, members: usize, subsets: usize) -> ArcSetBox {
+        self.subsets.push(Arc::from(Mutex::new(ArcSet::new(name, members, subsets))));
 
         let     last   = self.subsets.last().unwrap();
         let mut subset = last.lock().unwrap();
@@ -233,7 +233,7 @@ impl RusticsArcSet {
 
     // Remove a subset from the set.
 
-    pub fn remove_subset(&mut self, target_box: RusticsArcSetBox) -> bool {
+    pub fn remove_subset(&mut self, target_box: ArcSetBox) -> bool {
         let mut found         = false;
         let mut i             = 0;
         let     target_subset = target_box.lock().unwrap();
@@ -282,7 +282,7 @@ pub mod tests {
 
     //  Add statistics to a set.
 
-    fn add_stats(parent: &Mutex<RusticsArcSet>) {
+    fn add_stats(parent: &Mutex<ArcSet>) {
         for i in 0..4 {
             let lower             = -64;    // Just define the range for the test samples.
             let upper             = 64;
@@ -408,7 +408,7 @@ pub mod tests {
 
         //  Create the parent set for our test statistics.
 
-        let mut set = RusticsArcSet::new("parent set", 4, 4);
+        let mut set = ArcSet::new("parent set", 4, 4);
 
         //  Create timers for time statistics.
 
@@ -561,7 +561,7 @@ pub mod tests {
         // The last two parameters to new() are size hints, and need not be correct.
         // The same is true for add_subset.
 
-        let mut  set     = RusticsArcSet::new("parent set", 0, 1);
+        let mut  set     = ArcSet::new("parent set", 0, 1);
         let      subset  = set.add_subset("subset", 1, 0);
         let mut  subset  = subset.lock().unwrap();
         let      running = subset.add_running_integer("running");
@@ -642,7 +642,7 @@ pub mod tests {
             self.members += 1;
         }
 
-        fn visit_set(&mut self, set: &mut RusticsArcSet) {
+        fn visit_set(&mut self, set: &mut ArcSet) {
             println!(" *** visiting arc set     \"{}\"", set.name());
             self.sets += 1;
         }

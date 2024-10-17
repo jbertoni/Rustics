@@ -66,21 +66,25 @@
 //!         * The Hier struct implements the framework for hierarchical statistics.
 //!         * The HierGenerator trait provides the interface from a Rustics implementation
 //!           to the Hier struct.
-//!     * RunningGenerator
+//!     * IntegerHier
 //!         * This structure provides RunningInteger types in a Hier structure.  See
-//!            RunningGenerator::new_hier() for a simple interface to get going.  The
-//!            hier.rs test module also contains "sample_usage" and "make_hier" routines
-//!            as examples.
+//!           "Integer::new_hier" for a simple interface to get going.  The
+//!           hier.rs test module also contains "sample_usage" and "make_hier" routines
+//!           as examples.
+//!     * TimeHier
+//!         * TimeHier implements Hier for the RunningTime struct. As with IntegerHier,
+//!           see "TimeHier::new_hier" for an easy way to make a Hier object that uses
+//!           RunningTime statistics.
 //!
 //! * Creating Sets
 //!     * The "arc_sets" and "rc_sets" modules implement a simple feature allowing the creation of sets
 //!       that accept statistics and subsets as members.
 //!
-//!     * RusticsArcSet
+//!     * ArcSet
 //!         * This type functions as an Arc-based implementation of sets and subsets that can be printed
 //!           and cleared on command.
 //!
-//!     * RusticsRcSet
+//!     * RcSet
 //!         * This type functions as an Rc-based implementation of sets and subsets.  These sets will be
 //!           significantly faster than Arc-based sets, but are not thread-safe.
 //!

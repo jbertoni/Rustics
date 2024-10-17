@@ -18,29 +18,29 @@ use super::running_time::RunningTime;
 use super::integer_window::IntegerWindow;
 use super::time_window::TimeWindow;
 
-pub type RusticsRc       = Rc<RefCell<dyn Rustics>>;
-pub type RusticsRcSetBox = Rc<RefCell<RusticsRcSet>>;
+pub type RusticsRc = Rc<RefCell<dyn Rustics>>;
+pub type RcSetBox  = Rc<RefCell<RcSet>>;
 
 // Define the trait for traversing a set and its hierarchy.
 
 pub trait RcTraverser {
-    fn visit_set(&mut self, set: &mut RusticsRcSet);
+    fn visit_set(&mut self, set: &mut RcSet);
     fn visit_member(&mut self, member: &mut dyn Rustics);
 }
 
 // Define the actual set type.  A set can contain Rustics
-// members and subsets of type RusticsRcSet.
+// members and subsets of type RcSet.
 
-pub struct RusticsRcSet {
+pub struct RcSet {
     name:       String,
     title:      String,
     id:         usize,
     next_id:    usize,
     members:    Vec<RusticsRc>,
-    subsets:    Vec<RusticsRcSetBox>,
+    subsets:    Vec<RcSetBox>,
 }
 
-impl RusticsRcSet {
+impl RcSet {
 
     // Create a new set.
     //
@@ -48,7 +48,7 @@ impl RusticsRcSet {
     // of elements to be expected.  "members_hint" refers to the number of Rustics
     // statistics in the set.  These hints can improve performance a bit.
 
-    pub fn new(name_in: &str, members: usize, subsets: usize) -> RusticsRcSet {
+    pub fn new(name_in: &str, members: usize, subsets: usize) -> RcSet {
         let name    = String::from(name_in);
         let title   = String::from(name_in);
         let id      = usize::MAX;
@@ -56,7 +56,7 @@ impl RusticsRcSet {
         let members = Vec::with_capacity(members);
         let subsets = Vec::with_capacity(subsets);
 
-        RusticsRcSet { name, title, id, next_id, members, subsets }
+        RcSet { name, title, id, next_id, members, subsets }
     }
 
     // Returns the name of the set.
@@ -211,8 +211,8 @@ impl RusticsRcSet {
 
     // Create a new subset and add it to the set.
 
-    pub fn add_subset(&mut self, name: &str, members: usize, subsets: usize) -> RusticsRcSetBox {
-        self.subsets.push(Rc::from(RefCell::new(RusticsRcSet::new(name, members, subsets))));
+    pub fn add_subset(&mut self, name: &str, members: usize, subsets: usize) -> RcSetBox {
+        self.subsets.push(Rc::from(RefCell::new(RcSet::new(name, members, subsets))));
 
         let     last   = self.subsets.last().unwrap();
         let mut subset = (**last).borrow_mut();
@@ -229,7 +229,7 @@ impl RusticsRcSet {
     // There might be some way to do pointer comparison, but it
     // doesn't seem to be trivial.
 
-    pub fn remove_subset(&mut self, target: &RusticsRcSetBox) -> bool {
+    pub fn remove_subset(&mut self, target: &RcSetBox) -> bool {
         let mut found     = false;
         let mut i         = 0;
         let     subset    = (**target).borrow_mut();
@@ -290,13 +290,13 @@ mod tests {
             self.members += 1;
         }
 
-        fn visit_set(&mut self, set: &mut RusticsRcSet) {
+        fn visit_set(&mut self, set: &mut RcSet) {
             println!(" *** visiting rc set     \"{}\"", set.name());
             self.sets += 1;
         }
     }
 
-    fn add_stats(parent: &mut RusticsRcSet) {
+    fn add_stats(parent: &mut RcSet) {
         let lower = -64;
         let upper =  64;
 
@@ -364,7 +364,7 @@ mod tests {
 
         // Create the parent set for all the statistics.
 
-        let mut set = RusticsRcSet::new("parent set", 4, 4);
+        let mut set = RcSet::new("parent set", 4, 4);
 
         // Add integer statistics, both a running total and a window.
 
@@ -484,7 +484,7 @@ mod tests {
         //
         //  Create the parent set and add a subset.
 
-        let mut set     = RusticsRcSet::new("sample usage parent", 0, 0);
+        let mut set     = RcSet::new("sample usage parent", 0, 0);
         let     subset  = set.add_subset("subset", 0, 0);
         let mut subset  = (*subset).borrow_mut();
 

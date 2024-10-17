@@ -64,7 +64,7 @@ pub struct TimeHierConfig {
 }
 
 impl TimeHier {
-    pub fn new(timer: TimerBox) -> TimeHier  {
+    pub fn new_raw(timer: TimerBox) -> TimeHier  {
         TimeHier { timer }
     }
 
@@ -73,7 +73,7 @@ impl TimeHier {
     // RunningTime type.
 
     pub fn new_hier(configuration: TimeHierConfig) -> Hier {
-        let generator  = TimeHier::new(configuration.timer);
+        let generator  = TimeHier::new_raw(configuration.timer);
         let generator  = Rc::from(RefCell::new(generator));
         let class      = "integer".to_string();
 
@@ -180,7 +180,7 @@ mod tests {
         let     hz           = 1_000_000_000;
         let     timer        = crate::arc_sets::tests::ContinuingTimer::new(hz);
         let     timer        = Rc::from(RefCell::new(timer));
-        let     generator    = TimeHier::new(timer);
+        let     generator    = TimeHier::new_raw(timer);
         let     printer      = stdout_printer();
         let     member_rc    = generator.make_member("test member", printer);
         let     member_clone = member_rc.clone();

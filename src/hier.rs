@@ -1183,7 +1183,8 @@ pub mod tests {
         integer_hier.record_i64(42);
         events += 1;
 
-        assert!(integer_hier.live_len(1) == 1);
+        assert!(integer_hier.live_len(1)   == 1     );
+        assert!(integer_hier.event_count() == events);
     }
 
     #[test]

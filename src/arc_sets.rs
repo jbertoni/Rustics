@@ -11,8 +11,8 @@ use super::running_integer::RunningInteger;
 use super::running_time::RunningTime;
 use super::integer_window::IntegerWindow;
 use super::time_window::TimeWindow;
+use super::counter::Counter;
 use super::TimerBox;
-use super::Counter;
 use super::PrinterOption;
 use super::create_title;
 

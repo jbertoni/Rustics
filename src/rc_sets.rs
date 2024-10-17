@@ -9,7 +9,7 @@ use std::cell::RefCell;
 use super::Rustics;
 use super::PrinterOption;
 use super::TimerBox;
-use super::Counter;
+use super::counter::Counter;
 use super::create_title;
 
 use super::running_integer::RunningInteger;

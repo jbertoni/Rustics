@@ -120,6 +120,8 @@ pub mod hier;
 pub mod window;
 pub mod time;
 pub mod sum;
+pub mod running_generator;
+pub mod log_histogram;
 
 mod printable;
 
@@ -131,6 +133,7 @@ use hier::HierExporter;
 use hier::HierMember;
 use hier::ExporterRc;
 use hier::MemberRc;
+use log_histogram::LogHistogram;
 use sum::kbk_sum;
 use printable::Printable;
 
@@ -157,12 +160,11 @@ pub fn commas(value: &str) -> String {
     let digits;
     let comma_interval = 3;
 
-    /*
-     *  A string like "-200" shouldn't be printed as "-,200", so detect and
-     *  handle leading signs that'll cause a comma to be added.  If the
-     * string length is 1 mod 3 and the top character is a sign, we need to
-     * intervene.
-     */
+    //  A string like "-200" shouldn't be printed as "-,200", so detect and
+    //  handle leading signs that'll cause a comma to be added.  If the
+    // string length is 1 mod 3 and the top character is a sign, we need to
+    // intervene.
+
     if value.len() % comma_interval == 1 {
         match value.chars().next().unwrap() {
             '+' => { sign = "+"; digits = value[1..].to_string(); }
@@ -261,48 +263,6 @@ pub fn compute_kurtosis(count: u64, moment_2: f64, moment_4: f64) -> f64 {
     sample_excess_kurtosis
 }
 
-
-// This function returns an array index to record a log value
-// in a histogram.  Callers are expected to use two arrays,
-// one for positive and one for negative values, so this routine
-// ignores the sign of its input.
-//
-// The algorithm implements a simple log-like function of the
-// absolute value of its input.  It is intended only for making
-// histograms.
-//
-// The pseudo-log of most negative integers n is defined as -log(-n)
-// to give a reasonable histogram structure.  The pseudo-log of
-// i64::MIN is defined as 63 for convenience.  This routine always
-// returns a positive index for an array, so the return value is
-// pseudo-log(-n).  The calling routine handles the negation by using
-// separate arrays for positive and negative pseudo-log values.
-//
-// In addition, pseudo-log(0) is defined as 0.
-//
-
-fn pseudo_log_index(value: i64) -> usize {
-    let mut place = 1;
-    let mut log   = 0;
-
-    let absolute;
-
-    if value == i64::MIN {
-        return 63;
-    } else if value < 0 {
-        absolute = (-value) as u64;
-    } else {
-        absolute = value as u64;
-    }
-
-    while place < absolute && log < 63 {
-        place *= 2;
-        log   += 1;
-    }
-
-    log
-}
-
 // Insert a delimiter and concatenate the parent and child names
 // when creating a hierarchical title.
 
@@ -318,263 +278,6 @@ pub fn create_title(title_prefix: &str, title: &str) -> String {
         };
 
     title
-}
-
-/*
-// These structures and routines are common code for printing
-// statistics.
-//
-// The Printable struct allows passing common values to be
-// printed to generic routines for RunningInteger and
-// IntegerWindow structs.
-
-struct Printable {
-    n:          u64,
-    min:        i64,
-    max:        i64,
-    log_mode:   i64,
-    mean:       f64,
-    variance:   f64,
-    skewness:   f64,
-    kurtosis:   f64,
-}
-
-impl Printable {
-    fn print_integer(name: &str, value: i64, printer: &mut dyn Printer) {
-        let output = format!("    {:<12} {:>12}", name, value);
-        printer.print(&output);
-    }
-
-    fn print_float(name: &str, value: f64, printer: &mut dyn Printer) {
-        Self::print_float_unit(name, value, "", printer)
-    }
-
-    fn print_float_unit(name: &str, value: f64, unit: &str, printer: &mut dyn Printer) {
-        assert!(!value.is_nan());
-
-        let value = format!("{:+e}", value)
-            .replace('e', " e+")
-            .replace("e+-", " e-") ;
-
-        let mantissa_digits = 8;
-        let mut mantissa = Vec::with_capacity(mantissa_digits);
-
-        for char in value.chars() {
-            if char == ' ' {
-                break;
-            }
-
-            mantissa.push(char);
-
-            if mantissa.len() == 8 {
-                break;
-            }
-        }
-
-        while mantissa.len() < mantissa_digits {
-            mantissa.push('0');
-        }
-
-        let mantissa: String = mantissa.into_iter().collect();
-        let exponent         = value.split(' ').last().unwrap();
-        let output           = format!("    {:<13}    {} {} {}", name, mantissa, exponent, unit);
-
-        printer.print(&output);
-    }
-
-    fn print_time(name: &str, time: f64, hz: i64, printer: &mut dyn Printer) {
-        let (scaled_time, unit) = Printable::scale_time(time, hz);
-
-        if scaled_time > 999999.0 {
-            Self::print_float_unit(name, scaled_time, &unit, printer);
-        } else {
-            let output = format!("    {:<12} {:>12.3} {}", name, scaled_time, unit);
-            printer.print(&output);
-        }
-    }
-
-// Compute the sample variance.
-
-    // Print the common integer statistics as passed in a Printable structure.
-
-    fn print_common_integer(&self, printer: &mut dyn Printer) {
-        Self::print_integer("Count", self.n as i64, printer);
-
-        if self.n > 0 {
-            Self::print_integer("Minumum",  self.min,      printer);
-            Self::print_integer("Maximum",  self.max,      printer);
-            Self::print_integer("Log Mode", self.log_mode, printer);
-        }
-    }
-
-    // Print the common computed statistics as passed in a Printable structure.
-    // This includes values like the mean, which should be limited to an integer
-    // value.
-
-    fn print_common_float(&self, printer: &mut dyn Printer) {
-        if self.n > 0 {
-            Self::print_float("Mean",     self.mean,            printer);
-            Self::print_float("Std Dev",  self.variance.sqrt(), printer);
-            Self::print_float("Variance", self.variance,        printer);
-            Self::print_float("Skewness", self.skewness,        printer);
-            Self::print_float("Kurtosis", self.kurtosis,        printer);
-        }
-    }
-
-    fn print_common_integer_times(&self, hz: i64, printer: &mut dyn Printer) {
-        Self::print_integer("Count", self.n as i64, printer);
-
-        if self.n > 0 {
-            Self::print_time("Minumum",  self.min as f64,      hz, printer);
-            Self::print_time("Maximum",  self.max as f64,      hz, printer);
-            Self::print_time("Log Mode", self.log_mode as f64, hz, printer);
-        }
-    }
-
-    fn print_common_float_times(&self, hz: i64, printer: &mut dyn Printer) {
-        if self.n > 0 {
-            Self::print_time("Mean",     self.mean,            hz, printer);
-            Self::print_time("Std Dev",  self.variance.sqrt(), hz, printer);
-            Self::print_time("Variance", self.variance,        hz, printer);
-            Self::print_time("Skewness", self.skewness,        hz, printer);
-            Self::print_time("Kurtosis", self.kurtosis,        hz, printer);
-        }
-    }
-}
-*/
-
-// Implement a structure for the pseudo-log histograms.
-
-#[derive(Clone)]
-pub struct LogHistogram {
-    pub negative:   [u64; 64],
-    pub positive:   [u64; 64],
-}
-
-impl LogHistogram {
-    pub fn new() -> LogHistogram {
-        let negative: [u64; 64] = [0; 64];
-        let positive: [u64; 64] = [0; 64];
-
-        LogHistogram { negative, positive }
-    }
-
-    // Record a sample value.
-
-    pub fn record(&mut self, sample: i64) {
-        if sample < 0 {
-            self.negative[pseudo_log_index(sample)] += 1;
-        } else {
-            self.positive[pseudo_log_index(sample)] += 1;
-        }
-    }
-
-    // This helper function prints the negative buckets.
-
-    fn print_negative(&self, printer: &mut dyn Printer) {
-        // Skip printing buckets that would appear before the first non-zero bucket.
-        // So find the non-zero bucket with the highest index in the array.
-
-        let mut i = self.negative.len() - 1;
-
-        while i > 0 && self.negative[i] == 0 {
-            i -= 1;
-        }
-
-        // If there's nothing to print, just return.
-
-        if i == 0 && self.negative[0] == 0 {
-            return;
-        }
-
-        // Start printing from the highest-index non-zero row.
-
-        let     start_index = ((i + 4) / 4) * 4 - 1;
-        let mut i           = start_index + 4;
-        let mut rows        = (start_index + 1) / 4;
-
-        while rows > 0 {
-            assert!(i >= 3 && i < self.negative.len());
-            i -= 4;
-
-            printer.print(&format!("  {:>3}:    {:>14}    {:>14}    {:>14}    {:>14}",
-                -(i as i64) + 3,
-                commas_u64(self.negative[i - 3]),
-                commas_u64(self.negative[i - 2]),
-                commas_u64(self.negative[i - 1]),
-                commas_u64(self.negative[i])
-            ));
-
-            rows -= 1;
-        }
-    }
-
-    // This helper function prints the positive buckets.
-
-    fn print_positive(&self, printer: &mut dyn Printer) {
-        let mut last = self.positive.len() - 1;
-
-        while last > 0 && self.positive[last] == 0 {
-            last -= 1;
-        }
-
-        let stop_index = last;
-        let mut i = 0;
-
-        while i <= stop_index {
-            assert!(i <= self.positive.len() - 4);
-
-            printer.print(&format!("  {:>3}:    {:>14}    {:>14}    {:>14}    {:>14}",
-                i,
-                commas_u64(self.positive[i]),
-                commas_u64(self.positive[i + 1]),
-                commas_u64(self.positive[i + 2]),
-                commas_u64(self.positive[i + 3])));
-
-            i += 4;
-        }
-    }
-
-    // Find the most common "log" bucket
-
-    pub fn log_mode(&self) -> isize {
-        let mut mode = 0;
-        let mut max  =  0;
-
-        for i in 0..self.negative.len() {
-            if self.negative[i] > max {
-                mode = -(i as isize);
-                max  = self.negative[i];
-            }
-        }
-
-        for i in 0..self.positive.len() {
-            if self.positive[i] > max {
-                mode = i as isize;
-                max  = self.positive[i];
-            }
-        }
-
-        mode
-    }
-
-    pub fn print(&self, printer: &mut dyn Printer) {
-        printer.print("  Log Histogram");
-        self.print_negative(printer);
-        printer.print("  -----------------------");
-        self.print_positive(printer);
-    }
-
-    pub fn clear(&mut self) {
-        self.negative = [0; 64];
-        self.positive = [0; 64];
-    }
-}
-
-impl Default for LogHistogram {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 // Define a Printer trait to allow a custom stream for print() operations.
@@ -787,87 +490,6 @@ pub fn sum_running(exports: &Vec::<RunningExport>) -> RunningExport {
     let moment_4 = kbk_sum(&mut moment_4_vec[..]);
 
     RunningExport { count, mean, moment_2, moment_3, moment_4, min, max, log_histogram }
-}
-
-// RunningGenerator provides an interface from the Hier code to
-// the RunningInteger code.
-
-#[derive(Default)]
-pub struct RunningGenerator {
-}
-
-pub struct RunningHierConfig {
-    pub descriptor:  HierDescriptor,
-    pub name:        String,
-    pub title:       String,
-    pub printer:     PrinterBox,
-}
-
-impl RunningGenerator {
-    pub fn new() -> RunningGenerator  {
-        RunningGenerator { }
-    }
-
-    // Create a new Hier object from the given configuration.
-    // This routine does the grunt work specific to the
-    // RunningInteger type.
-
-    pub fn new_hier(configuration: RunningHierConfig) -> Hier {
-        let generator  = RunningGenerator::new();
-        let generator  = Rc::from(RefCell::new(generator));
-        let class      = "integer".to_string();
-
-        let descriptor = configuration.descriptor;
-        let name       = configuration.name;
-        let title      = configuration.title;
-        let printer    = configuration.printer;
-
-        let config = HierConfig { descriptor, generator, name, title, class, printer };
-
-        Hier::new(config)
-    }
-}
-
-// These are the functions that the Hier struct needs implemented
-// for a given statistic type that are not specific to a member
-// of that type.  It's thus the bridge between "impl RunningInteger"
-// and the Hier code.
-
-impl HierGenerator for RunningGenerator {
-    fn make_member(&self, name: &str, printer: PrinterBox) -> MemberRc {
-        let member = RunningInteger::new(name, Some(printer));
-
-        Rc::from(RefCell::new(member))
-    }
-
-    // Make a member from a complete list of exported statistics.
-
-    fn make_from_exporter(&self, name: &str, printer: PrinterBox, exporter: ExporterRc) -> MemberRc {
-        let mut exporter_borrow = exporter.borrow_mut();
-        let     exporter_impl   = exporter_borrow.as_any_mut().downcast_mut::<RunningExporter>().unwrap();
-        let     member          = exporter_impl.make_member(name, printer);
-
-        Rc::from(RefCell::new(member))
-    }
-
-    fn make_exporter(&self) -> ExporterRc {
-        let exporter = RunningExporter::new();
-
-        Rc::from(RefCell::new(exporter))
-    }
-
-    // Push another statistic onto the export list.  We will sum all of
-    // them at some point.
-
-    fn push(&self, exporter: ExporterRc, member_rc: MemberRc) {
-        let mut exporter_borrow = exporter.borrow_mut();
-        let     exporter_impl   = exporter_borrow.as_any_mut().downcast_mut::<RunningExporter>().unwrap();
-
-        let     member_borrow = member_rc.borrow();
-        let     member_impl   = member_borrow.as_any().downcast_ref::<RunningInteger>().unwrap();
-
-        exporter_impl.push(member_impl.export());
-    }
 }
 
 impl RunningInteger {
@@ -1143,27 +765,6 @@ impl Rustics for RunningInteger {
 
     fn id(&self) -> usize {
         self.id
-    }
-}
-
-// Provide for downcasting from a Hier member to a Rustics
-// type or "dn Any" to get to the RunningInteger code.
-
-impl HierMember for RunningInteger {
-    fn to_rustics(&self) -> &dyn Rustics {
-        self
-    }
-
-    fn to_rustics_mut(&mut self) -> &mut dyn Rustics {
-        self
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn as_any_mut(&mut self) -> &mut dyn Any {
-        self
     }
 }
 
@@ -2170,6 +1771,8 @@ mod tests {
     use super::*;
     use rand::Rng;
     use crate::hier::*;
+    use crate::log_histogram::pseudo_log_index;
+    use crate::running_generator::RunningGenerator;
 
     pub fn test_commas() {
         let test = [ 123456, 12, -1, -1234, 4000000, -200, -2000, -20000 ];

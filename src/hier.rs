@@ -651,8 +651,8 @@ impl Rustics for Hier {
 pub mod tests {
     use super::*;
     use crate::stdout_printer;
-    use crate::RunningGenerator;
-    use crate::RunningHierConfig;
+    use crate::running_generator::RunningGenerator;
+    use crate::running_generator::RunningHierConfig;
 
     // Make a Hier struct for testing.  The tests use the RunningInteger
     // implementation via RunningGenerator.

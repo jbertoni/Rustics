@@ -1,3 +1,8 @@
+//
+//  This code is available under the Berkeley 2-Clause, Berkely 2-clause,
+//  and MIT licenses.  It is also available as public domain source where
+//  permitted by law.
+//
 
 // These structures and routines are common code for printing
 // statistics.
@@ -7,6 +12,7 @@
 // IntegerWindow structs.
 
 use super::Printer;
+use super::commas_i64;
 
 pub struct Printable {
     pub n:          u64,
@@ -88,7 +94,7 @@ impl Printable {
         (scaled_time, unit)
     }
     pub fn print_integer(name: &str, value: i64, printer: &mut dyn Printer) {
-        let output = format!("    {:<12} {:>12}", name, value);
+        let output = format!("    {:<12} {:>12}", name, commas_i64(value));
         printer.print(&output);
     }
 

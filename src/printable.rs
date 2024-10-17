@@ -255,3 +255,37 @@ impl Printable {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    pub fn test_commas() {
+        let test = [ 123456, 12, -1, -1234, 4000000, -200, -2000, -20000 ];
+        let expect = [ "123,456", "12", "-1", "-1,234", "4,000,000", "-200", "-2,000", "-20,000" ];
+        let mut i = 0;
+
+        for sample in test.iter() {
+            println!("Test:  {} vs {}", Printable::commas_i64(*sample), expect[i]);
+            assert_eq!(Printable::commas_i64(*sample), expect[i]);
+            i += 1;
+        }
+
+        assert_eq!(Printable::commas("+21"), "+21");
+        assert_eq!(Printable::commas("+212"), "+212");
+        assert_eq!(Printable::commas("+2123"), "+2,123");
+        assert_eq!(Printable::commas("+21234"), "+21,234");
+        assert_eq!(Printable::commas("+212345"), "+212,345");
+
+        assert_eq!(Printable::commas("+20"), "+20");
+        assert_eq!(Printable::commas("+200"), "+200");
+        assert_eq!(Printable::commas("+2000"), "+2,000");
+        assert_eq!(Printable::commas("+20000"), "+20,000");
+        assert_eq!(Printable::commas("+200000"), "+200,000");
+    }
+
+    #[test]
+    fn run_tests() {
+        test_commas();
+    }
+}

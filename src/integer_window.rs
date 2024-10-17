@@ -389,3 +389,35 @@ impl Histogram for IntegerWindow {
         self.log_histogram.print(printer);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::log_histogram::pseudo_log_index;
+
+    pub fn test_simple_integer_window() {
+        let window_size = 100;
+        let mut stats = IntegerWindow::new(&"Test Statistics", window_size);
+
+        for sample in -256..512 {
+            stats.record_i64(sample);
+        }
+
+        assert!(stats.log_mode() as usize == pseudo_log_index(stats.max_i64()));
+        stats.print();
+        let sample = 100;
+
+        for _i in 0..2 * window_size {
+            stats.record_i64(sample);
+        }
+
+        stats.print();
+        assert!(stats.mean() == sample as f64);
+        assert!(stats.log_mode() as usize == pseudo_log_index(sample));
+    }
+
+    #[test]
+    fn run_tests() {
+        test_simple_integer_window();
+    }
+}

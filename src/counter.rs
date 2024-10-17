@@ -180,3 +180,31 @@ impl Rustics for Counter {
         panic!("Counter::histo_log_mode:  not supported");
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn test_simple_counter() {
+        let test_limit  = 20;
+        let mut counter = Counter::new("test counter");
+
+        for i in 1..test_limit + 1 {
+            counter.record_event();
+            counter.record_i64(i);
+        }
+
+        let events   = test_limit;
+        let sequence = ((test_limit + 1) * test_limit) / 2;
+        let expected = events + sequence;
+
+        assert!(counter.count() == expected as u64);
+
+        counter.print();
+    }
+
+    #[test]
+    fn run_tests() {
+        test_simple_counter();
+    }
+}

@@ -127,3 +127,108 @@ impl HierGenerator for RunningGenerator {
         exporter_impl.push(member_impl.export());
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::stdout_printer;
+    use crate::hier::HierDescriptor;
+    use crate::hier::HierDimension;
+    use crate::hier::GeneratorRc;
+
+    fn make_hier_gen(generator:  GeneratorRc) -> Hier {
+        let     auto_next      = 4;
+        let     levels         = 4;
+        let     level_0_period = 8;
+        let     dimension      = HierDimension::new(level_0_period, 3 * level_0_period);
+        let mut dimensions     = Vec::<HierDimension>::with_capacity(levels);
+        let     class          = "integer".to_string();
+
+        // Push the level 0 descriptor.
+
+        dimensions.push(dimension);
+
+        // Create a hierarchy.
+
+        let mut period = 4;
+
+        for _i in 1..levels {
+            let dimension = HierDimension::new(period, 3 * period);
+
+            dimensions.push(dimension);
+
+            period += 2;
+        }
+
+        let descriptor    = HierDescriptor::new(dimensions, Some(auto_next));
+        let name          = "test hier".to_string();
+        let title         = "test hier".to_string();
+        let printer       = stdout_printer();
+
+        let configuration = HierConfig { descriptor, generator, class, name, title, printer };
+
+        Hier::new(configuration)
+    }
+
+    // Do a minimal liveness test of the generic hier implementation.
+
+    fn test_simple_running_generator() {
+        //  First, just make a generator and a member, then record one event.
+
+        let     generator    = RunningGenerator::new();
+        let     printer      = stdout_printer();
+        let     member_rc    = generator.make_member("test member", printer);
+        let     member_clone = member_rc.clone();
+        let mut member       = member_clone.borrow_mut();
+        let     value        = 42;
+
+        member.to_rustics_mut().record_i64(value);
+
+        assert!(member.to_rustics().count() == 1);
+        assert!(member.to_rustics().mean()  == value as f64);
+
+        // Drop the lock on the member.
+
+        drop(member);
+
+        // Now try try making an exporter and check basic sanity of as_any_mut.
+
+        let exporter_rc     = generator.make_exporter();
+        let exporter_clone  = exporter_rc.clone();
+
+        // Push the member's numbers onto the exporter.
+
+        generator.push(exporter_clone, member_rc);
+
+        let new_member_rc = generator.make_from_exporter("member export", stdout_printer(), exporter_rc);
+
+
+        // See that the new member matches expectations.
+
+        let new_member = new_member_rc.borrow();
+
+        assert!(new_member.to_rustics().count() == 1);
+        assert!(new_member.to_rustics().mean()  == value as f64);
+
+        // Now make an actual hier struct.
+
+        let     generator     = Rc::from(RefCell::new(generator));
+        let mut hier          = make_hier_gen(generator);
+
+        let mut events = 0;
+
+        for i in 0..100 {
+            hier.record_i64(i);
+
+            events += 1;
+        }
+
+        assert!(hier.event_count() == events);
+        hier.print();
+    }
+
+    #[test]
+    fn run_tests() {
+        test_simple_running_generator();
+    }
+}

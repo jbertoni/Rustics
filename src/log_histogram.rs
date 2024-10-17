@@ -181,3 +181,41 @@ impl Default for LogHistogram {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::tests::TestPrinter;
+
+    pub fn test_log_histogram() {
+        let mut histogram = LogHistogram::new();
+        let     printer   = &mut TestPrinter::new(&"Test Output");
+        let     test      = [ 1, -1, 4, 25, 4109, -4108, -8, -9, -16, -17, 3, 8, 16 ];
+
+        for i in test.iter() {
+            histogram.record(*i);
+        }
+
+        histogram.print(printer);
+    }
+
+    pub fn test_pseudo_log() {
+        let test   = [ 1, 0, -1, -4, -3, i64::MIN, 3, 4, 5, 8, i64::MAX ];
+        let expect = [ 0, 0,  0,  2,  2,       63, 2, 2, 3, 3,       63 ];
+
+        let mut i = 0;
+
+        for sample in test.iter() {
+            println!("pseudo_log_index({}) = {}", *sample, pseudo_log_index(*sample));
+            assert_eq!(pseudo_log_index(*sample), expect[i]);
+            i += 1;
+        }
+    }
+
+    #[test]
+    fn run_tests() {
+        test_log_histogram();
+        test_pseudo_log();
+    }
+}
+

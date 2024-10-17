@@ -434,3 +434,27 @@ impl Histogram for RunningInteger {
         self.log_histogram.print(printer);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::tests::TestPrinter;
+    use std::sync::Mutex;
+    use std::sync::Arc;
+
+    pub fn test_simple_running_integer() {
+        let mut stats = RunningInteger::new(&"Test Statistics", None);
+
+        for sample in -256..512 {
+            stats.record_i64(sample);
+        }
+
+        let printer = Arc::new(Mutex::new(TestPrinter::new("test header ======")));
+        stats.print_opts(Some(printer), None);
+    }
+    
+    #[test]
+    fn run_tests() {
+        test_simple_running_integer();
+    }
+}

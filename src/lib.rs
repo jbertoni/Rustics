@@ -313,105 +313,28 @@ pub trait Histogram {
 mod tests {
     use super::*;
     use rand::Rng;
-    use crate::hier::*;
     use crate::running_time::RunningTime;
-    use crate::running_integer::RunningInteger;
-    use crate::integer_window::IntegerWindow;
-    use crate::time_window::TimeWindow;
-    use crate::counter::Counter;
     use crate::printable::Printable;
-    use crate::log_histogram::pseudo_log_index;
-    use crate::running_generator::RunningGenerator;
+    use crate::time_window::TimeWindow;
 
-    pub fn test_commas() {
-        let test = [ 123456, 12, -1, -1234, 4000000, -200, -2000, -20000 ];
-        let expect = [ "123,456", "12", "-1", "-1,234", "4,000,000", "-200", "-2,000", "-20,000" ];
-        let mut i = 0;
+    // This struct is used by other modules.
 
-        for sample in test.iter() {
-            println!("Test:  {} vs {}", Printable::commas_i64(*sample), expect[i]);
-            assert_eq!(Printable::commas_i64(*sample), expect[i]);
-            i += 1;
-        }
-
-        assert_eq!(Printable::commas("+21"), "+21");
-        assert_eq!(Printable::commas("+212"), "+212");
-        assert_eq!(Printable::commas("+2123"), "+2,123");
-        assert_eq!(Printable::commas("+21234"), "+21,234");
-        assert_eq!(Printable::commas("+212345"), "+212,345");
-
-        assert_eq!(Printable::commas("+20"), "+20");
-        assert_eq!(Printable::commas("+200"), "+200");
-        assert_eq!(Printable::commas("+2000"), "+2,000");
-        assert_eq!(Printable::commas("+20000"), "+20,000");
-        assert_eq!(Printable::commas("+200000"), "+200,000");
+    pub struct TestPrinter {
+        prefix: String,
     }
 
-    pub fn test_log_histogram() {
-        let mut histogram = LogHistogram::new();
-        let     printer   = &mut TestPrinter { test_output: &"Test Output" };
-        let     test      = [ 1, -1, 4, 25, 4109, -4108, -8, -9, -16, -17, 3, 8, 16 ];
+    impl TestPrinter {
+        pub fn new(prefix: &str) -> TestPrinter {
+            let prefix = prefix.to_string();
 
-        for i in test.iter() {
-            histogram.record(*i);
+            TestPrinter { prefix }
         }
-
-        histogram.print(printer);
-    }
-
-    pub fn test_pseudo_log() {
-        let test   = [ 1, 0, -1, -4, -3, i64::MIN, 3, 4, 5, 8, i64::MAX ];
-        let expect = [ 0, 0,  0,  2,  2,       63, 2, 2, 3, 3,       63 ];
-
-        let mut i = 0;
-
-        for sample in test.iter() {
-            println!("pseudo_log_index({}) = {}", *sample, pseudo_log_index(*sample));
-            assert_eq!(pseudo_log_index(*sample), expect[i]);
-            i += 1;
-        }
-    }
-
-    struct TestPrinter {
-        test_output: &'static str,
     }
 
     impl Printer for TestPrinter {
         fn print(&self, output: &str) {
-            println!("{}:  {}", self.test_output, output);
+            println!("{}:  {}", self.prefix, output);
         }
-    }
-
-    pub fn test_simple_running_integer() {
-        let mut stats = RunningInteger::new(&"Test Statistics", None);
-
-        for sample in -256..512 {
-            stats.record_i64(sample);
-        }
-
-        let printer = Arc::new(Mutex::new(TestPrinter { test_output: "test header ======" } ));
-        stats.print_opts(Some(printer), None);
-    }
-
-    pub fn test_simple_integer_window() {
-        let window_size = 100;
-        let mut stats = IntegerWindow::new(&"Test Statistics", window_size);
-
-        for sample in -256..512 {
-            stats.record_i64(sample);
-        }
-
-        assert!(stats.log_mode() as usize == pseudo_log_index(stats.max_i64()));
-        stats.print();
-        let sample = 100;
-
-        for _i in 0..2 * window_size {
-            stats.record_i64(sample);
-        }
-
-        stats.print();
-        assert!(stats.mean() == sample as f64);
-        assert!(stats.log_mode() as usize == pseudo_log_index(sample));
     }
 
     static global_next: Mutex<u128> = Mutex::new(0 as u128);
@@ -465,7 +388,7 @@ mod tests {
         set_global_next(ticks as u128 + 1);
     }
 
-    fn test_simple_running_time() {
+    fn test_running_time() {
         println!("Testing running time statistics.");
 
         let     hz              = 1_000_000_000;
@@ -566,7 +489,7 @@ mod tests {
         time_stat.print();
     }
 
-    fn test_simple_time_window() {
+    fn test_time_window() {
         println!("Testing time windows.");
 
         let     hz              = 1_000_000_000;
@@ -655,126 +578,9 @@ mod tests {
         time_stat.print();
     }
 
-    fn test_simple_count() {
-        let test_limit  = 20;
-        let mut counter = Counter::new("test counter");
-
-        for i in 1..test_limit + 1 {
-            counter.record_event();
-            counter.record_i64(i);
-        }
-
-        let events   = test_limit;
-        let sequence = ((test_limit + 1) * test_limit) / 2;
-        let expected = events + sequence;
-
-        assert!(counter.count() == expected as u64);
-
-        counter.print();
-    }
-
-    fn make_hier_gen(generator:  GeneratorRc) -> Hier {
-        let     auto_next      = 4;
-        let     levels         = 4;
-        let     level_0_period = 8;
-        let     dimension      = HierDimension::new(level_0_period, 3 * level_0_period);
-        let mut dimensions     = Vec::<HierDimension>::with_capacity(levels);
-        let     class          = "integer".to_string();
-
-        // Push the level 0 descriptor.
-
-        dimensions.push(dimension);
-
-        // Create a hierarchy.
-
-        let mut period = 4;
-
-        for _i in 1..levels {
-            let dimension = HierDimension::new(period, 3 * period);
-
-            dimensions.push(dimension);
-
-            period += 2;
-        }
-
-        let descriptor    = HierDescriptor::new(dimensions, Some(auto_next));
-        let name          = "test hier".to_string();
-        let title         = "test hier".to_string();
-        let printer       = stdout_printer();
-
-        let configuration = HierConfig { descriptor, generator, class, name, title, printer };
-
-        Hier::new(configuration)
-    }
-
-    // Do a minimal liveness test of the generic hier implementation.
-
-    fn test_running_generator() {
-        //  First, just make a generator and a member, then record one event.
-
-        let     generator    = RunningGenerator::new();
-        let     printer      = stdout_printer();
-        let     member_rc    = generator.make_member("test member", printer);
-        let     member_clone = member_rc.clone();
-        let mut member       = member_clone.borrow_mut();
-        let     value        = 42;
-
-        member.to_rustics_mut().record_i64(value);
-
-        assert!(member.to_rustics().count() == 1);
-        assert!(member.to_rustics().mean()  == value as f64);
-
-        // Drop the lock on the member.
-
-        drop(member);
-
-        // Now try try making an exporter and check basic sanity of as_any_mut.
-
-        let exporter_rc     = generator.make_exporter();
-        let exporter_clone  = exporter_rc.clone();
-
-        // Push the member's numbers onto the exporter.
-
-        generator.push(exporter_clone, member_rc);
-
-        let new_member_rc = generator.make_from_exporter("member export", stdout_printer(), exporter_rc);
-
-
-        // See that the new member matches expectations.
-
-        let new_member = new_member_rc.borrow();
-
-        assert!(new_member.to_rustics().count() == 1);
-        assert!(new_member.to_rustics().mean()  == value as f64);
-
-        // Now make an actual hier struct.
-
-        let     generator     = Rc::from(RefCell::new(generator));
-        let mut hier          = make_hier_gen(generator);
-
-        let mut events = 0;
-
-        for i in 0..100 {
-            hier.record_i64(i);
-
-            events += 1;
-        }
-
-        assert!(hier.event_count() == events);
-        hier.print();
-    }
-
     #[test]
     pub fn run_tests() {
-        test_running_generator();
-        test_commas();
-        test_log_histogram();
-        test_log_histogram();
-        test_pseudo_log();
-        test_simple_running_integer();
-        test_simple_integer_window();
-        test_simple_time_window();
-        test_simple_running_time();
-        test_simple_count();
+        test_time_window();
+        test_running_time();
     }
 }

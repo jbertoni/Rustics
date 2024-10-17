@@ -47,31 +47,31 @@ impl HierMember for RunningInteger {
     }
 }
 
-// RunningGenerator provides an interface from the Hier code to
+// IntegerHier provides an interface from the Hier code to
 // the RunningInteger code.
 
 #[derive(Default)]
-pub struct RunningGenerator {
+pub struct IntegerHier {
 }
 
-pub struct RunningHierConfig {
+pub struct IntegerHierConfig {
     pub descriptor:  HierDescriptor,
     pub name:        String,
     pub title:       String,
     pub printer:     PrinterBox,
 }
 
-impl RunningGenerator {
-    pub fn new() -> RunningGenerator  {
-        RunningGenerator { }
+impl IntegerHier {
+    pub fn new_raw() -> IntegerHier  {
+        IntegerHier { }
     }
 
     // Create a new Hier object from the given configuration.
     // This routine does the grunt work specific to the
     // RunningInteger type.
 
-    pub fn new_hier(configuration: RunningHierConfig) -> Hier {
-        let generator  = RunningGenerator::new();
+    pub fn new_hier(configuration: IntegerHierConfig) -> Hier {
+        let generator  = IntegerHier::new_raw();
         let generator  = Rc::from(RefCell::new(generator));
         let class      = "integer".to_string();
 
@@ -91,7 +91,7 @@ impl RunningGenerator {
 // of that type.  It's thus the bridge between "impl RunningInteger"
 // and the Hier code.
 
-impl HierGenerator for RunningGenerator {
+impl HierGenerator for IntegerHier {
     fn make_member(&self, name: &str, printer: PrinterBox) -> MemberRc {
         let member = RunningInteger::new(name, Some(printer));
 
@@ -175,7 +175,7 @@ mod tests {
     fn test_simple_running_generator() {
         //  First, just make a generator and a member, then record one event.
 
-        let     generator    = RunningGenerator::new();
+        let     generator    = IntegerHier::new_raw();
         let     printer      = stdout_printer();
         let     member_rc    = generator.make_member("test member", printer);
         let     member_clone = member_rc.clone();

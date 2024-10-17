@@ -48,10 +48,10 @@ impl HierMember for RunningTime {
     }
 }
 
-// TimeGenerator provides an interface from the Hier code to
+// TimeHier provides an interface from the Hier code to
 // the RunningTime code.
 
-pub struct TimeGenerator {
+pub struct TimeHier {
     timer:  TimerBox,
 }
 
@@ -63,9 +63,9 @@ pub struct TimeHierConfig {
     pub printer:     PrinterBox,
 }
 
-impl TimeGenerator {
-    pub fn new(timer: TimerBox) -> TimeGenerator  {
-        TimeGenerator { timer }
+impl TimeHier {
+    pub fn new(timer: TimerBox) -> TimeHier  {
+        TimeHier { timer }
     }
 
     // Create a new Hier object from the given configuration.
@@ -73,7 +73,7 @@ impl TimeGenerator {
     // RunningTime type.
 
     pub fn new_hier(configuration: TimeHierConfig) -> Hier {
-        let generator  = TimeGenerator::new(configuration.timer);
+        let generator  = TimeHier::new(configuration.timer);
         let generator  = Rc::from(RefCell::new(generator));
         let class      = "integer".to_string();
 
@@ -93,7 +93,7 @@ impl TimeGenerator {
 // of that type.  It's thus the bridge between "impl RunningTime"
 // and the Hier code.
 
-impl HierGenerator for TimeGenerator {
+impl HierGenerator for TimeHier {
     fn make_member(&self, name: &str, printer: PrinterBox) -> MemberRc {
         let member = RunningTime::new(name, self.timer.clone(), Some(printer));
 
@@ -180,7 +180,7 @@ mod tests {
         let     hz           = 1_000_000_000;
         let     timer        = crate::arc_sets::tests::ContinuingTimer::new(hz);
         let     timer        = Rc::from(RefCell::new(timer));
-        let     generator    = TimeGenerator::new(timer);
+        let     generator    = TimeHier::new(timer);
         let     printer      = stdout_printer();
         let     member_rc    = generator.make_member("test member", printer);
         let     member_clone = member_rc.clone();

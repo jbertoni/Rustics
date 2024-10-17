@@ -47,7 +47,8 @@ pub struct RunningInteger {
 }
 
 // RunningExporter structs are used to export statistics from a RunningInteger
-// struct so that multiple structures can be summed.
+// struct so that multiple structures can be summed.  The RunningTime code use
+// a RunningInteger struct underneath a wrapper, so it uses this code, too.
 
 #[derive(Default)]
 pub struct RunningExporter {

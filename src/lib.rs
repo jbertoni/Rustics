@@ -125,8 +125,8 @@ pub mod hier;
 pub mod window;
 pub mod time;
 pub mod sum;
-pub mod running_generator;
-pub mod time_generator;
+pub mod integer_hier;
+pub mod time_hier;
 pub mod log_histogram;
 
 mod printable;

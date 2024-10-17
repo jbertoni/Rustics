@@ -7,7 +7,7 @@
 // Implement a structure for the pseudo-log histograms.
 
 use super::Printer;
-use super::commas_u64;
+use super::printable::Printable;
 
 // This function returns an array index to record a log value
 // in a histogram.  Callers are expected to use two arrays,
@@ -104,10 +104,10 @@ impl LogHistogram {
 
             printer.print(&format!("  {:>3}:    {:>14}    {:>14}    {:>14}    {:>14}",
                 -(i as i64) + 3,
-                commas_u64(self.negative[i - 3]),
-                commas_u64(self.negative[i - 2]),
-                commas_u64(self.negative[i - 1]),
-                commas_u64(self.negative[i])
+                Printable::commas_u64(self.negative[i - 3]),
+                Printable::commas_u64(self.negative[i - 2]),
+                Printable::commas_u64(self.negative[i - 1]),
+                Printable::commas_u64(self.negative[i])
             ));
 
             rows -= 1;
@@ -131,10 +131,10 @@ impl LogHistogram {
 
             printer.print(&format!("  {:>3}:    {:>14}    {:>14}    {:>14}    {:>14}",
                 i,
-                commas_u64(self.positive[i]),
-                commas_u64(self.positive[i + 1]),
-                commas_u64(self.positive[i + 2]),
-                commas_u64(self.positive[i + 3])));
+                Printable::commas_u64(self.positive[i]),
+                Printable::commas_u64(self.positive[i + 1]),
+                Printable::commas_u64(self.positive[i + 2]),
+                Printable::commas_u64(self.positive[i + 3])));
 
             i += 4;
         }

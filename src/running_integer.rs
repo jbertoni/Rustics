@@ -434,4 +434,3 @@ impl Histogram for RunningInteger {
         self.log_histogram.print(printer);
     }
 }
-

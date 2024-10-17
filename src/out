@@ -1,0 +1,166 @@
+   Compiling proc-macro2 v1.0.88
+   Compiling unicode-ident v1.0.13
+   Compiling libc v0.2.160
+    Checking cfg-if v1.0.0
+    Checking byteorder v1.5.0
+   Compiling quote v1.0.37
+   Compiling syn v2.0.79
+    Checking getrandom v0.2.15
+    Checking rand_core v0.6.4
+   Compiling zerocopy-derive v0.7.35
+    Checking zerocopy v0.7.35
+    Checking ppv-lite86 v0.2.20
+    Checking rand_chacha v0.3.1
+    Checking rand v0.8.5
+    Checking rustics v0.9.1 (/Users/bertoni/Documents/GitHub/Rustics)
+warning: returning the result of a `let` binding from a block
+   --> src/integer_window.rs:242:9
+    |
+234 | /         let variance =
+235 | |             if self.stats_valid {
+236 | |                 compute_variance(count, self.moment_2)
+237 | |             } else {
+238 | |                 let crunched = self.crunch();
+239 | |                 compute_variance(count, crunched.moment_2)
+240 | |             };
+    | |______________- unnecessary `let` binding
+241 |
+242 |           variance
+    |           ^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#let_and_return
+    = note: `#[warn(clippy::let_and_return)]` on by default
+help: return the expression directly
+    |
+234 ~         
+235 | 
+236 ~         if self.stats_valid {
+237 +                 compute_variance(count, self.moment_2)
+238 +             } else {
+239 +                 let crunched = self.crunch();
+240 +                 compute_variance(count, crunched.moment_2)
+241 +             }
+    |
+
+warning: the loop variable `i` is only used to index `input`
+  --> src/sum.rs:25:14
+   |
+25 |     for i in 0..input.len() {
+   |              ^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#needless_range_loop
+   = note: `#[warn(clippy::needless_range_loop)]` on by default
+help: consider using an iterator
+   |
+25 |     for <item> in &input {
+   |         ~~~~~~    ~~~~~~
+
+warning: returning the result of a `let` binding from a block
+  --> src/printable.rs:72:9
+   |
+65 | /         let result =
+66 | |             match sign {
+67 | |                 "+" => "+".to_string() + &result,
+68 | |                 "-" => "-".to_string() + &result,
+69 | |                 _   => result,
+70 | |             };
+   | |______________- unnecessary `let` binding
+71 |
+72 |           result
+   |           ^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#let_and_return
+help: return the expression directly
+   |
+65 ~         
+66 | 
+67 ~         match sign {
+68 +                 "+" => "+".to_string() + &result,
+69 +                 "-" => "-".to_string() + &result,
+70 +                 _   => result,
+71 +             }
+   |
+
+warning: returning the result of a `let` binding from a block
+   --> src/lib.rs:162:5
+    |
+160 |     let sample_variance = moment_2 / (n - 1.0);
+    |     ------------------------------------------- unnecessary `let` binding
+161 |
+162 |     sample_variance
+    |     ^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#let_and_return
+help: return the expression directly
+    |
+160 ~     
+161 | 
+162 ~     moment_2 / (n - 1.0)
+    |
+
+warning: returning the result of a `let` binding from a block
+   --> src/lib.rs:183:5
+    |
+181 |     let sample_skewness = correction * skewness;
+    |     -------------------------------------------- unnecessary `let` binding
+182 |
+183 |     sample_skewness
+    |     ^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#let_and_return
+help: return the expression directly
+    |
+181 ~     
+182 | 
+183 ~     correction * skewness
+    |
+
+warning: returning the result of a `let` binding from a block
+   --> src/lib.rs:204:5
+    |
+202 |     let sample_excess_kurtosis = correction * kurtosis_factor;
+    |     ---------------------------------------------------------- unnecessary `let` binding
+203 |
+204 |     sample_excess_kurtosis
+    |     ^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#let_and_return
+help: return the expression directly
+    |
+202 ~     
+203 | 
+204 ~     correction * kurtosis_factor
+    |
+
+warning: returning the result of a `let` binding from a block
+   --> src/lib.rs:221:5
+    |
+211 | /     let title =
+212 | |         if title_prefix.is_empty() {
+213 | |             title.to_string()
+214 | |         } else {
+...   |
+218 | |             full_title
+219 | |         };
+    | |__________- unnecessary `let` binding
+220 |
+221 |       title
+    |       ^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#let_and_return
+help: return the expression directly
+    |
+211 ~     
+212 | 
+213 ~     if title_prefix.is_empty() {
+214 +             title.to_string()
+215 +         } else {
+216 +             let mut full_title = String::from(title_prefix);
+217 +             full_title.push_str(" ==> ");
+218 +             full_title.push_str(title);
+219 +             full_title
+220 +         }
+    |
+
+warning: `rustics` (lib) generated 7 warnings (run `cargo clippy --fix --lib -p rustics` to apply 6 suggestions)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.58s

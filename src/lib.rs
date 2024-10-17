@@ -68,7 +68,9 @@
 //!           to the Hier struct.
 //!     * RunningGenerator
 //!         * This structure provides RunningInteger types in a Hier structure.  See
-//!            RunningGenerator::new_hier() for a simple interface to get going.
+//!            RunningGenerator::new_hier() for a simple interface to get going.  The
+//!            hier.rs test module also contains "sample_usage" and "make_hier" routines
+//!            as examples.
 //!
 //! * Creating Sets
 //!     * The "arc_sets" and "rc_sets" modules implement a simple feature allowing the creation of sets
@@ -147,67 +149,6 @@ pub fn timer_box_hz(timer:  &TimerBox) -> u128 {
 
 fn stdout_printer() -> PrinterBox {
     Arc::new(Mutex::new(StdioPrinter::new(StreamKind::Stdout)))
-}
-
-// Insert commas into a string containing an integer.
-
-pub fn commas(value: &str) -> String {
-    if value.len() <= 3 {
-        return value.to_string()
-    }
-
-    let sign;
-    let digits;
-    let comma_interval = 3;
-
-    //  A string like "-200" shouldn't be printed as "-,200", so detect and
-    //  handle leading signs that'll cause a comma to be added.  If the
-    // string length is 1 mod 3 and the top character is a sign, we need to
-    // intervene.
-
-    if value.len() % comma_interval == 1 {
-        match value.chars().next().unwrap() {
-            '+' => { sign = "+"; digits = value[1..].to_string(); }
-            '-' => { sign = "-"; digits = value[1..].to_string(); }
-            _   => { sign = ""; digits = value.to_string(); }
-        }
-    } else {
-        sign   = "";
-        digits = value.to_string()
-    }
-
-    let result =
-        digits
-            .as_bytes()                 // convert the input to a byte array
-            .rchunks(comma_interval)    // break into chunks of three (or whatever) from the right
-            .rev()                      // reverse the current order back to the original order
-            .map(std::str::from_utf8)   // convert back to a vector of strings
-            .collect::<Result<Vec<&str>, _>>()
-            .unwrap()
-            .join(",");                 // join the blocks of three digits with commas
-
-    let result =
-        match sign {
-            "+" => "+".to_string() + &result,
-            "-" => "-".to_string() + &result,
-            _   => result,
-        };
-
-    result
-}
-
-// Convert an i64 into a string with comma separators.
-
-pub fn commas_i64(value: i64) -> String {
-    let base = value.to_string();
-    commas(&base)
-}
-
-// Convert an u64 into a string with comma separators.
-
-pub fn commas_u64(value: u64) -> String {
-    let base = value.to_string();
-    commas(&base)
 }
 
 pub fn compute_variance(count: u64, moment_2: f64) -> f64 {
@@ -388,22 +329,22 @@ mod tests {
         let mut i = 0;
 
         for sample in test.iter() {
-            println!("Test:  {} vs {}", commas_i64(*sample), expect[i]);
-            assert_eq!(commas_i64(*sample), expect[i]);
+            println!("Test:  {} vs {}", Printable::commas_i64(*sample), expect[i]);
+            assert_eq!(Printable::commas_i64(*sample), expect[i]);
             i += 1;
         }
 
-        assert_eq!(commas("+21"), "+21");
-        assert_eq!(commas("+212"), "+212");
-        assert_eq!(commas("+2123"), "+2,123");
-        assert_eq!(commas("+21234"), "+21,234");
-        assert_eq!(commas("+212345"), "+212,345");
+        assert_eq!(Printable::commas("+21"), "+21");
+        assert_eq!(Printable::commas("+212"), "+212");
+        assert_eq!(Printable::commas("+2123"), "+2,123");
+        assert_eq!(Printable::commas("+21234"), "+21,234");
+        assert_eq!(Printable::commas("+212345"), "+212,345");
 
-        assert_eq!(commas("+20"), "+20");
-        assert_eq!(commas("+200"), "+200");
-        assert_eq!(commas("+2000"), "+2,000");
-        assert_eq!(commas("+20000"), "+20,000");
-        assert_eq!(commas("+200000"), "+200,000");
+        assert_eq!(Printable::commas("+20"), "+20");
+        assert_eq!(Printable::commas("+200"), "+200");
+        assert_eq!(Printable::commas("+2000"), "+2,000");
+        assert_eq!(Printable::commas("+20000"), "+20,000");
+        assert_eq!(Printable::commas("+200000"), "+200,000");
     }
 
     pub fn test_log_histogram() {
@@ -616,7 +557,7 @@ mod tests {
             }
 
 
-            let header = format!("{} => ", commas_i64(time));
+            let header = format!("{} => ", Printable::commas_i64(time));
             Printable::print_time(&header, time as f64, hz as i64, printer);
 
             time *= 10;
@@ -705,7 +646,7 @@ mod tests {
         for _i in 1..16 {
             setup_elapsed_time(&mut timer, time);
             time_stat.record_event();
-            let header = format!("{} => ", commas_i64(time));
+            let header = format!("{} => ", Printable::commas_i64(time));
             Printable::print_time(&header, time as f64, hz as i64, printer);
 
             time *= 10;

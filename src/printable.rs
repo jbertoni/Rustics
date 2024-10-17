@@ -12,7 +12,6 @@
 // IntegerWindow structs.
 
 use super::Printer;
-use super::commas_i64;
 
 pub struct Printable {
     pub n:          u64,
@@ -26,6 +25,68 @@ pub struct Printable {
 }
 
 impl Printable {
+    // Insert commas into a string containing an integer.
+
+    pub fn commas(value: &str) -> String {
+        if value.len() <= 3 {
+            return value.to_string()
+        }
+
+        let sign;
+        let digits;
+        let comma_interval = 3;
+
+        //  A string like "-200" shouldn't be printed as "-,200", so detect and
+        //  handle leading signs that'll cause a comma to be added.  If the
+        // string length is 1 mod 3 and the top character is a sign, we need to
+        // intervene.
+
+        if value.len() % comma_interval == 1 {
+            match value.chars().next().unwrap() {
+                '+' => { sign = "+"; digits = value[1..].to_string(); }
+                '-' => { sign = "-"; digits = value[1..].to_string(); }
+                _   => { sign = ""; digits = value.to_string(); }
+            }
+        } else {
+            sign   = "";
+            digits = value.to_string()
+        }
+
+        let result =
+            digits
+                .as_bytes()                 // convert the input to a byte array
+                .rchunks(comma_interval)    // break into chunks of three (or whatever) from the right
+                .rev()                      // reverse the current order back to the original order
+                .map(std::str::from_utf8)   // convert back to a vector of strings
+                .collect::<Result<Vec<&str>, _>>()
+                .unwrap()
+                .join(",");                 // join the blocks of three digits with commas
+
+        let result =
+            match sign {
+                "+" => "+".to_string() + &result,
+                "-" => "-".to_string() + &result,
+                _   => result,
+            };
+
+        result
+    }
+
+    // Convert an i64 into a string with comma separators.
+
+    pub fn commas_i64(value: i64) -> String {
+        let base = value.to_string();
+
+        Self::commas(&base)
+    }
+
+    // Convert an u64 into a string with comma separators.
+
+    pub fn commas_u64(value: u64) -> String {
+        let base = value.to_string();
+
+        Self::commas(&base)
+    }
 
     // Format a time value for printing.
 
@@ -94,7 +155,7 @@ impl Printable {
         (scaled_time, unit)
     }
     pub fn print_integer(name: &str, value: i64, printer: &mut dyn Printer) {
-        let output = format!("    {:<12} {:>12}", name, commas_i64(value));
+        let output = format!("    {:<12} {:>12}", name, Self::commas_i64(value));
         printer.print(&output);
     }
 

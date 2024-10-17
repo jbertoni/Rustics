@@ -20,6 +20,11 @@ In addition to the more detailed, the library supports a simple counter for
 which no other statistics are generated.  This can be useful for counting
 events.
 
+This library also implements a form of hierarchical statistics.  Such
+structures can provide multiple levels of statistics to help reduce
+loss of information for long-running programs.  See the hier.rs file and
+documentation for more information.
+
 This library also implements sets, which contain statistics that are printed
 and manipulated together.  It provides sets contained in Arc structures and Rc
 structures.  The two set modules are otherwise identical.  The implementations

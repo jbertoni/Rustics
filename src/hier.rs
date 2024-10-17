@@ -655,8 +655,8 @@ pub mod tests {
     use crate::RunningHierConfig;
 
     // Make a Hier struct for testing.  The tests use the RunningInteger
-    // implementation.
-
+    // implementation via RunningGenerator.
+    //
     // Make a 4-level hierarchical statistic for testing.
 
     pub fn make_hier(level_0_period: usize, auto_next: usize) -> Hier {
@@ -688,19 +688,25 @@ pub mod tests {
         // just describes the windows and how the statistics
         // structures are advanced.
 
-        let auto_next     = Some(auto_next as i64);
-        let descriptor    = HierDescriptor::new(dimensions, auto_next);
+        let auto_next  = Some(auto_next as i64);
+        let descriptor = HierDescriptor::new(dimensions, auto_next);
 
         // Now create the RunningInteger-based Hier struct via
         // RunningGenerator, which does some of the work for
         // us.
 
-        let name          = "hier".to_string();
-        let title         = "hier title".to_string();
-        let printer       = stdout_printer();
+        let name       = "hier".to_string();
+        let title      = "hier title".to_string();
+        let printer    = stdout_printer();
+
+        // Finally, create the configuration description for the
+        // constructor.
 
         let configuration =
             RunningHierConfig { descriptor, name, title, printer };
+
+        // Make the actual Hier structure.  new_hier() handles the
+        // parameters specific for using RunningInteger statistics.
 
         RunningGenerator::new_hier(configuration)
     }

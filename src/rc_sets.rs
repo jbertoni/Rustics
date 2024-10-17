@@ -26,6 +26,9 @@ pub trait RcTraverser {
     fn visit_member(&mut self, member: &mut dyn Rustics);
 }
 
+// Define the actual set type.  A set can contain Rustics
+// members and subsets of type RusticsRcSet.
+
 pub struct RusticsRcSet {
     name:       String,
     title:      String,
@@ -218,7 +221,9 @@ impl RusticsRcSet {
         last.clone()
     }
 
-    // Remove a subset from the set.
+    // Remove a subset from the set.  We find the element by id.
+    // There might be some way to do pointer comparison, but it
+    // doesn't seem to be trivial.
 
     pub fn remove_subset(&mut self, target: &RusticsRcSetBox) -> bool {
         let mut found     = false;

@@ -42,17 +42,23 @@ pub struct DurationTimer {
 
 impl Timer for DurationTimer {
     fn start(&mut self) {
-        self.start = Instant::now();
+        self.start    = Instant::now();
         self.previous = 0;
     }
 
-    fn finish(&mut self) -> u128 {
-        let end_time = self.start.elapsed().as_nanos();
-        let result   = end_time - self.previous;
+    // Get the current elapsed time and subtract
+    // "previous" from it to get the time since the
+    // last "finish" call.  Then save this current
+    // time as the new "previous".
 
+    fn finish(&mut self) -> u128 {
+        let end_time  = self.start.elapsed().as_nanos();
+        let result    = end_time - self.previous;
         self.previous = end_time;
         result
     }
+
+    // We read the clock in nanoseconds currently.
 
     fn hz(&self) -> u128 {
         1_000_000_000

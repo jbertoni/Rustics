@@ -26,6 +26,9 @@ pub trait ArcTraverser {
     fn visit_member(&mut self, member: &mut dyn Rustics);
 }
 
+// Define the set type.  A set can contain statistics and
+// subsets of type RusticsArcSet.
+
 pub struct RusticsArcSet {
     name:       String,
     title:      String,
@@ -125,7 +128,8 @@ impl RusticsArcSet {
         }
     }
 
-    // Add a member statistic.
+    // Add a member statistic.  The user creates the statistics object
+    // and passes it.
 
     pub fn add_member(&mut self, member: RusticsArc) {
         self.members.push(member);

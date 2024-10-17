@@ -61,6 +61,15 @@
 //!       objects that are summed and pushed to the higher level, and a retention window, so
 //!       that statistics are kept for some time period after being summed.
 //!
+//! * Hierarchical statistics struct
+//!     * Hier
+//!         * The Hier struct implements the framework for hierarchical statistics.
+//!         * The HierGenerator trait provides the interface from a Rustics implementation
+//!           to the Hier struct.
+//!     * RunningGenerator
+//!         * This structure provides RunningInteger types in a Hier structure.  See
+//!            RunningGenerator::new_hier() for a simple interface to get going.
+//!
 //! * Creating Sets
 //!     * The "arc_sets" and "rc_sets" modules implement a simple feature allowing the creation of sets
 //!       that accept statistics and subsets as members.
@@ -112,7 +121,8 @@ pub mod window;
 pub mod time;
 pub mod sum;
 
-use sum::kbk_sum;
+mod printable;
+
 use hier::Hier;
 use hier::HierDescriptor;
 use hier::HierConfig;
@@ -121,6 +131,8 @@ use hier::HierExporter;
 use hier::HierMember;
 use hier::ExporterRc;
 use hier::MemberRc;
+use sum::kbk_sum;
+use printable::Printable;
 
 pub type PrinterBox    = Arc<Mutex<dyn Printer>>;
 pub type PrinterOption = Option<Arc<Mutex<dyn Printer>>>;
@@ -195,107 +207,6 @@ pub fn commas_u64(value: u64) -> String {
     let base = value.to_string();
     commas(&base)
 }
-
-fn print_common_integer_times(data: &Printable, hz: i64, printer: &mut dyn Printer) {
-    print_integer("Count", data.n as i64, printer);
-
-    if data.n > 0 {
-        print_time("Minumum",  data.min as f64,      hz, printer);
-        print_time("Maximum",  data.max as f64,      hz, printer);
-        print_time("Log Mode", data.log_mode as f64, hz, printer);
-    }
-}
-
-fn print_common_float_times(data: &Printable, hz: i64, printer: &mut dyn Printer) {
-    if data.n > 0 {
-        print_time("Mean",     data.mean,            hz, printer);
-        print_time("Std Dev",  data.variance.sqrt(), hz, printer);
-        print_time("Variance", data.variance,        hz, printer);
-        print_time("Skewness", data.skewness,        hz, printer);
-        print_time("Kurtosis", data.kurtosis,        hz, printer);
-    }
-}
-
-// Format a time value for printing.
-
-pub fn scale_time(time: f64, hz: i64) -> (f64, String) {
-    let microsecond = 1_000.0;
-    let millisecond = microsecond * 1000.0;
-    let second      = millisecond * 1000.0;
-    let minute      = 60.0 * second;
-    let hour        = 60.0 * minute;
-    let day         = hour * 24.0;
-
-    // Convert the time to nanoseconds
-
-    let time = time * (1_000_000_000.0 / hz as f64);
-
-    let unit;
-    let scale;
-    let has_plural;
-
-    // Decide what units to use.
-
-    if time >= day {
-        unit       = "day";
-        scale      = day;
-        has_plural = true;
-    } else if time >= hour {
-        unit       = "hour";
-        scale      = hour;
-        has_plural = true;
-    } else if time >= minute {
-        unit       = "minute";
-        scale      = minute;
-        has_plural = true;
-    } else if time >= second {
-        unit       = "second";
-        scale      = second;
-        has_plural = true;
-    } else if time >= millisecond {
-        unit       = "ms";
-        scale      = millisecond;
-        has_plural = false;
-    } else if time >= microsecond {
-        unit       = "us";
-        scale      = microsecond;
-        has_plural = false;
-    } else {
-        unit       = "ns";
-        scale      = 1.0;
-        has_plural = false;
-    }
-
-    let plural = time != scale;
-
-    let suffix =
-        if plural & has_plural {
-            "s"
-        } else {
-            ""
-        };
-
-    let     scaled_time = time / scale;
-    let mut unit        = unit.to_string();
-
-    unit.push_str(suffix);
-
-    (scaled_time, unit)
-}
-
-
-fn print_time(name: &str, time: f64, hz: i64, printer: &mut dyn Printer) {
-    let (scaled_time, unit) = scale_time(time, hz);
-
-    if scaled_time > 999999.0 {
-        print_float_unit(name, scaled_time, &unit, printer);
-    } else {
-        let output = format!("    {:<12} {:>12.3} {}", name, scaled_time, unit);
-        printer.print(&output);
-    }
-}
-
-// Compute the sample variance.
 
 pub fn compute_variance(count: u64, moment_2: f64) -> f64 {
     if count < 2 {
@@ -409,8 +320,13 @@ pub fn create_title(title_prefix: &str, title: &str) -> String {
     title
 }
 
+/*
 // These structures and routines are common code for printing
 // statistics.
+//
+// The Printable struct allows passing common values to be
+// printed to generic routines for RunningInteger and
+// IntegerWindow structs.
 
 struct Printable {
     n:          u64,
@@ -423,74 +339,109 @@ struct Printable {
     kurtosis:   f64,
 }
 
-fn print_integer(name: &str, value: i64, printer: &mut dyn Printer) {
-    let output = format!("    {:<12} {:>12}", name, value);
-    printer.print(&output);
-}
+impl Printable {
+    fn print_integer(name: &str, value: i64, printer: &mut dyn Printer) {
+        let output = format!("    {:<12} {:>12}", name, value);
+        printer.print(&output);
+    }
 
-fn print_float(name: &str, value: f64, printer: &mut dyn Printer) {
-    print_float_unit(name, value, "", printer)
-}
+    fn print_float(name: &str, value: f64, printer: &mut dyn Printer) {
+        Self::print_float_unit(name, value, "", printer)
+    }
 
-fn print_float_unit(name: &str, value: f64, unit: &str, printer: &mut dyn Printer) {
-    assert!(!value.is_nan());
+    fn print_float_unit(name: &str, value: f64, unit: &str, printer: &mut dyn Printer) {
+        assert!(!value.is_nan());
 
-    let value = format!("{:+e}", value)
-        .replace('e', " e+")
-        .replace("e+-", " e-") ;
+        let value = format!("{:+e}", value)
+            .replace('e', " e+")
+            .replace("e+-", " e-") ;
 
-    let mantissa_digits = 8;
-    let mut mantissa = Vec::with_capacity(mantissa_digits);
+        let mantissa_digits = 8;
+        let mut mantissa = Vec::with_capacity(mantissa_digits);
 
-    for char in value.chars() {
-        if char == ' ' {
-            break;
+        for char in value.chars() {
+            if char == ' ' {
+                break;
+            }
+
+            mantissa.push(char);
+
+            if mantissa.len() == 8 {
+                break;
+            }
         }
 
-        mantissa.push(char);
+        while mantissa.len() < mantissa_digits {
+            mantissa.push('0');
+        }
 
-        if mantissa.len() == 8 {
-            break;
+        let mantissa: String = mantissa.into_iter().collect();
+        let exponent         = value.split(' ').last().unwrap();
+        let output           = format!("    {:<13}    {} {} {}", name, mantissa, exponent, unit);
+
+        printer.print(&output);
+    }
+
+    fn print_time(name: &str, time: f64, hz: i64, printer: &mut dyn Printer) {
+        let (scaled_time, unit) = Printable::scale_time(time, hz);
+
+        if scaled_time > 999999.0 {
+            Self::print_float_unit(name, scaled_time, &unit, printer);
+        } else {
+            let output = format!("    {:<12} {:>12.3} {}", name, scaled_time, unit);
+            printer.print(&output);
         }
     }
 
-    while mantissa.len() < mantissa_digits {
-        mantissa.push('0');
+// Compute the sample variance.
+
+    // Print the common integer statistics as passed in a Printable structure.
+
+    fn print_common_integer(&self, printer: &mut dyn Printer) {
+        Self::print_integer("Count", self.n as i64, printer);
+
+        if self.n > 0 {
+            Self::print_integer("Minumum",  self.min,      printer);
+            Self::print_integer("Maximum",  self.max,      printer);
+            Self::print_integer("Log Mode", self.log_mode, printer);
+        }
     }
 
-    let mantissa: String = mantissa.into_iter().collect();
-    let exponent         = value.split(' ').last().unwrap();
-    let output           = format!("    {:<13}    {} {} {}", name, mantissa, exponent, unit);
+    // Print the common computed statistics as passed in a Printable structure.
+    // This includes values like the mean, which should be limited to an integer
+    // value.
 
-    printer.print(&output);
-}
+    fn print_common_float(&self, printer: &mut dyn Printer) {
+        if self.n > 0 {
+            Self::print_float("Mean",     self.mean,            printer);
+            Self::print_float("Std Dev",  self.variance.sqrt(), printer);
+            Self::print_float("Variance", self.variance,        printer);
+            Self::print_float("Skewness", self.skewness,        printer);
+            Self::print_float("Kurtosis", self.kurtosis,        printer);
+        }
+    }
 
-// Print the common integer statistics as passed in a Printable structure.
+    fn print_common_integer_times(&self, hz: i64, printer: &mut dyn Printer) {
+        Self::print_integer("Count", self.n as i64, printer);
 
-fn print_common_integer(data: &Printable, printer: &mut dyn Printer) {
-    print_integer("Count", data.n as i64, printer);
+        if self.n > 0 {
+            Self::print_time("Minumum",  self.min as f64,      hz, printer);
+            Self::print_time("Maximum",  self.max as f64,      hz, printer);
+            Self::print_time("Log Mode", self.log_mode as f64, hz, printer);
+        }
+    }
 
-    if data.n > 0 {
-        print_integer("Minumum",  data.min,      printer);
-        print_integer("Maximum",  data.max,      printer);
-        print_integer("Log Mode", data.log_mode, printer);
+    fn print_common_float_times(&self, hz: i64, printer: &mut dyn Printer) {
+        if self.n > 0 {
+            Self::print_time("Mean",     self.mean,            hz, printer);
+            Self::print_time("Std Dev",  self.variance.sqrt(), hz, printer);
+            Self::print_time("Variance", self.variance,        hz, printer);
+            Self::print_time("Skewness", self.skewness,        hz, printer);
+            Self::print_time("Kurtosis", self.kurtosis,        hz, printer);
+        }
     }
 }
-
-// Print the common computed statistics as passed in a Printable structure.
-// This includes values like the mean, which should be limited to an integer
-// value.
-
-fn print_common_float(data: &Printable, printer: &mut dyn Printer) {
-    if data.n > 0 {
-        print_float("Mean",     data.mean,            printer);
-        print_float("Std Dev",  data.variance.sqrt(), printer);
-        print_float("Variance", data.variance,        printer);
-        print_float("Skewness", data.skewness,        printer);
-        print_float("Kurtosis", data.kurtosis,        printer);
-    }
-}
-
+*/
 
 // Implement a structure for the pseudo-log histograms.
 
@@ -736,8 +687,11 @@ pub struct RunningInteger {
     printer:    PrinterBox,
 }
 
+// RunningExporter structs are used to export statistics from a RunningInteger
+// struct so that multiple structures can be summed.
+
 pub struct RunningExporter {
-    addends: Vec<RunningImport>,
+    addends: Vec<RunningExport>,
 }
 
 impl RunningExporter {
@@ -747,18 +701,25 @@ impl RunningExporter {
         RunningExporter { addends }
     }
 
-    fn push(&mut self, addend: RunningImport) {
+    fn push(&mut self, addend: RunningExport) {
         self.addends.push(addend);
     }
+
+    // Make a member based on the summed exports.
 
     fn make_member(&mut self, name: &str, printer: PrinterBox) -> RunningInteger {
         let title   = name;
         let sum     = sum_running(&self.addends);
         let printer = Some(printer);
 
-        RunningInteger::new_import(name, title, printer, sum)
+        RunningInteger::new_from_exporter(name, title, printer, sum)
     }
 }
+
+// The Hier code uses this trait to do summation of statistics.
+//
+// We just need downcasting capabilities since all the work
+// is implementation-specific.
 
 impl HierExporter for RunningExporter {
     fn as_any(&self) -> &dyn Any {
@@ -770,7 +731,7 @@ impl HierExporter for RunningExporter {
     }
 }
 
-pub struct RunningImport {
+pub struct RunningExport {
     pub count:      u64,
     pub mean:       f64,
     pub moment_2:   f64,
@@ -793,7 +754,10 @@ pub fn sum_log_histogram(sum:  &mut LogHistogram, addend: &LogHistogram) {
     }
 }
 
-pub fn sum_running(exports: &Vec::<RunningImport>) -> RunningImport {
+// Merge the vector of exported statistics.  Many fields are just
+// sums of the parts.
+
+pub fn sum_running(exports: &Vec::<RunningExport>) -> RunningExport {
     let mut count          = 0;
     let mut min            = i64::MAX;
     let mut max            = i64::MIN;
@@ -822,8 +786,11 @@ pub fn sum_running(exports: &Vec::<RunningImport>) -> RunningImport {
     let moment_3 = kbk_sum(&mut moment_3_vec[..]);
     let moment_4 = kbk_sum(&mut moment_4_vec[..]);
 
-    RunningImport { count, mean, moment_2, moment_3, moment_4, min, max, log_histogram }
+    RunningExport { count, mean, moment_2, moment_3, moment_4, min, max, log_histogram }
 }
+
+// RunningGenerator provides an interface from the Hier code to
+// the RunningInteger code.
 
 #[derive(Default)]
 pub struct RunningGenerator {
@@ -841,6 +808,10 @@ impl RunningGenerator {
         RunningGenerator { }
     }
 
+    // Create a new Hier object from the given configuration.
+    // This routine does the grunt work specific to the
+    // RunningInteger type.
+
     pub fn new_hier(configuration: RunningHierConfig) -> Hier {
         let generator  = RunningGenerator::new();
         let generator  = Rc::from(RefCell::new(generator));
@@ -857,12 +828,19 @@ impl RunningGenerator {
     }
 }
 
+// These are the functions that the Hier struct needs implemented
+// for a given statistic type that are not specific to a member
+// of that type.  It's thus the bridge between "impl RunningInteger"
+// and the Hier code.
+
 impl HierGenerator for RunningGenerator {
     fn make_member(&self, name: &str, printer: PrinterBox) -> MemberRc {
         let member = RunningInteger::new(name, Some(printer));
 
         Rc::from(RefCell::new(member))
     }
+
+    // Make a member from a complete list of exported statistics.
 
     fn make_from_exporter(&self, name: &str, printer: PrinterBox, exporter: ExporterRc) -> MemberRc {
         let mut exporter_borrow = exporter.borrow_mut();
@@ -877,6 +855,9 @@ impl HierGenerator for RunningGenerator {
 
         Rc::from(RefCell::new(exporter))
     }
+
+    // Push another statistic onto the export list.  We will sum all of
+    // them at some point.
 
     fn push(&self, exporter: ExporterRc, member_rc: MemberRc) {
         let mut exporter_borrow = exporter.borrow_mut();
@@ -918,7 +899,8 @@ impl RunningInteger {
         }
     }
 
-    pub fn new_import(name: &str, title: &str, printer: PrinterOption, import: RunningImport) -> RunningInteger {
+    pub fn new_from_exporter(name: &str, title: &str, printer: PrinterOption, import: RunningExport)
+            -> RunningInteger {
         let name            = String::from(name);
         let title           = String::from(title);
         let id              = usize::MAX;
@@ -946,7 +928,10 @@ impl RunningInteger {
         }
     }
 
-    pub fn export(&self) -> RunningImport {
+    // Export all the statistics from a given structure to
+    // be used to create a sum of many structures.
+
+    pub fn export(&self) -> RunningExport {
         let count           = self.count;
         let mean            = self.mean;
         let moment_2        = self.moment_2;
@@ -956,7 +941,7 @@ impl RunningInteger {
         let min             = self.min;
         let max             = self.max;
 
-        RunningImport {
+        RunningExport {
             count,      mean,       moment_2,
             moment_3,   moment_4,   log_histogram,
             min,        max
@@ -1143,8 +1128,8 @@ impl Rustics for RunningInteger {
         println!("print_opts:  got printer lock");
 
         printer.print(title);
-        print_common_integer(&printable, printer);
-        print_common_float(&printable, printer);
+        printable.print_common_integer(printer);
+        printable.print_common_float(printer);
         self.log_histogram.print(printer);
     }
 
@@ -1160,6 +1145,9 @@ impl Rustics for RunningInteger {
         self.id
     }
 }
+
+// Provide for downcasting from a Hier member to a Rustics
+// type or "dn Any" to get to the RunningInteger code.
 
 impl HierMember for RunningInteger {
     fn to_rustics(&self) -> &dyn Rustics {
@@ -1216,6 +1204,9 @@ pub struct IntegerWindow {
 
     printer:        PrinterBox,
 }
+
+// The Crunched structure contains all the data needed to
+// compute the summary statistics that we need to print.
 
 struct Crunched {
     mean:       f64,
@@ -1515,8 +1506,8 @@ impl Rustics for IntegerWindow {
         let printable = Printable { n, min, max, log_mode, mean, variance, skewness, kurtosis };
 
         printer.print(title);
-        print_common_integer(&printable, printer);
-        print_common_float(&printable, printer);
+        printable.print_common_integer(printer);
+        printable.print_common_float(printer);
         self.log_histogram.print(printer);
     }
 
@@ -1747,8 +1738,8 @@ impl Rustics for RunningTime {
         let printable = Printable { n, min, max, log_mode, mean, variance, skewness, kurtosis };
 
         printer.print(title);
-        print_common_integer_times(&printable, self.hz, printer);
-        print_common_float_times(&printable, self.hz, printer);
+        printable.print_common_integer_times(self.hz, printer);
+        printable.print_common_float_times(self.hz, printer);
 
         self.running_integer.print_histogram();
     }
@@ -1973,8 +1964,8 @@ impl Rustics for TimeWindow {
         let printer   = &mut *printer_box.lock().unwrap();
 
         printer.print(title);
-        print_common_integer_times(&printable, self.hz, printer);
-        print_common_float_times(&printable, self.hz, printer);
+        printable.print_common_integer_times(self.hz, printer);
+        printable.print_common_float_times(self.hz, printer);
 
         self.integer_window.print_histogram();
     }
@@ -2141,7 +2132,7 @@ impl Rustics for Counter {
         let printer = &mut *printer_box.lock().unwrap();
 
         printer.print(title);
-        print_integer("Count", self.count, printer);
+        Printable::print_integer("Count", self.count, printer);
     }
 
     // For internal use only.
@@ -2415,7 +2406,7 @@ mod tests {
 
 
             let header = format!("{} => ", commas_i64(time));
-            print_time(&header, time as f64, hz as i64, printer);
+            Printable::print_time(&header, time as f64, hz as i64, printer);
 
             time *= 10;
         }
@@ -2504,7 +2495,7 @@ mod tests {
             setup_elapsed_time(&mut timer, time);
             time_stat.record_event();
             let header = format!("{} => ", commas_i64(time));
-            print_time(&header, time as f64, hz as i64, printer);
+            Printable::print_time(&header, time as f64, hz as i64, printer);
 
             time *= 10;
         }

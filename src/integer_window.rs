@@ -404,6 +404,8 @@ mod tests {
         let window_size = 100;
         let mut stats = IntegerWindow::new(&"Test Statistics", window_size, None);
 
+        assert!(stats.class() == "integer");
+
         for sample in -256..512 {
             stats.record_i64(sample);
         }

@@ -444,11 +444,25 @@ mod tests {
     use std::sync::Arc;
 
     pub fn test_simple_running_integer() {
-        let mut stats = RunningInteger::new(&"Test Statistics", None);
+        let mut stats  = RunningInteger::new(&"Test Statistics", None);
+        let mut events =    0;
+        let     min    = -256;
+        let     max    =  511;
 
-        for sample in -256..512 {
+        assert!(stats.class() == "integer");
+
+        for sample in min..max + 1 {
             stats.record_i64(sample);
+            events += 1;
         }
+
+        let mean = (min + max) as f64 / 2.0;
+
+        assert!(stats.min_i64() == min      );
+        assert!(stats.max_i64() == max      );
+        assert!(stats.mean()    == mean     );
+        assert!(stats.count()   == events   );
+        assert!(stats.class()   == "integer");
 
         let printer = Arc::new(Mutex::new(TestPrinter::new("test header ======")));
         stats.print_opts(Some(printer), None);

@@ -152,9 +152,11 @@ pub fn timer_box_hz(timer:  &TimerBox) -> u128 {
     (**timer).borrow().hz()
 }
 
-fn stdout_printer() -> PrinterBox {
+pub fn stdout_printer() -> PrinterBox {
     Arc::new(Mutex::new(StdioPrinter::new(StreamKind::Stdout)))
 }
+
+// Compute a variance estimator.
 
 pub fn compute_variance(count: u64, moment_2: f64) -> f64 {
     if count < 2 {
@@ -297,9 +299,10 @@ pub trait Rustics {
 
     // Functions for printing
 
-    fn print(&self);
+    fn print     (&self);
     fn print_opts(&self, printer: PrinterOption, title: Option<&str>);
-    fn set_title(&mut self, title: &str);
+
+    fn set_title (&mut self, title: &str);
 
     // For internal use only.
     fn set_id(&mut self, index: usize);
@@ -508,6 +511,8 @@ mod tests {
         let mut timer: TimerBox = Rc::from(RefCell::new(TestTimer::new(hz)));
         let mut time_stat       = TimeWindow::new("Test Time Window 1", 50, timer.clone(), None);
 
+        assert!(time_stat.class() == "time");
+
         setup_elapsed_time(&mut timer, i64::MAX);
         time_stat.record_event();
 
@@ -545,6 +550,8 @@ mod tests {
         let mut timer: TimerBox = Rc::from(RefCell::new(TestTimer::new(1_000_000_000)));
         let     printer         = Some(stdout_printer());
         let mut time_stat       = RunningTime::new("Test Time Window 2", timer.clone(), printer);
+
+        assert!(time_stat.class() == "time");
 
         let limit = 99;
 

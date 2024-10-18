@@ -527,6 +527,10 @@ mod tests {
         let mut time_window     = (*time_window).borrow_mut();
         let mut timer: TimerBox = Rc::from(RefCell::new(ContinuingTimer::new(test_hz)));
 
+        // Do a quick sanity test.
+
+        assert!(time_window.class() == "time");
+
         (*timer).borrow_mut().start();
 
         //  Record some data.

@@ -661,6 +661,7 @@ pub mod tests {
     use crate::stdout_printer;
     use crate::integer_hier::IntegerHier;
     use crate::integer_hier::IntegerHierConfig;
+    use crate::running_integer::RunningInteger;
     use crate::time_hier::TimeHier;
     use crate::time_hier::TimeHierConfig;
     use crate::running_time::RunningTime;
@@ -1074,13 +1075,94 @@ pub mod tests {
         println!("long_test:  traversed {} stats structs, predicted {}",
             traverser.count, predicted);
         assert!(traverser.count == predicted);
+
+        // Do a sanity test on the members.
+
+        let member_opt    = hier_integer.stats[1].newest().unwrap();
+        let member_borrow = member_opt.borrow();
+        let member        = member_borrow.as_any().downcast_ref::<RunningInteger>();
+
+        let proper_type =
+            match member {
+                Some(_) => { true  }
+                None    => { false }
+            };
+
+        let rustics = member.unwrap().to_rustics();
+
+        println!("long_test:  got \"{}\" for class", rustics.class());
+
+        assert!(proper_type);
+        assert!(rustics.class() == "integer");
+    }
+
+    fn test_time_hier_sanity() {
+        //  First, just make a generator and a member, then record one event.
+
+        let     name         = "time_hier sanity test".to_string();
+        let     title        = "time_hier sanity test title".to_string();
+        let     hz           = 1_000_000_000;
+        let     timer        = crate::arc_sets::tests::ContinuingTimer::new(hz);
+        let     timer        = Rc::from(RefCell::new(timer));
+        let     printer      = stdout_printer();
+
+        // Create the dimensions.
+
+        let dimension_0 = HierDimension::new(4, 4);
+        let dimension_1 = HierDimension::new(100, 200);
+
+        let dimensions = vec![ dimension_0.clone(), dimension_1.clone() ];
+
+        let auto_next    = 20;
+        let auto_advance = Some(auto_next);
+        let descriptor   = HierDescriptor::new(dimensions, auto_advance);
+
+        // Now make an actual time_hier struct from a configuration.
+
+        let configuration =
+            TimeHierConfig { descriptor, timer, name, title, printer };
+
+        let mut hier = TimeHier::new_hier(configuration);
+
+        // Now force a level 1 statistics.
+
+        let mut events             = 0;
+        let     events_per_level_1 = auto_next * dimension_0.period() as i64;
+
+        for i in 0..2 * events_per_level_1 {
+            hier.record_time(i + 1);
+
+            events += 1;
+        }
+
+        assert!(hier.event_count() == events);
+        hier.print();
+
+        // Do a sanity test on the members.
+
+        let member_opt    = hier.stats[1].newest().unwrap();
+        let member_borrow = member_opt.borrow();
+        let member        = member_borrow.as_any().downcast_ref::<RunningTime>();
+
+        let proper_type =
+            match member {
+                Some(_) => { true  }
+                None    => { false }
+            };
+
+        let rustics = member.unwrap().to_rustics();
+
+        assert!(proper_type);
+        assert!(rustics.count() == events_per_level_1 as u64);
+        assert!(rustics.class() == "time");
+        println!("test_time_hier_sanity:  got \"{}\" for class", rustics.class());
     }
 
     fn sample_usage() {
         // Make a descriptor of the first level.  We have chosen to sum 1000
         // level 0 RunningInteger structs into one level 1 RunningInteger
         // struct.  This level is large, so we will keep only 1000 level 0
-        // structs around.
+        // structs in the window.
 
         let dimension_0 = HierDimension::new(1000, 1000);
 
@@ -1190,74 +1272,12 @@ pub mod tests {
         assert!(integer_hier.event_count() == events);
     }
 
-    fn test_time_hier_sanity() {
-        //  First, just make a generator and a member, then record one event.
-
-        let     name         = "time_hier sanity test".to_string();
-        let     title        = "time_hier sanity test title".to_string();
-        let     hz           = 1_000_000_000;
-        let     timer        = crate::arc_sets::tests::ContinuingTimer::new(hz);
-        let     timer        = Rc::from(RefCell::new(timer));
-        let     printer      = stdout_printer();
-
-        // Create the dimensions.
-
-        let dimension_0 = HierDimension::new(4, 4);
-        let dimension_1 = HierDimension::new(100, 200);
-
-        let dimensions = vec![ dimension_0.clone(), dimension_1.clone() ];
-
-        let auto_next    = 20;
-        let auto_advance = Some(auto_next);
-        let descriptor   = HierDescriptor::new(dimensions, auto_advance);
-
-        // Now make an actual time_hier struct from a configuration.
-
-        let configuration =
-            TimeHierConfig { descriptor, timer, name, title, printer };
-
-        let mut hier = TimeHier::new_hier(configuration);
-
-        // Now force a level 1 statistics.
-
-        let mut events             = 0;
-        let     events_per_level_1 = auto_next * dimension_0.period() as i64;
-
-        for i in 0..2 * events_per_level_1 {
-            hier.record_time(i + 1);
-
-            events += 1;
-        }
-
-        assert!(hier.event_count() == events);
-        hier.print();
-
-        // Do a sanity test on the members.
-
-        let member_opt    = hier.stats[1].newest().unwrap();
-        let member_borrow = member_opt.borrow();
-        let member        = member_borrow.as_any().downcast_ref::<RunningTime>();
-
-        let proper_type =
-            match member {
-                Some(_) => { true  }
-                None    => { false }
-            };
-
-        let rustics = member.unwrap().to_rustics();
-
-        assert!(proper_type);
-        assert!(rustics.count() == events_per_level_1 as u64);
-        assert!(rustics.class() == "time");
-        println!("test_time_hier_sanity:  got \"{}\" for class", rustics.class());
-    }
-
     #[test]
     fn run_tests() {
         println!("Running the hierarchical stats tests.");
         simple_hier_test();
-        sample_usage();
         long_test();
         test_time_hier_sanity();
+        sample_usage();
     }
 }

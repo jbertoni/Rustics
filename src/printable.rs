@@ -256,7 +256,6 @@ impl Printable {
         }
 
         let log   = self.log_mode.abs();
-        let log   = log;
         let base  = 2_u64;
         let ticks = base.pow(log as u32);
 

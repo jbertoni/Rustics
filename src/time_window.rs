@@ -99,7 +99,7 @@ impl Rustics for TimeWindow {
     }
 
     fn class(&self) -> &str {
-        self.integer_window.class()
+        "time"
     }
 
     fn count(&self) ->u64 {

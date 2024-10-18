@@ -102,7 +102,8 @@ impl HierGenerator for IntegerHier {
 
     fn make_from_exporter(&self, name: &str, printer: PrinterBox, exporter: ExporterRc) -> MemberRc {
         let mut exporter_borrow = exporter.borrow_mut();
-        let     exporter_impl   = exporter_borrow.as_any_mut().downcast_mut::<RunningExporter>().unwrap();
+        let     exporter_any    = exporter_borrow.as_any_mut();
+        let     exporter_impl   = exporter_any.downcast_mut::<RunningExporter>().unwrap();
         let     member          = exporter_impl.make_member(name, printer);
 
         Rc::from(RefCell::new(member))

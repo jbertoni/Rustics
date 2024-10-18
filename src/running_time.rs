@@ -47,6 +47,14 @@ impl RunningTime {
         RunningTime { printer, running_integer, timer, hz }
     }
 
+    pub fn from_integer(timer: TimerBox, printer: PrinterBox, running: RunningInteger)
+            -> RunningTime {
+        let hz              = timer_box_hz(&timer) as i64;
+        let running_integer = Box::new(running);
+
+        RunningTime { printer, running_integer, timer, hz }
+    }
+
     pub fn hz(&self) -> i64 {
         self.hz
     }
@@ -101,7 +109,7 @@ impl Rustics for RunningTime {
     }
 
     fn class(&self) -> &str {
-        self.running_integer.class()
+        "time"
     }
 
     fn count(&self) ->u64 {

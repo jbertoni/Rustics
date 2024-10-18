@@ -104,8 +104,11 @@ impl HierGenerator for TimeHier {
 
     fn make_from_exporter(&self, name: &str, printer: PrinterBox, exporter: ExporterRc) -> MemberRc {
         let mut exporter_borrow = exporter.borrow_mut();
-        let     exporter_impl   = exporter_borrow.as_any_mut().downcast_mut::<RunningExporter>().unwrap();
-        let     member          = exporter_impl.make_member(name, printer);
+        let     exporter_any    = exporter_borrow.as_any_mut();
+        let     exporter_impl   = exporter_any.downcast_mut::<RunningExporter>().unwrap();
+        let     member          = exporter_impl.make_member(name, printer.clone());
+        let     timer           = self.timer.clone();
+        let     member          = RunningTime::from_integer(timer, printer, member);
 
         Rc::from(RefCell::new(member))
     }
@@ -121,7 +124,8 @@ impl HierGenerator for TimeHier {
 
     fn push(&self, exporter: ExporterRc, member_rc: MemberRc) {
         let mut exporter_borrow = exporter.borrow_mut();
-        let     exporter_impl   = exporter_borrow.as_any_mut().downcast_mut::<RunningExporter>().unwrap();
+        let     exporter_any    = exporter_borrow.as_any_mut();
+        let     exporter_impl   = exporter_any.downcast_mut::<RunningExporter>().unwrap();
 
         let     member_borrow = member_rc.borrow();
         let     member_impl   = member_borrow.as_any().downcast_ref::<RunningTime>().unwrap();

@@ -6,8 +6,8 @@
 
 //
 // A window contains at most "size_limit" items.  The window also
-// supports the concept of "live" entries, which ares the last
-// "size_limit" entries pushed onto the window.  When the window
+// supports the concept of "live" entries, which are the last
+// "live_limit" entries pushed onto the window.  When the window
 // is full and a new item is pushed, the oldest item is dropped.
 // Thus, this struct can be thought of as a window into the
 // last "size_limit" events pushed into the window.
@@ -62,7 +62,7 @@ impl<T> Window<T> {
         // and increment current.
         //
         // In all cases, "current_index" wraps back to zero when
-        // it reaches the end of the data.
+        // it reaches the size_limit of the queue.
         //
         // If the array is not yet full, we have to "push" the
         // data onto the Vec.  Otherwise, we overwrite.
@@ -93,7 +93,7 @@ impl<T> Window<T> {
         self.data.is_empty()
     }
 
-    // Return the index to the oldest "live" entry.
+    // Return the index to the oldest live entry.
     //
     // Compute the index to the newest entry from "current_index".
     // Just subtract one from "current_index" one unless we're at
@@ -333,7 +333,7 @@ impl<'a, T> WindowIterator<'a, T> {
                 scan_limit
             };
 
-        // Now compute the first index.  Make a first guess.
+        // Now compute the first index.
 
         let index =
             match scan_type {

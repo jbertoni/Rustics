@@ -166,12 +166,20 @@ impl Printable {
     pub fn print_float_unit(name: &str, value: f64, unit: &str, printer: &mut dyn Printer) {
         assert!(!value.is_nan());
 
+        // Print the value in scientific notation, then
+        // force a sign onto the exponent to make things
+        // line up.
+
         let value = format!("{:+e}", value)
-            .replace('e', " e+")
+            .replace('e',   " e+")
             .replace("e+-", " e-") ;
 
-        let mantissa_digits = 8;
-        let mut mantissa = Vec::with_capacity(mantissa_digits);
+        // Force the mantissa to 8 digits.  This should
+        // help with legibility since all the numbers
+        // should align.
+
+        let     mantissa_digits = 8;
+        let mut mantissa        = Vec::with_capacity(mantissa_digits);
 
         for char in value.chars() {
             if char == ' ' {
@@ -184,6 +192,8 @@ impl Printable {
                 break;
             }
         }
+
+        // Add trailing zeroes as needed.
 
         while mantissa.len() < mantissa_digits {
             mantissa.push('0');
@@ -206,8 +216,6 @@ impl Printable {
             printer.print(&output);
         }
     }
-
-// Compute the sample variance.
 
     // Print the common integer statistics as passed in a Printable structure.
 
@@ -235,23 +243,50 @@ impl Printable {
         }
     }
 
+    // Convert the log_mode of the histogram into an approximate
+    // time for the bucket.  Note that this approximation can
+    // be bigger than the record max value since the pseudo-log
+    // function rounds up.
+
+    fn log_mode_to_time(&self) -> f64 {
+        // Time values should never be negative...
+
+        if self.log_mode < 0 {
+            return 0.0;
+        }
+
+        let log   = self.log_mode.abs();
+        let log   = log;
+        let base  = 2_u64;
+        let ticks = base.pow(log as u32);
+
+        // Compute the approximate time interval for this number of ticks.
+
+        ticks as f64
+    }
+
+    // Print integer values that are in time units as actual times. The
+    // mode of the pseudo-log is an exception.
+
     pub fn print_common_integer_times(&self, hz: i64, printer: &mut dyn Printer) {
         Self::print_integer("Count", self.n as i64, printer);
 
         if self.n > 0 {
-            Self::print_time("Minumum",  self.min as f64,      hz, printer);
-            Self::print_time("Maximum",  self.max as f64,      hz, printer);
-            Self::print_time("Log Mode", self.log_mode as f64, hz, printer);
+            let approximation = self.log_mode_to_time();
+
+            Self::print_time("Minumum",  self.min as f64, hz, printer);
+            Self::print_time("Maximum",  self.max as f64, hz, printer);
+            Self::print_time("Log Mode", approximation,   hz, printer);
         }
     }
 
     pub fn print_common_float_times(&self, hz: i64, printer: &mut dyn Printer) {
         if self.n > 0 {
-            Self::print_time("Mean",     self.mean,            hz, printer);
-            Self::print_time("Std Dev",  self.variance.sqrt(), hz, printer);
-            Self::print_time("Variance", self.variance,        hz, printer);
-            Self::print_time("Skewness", self.skewness,        hz, printer);
-            Self::print_time("Kurtosis", self.kurtosis,        hz, printer);
+            Self::print_time ("Mean",     self.mean,            hz, printer);
+            Self::print_time ("Std Dev",  self.variance.sqrt(), hz, printer);
+            Self::print_float("Variance", self.variance,            printer);
+            Self::print_float("Skewness", self.skewness,            printer);
+            Self::print_float("Kurtosis", self.kurtosis,            printer);
         }
     }
 }
@@ -261,31 +296,63 @@ mod tests {
     use super::*;
 
     pub fn test_commas() {
-        let test = [ 123456, 12, -1, -1234, 4000000, -200, -2000, -20000 ];
-        let expect = [ "123,456", "12", "-1", "-1,234", "4,000,000", "-200", "-2,000", "-20,000" ];
-        let mut i = 0;
+        let     test   = [ 123456, 12, -1, -1234, 4000000, -200, -2000, -20000 ];
+        let     expect = [ "123,456", "12", "-1", "-1,234", "4,000,000", "-200", "-2,000", "-20,000" ];
+        for i in 0..test.len() {
+            println!("Test:  {} vs {}", Printable::commas_i64(test[i]), expect[i]);
 
-        for sample in test.iter() {
-            println!("Test:  {} vs {}", Printable::commas_i64(*sample), expect[i]);
-            assert_eq!(Printable::commas_i64(*sample), expect[i]);
-            i += 1;
+            assert_eq!(Printable::commas_i64(test[i]), expect[i]);
         }
 
-        assert_eq!(Printable::commas("+21"), "+21");
-        assert_eq!(Printable::commas("+212"), "+212");
-        assert_eq!(Printable::commas("+2123"), "+2,123");
-        assert_eq!(Printable::commas("+21234"), "+21,234");
+        assert_eq!(Printable::commas("+21"),     "+21"     );
+        assert_eq!(Printable::commas("+212"),    "+212"    );
+        assert_eq!(Printable::commas("+2123"),   "+2,123"  );
+        assert_eq!(Printable::commas("+21234"),  "+21,234" );
         assert_eq!(Printable::commas("+212345"), "+212,345");
 
-        assert_eq!(Printable::commas("+20"), "+20");
-        assert_eq!(Printable::commas("+200"), "+200");
-        assert_eq!(Printable::commas("+2000"), "+2,000");
-        assert_eq!(Printable::commas("+20000"), "+20,000");
+        assert_eq!(Printable::commas("+20"),     "+20"     );
+        assert_eq!(Printable::commas("+200"),    "+200"    );
+        assert_eq!(Printable::commas("+2000"),   "+2,000"  );
+        assert_eq!(Printable::commas("+20000"),  "+20,000" );
         assert_eq!(Printable::commas("+200000"), "+200,000");
+    }
+
+    fn test_log_mode_to_time() {
+        let n        =  100;
+        let min      =    1;
+        let max      = 1000;
+        let log_mode =   32;
+
+        let mean     = 10.0;
+        let variance = 10.0;
+        let skewness = -4.0;
+        let kurtosis = 10.0;
+
+        let base     = 2 as u64;
+        let expected = base.pow(log_mode as u32) as f64;
+
+        let mut printable =
+            Printable { n, min, max, log_mode, mean, variance, skewness, kurtosis };
+
+        assert!(printable.log_mode_to_time() == expected);
+
+        // Negative times aren't actually possible, but check the sanity test.
+
+        printable.log_mode = -printable.log_mode;
+
+        assert!(printable.log_mode_to_time() == 0.0);
+
+        printable.log_mode = 63;
+
+        let base     = 2 as u64;
+        let expected = base.pow(63) as f64;
+
+        assert!(printable.log_mode_to_time() == expected);
     }
 
     #[test]
     fn run_tests() {
         test_commas();
+        test_log_mode_to_time();
     }
 }

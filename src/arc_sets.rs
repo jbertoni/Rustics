@@ -55,7 +55,7 @@ impl ArcSet {
         let name    = String::from(name_in);
         let title   = String::from(name_in);
         let id      = usize::MAX;
-        let next_id = 0;
+        let next_id = 1;
         let members = Vec::with_capacity(members_hint);
         let subsets = Vec::with_capacity(subsets_hint);
 
@@ -140,18 +140,18 @@ impl ArcSet {
     }
 
     // Add a member statistic.  The user creates the statistics object
-    // and passes it.
+    // and passes it in an Arc.
 
     pub fn add_member(&mut self, member: RusticsArc) {
-        self.members.push(member);
-
-        let     last  = self.members.last().unwrap();
-        let mut stat  = last.lock().unwrap();
+        let mut stat  = member.lock().unwrap();
         let     title = create_title(&self.title, &stat.name());
 
         stat.set_title(&title);
         stat.set_id(self.next_id);
         self.next_id += 1;
+        drop(stat);
+
+        self.members.push(member);
     }
 
     // Create a RunningInteger statistics object and add it to the set.
@@ -161,8 +161,8 @@ impl ArcSet {
         let member  = RunningInteger::new(name, printer);
         let member  = Arc::from(Mutex::new(member));
 
-        self.members.push(member);
-        self.common_add()
+        self.add_member(member.clone());
+        member
     }
 
     // Create a IntegerWindow statistics object and add it to the set.
@@ -170,9 +170,10 @@ impl ArcSet {
     pub fn add_integer_window(&mut self, window_size: usize, name: &str) -> RusticsArc {
         let printer = Some(self.printer.clone());
         let member  = IntegerWindow::new(name, window_size, printer);
+        let member  = Arc::from(Mutex::new(member));
 
-        self.members.push(Arc::from(Mutex::new(member)));
-        self.common_add()
+        self.add_member(member.clone());
+        member
     }
 
     pub fn add_running_time(&mut self, name: &str, timer: TimerBox) -> RusticsArc {
@@ -180,8 +181,8 @@ impl ArcSet {
         let member  = RunningTime::new(name, timer, printer);
         let member  = Arc::from(Mutex::new(member));
 
-        self.members.push(member);
-        self.common_add()
+        self.add_member(member.clone());
+        member
     }
 
     pub fn add_time_window(&mut self, name: &str, window_size: usize, timer: TimerBox) -> RusticsArc {
@@ -189,8 +190,8 @@ impl ArcSet {
         let member  = TimeWindow::new(name, window_size, timer, printer);
         let member  = Arc::from(Mutex::new(member));
 
-        self.members.push(member);
-        self.common_add()
+        self.add_member(member.clone());
+        member
     }
 
     pub fn add_counter(&mut self, name: &str) -> RusticsArc {
@@ -198,19 +199,8 @@ impl ArcSet {
         let member  = Counter::new(name, printer);
         let member  = Arc::from(Mutex::new(member));
 
-        self.members.push(member);
-        self.common_add()
-    }
-
-    fn common_add(&mut self) -> RusticsArc {
-        let     last  = self.members.last().unwrap();
-        let mut stat  = last.lock().unwrap();
-        let     title = create_title(&self.title, &stat.name());
-
-        stat.set_title(&title);
-        stat.set_id(self.next_id);
-        self.next_id += 1;
-        last.clone()
+        self.add_member(member.clone());
+        member
     }
 
     // Remove a statistic from the set.

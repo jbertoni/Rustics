@@ -177,7 +177,7 @@ impl Hier {
 
         let     auto_next     = descriptor.auto_next;
         let     dimensions    = descriptor.dimensions;
-        let     id            = 0;
+        let     id            = usize::MAX;
         let     advance_count = 0;
         let     event_count   = 0;
         let mut stats         = Vec::with_capacity(dimensions.len());
@@ -613,11 +613,9 @@ impl Rustics for Hier {
     }
 
     fn print_opts(&self, printer: PrinterOption, title: Option<&str>) {
-        let current = self.current();
-        let borrow  = current.borrow();
-        let rustics = borrow.to_rustics();
+        let index = HierIndex::new(HierSet::Live, 0, self.live_len(0) - 1);
 
-        rustics.print_opts(printer, title);
+        self.local_print(index, printer, title);
     }
 
     // The title is kept in the Hier object.
@@ -626,8 +624,8 @@ impl Rustics for Hier {
         self.title = title.to_string();
     }
 
-    fn set_id(&mut self, index: usize) {
-        self.id = index;
+    fn set_id(&mut self, id: usize) {
+        self.id = id;
     }
 
     fn id(&self) -> usize {
@@ -635,11 +633,11 @@ impl Rustics for Hier {
     }
 
     fn equals(&self, other: &dyn Rustics) -> bool {
-        let current = self.current();
-        let borrow  = current.borrow();
-        let rustics = borrow.to_rustics();
-
-        rustics.equals(other)
+        if let Some(other) = <dyn Any>::downcast_ref::<Hier>(other.generic()) {
+            std::ptr::eq(self, other)
+        } else {
+            false
+        }
     }
 
     fn generic(&self) -> &dyn Any {
@@ -707,9 +705,9 @@ pub mod tests {
         // IntegerHier, which does some of the work for
         // us.
 
-        let name       = "hier".to_string();
-        let title      = "hier title".to_string();
-        let printer    = stdout_printer();
+        let name    = "hier".to_string();
+        let title   = "hier title".to_string();
+        let printer = stdout_printer();
 
         // Finally, create the configuration description for the
         // constructor.
@@ -803,6 +801,13 @@ pub mod tests {
         let mut events         = 0;
         let mut sum_of_events  = 0;
         let mut hier_integer   = make_hier(level_0_period, auto_next);
+        let     hier_integer_2 = make_hier(level_0_period, auto_next);
+
+        // Do a quick sanity test on equals().
+
+        assert!( hier_integer.equals(&hier_integer));
+        assert!(!hier_integer.equals(&hier_integer_2));
+
 
         // Check that the struct matches our expectations.
 
@@ -985,6 +990,10 @@ pub mod tests {
         let stat_rc      = hier_integer.stats[2].newest().unwrap();
         let stat_borrow  = stat_rc.borrow();
         let stat         = stat_borrow.to_rustics();
+
+        // Do a sanity test on equals.
+
+        assert!(!hier_integer.equals(stat));
 
         println!("simple_hier_test:  print 4 at {}", events);
         stat.print();

@@ -206,8 +206,8 @@ impl Rustics for TimeWindow {
         self.integer_window.set_title(title)
     }
 
-    fn set_id(&mut self, index: usize) {
-        self.integer_window.set_id(index)
+    fn set_id(&mut self, id: usize) {
+        self.integer_window.set_id(id)
     }
 
     fn id(&self) -> usize {

@@ -212,8 +212,8 @@ impl Rustics for RunningTime {
         self.running_integer.set_title(title);
     }
 
-    fn set_id(&mut self, index: usize) {
-        self.running_integer.set_id(index)
+    fn set_id(&mut self, id: usize) {
+        self.running_integer.set_id(id)
     }
 
     fn id(&self) -> usize {

@@ -25,7 +25,7 @@ impl Counter {
         let name    = String::from(name);
         let title   = name.clone();
         let count   = 0;
-        let id      = 0;
+        let id      = usize::MAX;
 
         let printer =
             if let Some(printer) = printer {

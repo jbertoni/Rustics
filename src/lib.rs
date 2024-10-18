@@ -269,10 +269,10 @@ impl Printer for StdioPrinter {
 // library will support floating point samples.
 
 pub trait Rustics {
-    fn record_i64(&mut self, sample: i64);   // add an i64 sample
-    fn record_f64(&mut self, sample: f64);   // add an f64 sample -- not implemented
-    fn record_event(&mut self);              // implementation-specific record
-    fn record_time(&mut self, sample: i64);  // add a time sample
+    fn record_i64  (&mut self, sample: i64);  // add an i64 sample
+    fn record_f64  (&mut self, sample: f64);  // add an f64 sample -- not implemented
+    fn record_event(&mut self             );  // implementation-specific record
+    fn record_time (&mut self, sample: i64);  // add a time sample
 
     fn record_interval(&mut self, timer: &mut TimerBox);
                                              // Add a duration sample ending now
@@ -305,11 +305,12 @@ pub trait Rustics {
     fn set_title (&mut self, title: &str);
 
     // For internal use only.
-    fn set_id(&mut self, index: usize);
-    fn id(&self)                          -> usize;
-    fn equals(&self, other: &dyn Rustics) -> bool;
-    fn generic(&self)                     -> &dyn Any;
-    fn histo_log_mode(&self)              -> i64;
+    fn set_id (&mut self, id: usize      );
+    fn id     (&self                     ) -> usize;
+    fn equals (&self, other: &dyn Rustics) -> bool;
+    fn generic(&self                     ) -> &dyn Any;
+
+    fn histo_log_mode(&self) -> i64;
 }
 
 pub trait Histogram {

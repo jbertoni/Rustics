@@ -54,7 +54,7 @@ impl RcSet {
         let name    = String::from(name_in);
         let title   = String::from(name_in);
         let id      = usize::MAX;
-        let next_id = 0;
+        let next_id = 1;
         let members = Vec::with_capacity(members);
         let subsets = Vec::with_capacity(subsets);
 
@@ -134,17 +134,18 @@ impl RcSet {
         }
     }
 
-    // Add a member
+    // Add a member given an Rc struct
+
     pub fn add_member(&mut self, member: RusticsRc) {
-        self.members.push(member);
+        let mut stat   = member.borrow_mut();
+        let     title  = create_title(&self.title, &stat.name());
 
-        let     last   = self.members.last().unwrap();
-        let mut member = (**last).borrow_mut();
-        let     title  = create_title(&self.title, &member.name());
-
-        member.set_title(&title);
-        member.set_id(self.next_id);
+        stat.set_title(&title);
+        stat.set_id(self.next_id);
         self.next_id += 1;
+        drop(stat);
+
+        self.members.push(member);
     }
 
     // Create a RunningInteger statistics object and add it to the set.
@@ -154,8 +155,8 @@ impl RcSet {
         let member  = RunningInteger::new(name, printer);
         let member  = Rc::from(RefCell::new(member));
 
-        self.members.push(member);
-        self.common_add()
+        self.add_member(member.clone());
+        member
     }
 
     // Create a IntegerWindow statistics object and add it to the set.
@@ -165,8 +166,8 @@ impl RcSet {
         let member  = IntegerWindow::new(name, window_size, printer);
         let member  = Rc::from(RefCell::new(member));
 
-        self.members.push(member);
-        self.common_add()
+        self.add_member(member.clone());
+        member
     }
 
     pub fn add_running_time(&mut self, name: &str, timer: TimerBox) -> RusticsRc {
@@ -174,8 +175,8 @@ impl RcSet {
         let member  = RunningTime::new(name, timer, printer);
         let member  = Rc::from(RefCell::new(member));
 
-        self.members.push(member);
-        self.common_add()
+        self.add_member(member.clone());
+        member
     }
 
     pub fn add_time_window(&mut self, name: &str, window_size: usize, timer: TimerBox) -> RusticsRc {
@@ -183,8 +184,8 @@ impl RcSet {
         let member  = TimeWindow::new(name, window_size, timer, printer);
         let member  = Rc::from(RefCell::new(member));
 
-        self.members.push(member);
-        self.common_add()
+        self.add_member(member.clone());
+        member
     }
 
     pub fn add_counter(&mut self, name: &str) -> RusticsRc {
@@ -192,19 +193,8 @@ impl RcSet {
         let member  = Counter::new(name, printer);
         let member  = Rc::from(RefCell::new(member));
 
-        self.members.push(member);
-        self.common_add()
-    }
-
-    fn common_add(&mut self) -> RusticsRc {
-        let     last   = self.members.last().unwrap();
-        let mut member = (**last).borrow_mut();
-        let     title  = create_title(&self.title, &member.name());
-
-        member.set_title(&title);
-        member.set_id(self.next_id);
-        self.next_id += 1;
-        last.clone()
+        self.add_member(member.clone());
+        member
     }
 
     // Remove a statistic from the set.

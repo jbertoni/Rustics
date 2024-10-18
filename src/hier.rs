@@ -354,7 +354,7 @@ impl Hier {
 
         let printer_box =
             if let Some(printer) = printer_opt.clone() {
-                printer.clone()
+                printer
             } else {
                 self.printer.clone()
             };

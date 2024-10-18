@@ -169,7 +169,7 @@ impl Rustics for RunningTime {
     fn print_opts(&self, printer: PrinterOption, title: Option<&str>) {
         let printer_box =
             if let Some(printer) = printer {
-                printer.clone()
+                printer
             } else {
                 self.printer.clone()
             };

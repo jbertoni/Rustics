@@ -21,12 +21,18 @@ pub struct Counter {
 }
 
 impl Counter {
-    pub fn new(name: &str) -> Counter {
+    pub fn new(name: &str, printer: PrinterOption) -> Counter {
         let name    = String::from(name);
         let title   = name.clone();
         let count   = 0;
         let id      = 0;
-        let printer = stdout_printer();
+
+        let printer =
+            if let Some(printer) = printer {
+                printer
+            } else {
+                stdout_printer()
+            };
 
         Counter { name, title, count, id, printer }
     }
@@ -133,7 +139,7 @@ impl Rustics for Counter {
     fn print_opts(&self, printer: PrinterOption, title: Option<&str>) {
         let printer_box =
             if let Some(printer) = printer {
-                printer.clone()
+                printer
             } else {
                 self.printer.clone()
             };
@@ -187,7 +193,7 @@ mod tests {
 
     fn test_simple_counter() {
         let test_limit  = 20;
-        let mut counter = Counter::new("test counter");
+        let mut counter = Counter::new("test counter", None);
 
         for i in 1..test_limit + 1 {
             counter.record_event();

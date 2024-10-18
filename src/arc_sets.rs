@@ -14,6 +14,7 @@ use super::time_window::TimeWindow;
 use super::stdout_printer;
 use super::counter::Counter;
 use super::TimerBox;
+use super::PrinterBox;
 use super::PrinterOption;
 use super::create_title;
 
@@ -37,6 +38,7 @@ pub struct ArcSet {
     next_id:    usize,
     members:    Vec<RusticsArc>,
     subsets:    Vec<ArcSetBox>,
+    printer:    PrinterBox,
 }
 
 impl ArcSet {
@@ -48,7 +50,8 @@ impl ArcSet {
     // statistics in the set.  These hints can improve performance a bit.  They
     // might be especially useful in embedded environments.
 
-    pub fn new(name_in: &str, members_hint: usize, subsets_hint: usize) -> ArcSet {
+    pub fn new(name_in: &str, printer: PrinterOption, members_hint: usize, subsets_hint: usize)
+            -> ArcSet {
         let name    = String::from(name_in);
         let title   = String::from(name_in);
         let id      = usize::MAX;
@@ -56,7 +59,14 @@ impl ArcSet {
         let members = Vec::with_capacity(members_hint);
         let subsets = Vec::with_capacity(subsets_hint);
 
-        ArcSet { name, title, id, next_id, members, subsets }
+        let printer =
+            if let Some(printer) = printer {
+                printer
+            } else {
+                stdout_printer()
+            };
+
+        ArcSet { name, title, id, next_id, members, subsets, printer }
     }
 
     // Returns the name of the set.
@@ -147,31 +157,48 @@ impl ArcSet {
     // Create a RunningInteger statistics object and add it to the set.
 
     pub fn add_running_integer(&mut self, name: &str) -> RusticsArc {
-        self.members.push(Arc::from(Mutex::new(RunningInteger::new(name, None))));
+        let printer = Some(self.printer.clone());
+        let member  = RunningInteger::new(name, printer);
+        let member  = Arc::from(Mutex::new(member));
+
+        self.members.push(member);
         self.common_add()
     }
 
     // Create a IntegerWindow statistics object and add it to the set.
 
     pub fn add_integer_window(&mut self, window_size: usize, name: &str) -> RusticsArc {
-        self.members.push(Arc::from(Mutex::new(IntegerWindow::new(name, window_size))));
+        let printer = Some(self.printer.clone());
+        let member  = IntegerWindow::new(name, window_size, printer);
+
+        self.members.push(Arc::from(Mutex::new(member)));
         self.common_add()
     }
 
     pub fn add_running_time(&mut self, name: &str, timer: TimerBox) -> RusticsArc {
-        let printer = Some(stdout_printer());
+        let printer = Some(self.printer.clone());
+        let member  = RunningTime::new(name, timer, printer);
+        let member  = Arc::from(Mutex::new(member));
 
-        self.members.push(Arc::from(Mutex::new(RunningTime::new(name, timer, printer))));
+        self.members.push(member);
         self.common_add()
     }
 
     pub fn add_time_window(&mut self, name: &str, window_size: usize, timer: TimerBox) -> RusticsArc {
-        self.members.push(Arc::from(Mutex::new(TimeWindow::new(name, window_size, timer))));
+        let printer = Some(self.printer.clone());
+        let member  = TimeWindow::new(name, window_size, timer, printer);
+        let member  = Arc::from(Mutex::new(member));
+
+        self.members.push(member);
         self.common_add()
     }
 
     pub fn add_counter(&mut self, name: &str) -> RusticsArc {
-        self.members.push(Arc::from(Mutex::new(Counter::new(name))));
+        let printer = Some(self.printer.clone());
+        let member  = Counter::new(name, printer);
+        let member  = Arc::from(Mutex::new(member));
+
+        self.members.push(member);
         self.common_add()
     }
 
@@ -218,7 +245,11 @@ impl ArcSet {
     // Create a new subset and add it to the set.
 
     pub fn add_subset(&mut self, name: &str, members: usize, subsets: usize) -> ArcSetBox {
-        self.subsets.push(Arc::from(Mutex::new(ArcSet::new(name, members, subsets))));
+        let printer = Some(self.printer.clone());
+        let subset  = ArcSet::new(name, printer, members, subsets);
+        let subset  = Arc::from(Mutex::new(subset));
+
+        self.subsets.push(subset);
 
         let     last   = self.subsets.last().unwrap();
         let mut subset = last.lock().unwrap();
@@ -408,7 +439,7 @@ pub mod tests {
 
         //  Create the parent set for our test statistics.
 
-        let mut set = ArcSet::new("parent set", 4, 4);
+        let mut set = ArcSet::new("parent set", None, 4, 4);
 
         //  Create timers for time statistics.
 
@@ -561,7 +592,7 @@ pub mod tests {
         // The last two parameters to new() are size hints, and need not be correct.
         // The same is true for add_subset.
 
-        let mut  set     = ArcSet::new("parent set", 0, 1);
+        let mut  set     = ArcSet::new("parent set", None, 0, 1);
         let      subset  = set.add_subset("subset", 1, 0);
         let mut  subset  = subset.lock().unwrap();
         let      running = subset.add_running_integer("running");

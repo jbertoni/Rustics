@@ -28,7 +28,8 @@ pub struct TimeWindow {
 }
 
 impl TimeWindow {
-    pub fn new(name_in: &str, window_size: usize, timer:  TimerBox) -> TimeWindow {
+    pub fn new(name_in: &str, window_size: usize, timer:  TimerBox, printer: PrinterOption)
+            -> TimeWindow {
         let hz = timer_box_hz(&timer);
 
         if hz > i64::MAX as u128 {
@@ -36,9 +37,15 @@ impl TimeWindow {
         }
 
         let hz             = hz as i64;
-        let integer_window = IntegerWindow::new(name_in, window_size);
+        let integer_window = IntegerWindow::new(name_in, window_size, printer.clone());
         let integer_window = Box::new(integer_window);
-        let printer        = stdout_printer();
+
+        let printer =
+            if let Some(printer) = printer {
+                printer
+            } else {
+                stdout_printer()
+            };
 
         TimeWindow { printer, integer_window, timer, hz }
     }
@@ -160,7 +167,7 @@ impl Rustics for TimeWindow {
     fn print_opts(&self, printer: PrinterOption, title: Option<&str>) {
         let printer_box =
             if let Some(printer) = printer {
-                printer.clone()
+                printer
             } else {
                 self.printer.clone()
             };

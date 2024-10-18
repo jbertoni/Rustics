@@ -69,7 +69,7 @@ impl Crunched {
 }
 
 impl IntegerWindow {
-    pub fn new(name_in: &str, window_size: usize) -> IntegerWindow {
+    pub fn new(name_in: &str, window_size: usize, printer: PrinterOption) -> IntegerWindow {
         if window_size == 0 {
             panic!("The window size is zero.");
         }
@@ -86,7 +86,13 @@ impl IntegerWindow {
         let moment_3      = 0.0;
         let moment_4      = 0.0;
         let log_histogram = LogHistogram::new();
-        let printer       = stdout_printer();
+
+        let printer =
+            if let Some(printer) = printer {
+                printer
+            } else {
+                stdout_printer()
+            };
 
         IntegerWindow {
             name,
@@ -305,7 +311,7 @@ impl Rustics for IntegerWindow {
     fn print_opts(&self, printer: PrinterOption, title: Option<&str>) {
         let printer_box =
             if let Some(printer) = printer {
-                printer.clone()
+                printer
             } else {
                 self.printer.clone()
             };
@@ -396,7 +402,7 @@ mod tests {
 
     pub fn test_simple_integer_window() {
         let window_size = 100;
-        let mut stats = IntegerWindow::new(&"Test Statistics", window_size);
+        let mut stats = IntegerWindow::new(&"Test Statistics", window_size, None);
 
         for sample in -256..512 {
             stats.record_i64(sample);

@@ -68,9 +68,9 @@
 //!           to the Hier struct.
 //!     * IntegerHier
 //!         * This structure provides RunningInteger types in a Hier structure.  See
-//!           "Integer::new_hier" for a simple interface to get going.  The
-//!           hier.rs test module also contains "sample_usage" and "make_hier" routines
-//!           as examples.
+//!           "Integer::new_hier" for a simple interface to get going.  The hier.rs test
+//!            module also contains "sample_usage" and "make_hier" routines as examples.
+//!
 //!     * TimeHier
 //!         * TimeHier implements Hier for the RunningTime struct. As with IntegerHier,
 //!           see "TimeHier::new_hier" for an easy way to make a Hier object that uses
@@ -506,7 +506,7 @@ mod tests {
 
         let     hz              = 1_000_000_000;
         let mut timer: TimerBox = Rc::from(RefCell::new(TestTimer::new(hz)));
-        let mut time_stat       = TimeWindow::new("Test Time Window 1", 50, timer.clone());
+        let mut time_stat       = TimeWindow::new("Test Time Window 1", 50, timer.clone(), None);
 
         setup_elapsed_time(&mut timer, i64::MAX);
         time_stat.record_event();

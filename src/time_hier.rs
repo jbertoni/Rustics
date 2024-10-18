@@ -14,6 +14,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use super::Rustics;
+use super::Histogram;
 use super::TimerBox;
 use super::PrinterBox;
 use super::running_time::RunningTime;
@@ -45,6 +46,10 @@ impl HierMember for RunningTime {
 
     fn as_any_mut(&mut self) -> &mut dyn Any {
         self
+    }
+
+    fn to_histogram(&self) -> &dyn Histogram {
+        self as &dyn Histogram
     }
 }
 
@@ -141,6 +146,7 @@ mod tests {
     use crate::hier::HierDescriptor;
     use crate::hier::HierDimension;
     use crate::hier::GeneratorRc;
+    use crate::tests::continuing_box;
 
     fn make_hier_gen(generator:  GeneratorRc) -> Hier {
         let     auto_next      = 4;
@@ -181,9 +187,7 @@ mod tests {
     fn test_simple_running_generator() {
         //  First, just make a generator and a member, then record one event.
 
-        let     hz           = 1_000_000_000;
-        let     timer        = crate::arc_sets::tests::ContinuingTimer::new(hz);
-        let     timer        = Rc::from(RefCell::new(timer));
+        let     timer        = continuing_box();
         let     generator    = TimeHier::new_raw(timer);
         let     printer      = stdout_printer();
         let     member_rc    = generator.make_member("test member", printer);

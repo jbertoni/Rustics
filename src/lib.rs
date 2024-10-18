@@ -305,12 +305,12 @@ pub trait Rustics {
     fn set_title (&mut self, title: &str);
 
     // For internal use only.
-    fn set_id (&mut self, id: usize      );
-    fn id     (&self                     ) -> usize;
-    fn equals (&self, other: &dyn Rustics) -> bool;
-    fn generic(&self                     ) -> &dyn Any;
 
-    fn histo_log_mode(&self) -> i64;
+    fn set_id   (&mut self, id: usize      );
+    fn id       (&self                     ) -> usize;
+    fn equals   (&self, other: &dyn Rustics) -> bool;
+    fn generic  (&self                     ) -> &dyn Any;
+    fn histogram(&self                     ) -> LogHistogram;
 }
 
 pub trait Histogram {
@@ -323,8 +323,11 @@ mod tests {
     use super::*;
     use rand::Rng;
     use crate::running_time::RunningTime;
-    use crate::printable::Printable;
+    use crate::running_integer::RunningInteger;
+    use crate::integer_window::IntegerWindow;
     use crate::time_window::TimeWindow;
+    use crate::printable::Printable;
+    use crate::log_histogram::pseudo_log_index;
 
     // This struct is used by other modules.
 
@@ -343,6 +346,43 @@ mod tests {
     impl Printer for TestPrinter {
         fn print(&self, output: &str) {
             println!("{}:  {}", self.prefix, output);
+        }
+    }
+
+    // Define a simple timer for testing that just counts up by 1000 ticks
+    // for each event interval.  This strucet is used by other modules.
+
+    pub fn continuing_box() -> TimerBox {
+        let hz = 1_000_000_000;
+
+        Rc::from(RefCell::new(ContinuingTimer::new(hz)))
+    }
+
+    pub struct ContinuingTimer {
+        time: u128,
+        hz:   u128,
+    }
+
+    impl ContinuingTimer {
+        pub fn new(hz: u128) -> ContinuingTimer {
+            let time = 0;
+
+            ContinuingTimer { time, hz }
+        }
+    }
+
+    impl Timer for ContinuingTimer {
+        fn start(&mut self) {
+            self.time = 0;
+        }
+
+        fn finish(&mut self) -> u128 {
+            self.time += 1000;
+            self.time
+        }
+
+        fn hz(&self) -> u128 {
+            self.hz
         }
     }
 
@@ -601,9 +641,104 @@ mod tests {
         time_stat.print();
     }
 
+    fn run_all_histo_tests() {
+        let     timer           = continuing_box();
+        let mut running_integer = RunningInteger::new("RunningInteger", None);
+        let mut running_time    = RunningTime::new("RunningTime", timer.clone(), None);
+        let mut integer_window  = IntegerWindow::new("IntegerWindow", 100, None);
+        let mut time_window     = TimeWindow::new("IntegerWindow", 100, timer.clone(), None);
+
+        run_histogram_tests(&mut running_integer);
+        run_histogram_tests(&mut running_time   );
+        run_histogram_tests(&mut integer_window );
+        run_histogram_tests(&mut time_window    );
+    }
+
+    // This test is used by other modules.
+
+    pub fn run_histogram_tests(rustics: &mut dyn Rustics) {
+        let values = [ -300, 0, 300, 1300, 2300, i64::MIN, i64::MAX ];
+
+        for value in values {
+            test_histogram(rustics, value);
+        }
+    }
+
+    // Put some samples into the struct, then check the
+    // contents.
+
+    fn test_histogram(rustics: &mut dyn Rustics, mut value: i64) {
+        rustics.clear();
+
+        assert!(rustics.count() == 0);
+
+        // Check the histogram...
+
+        let histogram = rustics.histogram();
+
+        for item in histogram.negative {
+            assert!(item == 0);
+        }
+
+        for item in histogram.positive {
+            assert!(item == 0);
+        }
+
+        // Time structs only get positive values...  Avoid overflow
+        // when negating and adding.  Consider MAX and MIN...
+
+        if rustics.class() == "time" && value <= 0 {
+            value = std::cmp::max(-(value + 2) + 1, 1);
+        }
+
+        // Record the values and count the events.
+
+        let mut events = 0;
+
+        for _i in 0..100 {
+            if rustics.class() == "time" {
+                rustics.record_time(value);
+            } else {
+                rustics.record_i64(value);
+            }
+
+            events += 1;
+        }
+
+        // Check that the data seems sane.
+
+        assert!(rustics.standard_deviation() == 0.0);
+
+        assert!(rustics.mean()     == value as f64);
+        assert!(rustics.variance() == 0.0);
+        assert!(rustics.skewness() == 0.0);
+        assert!(rustics.kurtosis() == 0.0);
+
+        // Check that the histogram matches expectation.
+        let histogram       = rustics.histogram();
+        let log_mode_index  = pseudo_log_index(value);
+
+        for i in 0..histogram.negative.len() {
+            if value < 0 && i == log_mode_index {
+                assert!(histogram.negative[i] == events);
+            } else {
+                assert!(histogram.negative[i] == 0);
+            }
+        }
+
+        for i in 0..histogram.positive.len() {
+            if value >= 0 && i == log_mode_index {
+                assert!(histogram.positive[i] == events);
+            } else {
+                assert!(histogram.positive[i] == 0);
+            }
+        }
+    }
+
     #[test]
     pub fn run_tests() {
         test_time_window();
         test_running_time();
+        run_all_histo_tests();
     }
 }

@@ -6,6 +6,7 @@
 
 use std::any::Any;
 use super::Rustics;
+use super::LogHistogram;
 use super::PrinterBox;
 use super::PrinterOption;
 use super::TimerBox;
@@ -182,8 +183,8 @@ impl Rustics for Counter {
         self as &dyn Any
     }
 
-    fn histo_log_mode(&self) -> i64 {
-        panic!("Counter::histo_log_mode:  not supported");
+    fn histogram(&self) -> LogHistogram {
+        panic!("Counter::histogram:  not supported");
     }
 }
 

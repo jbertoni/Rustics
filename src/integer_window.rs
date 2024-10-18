@@ -368,8 +368,8 @@ impl Rustics for IntegerWindow {
         self as &dyn Any
     }
 
-    fn histo_log_mode(&self) -> i64 {
-        self.log_histogram.log_mode() as i64
+    fn histogram(&self) -> LogHistogram {
+        self.log_histogram.clone()
     }
 
     fn set_title(&mut self, title: &str) {

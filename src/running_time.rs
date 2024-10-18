@@ -8,6 +8,8 @@ use std::any::Any;
 
 use super::Rustics;
 use super::Histogram;
+use super::LogHistogram;
+use super::Printer;
 use super::PrinterBox;
 use super::PrinterOption;
 use super::stdout_printer;
@@ -192,7 +194,7 @@ impl Rustics for RunningTime {
         let n        = self.count();
         let min      = self.min_i64();
         let max      = self.max_i64();
-        let log_mode = self.running_integer.histo_log_mode();
+        let log_mode = self.running_integer.log_mode() as i64;
         let mean     = self.mean();
         let variance = self.variance();
         let skewness = self.skewness();
@@ -228,7 +230,17 @@ impl Rustics for RunningTime {
         self as &dyn Any
     }
 
-    fn histo_log_mode(&self) -> i64 {
-        self.running_integer.histo_log_mode()
+    fn histogram(&self) -> LogHistogram {
+        self.running_integer.histogram()
+    }
+}
+
+impl Histogram for RunningTime {
+    fn log_histogram(&self) -> LogHistogram {
+        self.running_integer.log_histogram()
+    }
+
+    fn print_histogram(&self, printer: &mut dyn Printer) {
+        self.running_integer.print_histogram(printer)
     }
 }

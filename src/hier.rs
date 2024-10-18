@@ -5,6 +5,9 @@
 //
 
 use super::Rustics;
+use super::Histogram;
+use super::LogHistogram;
+use super::Printer;
 use super::PrinterBox;
 use super::PrinterOption;
 use super::TimerBox;
@@ -133,6 +136,7 @@ pub trait HierGenerator {
 pub trait HierMember {
     fn to_rustics    (&self    ) -> &dyn Rustics;
     fn to_rustics_mut(&mut self) -> &mut dyn Rustics;
+    fn to_histogram  (&    self) -> &dyn Histogram;
     fn as_any        (&self    ) -> &dyn Any;
     fn as_any_mut    (&mut self) -> &mut dyn Any;
 }
@@ -644,18 +648,37 @@ impl Rustics for Hier {
         self as &dyn Any
     }
 
-    fn histo_log_mode(&self) -> i64 {
+    fn histogram(&self) -> LogHistogram {
         let current = self.current();
         let borrow  = current.borrow();
         let rustics = borrow.to_rustics();
 
-        rustics.histo_log_mode()
+        rustics.histogram()
+    }
+}
+
+impl Histogram for Hier {
+    fn log_histogram(&self) -> LogHistogram {
+        let current   = self.current();
+        let borrow    = current.borrow();
+        let log_histo = borrow.to_histogram();
+
+        log_histo.log_histogram()
+    }
+
+    fn print_histogram(&self, printer: &mut dyn Printer) {
+        let current   = self.current();
+        let borrow    = current.borrow();
+        let log_histo = borrow.to_histogram();
+
+        log_histo.print_histogram(printer);
     }
 }
 
 #[cfg(test)]
 pub mod tests {
     use super::*;
+    use crate::tests::run_histogram_tests;
     use crate::stdout_printer;
     use crate::integer_hier::IntegerHier;
     use crate::integer_hier::IntegerHierConfig;
@@ -807,7 +830,6 @@ pub mod tests {
 
         assert!( hier_integer.equals(&hier_integer));
         assert!(!hier_integer.equals(&hier_integer_2));
-
 
         // Check that the struct matches our expectations.
 
@@ -1110,8 +1132,7 @@ pub mod tests {
 
         let     name         = "time_hier sanity test".to_string();
         let     title        = "time_hier sanity test title".to_string();
-        let     hz           = 1_000_000_000;
-        let     timer        = crate::arc_sets::tests::ContinuingTimer::new(hz);
+        let     timer        = crate::tests::ContinuingTimer::new(1_000_0000);
         let     timer        = Rc::from(RefCell::new(timer));
         let     printer      = stdout_printer();
 
@@ -1279,6 +1300,10 @@ pub mod tests {
 
         assert!(integer_hier.live_len(1)   == 1     );
         assert!(integer_hier.event_count() == events);
+
+        // Test the histograms while we have a Hier.
+
+        run_histogram_tests(&mut integer_hier);
     }
 
     #[test]

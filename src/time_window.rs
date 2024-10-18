@@ -11,6 +11,7 @@ use super::PrinterBox;
 use super::PrinterOption;
 use super::TimerBox;
 use super::Histogram;
+use super::LogHistogram;
 use super::timer_box_hz;
 use super::integer_window::IntegerWindow;
 use crate::printable::Printable;
@@ -184,7 +185,7 @@ impl Rustics for TimeWindow {
         let n         = self.integer_window.count();
         let min       = self.integer_window.min_i64();
         let max       = self.integer_window.max_i64();
-        let log_mode  = self.integer_window.histo_log_mode();
+        let log_mode  = self.integer_window.log_mode() as i64;
 
         let mean      = crunched.mean;
         let variance  = compute_variance(n, crunched.moment_2);
@@ -222,7 +223,7 @@ impl Rustics for TimeWindow {
         self as &dyn Any
     }
 
-    fn histo_log_mode(&self) -> i64 {
-        self.integer_window.histo_log_mode()
+    fn histogram(&self) -> LogHistogram {
+        self.integer_window.histogram()
     }
 }

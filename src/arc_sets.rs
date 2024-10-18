@@ -295,6 +295,7 @@ impl ArcSet {
 #[cfg(test)]
 pub mod tests {
     use super::*;
+    use crate::tests::continuing_box;
     use crate::hier::Hier;
     use crate::Printer;
     use std::cell::RefCell;
@@ -391,37 +392,6 @@ pub mod tests {
         set_global_next(ticks as u128 + 1);
     }
 
-    // Define a simple timer for testing that just counts up by 1000 ticks
-    // for each event interval.
-
-    pub struct ContinuingTimer {
-        time: u128,
-        hz:   u128,
-    }
-
-    impl ContinuingTimer {
-        pub fn new(hz: u128) -> ContinuingTimer {
-            let time = 0;
-
-            ContinuingTimer { time, hz }
-        }
-    }
-
-    impl Timer for ContinuingTimer {
-        fn start(&mut self) {
-            self.time = 0;
-        }
-
-        fn finish(&mut self) -> u128 {
-            self.time += 1000;
-            self.time
-        }
-
-        fn hz(&self) -> u128 {
-            self.hz
-        }
-    }
-
     pub fn simple_test() {
         let lower   = -32;
         let upper   = 32;
@@ -433,8 +403,8 @@ pub mod tests {
 
         //  Create timers for time statistics.
 
-        let window_timer:  TimerBox = Rc::from(RefCell::new(ContinuingTimer::new(test_hz)));
-        let running_timer: TimerBox = Rc::from(RefCell::new(ContinuingTimer::new(test_hz)));
+        let window_timer:  TimerBox = continuing_box();
+        let running_timer: TimerBox = continuing_box();
 
         //  Now create the statistics in our set.
 

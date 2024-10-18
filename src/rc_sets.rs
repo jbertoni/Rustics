@@ -229,17 +229,18 @@ impl RcSet {
     // Create a new subset and add it to the set.
 
     pub fn add_subset(&mut self, name: &str, members: usize, subsets: usize) -> RcSetBox {
-        self.subsets.push(Rc::from(RefCell::new(RcSet::new(name, members, subsets, None))));
-
-        let     last   = self.subsets.last().unwrap();
-        let mut subset = (**last).borrow_mut();
-        let     title  = create_title(&self.title, name);
+        let     printer = Some(self.printer.clone());
+        let mut subset  = RcSet::new(name, members, subsets, printer);
+        let     title   = create_title(&self.title, name);
 
         subset.set_title(&title);
         subset.set_id(self.next_id);
         self.next_id += 1;
 
-        last.clone()
+        let subset = Rc::from(RefCell::new(subset));
+
+        self.subsets.push(subset.clone());
+        subset
     }
 
     // Remove a subset from the set.  We find the element by id.
@@ -286,7 +287,7 @@ impl RcSet {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::time::Timer;
+    use crate::tests::continuing_box;
     use crate::hier::Hier;
 
     struct TestTraverser {
@@ -343,41 +344,9 @@ mod tests {
         }
     }
 
-    // Define a simple timer for testing that just counts up by 1000 ticks
-    // for each event interval.
-
-    struct ContinuingTimer {
-        time: u128,
-        hz:   u128,
-    }
-
-    impl ContinuingTimer {
-        pub fn new(hz: u128) -> ContinuingTimer {
-            let time = 0;
-
-            ContinuingTimer { time, hz }
-        }
-    }
-
-    impl Timer for ContinuingTimer {
-        fn start(&mut self) {
-            self.time = 0;
-        }
-
-        fn finish(&mut self) -> u128 {
-            self.time += 1000;
-            self.time
-        }
-
-        fn hz(&self) -> u128 {
-            self.hz
-        }
-    }
-
     pub fn simple_test() {
         let lower    = -32;
         let upper    = 32;
-        let test_hz  = 1_000_000_000;
 
         // Create the parent set for all the statistics.
 
@@ -388,8 +357,8 @@ mod tests {
         let window  = set.add_integer_window(32, "window");
         let running = set.add_running_integer("running");
 
-        let window_timer:  TimerBox = Rc::from(RefCell::new(ContinuingTimer::new(test_hz)));
-        let running_timer: TimerBox = Rc::from(RefCell::new(ContinuingTimer::new(test_hz)));
+        let window_timer:  TimerBox = continuing_box();
+        let running_timer: TimerBox = continuing_box();
 
         let time_window  = set.add_time_window("time window", 32, window_timer);
         let running_time = set.add_running_time("running time", running_timer);
@@ -494,8 +463,6 @@ mod tests {
     }
 
     fn sample_usage() {
-        let test_hz = 1_000_000_000;
-
         // The last two parameters to new() and add_subset are size hints.
         // They are only hints.
         //
@@ -512,10 +479,10 @@ mod tests {
 
         // Now try a timer window.
 
-        let     window_timer    = Rc::from(RefCell::new(ContinuingTimer::new(test_hz)));
+        let     window_timer    = continuing_box();
         let     time_window     = set.add_time_window("time window", 32, window_timer);
         let mut time_window     = (*time_window).borrow_mut();
-        let mut timer: TimerBox = Rc::from(RefCell::new(ContinuingTimer::new(test_hz)));
+        let mut timer: TimerBox = continuing_box();
 
         // Do a quick sanity test.
 

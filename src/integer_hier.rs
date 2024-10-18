@@ -14,6 +14,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use super::Rustics;
+use super::Histogram;
 use super::PrinterBox;
 use super::running_integer::RunningInteger;
 use crate::running_integer::RunningExporter;
@@ -44,6 +45,10 @@ impl HierMember for RunningInteger {
 
     fn as_any_mut(&mut self) -> &mut dyn Any {
         self
+    }
+
+    fn to_histogram(&self) -> &dyn Histogram {
+        self as &dyn Histogram
     }
 }
 

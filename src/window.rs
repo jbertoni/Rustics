@@ -4,6 +4,61 @@
 //  permitted by law.
 //
 
+///```
+///     use rustics::window::Window;
+///     use std::cmp::min;
+///
+///     let     size_limit  = 96;
+///     let     live_limit  = 32;
+///     let mut window      = Window::<usize>::new(size_limit, live_limit);
+///
+///     // Fill the window while checking that the results match expectations.
+///
+///     for _i in window.iter_all() {
+///         panic!("iterator_test:  The window should be empty.");
+///     }
+///
+///     for _i in window.iter_live() {
+///         panic!("iterator_test:  The window should be empty.");
+///     }
+///
+///     // First, just fill the array.
+///
+///     for i in 1..size_limit + 1 {
+///         println!("iterator_test:  at {} filling the window.", i);
+///
+///         window.push(i);
+///
+///         // Do a sanity check.
+///
+///         assert!(window.live_len() == min(i, live_limit));
+///         assert!(window.all_len()  == i);
+///     }
+///
+///     // Check the contents a bit...
+///
+///     let mut i = 1;
+///
+///     for value in window.iter_all() {
+///         assert!(*value == i);
+///
+///         i += 1;
+///     }
+///
+///     // Now keep pushing, and make sure that old elements disappear.
+///
+///     for i in 0..size_limit {
+///         let next_data = i + size_limit;
+///
+///         window.push(next_data);
+///
+///         // Let verify_window run the iterators.
+///
+///         assert!(window.live_len() == live_limit);
+///         assert!(window.all_len()  == size_limit);
+///     }
+///```
+
 //
 // A window contains at most "size_limit" items.  The window also
 // supports the concept of "live" entries, which are the last

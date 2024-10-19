@@ -4,6 +4,155 @@
 //  permitted by law.
 //
 
+/// ## Types
+///
+/// * IntegerHier
+///     * This struct implements hierarchical statistics using the
+///       RunningInteger type, q.v.
+///     * Each level uses a Window struct to hold i RunningInteger
+///       structs, where i is configured per level.  See the window
+///       module documentation for more information.
+///     * Level 0 statistics structs are used to collect data.  Each
+///       struct collects n samples, where n is a configuration
+///       parameter.  After n samples are gathered, a new statistics
+///       object is pushed into the window.
+///     * When k level 0 objects have been collected into the window,
+///       they are summed into one level 1 RunningInteger struct.
+///       The value k is a configuration parameter.
+///     * An upper level j is a sum of of i structs from level j - 1
+///       where i is configured per level.
+///     * Each window can retain RunningInteger structs that have
+///       already been summed, in case they are wanted for queries.
+///       The total window size is configured per level.
+///
+/// ## Example
+///```
+///    // This example also is used in the Hier documentation.
+///
+///    use rustics::Rustics;
+///    use rustics::stdout_printer;
+///    use rustics::hier::Hier;
+///    use rustics::hier::HierDescriptor;
+///    use rustics::hier::HierDimension;
+///    use rustics::integer_hier::IntegerHier;
+///    use rustics::integer_hier::IntegerHierConfig;
+///
+///     // Make a descriptor of the first level.  We have chosen to sum
+///     // 1000 level 0 RunningInteger structs into one level 1
+///     // RunningInteger struct.  This level is large, so we will keep
+///     // only 1000 level 0 structs in the window.
+///
+///     let dimension_0 = HierDimension::new(1000, 1000);
+///
+///     // At level 1, we want to sum 100 level 1 statistics into one level 2
+///     // statistics.  This level is smaller, so let's retain 200
+///     // RunningInteger structs here.
+///
+///     let dimension_1 = HierDimension::new(100, 200);
+///
+///     // Level two isn't summed, so the period isn't used.  Tell it to
+///     // sum one event to keep the contructor happy.  Let's pretend this
+///     // level isn't used much, so retain only 100 structs in it.
+///
+///     let dimension_2 = HierDimension::new(1, 100);
+///
+///     //  Now create the Vec of the dimensions.  Save the dimension
+///     //  structs for future use.
+///
+///     let dimensions =
+///         vec![
+///             dimension_0.clone(), dimension_1.clone(), dimension_2.clone()
+///         ];
+///
+///     // Now create the entire descriptor for the hier struct.  Let's
+///     // record 2000 events into each level 0 RunningInteger instance.
+///
+///     let auto_advance = Some(2000);
+///     let descriptor   = HierDescriptor::new(dimensions, auto_advance);
+///
+///     // Now create some items used by Hier to do printing.
+///
+///     let name    = "test hierarchical integer".to_string();
+///     let title   = "test hierarchical integer".to_string();
+///     let printer = stdout_printer();
+///
+///     // Finally, create the configuration description for the
+///     // constructor.
+///
+///     let configuration =
+///         IntegerHierConfig { descriptor, name, title, printer };
+///
+///     // Now make the Hier instance.
+///
+///     let     integer_hier = IntegerHier::new_hier_box(configuration);
+///
+///     let mut integer_hier = integer_hier.lock().unwrap();
+///
+///     // Now record some events with boring data.
+///
+///     let mut events   = 0;
+///     let auto_advance = auto_advance.unwrap();
+///
+///     for i in  0..auto_advance {
+///         events += 1;
+///         integer_hier.record_i64(i + 10);
+///     }
+///
+///     // We have just completed the first level 0 structure, but
+///     // the implementation creates the next struct only when
+///     // it has data to record, so there should be only one level
+///     // zero struct, and nothing at level 1 or level 2.
+///
+///     assert!(integer_hier.event_count() == events);
+///     assert!(integer_hier.count()       == events as u64);
+///     assert!(integer_hier.live_len(0)   == 1     );
+///     assert!(integer_hier.live_len(1)   == 0     );
+///     assert!(integer_hier.live_len(2)   == 0     );
+///
+///     // Now record some data to force the creation of
+///     // the second level 1 struct.
+///
+///     events += 1;
+///     integer_hier.record_i64(10);
+///
+///     // The new level 0 struct should have only one event
+///     // recorded.  The Rustics implementatio for Hier returns
+///     // the data in the current level 0 struct, so check it.
+///
+///     assert!(integer_hier.event_count() == events);
+///     assert!(integer_hier.count()       == 1     );
+///     assert!(integer_hier.live_len(0)   == 2     );
+///     assert!(integer_hier.live_len(1)   == 0     );
+///     assert!(integer_hier.live_len(2)   == 0     );
+///
+///     let events_per_level_1 =
+///         auto_advance * dimension_0.period() as i64;
+///
+///     for i in events..events_per_level_1 {
+///         integer_hier.record_i64(i);
+///         events += 1;
+///     }
+///
+///     // Check the state again.  We need to record one more
+///     // events to cause the summation at level 0 into level
+///     // 1.
+///
+///     let expected_live  = dimension_0.period();
+///     let expected_count = auto_advance as u64;
+///
+///     assert!(integer_hier.event_count() == events        );
+///     assert!(integer_hier.count()       == expected_count);
+///     assert!(integer_hier.live_len(0)   == expected_live );
+///     assert!(integer_hier.live_len(1)   == 0             );
+///     assert!(integer_hier.live_len(2)   == 0             );
+///
+///     integer_hier.record_i64(42);
+///     events += 1;
+///
+///     assert!(integer_hier.live_len(1)   == 1     );
+///     assert!(integer_hier.event_count() == events);
+///```
+
 //
 // This module provides the interface between RunningInteger and the Hier
 // code.

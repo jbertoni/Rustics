@@ -244,10 +244,12 @@ pub trait Printer {
 // Define a printer that will send output to Stdout or Stderr, as
 // configured.
 
+#[derive(Clone)]
 pub struct StdioPrinter {
     which: StreamKind,
 }
 
+#[derive(Clone)]
 pub enum StreamKind {
     Stdout,
     Stderr,

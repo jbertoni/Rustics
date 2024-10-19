@@ -3,6 +3,7 @@
 //  and MIT licenses.  It is also available as public domain source where
 //  permitted by law.
 //
+
 ///```
 ///    // RcSet and ArcSet provide a nearly identical interface.  This
 ///    // code is mostly lifted from the ArcSet comments.
@@ -113,6 +114,7 @@ pub trait RcTraverser {
 // Define the actual set type.  A set can contain Rustics
 // members and subsets of type RcSet.
 
+#[derive(Clone)]
 pub struct RcSet {
     name:       String,
     title:      String,

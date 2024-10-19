@@ -13,6 +13,7 @@ use super::TimerBox;
 use super::stdout_printer;
 use super::printable::Printable;
 
+#[derive(Clone)]
 pub struct Counter {
     name:       String,
     title:      String,

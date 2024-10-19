@@ -5,8 +5,6 @@
 //
 
 ///
-/// This module
-///
 /// ## Types
 ///
 /// * ArcSet
@@ -30,7 +28,7 @@
 ///    // an example, so just give "None" to accept the default.
 ///    // See the Printer trait to implement a custom printer.
 ///
-///    let mut set = ArcSet::new("Main Statistics", None, 8, 0);
+///    let mut set = ArcSet::new("Main Statistics", 8, 0, None);
 ///
 ///    // Add a statistic to record query latencies.  It's a time
 ///    // statistics, so we need a timer.  Use an adapter for the
@@ -47,7 +45,13 @@
 ///    // need to use record_interval and manage the clocks themselves.
 ///    // if they want to share a single RunningTime struct.
 ///    //
-///    // So record one event time for the single-threaded case.
+///    // So record one time sample for the single-threaded case.  The
+///    // clock started running when we created the DurationTimer.  You
+///    // can reset it with the start() function if you clone a copy.
+///
+///    query_latency.lock().unwrap().record_event();
+///
+///    // Do more work, then reocrd another time.
 ///
 ///    query_latency.lock().unwrap().record_event();
 ///
@@ -122,6 +126,7 @@ pub trait ArcTraverser {
 // Define the set type.  A set can contain statistics and
 // subsets of type ArcSet.
 
+#[derive(Clone)]
 pub struct ArcSet {
     name:       String,
     title:      String,
@@ -141,7 +146,7 @@ impl ArcSet {
     // statistics in the set.  These hints can improve performance a bit.  They
     // might be especially useful in embedded environments.
 
-    pub fn new(name_in: &str, printer: PrinterOption, members_hint: usize, subsets_hint: usize)
+    pub fn new(name_in: &str, members_hint: usize, subsets_hint: usize, printer: PrinterOption)
             -> ArcSet {
         let name    = String::from(name_in);
         let title   = String::from(name_in);
@@ -160,9 +165,9 @@ impl ArcSet {
         ArcSet { name, title, id, next_id, members, subsets, printer }
     }
 
-    pub fn new_box(name: &str, printer: PrinterOption, members_hint: usize, subsets_hint: usize)
+    pub fn new_box(name: &str, members_hint: usize, subsets_hint: usize, printer: PrinterOption)
             -> ArcSetBox {
-        let set = ArcSet::new(name, printer, members_hint, subsets_hint);
+        let set = ArcSet::new(name, members_hint, subsets_hint, printer);
 
         Arc::from(Mutex::new(set))
     }
@@ -334,7 +339,7 @@ impl ArcSet {
 
     pub fn add_subset(&mut self, name: &str, members: usize, subsets: usize) -> ArcSetBox {
         let printer = Some(self.printer.clone());
-        let subset  = ArcSet::new(name, printer, members, subsets);
+        let subset  = ArcSet::new(name, members, subsets, printer);
         let subset  = Arc::from(Mutex::new(subset));
 
         self.subsets.push(subset);
@@ -482,7 +487,7 @@ pub mod tests {
 
         //  Create the parent set for our test statistics.
 
-        let mut set = ArcSet::new(&parent_name, None, 4, 4);
+        let mut set = ArcSet::new(&parent_name, 4, 4, None);
 
         //  Create timers for time statistics.
 
@@ -666,7 +671,7 @@ pub mod tests {
         // The last two parameters to new() are size hints, and need not be correct.
         // The same is true for add_subset.
 
-        let mut  set     = ArcSet::new("parent set", None, 0, 1);
+        let mut  set     = ArcSet::new("parent set", 0, 1, None);
         let      subset  = set.add_subset("subset", 1, 0);
         let mut  subset  = subset.lock().unwrap();
         let      running = subset.add_running_integer("running");
@@ -732,11 +737,11 @@ pub mod tests {
     fn documentation() {
        // Create a set.  We're expecting 8 statistics objects but
        // no subsets, so we set those hints appropriately.  The
-//     // default print output goes to stdout, and that's fine for
+       // default print output goes to stdout, and that's fine for
        // an example, so just give "None" to accept the default.
        // See the Printer trait to implement a custom printer.
    
-       let mut set = ArcSet::new("Main Statistics", None, 8, 0);
+       let mut set = ArcSet::new("Main Statistics", 8, 0, None);
    
        // Add a statistic to record query latencies.  It's a time
        // statistics, so we need a timer.  Use an adapter for the

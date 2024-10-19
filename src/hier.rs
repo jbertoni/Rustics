@@ -147,6 +147,7 @@ pub trait HierMember {
 // structs.
 //
 
+#[derive(Clone)]
 pub struct Hier {
     dimensions:     Vec<HierDimension>,
     generator:      GeneratorRc,
@@ -161,6 +162,7 @@ pub struct Hier {
     printer:        PrinterBox,
 }
 
+#[derive(Clone)]
 pub struct HierConfig {
     pub descriptor:  HierDescriptor,
     pub generator:   GeneratorRc,

@@ -13,6 +13,7 @@
 
 use super::Printer;
 
+#[derive(Copy, Clone)]
 pub struct Printable {
     pub n:          u64,
     pub min:        i64,

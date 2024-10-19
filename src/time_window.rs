@@ -4,6 +4,65 @@
 //  permitted by law.
 //      
 
+/// ## Types
+///
+/// * TimerWindow
+///     * TimerWindow maintains a set consisting of the last n samples
+///       recorded into it.
+///
+/// ## Example
+///```
+///    use std::rc::Rc;
+///    use std::cell::RefCell;
+///    use rustics::Rustics;
+///    use rustics::time_window::TimeWindow;
+///    use rustics::time::Timer;
+///    use rustics::time::DurationTimer;
+///    use rustics::running_time::RunningTime;
+///
+///    // Create  a statistic to record packet latencies.  The default
+///    // for printing output is stdout, which we'll assume is fine
+///    // for this example, so None works for the printer.  See lib.rs
+///    // for information on the Printer trait.  Assume that retaining
+///    // 1000 samples is fine, and use the DurationTimer to measure
+///    // time.  DurationTimer is a wrapper for the standard rust
+///    // Duration.  This example is for a single-threaded statistic.
+///    // See ArcSet for an example of multi-threading a time statistic.
+///
+///    let window_size = 1000;
+///    let mut timer = DurationTimer::new_box();
+///
+///    let mut packet_latency =
+///        TimeWindow::new("Packet Latency", window_size, timer.clone(), None);
+///
+///    // Record some hypothetical packet latencies.  The clock started
+///    // running when we created the timer, but restart it here as in
+///    // a real program, you'll need to do that..
+///
+///    timer.borrow_mut().start();
+///
+///    for i in 1..window_size + 1 {
+///       // Do work...
+///
+///       packet_latency.record_event();
+///       assert!(packet_latency.count() == i as u64);
+///    }
+///
+///    // Print our statistics.  This example has only one event recorded.
+///
+///    packet_latency.print();
+///
+///    // We should have seen "window_size" events.
+///
+///    assert!(packet_latency.count() == window_size as u64);
+///
+///    for i in 1..window_size / 2 + 1 {
+///       packet_latency.record_event();
+///       assert!(packet_latency.count() == window_size as u64);
+///    }
+/// 
+///```
+
 use std::any::Any;
 
 use super::Rustics;
@@ -20,6 +79,7 @@ use super::compute_skewness;
 use super::compute_kurtosis;
 use super::stdout_printer;
 
+#[derive(Clone)]
 pub struct TimeWindow {
     printer:            PrinterBox,
 

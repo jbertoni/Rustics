@@ -39,6 +39,7 @@ pub trait Timer {
 
 pub type DurationTimerBox = Rc<RefCell<DurationTimer>>;
 
+#[derive(Clone)]
 pub struct DurationTimer {
     start:      Instant,
     previous:   u128,
@@ -111,18 +112,20 @@ pub trait SimpleClock {
 //  On the other hand, using femtoseconds might be useful for
 //  particularly hostile hz ratings.
 
+#[derive(Clone)]
 pub struct ClockTimer {
     start:      u128,
-    clock:      Box<dyn SimpleClock>,
+    clock:      Rc<RefCell<dyn SimpleClock>>,
+    hz:         u128,
 }
 
 impl Timer for ClockTimer {
     fn start(&mut self) {
-        self.start = self.clock.get_time();
+        self.start = self.clock.borrow_mut().get_time();
     }
 
     fn finish(&mut self) -> i64 {
-        let end_time = self.clock.get_time();
+        let end_time = self.clock.borrow_mut().get_time();
         let ticks    = end_time - self.start;
         self.start   = end_time;
 
@@ -130,15 +133,16 @@ impl Timer for ClockTimer {
     }
 
     fn hz(&self) -> u128 {
-        self.clock.hz()
+        self.hz
     }
 }
 
 impl ClockTimer {
-    pub fn new(mut clock: Box<dyn SimpleClock>) -> ClockTimer {
-        let start = clock.get_time();
+    pub fn new(clock: Rc<RefCell<dyn SimpleClock>>) -> ClockTimer {
+        let start = clock.borrow_mut().get_time();
+        let hz    = clock.borrow().hz();
 
-        ClockTimer { start, clock }
+        ClockTimer { start, clock, hz }
     }
 }
 
@@ -187,7 +191,7 @@ mod tests {
     pub fn simple_test_clock() {
         let     current      = 0;
         let mut increment    = 1500;
-        let     simple_clock = Box::new(TestSimpleClock { current, increment });
+        let     simple_clock = Rc::from(RefCell::new(TestSimpleClock { current, increment }));
         let mut clock        = ClockTimer::new(simple_clock);
 
         // Creating the clock invokes get_time, so the increment in the

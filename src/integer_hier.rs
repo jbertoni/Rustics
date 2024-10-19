@@ -62,6 +62,7 @@ impl HierMember for RunningInteger {
 pub struct IntegerHier {
 }
 
+#[derive(Clone)]
 pub struct IntegerHierConfig {
     pub descriptor:  HierDescriptor,
     pub name:        String,

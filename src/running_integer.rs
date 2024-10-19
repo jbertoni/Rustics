@@ -4,6 +4,63 @@
 //  permitted by law.
 //
 
+/// ## Types
+///
+/// * RunningInteger
+///     * RunningInteger maintains running statistics on a set of samples
+///       recorded into it.
+///
+/// ## Example
+///```
+///    use std::rc::Rc;
+///    use std::cell::RefCell;
+///    use rustics::Rustics;
+///    use rustics::running_integer::RunningInteger;
+///
+///    // Create  a statistic to record packet sizes.  The default
+///    // for printing output is stdout, which we'll assume is fine
+///    // for this example, so None works for the printer.  See
+///    // lib.rs for information on the Printer trait.
+///
+///    let mut packet_sizes = RunningInteger::new("Packet Sizes", None);
+///
+///    // Record some hypothetical packet sizes.  Let's fill the window.
+///
+///    let sample_count = 1000;
+///
+///    for i in 1..sample_count + 1 {
+///       packet_sizes.record_i64(i as i64);
+///       assert!(packet_sizes.count() == i as u64);
+///    }
+///
+///    // Print our statistics.  This example has only one event recorded.
+///
+///    packet_sizes.print();
+///
+///    // We should have seen "window_size" events.
+///
+///    assert!(packet_sizes.count() == sample_count as u64);
+///
+///    // Compute the expected mean.  We need the sum of
+///    // 1 + 2 + ... + n, which is n * (n + 1) / 2.
+///
+///    let float_count = sample_count as f64;
+///    let float_sum   = float_count * (float_count + 1.0) / 2.0;
+///    let mean        = float_sum / float_count;
+///
+///    assert!(packet_sizes.mean() == mean);
+///
+///    // Let's record more samples.
+///
+///    let next_sample_count = 100;
+///
+///    for i in 1..next_sample_count + 1 {
+///       packet_sizes.record_i64(i + sample_count as i64);
+///       assert!(packet_sizes.count() == (sample_count + i) as u64);
+///    }
+/// 
+///```
+
 use std::any::Any;
 use std::cmp::min;
 use std::cmp::max;
@@ -53,7 +110,7 @@ pub struct RunningInteger {
 // RunningInteger struct underneath a wrapper, so TimeHier uses this
 // code.
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct RunningExporter {
     addends: Vec<RunningExport>,
 }
@@ -95,6 +152,7 @@ impl HierExporter for RunningExporter {
     }
 }
 
+#[derive(Clone)]
 pub struct RunningExport {
     pub count:      u64,
     pub mean:       f64,

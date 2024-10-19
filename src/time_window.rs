@@ -68,11 +68,7 @@ impl Rustics for TimeWindow {
     fn record_event(&mut self) {
         let interval = (*self.timer).borrow_mut().finish();
 
-        if interval > i64::MAX as u128 {
-            panic!("TimeWindow::record_interval:  The interval is too long.");
-        }
-
-        self.integer_window.record_i64(interval as i64);
+        self.integer_window.record_i64(interval);
     }
 
     fn record_time(&mut self, sample: i64) {
@@ -84,11 +80,7 @@ impl Rustics for TimeWindow {
         let mut timer = (*timer).borrow_mut();
         let interval = timer.finish();
 
-        if interval > i64::MAX as u128 {
-            panic!("TimeWindow::record_interval:  The interval is too long.");
-        }
-
-        self.integer_window.record_i64(interval as i64);
+        self.integer_window.record_i64(interval);
     }
 
     fn name(&self) -> String {

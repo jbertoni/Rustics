@@ -391,12 +391,12 @@ mod tests {
             assert!(self.started);
         }
 
-        fn finish(&mut self) -> u128 {
+        fn finish(&mut self) -> i64 {
             assert!(self.started);
             assert!(self.ticks >= 0);
 
             self.started = false;
-            self.ticks as u128
+            self.ticks
         }
 
         fn hz(&self) -> u128 {
@@ -439,7 +439,7 @@ mod tests {
 
         for i in 1..100 {
             setup.borrow_mut().setup(i);
-            assert!(value.borrow_mut().finish() == i as u128);
+            assert!(value.borrow_mut().finish() == i);
         }
     }
 
@@ -453,7 +453,7 @@ mod tests {
     }
 
     pub struct ContinuingTimer {
-        time: u128,
+        time: i64,
         hz:   u128,
     }
 
@@ -470,7 +470,7 @@ mod tests {
             self.time = 0;
         }
 
-        fn finish(&mut self) -> u128 {
+        fn finish(&mut self) -> i64 {
             self.time += 1000;
             self.time
         }

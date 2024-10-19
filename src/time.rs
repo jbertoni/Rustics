@@ -29,7 +29,7 @@ use std::cell::RefCell;
 
 pub trait Timer {
     fn start(&mut self);            // start or restart a timer
-    fn finish(&mut self) -> u128;   // get the elapsed time and set a new start time
+    fn finish(&mut self) -> i64;    // get the elapsed time and set a new start time
     fn hz(&self) -> u128;           // get the clock hz
 }
 
@@ -55,11 +55,16 @@ impl Timer for DurationTimer {
     // last "finish" call.  Then save this current
     // time as the new "previous".
 
-    fn finish(&mut self) -> u128 {
+    fn finish(&mut self) -> i64 {
         let end_time  = self.start.elapsed().as_nanos();
         let result    = end_time - self.previous;
         self.previous = end_time;
-        result
+
+        if result <= i64::MAX as u128 {
+            result as i64
+        } else {
+            i64::MAX
+        }
     }
 
     // We read the clock in nanoseconds currently.
@@ -116,12 +121,12 @@ impl Timer for ClockTimer {
         self.start = self.clock.get_time();
     }
 
-    fn finish(&mut self) -> u128 {
+    fn finish(&mut self) -> i64 {
         let end_time = self.clock.get_time();
         let ticks    = end_time - self.start;
+        self.start   = end_time;
 
-        self.start = end_time;
-        ticks
+        ticks as i64
     }
 
     fn hz(&self) -> u128 {
@@ -147,7 +152,7 @@ mod tests {
         let mut clock         = DurationTimer::new();
         let     seconds       = 1;
         let     sleep_time    = Duration::new(seconds, 0);
-        let     base_interval = seconds as u128 * clock.hz() as u128;
+        let     base_interval = seconds as i64 * clock.hz() as i64;
 
         clock.start();
 
@@ -196,7 +201,7 @@ mod tests {
 
         for _i in 1..5 {
             let interval = clock.finish();
-            assert!(interval == increment);
+            assert!(interval == increment as i64);
 
             // Keep our increment in sync with the test clock.
             increment = increment * 2;

@@ -3,6 +3,87 @@
 //  and MIT licenses.  It is also available as public domain source where
 //  permitted by law.
 //
+///```
+///    // RcSet and ArcSet provide a nearly identical interface.  This
+///    // code is mostly lifted from the ArcSet comments.
+///
+///    use std::rc::Rc;
+///    use std::cell::RefCell;
+///    use std::time::Instant;
+///    use rustics::time::Timer;
+///    use rustics::time::DurationTimer;
+///    use rustics::rc_sets::RcSet;
+///
+///    // Create a set.  We're expecting 8 statistics objects but
+///    // no subsets, so we set those hints appropriately.  The
+//     // default print output goes to stdout, and that's fine for
+///    // an example, so just give "None" to accept the default.
+///    // See the Printer trait to implement a custom printer.
+///
+///    let mut set = RcSet::new("Main Statistics", 8, 0, None);
+///
+///    // Add a statistic to record query latencies.  It's a time
+///    // statistics, so we need a timer.  Use an adapter for the
+///    // rust standard Duration timer.  The add_running_timer
+///    // function is a help for creating RunningTime structs.
+///
+///    let timer = DurationTimer::new_box();
+///
+///    let mut query_latency = set.add_running_time("Query Latency", timer);
+///
+///    // By way of example, we assume that the queries are single-
+///    // threaded, so we can use the "record_time" routine to
+///    // query the timer and restart it.  Multi-threaded apps will
+///    // need to use record_interval and manage the clocks themselves.
+///    // if they want to share a single RunningTime struct.
+///    //
+///    // So record one event time for the single-threaded case.
+///
+///    query_latency.borrow_mut().record_event();
+///
+///    // For the multithreaded case, you can use DurationTimer manually.
+///
+///    let mut local_timer = DurationTimer::new();
+///
+///    // Do our query.
+///    // ...
+///
+///    query_latency.borrow_mut().record_time(local_timer.finish() as i64);
+///
+///    // If you want to use your own timer, you'll need to implement
+///    // the Timer trait to initialize the RunningTime struct, but you
+///    //can use it directly to get data. Let's use Duration timer directly
+///    // as an example.  Make a new object for this example.
+///
+///    let timer = DurationTimer::new_box();
+///
+///    let mut query_latency = set.add_running_time("Custom Timer Query Latency", timer.clone());
+///
+///    // Start the Duration timer.
+///
+///    let start = Instant::now();
+///
+///    // Do our query.
+///
+///    // Now get the elapsed timer.  DurationTimer works in nanoseconds,
+///    // so use that interface.
+///
+///    assert!(timer.borrow().hz() == 1_000_000_000);
+///    let time_spent = start.elapsed().as_nanos();
+///
+///    query_latency.borrow_mut().record_time(time_spent as i64);
+///
+///    // Print our statistics.  This example has only one event recorded.
+///
+///    let query_borrow = query_latency.borrow();
+///
+///    query_borrow.print();
+///
+///    assert!(query_borrow.count() == 1);
+///    assert!(query_borrow.mean() == time_spent as f64);
+///    assert!(query_borrow.standard_deviation() == 0.0);
+/// 
+///```
 
 use std::rc::Rc;
 use std::cell::RefCell;

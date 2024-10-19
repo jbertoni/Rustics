@@ -79,11 +79,7 @@ impl Rustics for RunningTime {
         let mut timer    = (*self.timer).borrow_mut();
         let     interval = timer.finish();  // read and restart the timer
 
-        if interval > i64::MAX as u128 {
-            panic!("RunningTime::record_interval:  The interval is too long.");
-        }
-
-        self.running_integer.record_i64(interval as i64);
+        self.running_integer.record_i64(interval);
     }
 
     fn record_time(&mut self, sample: i64) {
@@ -95,11 +91,7 @@ impl Rustics for RunningTime {
         let mut timer = (*timer).borrow_mut();
         let interval = timer.finish();
 
-        if interval > i64::MAX as u128 {
-            panic!("RunningTime::record_interval:  The interval is too long.");
-        }
-
-        self.running_integer.record_i64(interval as i64);
+        self.running_integer.record_i64(interval);
     }
 
     fn name(&self) -> String {

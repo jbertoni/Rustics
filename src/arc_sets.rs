@@ -15,7 +15,7 @@
 ///     * Members of an ArcSet are kept as Arc structs to allow for
 ///       multithreaded usage.
 ///
-/// ## Examples
+/// ## Example
 ///```
 ///    use std::rc::Rc;
 ///    use std::cell::RefCell;
@@ -65,7 +65,7 @@
 ///    //can use it directly to get data. Let's use Duration timer directly
 ///    // as an example.  Make a new object for this example.
 ///
-///    let timer = Rc::from(RefCell::new(DurationTimer::new()));
+///    let timer = DurationTimer::new_box();
 ///
 ///    let mut query_latency = set.add_running_time("Custom Timer Query Latency", timer.clone());
 ///
@@ -78,6 +78,7 @@
 ///    // Now get the elapsed timer.  DurationTimer works in nanoseconds,
 ///    // so use that interface.
 ///
+///    assert!(timer.borrow().hz() == 1_000_000_000);
 ///    let time_spent = start.elapsed().as_nanos();
 ///
 ///    query_latency.lock().unwrap().record_time(time_spent as i64);

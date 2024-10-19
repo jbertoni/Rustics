@@ -4,6 +4,43 @@
 //  permitted by law.
 //
 
+///
+/// ## Type
+///
+/// * Counter
+///     * Counter implements a simple i64 counter that can be
+///       printed with other statistics.
+///       and other ArcSet structs as subsets.
+///```
+///     use rustics::Rustics;
+///     use rustics::counter::Counter;
+///
+///     let test_limit  = 20;
+///     let mut counter = Counter::new("test counter", None);
+///
+///     // Add some counts to the counter.  record_event adds
+///     // one, to implement an event counter.  record_i64
+///     // adds any i64 value, for keeping a count when
+///     // statistics like the mean aren't useful.
+///
+///     for i in 1..test_limit + 1 {
+///         counter.record_event();
+///         counter.record_i64(i);
+///     }
+///
+///     // Now compute what we expect as the total count, and
+///     // check that against the counter's value.  record_event
+///     // increments by one.
+///
+///     let events   = test_limit;
+///     let sequence = ((test_limit + 1) * test_limit) / 2;
+///     let expected = events + sequence;
+///
+///     assert!(counter.count() == expected as u64);
+///
+///     counter.print();
+///```
+
 use std::any::Any;
 use super::Rustics;
 use super::LogHistogram;

@@ -4,7 +4,7 @@
 //  permitted by law.
 //
 
-/// ## Types
+/// ## Type
 ///
 /// * IntegerHier
 ///     * This struct implements hierarchical statistics using the

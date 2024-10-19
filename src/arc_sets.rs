@@ -5,7 +5,7 @@
 //
 
 ///
-/// ## Types
+/// ## Type
 ///
 /// * ArcSet
 ///     * ArcSet implements a set that can contain statistics objects

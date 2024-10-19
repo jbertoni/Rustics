@@ -4,7 +4,7 @@
 //  permitted by law.
 //
 
-/// ## Types
+/// ## Type
 ///
 /// * RunningInteger
 ///     * RunningInteger maintains running statistics on a set of samples

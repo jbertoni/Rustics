@@ -4,6 +4,14 @@
 //  permitted by law.
 //
 
+///
+/// ## Type
+///
+/// * RcSet
+///     * RcSet implements a set that can contain statistics objects
+///       and other RcSet structs as subsets.
+///     * Members of an RcSet are kept as Arc structs to allow for
+///       single-threaded sharing.
 ///```
 ///    // RcSet and ArcSet provide a nearly identical interface.  This
 ///    // code is mostly lifted from the ArcSet comments.

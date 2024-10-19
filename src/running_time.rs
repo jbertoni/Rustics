@@ -4,7 +4,7 @@
 //  permitted by law.
 //
 
-/// ## Types
+/// ## Type
 ///
 /// * RunningTime
 ///     * RunningTime accumulates statistics on a stream of event times.

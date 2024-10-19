@@ -4,6 +4,25 @@
 //  permitted by law.
 //
 
+///
+/// ## Types
+///
+/// * Timer
+///   * Timer is the trait for time operations needed by the
+///     statistics routines.
+/// * DurationTimer
+///   * DurationTimer provides a Timer interface to the standard
+///     rust Duration type, which measures wall-clock time.
+/// * SimpleClock
+///   * SimpleClock is an abstraction that can be used to implement
+///     platform-specific Timer objects.  Something like a simple
+///     cycle counter would be an example.
+/// * ClockTimer
+///   * Clock timer is an implementation of Timer for a SimpleClock.
+///   * ClockTimer uses a Rc<RefCell<dyn SimpleClock>> provided
+///     to ClockTimer::new to read time.
+///
+
 use std::time::Instant;
 use std::rc::Rc;
 use std::cell::RefCell;

@@ -4,7 +4,7 @@
 //  permitted by law.
 //      
 
-/// ## Types
+/// ## Type
 ///
 /// * TimerWindow
 ///     * TimerWindow maintains a set consisting of the last n samples

@@ -4,11 +4,13 @@
 //  permitted by law.
 //
 
-/// ## Types
+/// ## Type
 ///
 /// * IntegerWindow
 ///     * IntegerWindow maintains a set consisting of the last n samples
 ///       recorded into it.
+///     * It also maintains a log histogram that contains counts of all
+//        events seen, not just the window of n samples.
 ///
 /// ## Example
 ///```

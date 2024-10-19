@@ -4,6 +4,13 @@
 //  permitted by law.
 //
 
+///
+/// ## Type
+///
+/// * Hier
+///     * Hier is a framework class that should be created using a 
+///       concrete type via IntegerHier::new_hier or TimeHier::new_hier.
+///       This example uses IntegerHier.
 ///```
 ///    use rustics::Rustics;
 ///    use rustics::hier::Hier;

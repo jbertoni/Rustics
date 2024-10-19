@@ -4,6 +4,17 @@
 //  permitted by law.
 //
 
+///
+/// ## Type
+///
+/// * TimeHier
+///   * This struct implements hierarchical statistics using the
+///     RunningTime type.  See the RunningTime documentation for
+///     how to used that type.
+///   * See the Hier documentation on how to use hierarchical
+///     statistics.
+///
+
 //
 // This module provides the interface between RunningTime and the Hier
 // code.

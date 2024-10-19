@@ -16,7 +16,7 @@ use super::counter::Counter;
 use super::TimerBox;
 use super::PrinterBox;
 use super::PrinterOption;
-use super::create_title;
+use super::make_title;
 
 pub type RusticsArc = Arc<Mutex<dyn Rustics>>;
 pub type ArcSetBox  = Arc<Mutex<ArcSet>>;
@@ -144,7 +144,7 @@ impl ArcSet {
 
     pub fn add_member(&mut self, member: RusticsArc) {
         let mut stat  = member.lock().unwrap();
-        let     title = create_title(&self.title, &stat.name());
+        let     title = make_title(&self.title, &stat.name());
 
         stat.set_title(&title);
         stat.set_id(self.next_id);
@@ -243,7 +243,7 @@ impl ArcSet {
 
         let     last   = self.subsets.last().unwrap();
         let mut subset = last.lock().unwrap();
-        let     title  = create_title(&self.title, name);
+        let     title  = make_title(&self.title, name);
 
         subset.set_title(&title);
         subset.set_id(self.next_id);
@@ -295,111 +295,96 @@ impl ArcSet {
 #[cfg(test)]
 pub mod tests {
     use super::*;
+    use crate::tests::TestTimer;
+    use crate::tests::setup_elapsed_time;
     use crate::tests::continuing_box;
     use crate::hier::Hier;
     use crate::Printer;
-    use std::cell::RefCell;
-    use std::rc::Rc;
-    use crate::time::Timer;
+
+    struct TestTraverser {
+        pub members:  i64,
+        pub sets:     i64,
+    }
+
+    impl TestTraverser {
+        pub fn new() -> TestTraverser {
+            println!(" *** making an arc traverser");
+            TestTraverser { members:  0, sets:  0 }
+        }
+    }
+
+    impl ArcTraverser for TestTraverser {
+        fn visit_member(&mut self, member: &mut dyn Rustics) {
+            println!(" *** visiting arc member  \"{}\"", member.name());
+            self.members += 1;
+        }
+
+        fn visit_set(&mut self, set: &mut ArcSet) {
+            println!(" *** visiting arc set     \"{}\"", set.name());
+            self.sets += 1;
+        }
+    }
 
     //  Add statistics to a set.
 
     fn add_stats(parent: &Mutex<ArcSet>) {
         for i in 0..4 {
-            let lower             = -64;    // Just define the range for the test samples.
-            let upper             = 64;
+            let     lower         = -64;    // Just define the range for the test samples.
+            let     upper         =  64;
+            let     events_limit  = 2 * (upper - lower) as usize;
 
             let     parent        = &mut parent.lock().unwrap();
-            let     name          = format!("generated subset {}", i);
-            let     subset        = parent.add_subset(&name, 4, 4);
+            let     subset_name   = format!("generated subset {}", i);
+            let     subset        = parent.add_subset(&subset_name, 4, 4);
             let mut subset        = subset.lock().unwrap();
 
             let     window_name   = format!("generated window {}", i);
             let     running_name  = format!("generated running {}", i);
-            let     window_mutex  = subset.add_integer_window(32, &window_name);
+            let     window_mutex  = subset.add_integer_window(events_limit, &window_name);
             let     running_mutex = subset.add_running_integer(&running_name);
 
-            let mut window         = window_mutex.lock().unwrap();
-            let mut running        = running_mutex.lock().unwrap();
+            let mut window        = window_mutex.lock().unwrap();
+            let mut running       = running_mutex.lock().unwrap();
 
-            println!(" *** made arc \"{}\"", subset.title());
-            println!(" *** made arc \"{}\"", window.title());
-            println!(" *** made arc \"{}\"", running.title());
+            let subset_expected   = make_title(&parent.title(),  &subset_name );
+            let window_expected   = make_title(&subset_expected, &window_name );
+            let running_expected  = make_title(&subset_expected, &running_name);
 
-            for i in lower..upper {
-                window.record_i64(i);
+            assert!(subset.title()  == subset_expected );
+            assert!(window.title()  == window_expected );
+            assert!(running.title() == running_expected);
+
+            // Record some events and see how that goes.
+
+            let mut events = 0;
+
+            for i in lower..upper + 1 {
+                window .record_i64(i);
                 running.record_i64(i);
+
+                events += 1;
             }
+
+            // Compute the expected mean for the stats.
+
+            let mean = (((upper + lower) as f64) / 2.0) / events as f64;
+
+            assert!(running.mean()  == mean  );
+            assert!(window.mean()   == mean  );
+            assert!(running.count() == events);
+            assert!(window.count()  == events);
         }
-    }
-
-    //  Implement a timer time that lets us control the interval values.
-    //  This approach lets us test various properties of the underlying
-    //  statistics.  This timer is "one-shot":  it must be reinitialized
-    //  for each timer operation.
-
-    static global_next: Mutex<u128> = Mutex::new(0 as u128);
-
-    fn get_global_next() -> u128 {
-        *(global_next.lock().unwrap())
-    }
-
-    fn set_global_next(value: u128) {
-        *(global_next.lock().unwrap()) = value;
-    }
-
-    struct TestTimer {
-        start: u128,
-        hz: u128,
-    }
-
-    impl TestTimer {
-        fn new(hz: u128) -> TestTimer {
-            let start = 0;
-
-            TestTimer { start, hz }
-        }
-    }
-
-    impl Timer for TestTimer {
-        fn start(&mut self) {
-            assert!(get_global_next() > 0);
-            self.start = get_global_next();
-        }
-
-        fn finish(&mut self) -> u128 {
-            assert!(self.start > 0);
-            assert!(get_global_next() >= self.start);
-            let elapsed_time = get_global_next() - self.start;
-            self.start = 0;
-            set_global_next(0);
-            elapsed_time
-        }
-
-        fn hz(&self) -> u128 {
-            self.hz
-        }
-    }
-
-    //  Given a timer, set the start time and set the elapsed
-    //  time that will be reported.
-
-    fn setup_elapsed_time(timer: &mut TimerBox, ticks: i64) {
-        assert!(ticks >= 0);
-        let mut timer = (**timer).borrow_mut();
-        set_global_next(1);
-        timer.start();
-        set_global_next(ticks as u128 + 1);
     }
 
     pub fn simple_test() {
-        let lower   = -32;
-        let upper   = 32;
-        let test_hz = 1_000_000_000;
+        let lower       = -32;
+        let upper       =  32;
+        let test_hz     = 1_000_000_000;
+        let parent_name = "parent set";
 
         //  Create the parent set for our test statistics.
 
-        let mut set = ArcSet::new("parent set", None, 4, 4);
+        let mut set = ArcSet::new(&parent_name, None, 4, 4);
 
         //  Create timers for time statistics.
 
@@ -408,26 +393,27 @@ pub mod tests {
 
         //  Now create the statistics in our set.
 
-        let window_mutex       = set.add_integer_window(32, "window");
-        let running_mutex      = set.add_running_integer("running");
-        let time_window_mutex  = set.add_time_window("time window", 32, window_timer);
-        let running_time_mutex = set.add_running_time("running time", running_timer);
+        let window_mutex        = set.add_integer_window(32, "window");
+        let running_mutex       = set.add_running_integer("running");
+        let time_window_mutex   = set.add_time_window("time window", 32, window_timer);
+        let running_time_mutex  = set.add_running_time("running time", running_timer);
 
         //  Lock the statistics for manipulation.
 
-        let mut window         = window_mutex.lock().unwrap();
-        let mut running        = running_mutex.lock().unwrap();
-        let mut time_window    = time_window_mutex.lock().unwrap();
-        let mut running_time   = running_time_mutex.lock().unwrap();
+        let mut window          = window_mutex.lock().unwrap();
+        let mut running         = running_mutex.lock().unwrap();
+        let mut time_window     = time_window_mutex.lock().unwrap();
+        let mut running_time    = running_time_mutex.lock().unwrap();
 
         //  Create some simple timers to be started manually.
 
-        let mut running_interval: TimerBox = Rc::from(RefCell::new(TestTimer::new(test_hz)));
-        let mut window_interval:  TimerBox = Rc::from(RefCell::new(TestTimer::new(test_hz)));
+        let mut running_interval = TestTimer::new_box(test_hz);
+        let mut window_interval  = TestTimer::new_box(test_hz);
 
         //  Now record some data in all the statistics.
 
         for i in lower..upper {
+            println!("first loop i {} ({}, {})", i, lower, upper);
             window.record_i64(i);
             running.record_i64(i);
 
@@ -445,21 +431,21 @@ pub mod tests {
 
         let set_title = set.title();
 
-        assert!(set_title == "parent set");
-        assert!(running_time.title() == create_title(&"parent set", &"running time"));
-        assert!(time_window.title() == create_title(&"parent set", &"time window"));
-        assert!(running.title() == create_title(&"parent set", &"running"));
-        assert!(window.title() == create_title(&"parent set", &"window"));
+        assert!(set_title            == parent_name);
+        assert!(running_time.title() == make_title(&"parent set", &"running time"));
+        assert!(time_window.title()  == make_title(&"parent set", &"time window" ));
+        assert!(running.title()      == make_title(&"parent set", &"running"     ));
+        assert!(window.title()       == make_title(&"parent set", &"window"      ));
 
         //  Create a subset to check titles in a subtree.
 
-        let     subset = set.add_subset("subset", 0, 0);
-        let mut subset = subset.lock().unwrap();
-        let subset_stat_mutex = subset.add_running_integer("subset stat");
-        let subset_stat   = subset_stat_mutex.lock().unwrap();
+        let     subset      = set.add_subset("subset", 0, 0);
+        let mut subset      = subset.lock().unwrap();
+        let     subset_stat = subset.add_running_integer("subset stat");
+        let     subset_stat = subset_stat.lock().unwrap();
 
-        assert!(subset.title() == create_title(&set_title, "subset"));
-        assert!(subset_stat.title() == create_title(&subset.title(), &"subset stat"));
+        assert!(subset.title()      == make_title(&set_title, "subset"));
+        assert!(subset_stat.title() == make_title(&subset.title(), &"subset stat"));
 
         //  Drop all the locks.
 
@@ -482,12 +468,23 @@ pub mod tests {
         println!(" *** arc members {}, sets {}", traverser.members, traverser.sets);
 
         assert!(traverser.members == 5);
-        assert!(traverser.sets == 2);
+        assert!(traverser.sets    == 2);
 
         //  Now test removing statistics.
 
-        let subset_1 = set.add_subset("subset 1", 4, 4);
-        let subset_2 = set.add_subset("subset 2", 4, 4);
+        let subset_1_name  = "subset 1";
+        let subset_2_name  = "subset 2";
+        let subset_1       = set.add_subset(subset_1_name, 4, 4);
+        let subset_2       = set.add_subset(subset_2_name, 4, 4);
+
+        let subset_1_impl  = subset_1.lock().unwrap();
+        let subset_2_impl  = subset_2.lock().unwrap();
+
+        assert!(subset_1_impl.title() == make_title(parent_name, &subset_1_name));
+        assert!(subset_2_impl.title() == make_title(parent_name, &subset_2_name));
+
+        drop(subset_1_impl);
+        drop(subset_2_impl);
 
         add_stats(&subset_1);
         add_stats(&subset_2);
@@ -500,7 +497,7 @@ pub mod tests {
         println!(" *** arc members {}, sets {}", traverser.members, traverser.sets);
 
         assert!(traverser.members == 21);
-        assert!(traverser.sets == 12);
+        assert!(traverser.sets    == 12);
 
         // Print the set, as well.
 
@@ -594,7 +591,9 @@ pub mod tests {
 
         //  print should still work.
 
-        let member = Arc::from(Mutex::new(RunningInteger::new("added as member", None),));
+        let member = RunningInteger::new("added as member", None);
+        let member = Arc::from(Mutex::new(member));
+
         set.add_member(member);
 
         set.print_opts(Some(printer.clone()), None);
@@ -613,29 +612,5 @@ pub mod tests {
     pub fn run_tests() {
         simple_test();
         sample_usage();
-    }
-
-    struct TestTraverser {
-        pub members:  i64,
-        pub sets:     i64,
-    }
-
-    impl TestTraverser {
-        pub fn new() -> TestTraverser {
-            println!(" *** making an arc traverser");
-            TestTraverser { members:  0, sets:  0 }
-        }
-    }
-
-    impl ArcTraverser for TestTraverser {
-        fn visit_member(&mut self, member: &mut dyn Rustics) {
-            println!(" *** visiting arc member  \"{}\"", member.name());
-            self.members += 1;
-        }
-
-        fn visit_set(&mut self, set: &mut ArcSet) {
-            println!(" *** visiting arc set     \"{}\"", set.name());
-            self.sets += 1;
-        }
     }
 }

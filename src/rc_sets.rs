@@ -12,7 +12,7 @@ use super::PrinterOption;
 use super::TimerBox;
 use super::stdout_printer;
 use super::counter::Counter;
-use super::create_title;
+use super::make_title;
 
 use super::running_integer::RunningInteger;
 use super::running_time::RunningTime;
@@ -138,7 +138,7 @@ impl RcSet {
 
     pub fn add_member(&mut self, member: RusticsRc) {
         let mut stat   = member.borrow_mut();
-        let     title  = create_title(&self.title, &stat.name());
+        let     title  = make_title(&self.title, &stat.name());
 
         stat.set_title(&title);
         stat.set_id(self.next_id);
@@ -231,7 +231,7 @@ impl RcSet {
     pub fn add_subset(&mut self, name: &str, members: usize, subsets: usize) -> RcSetBox {
         let     printer = Some(self.printer.clone());
         let mut subset  = RcSet::new(name, members, subsets, printer);
-        let     title   = create_title(&self.title, name);
+        let     title   = make_title(&self.title, name);
 
         subset.set_title(&title);
         subset.set_id(self.next_id);
@@ -383,10 +383,11 @@ mod tests {
 
         let set_title = set.title();
         assert!(set_title == "parent set");
-        assert!(running_time_stat.title() == create_title(&"parent set", &"running time"));
-        assert!(time_window_stat.title() == create_title(&"parent set", &"time window"));
-        assert!(running_stat.title() == create_title(&"parent set", &"running"));
-        assert!(window_stat.title() == create_title(&"parent set", &"window"));
+
+        assert!(running_time_stat.title() == make_title(&"parent set", &"running time"));
+        assert!(time_window_stat.title()  == make_title(&"parent set", &"time window" ));
+        assert!(running_stat.title()      == make_title(&"parent set", &"running"     ));
+        assert!(window_stat.title()       == make_title(&"parent set", &"window"      ));
 
         //  Test subset titles.
 
@@ -397,8 +398,8 @@ mod tests {
         let     subset_stat  = subset.add_running_integer("subset stat");
         let     subset_stat  = (*subset_stat).borrow_mut();
 
-        assert!(subset_title == create_title(&set_title, "subset"));
-        assert!(subset_stat.title() == create_title(&subset_title, &"subset stat"));
+        assert!(subset_title        == make_title(&set_title, "subset"         ));
+        assert!(subset_stat.title() == make_title(&subset_title, &"subset stat"));
 
         //  Drop the locks so that we can print the set.
 
@@ -506,7 +507,8 @@ mod tests {
 
         // Do a minimal test of "add".
 
-        let member = Rc::from(RefCell::new(RunningInteger::new("added as member", None)));
+        let member = RunningInteger::new("added as member", None);
+        let member = Rc::from(RefCell::new(member));
         set.add_member(member);
 
         set.print();

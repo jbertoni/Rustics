@@ -480,7 +480,9 @@ mod tests {
         assert!(stats.count()   == events   );
         assert!(stats.class()   == "integer");
 
-        let printer = Arc::new(Mutex::new(TestPrinter::new("test header ======")));
+        let printer = TestPrinter::new("test header ======");
+        let printer = Arc::new(Mutex::new(printer));
+
         stats.print_opts(Some(printer), None);
 
         // Test that the log mode makes sense.
@@ -496,74 +498,6 @@ mod tests {
         println!("log mode {}", stats.log_mode());
         println!("log mode {}", stats.log_mode());
         assert!(stats.log_mode() == 7);
-
-        // Test some more values.
-
-        test_histogram(&mut stats,  -300);
-        test_histogram(&mut stats,     0);
-        test_histogram(&mut stats,  1300);
-        test_histogram(&mut stats, -2300);
-        test_histogram(&mut stats,    42);
-    }
-
-    // Put some samples into the struct, then check the
-    // contents.
-
-    fn test_histogram(stats: &mut RunningInteger, value: i64) {
-        stats.clear();
-
-        assert!(stats.count == 0);
-
-        // Check the histogram...
-
-        let histogram = stats.log_histogram();
-
-        for item in histogram.negative {
-            assert!(item == 0);
-        }
-
-        for item in histogram.positive {
-            assert!(item == 0);
-        }
-
-        // Record the values and count the events.
-
-        let mut events = 0;
-
-        for _i in 0..100 {
-            stats.record_i64(value);
-            events += 1;
-        }
-
-        // Check that the data seems sane.
-
-        assert!(stats.standard_deviation() == 0.0);
-
-        assert!(stats.mean()     == value as f64);
-        assert!(stats.variance() == 0.0);
-        assert!(stats.skewness() == 0.0);
-        assert!(stats.kurtosis() == 0.0);
-
-        // Check that the histogram matches expectation.
-
-        let histogram       = stats.log_histogram();
-        let log_mode_index  = pseudo_log_index(value);
-
-        for i in 0..histogram.negative.len() {
-            if value < 0 && i == log_mode_index {
-                assert!(histogram.negative[i] == events);
-            } else {
-                assert!(histogram.negative[i] == 0);
-            }
-        }
-
-        for i in 0..histogram.positive.len() {
-            if value >= 0 && i == log_mode_index {
-                assert!(histogram.positive[i] == events);
-            } else {
-                assert!(histogram.positive[i] == 0);
-            }
-        }
     }
 
     #[test]

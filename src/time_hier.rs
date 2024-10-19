@@ -12,9 +12,12 @@
 use std::any::Any;
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::sync::Arc;
+use std::sync::Mutex;
 
 use super::Rustics;
 use super::Histogram;
+use super::HierBox;
 use super::TimerBox;
 use super::PrinterBox;
 use super::running_time::RunningTime;
@@ -91,6 +94,12 @@ impl TimeHier {
 
         Hier::new(config)
     }
+
+    pub fn new_hier_box(configuration: TimeHierConfig) -> HierBox {
+        let hier = TimeHier::new_hier(configuration);
+
+        Arc::from(Mutex::new(hier))
+    }
 }
 
 // These are the functions that the Hier struct needs implemented
@@ -148,13 +157,12 @@ mod tests {
     use crate::hier::GeneratorRc;
     use crate::tests::continuing_box;
 
-    fn make_hier_gen(generator:  GeneratorRc) -> Hier {
+    fn make_descriptor() -> HierDescriptor {
         let     auto_next      = 4;
         let     levels         = 4;
         let     level_0_period = 8;
         let     dimension      = HierDimension::new(level_0_period, 3 * level_0_period);
         let mut dimensions     = Vec::<HierDimension>::with_capacity(levels);
-        let     class          = "integer".to_string();
 
         // Push the level 0 descriptor.
 
@@ -172,7 +180,12 @@ mod tests {
             period += 2;
         }
 
-        let descriptor    = HierDescriptor::new(dimensions, Some(auto_next));
+        HierDescriptor::new(dimensions, Some(auto_next))
+    }
+
+    fn make_hier_gen(generator:  GeneratorRc) -> Hier {
+        let descriptor    = make_descriptor();
+        let class         = "integer".to_string();
         let name          = "test hier".to_string();
         let title         = "test hier".to_string();
         let printer       = stdout_printer();
@@ -180,6 +193,31 @@ mod tests {
         let configuration = HierConfig { descriptor, generator, class, name, title, printer };
 
         Hier::new(configuration)
+    }
+
+    fn test_new_hier_box() {
+        let     descriptor    = make_descriptor();
+        let     name          = "test hier".to_string();
+        let     title         = "test hier".to_string();
+        let     printer       = stdout_printer();
+        let     timer         = continuing_box();
+        let     configuration = TimeHierConfig { descriptor, name, timer, title, printer };
+
+        let     hier          = TimeHier::new_hier_box(configuration);
+        let mut hier_impl     = hier.lock().unwrap();
+
+        // Now just record a few events.
+
+        let mut events = 0;
+
+        for i in 0..100 {
+            hier_impl.record_time(i + 1);
+
+            events += 1;
+        }
+
+        assert!(hier_impl.event_count() <= events);
+        hier_impl.print();
     }
 
     // Do a minimal liveness test of the generic hier implementation.
@@ -243,5 +281,6 @@ mod tests {
     #[test]
     fn run_tests() {
         test_simple_running_generator();
+        test_new_hier_box();
     }
 }

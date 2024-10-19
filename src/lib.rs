@@ -144,6 +144,7 @@ use hier::ExporterRc;
 use hier::MemberRc;
 use log_histogram::LogHistogram;
 
+pub type HierBox       = Arc<Mutex<Hier>>;
 pub type PrinterBox    = Arc<Mutex<dyn Printer>>;
 pub type PrinterOption = Option<Arc<Mutex<dyn Printer>>>;
 pub type TimerBox      = Rc<RefCell<dyn Timer>>;
@@ -153,7 +154,9 @@ pub fn timer_box_hz(timer:  &TimerBox) -> u128 {
 }
 
 pub fn stdout_printer() -> PrinterBox {
-    Arc::new(Mutex::new(StdioPrinter::new(StreamKind::Stdout)))
+    let printer = StdioPrinter::new(StreamKind::Stdout);
+
+    Arc::new(Mutex::new(printer))
 }
 
 // Compute a variance estimator.
@@ -214,7 +217,7 @@ pub fn compute_kurtosis(count: u64, moment_2: f64, moment_4: f64) -> f64 {
 // Insert a delimiter and concatenate the parent and child names
 // when creating a hierarchical title.
 
-pub fn create_title(title_prefix: &str, title: &str) -> String {
+pub fn make_title(title_prefix: &str, title: &str) -> String {
     let title =
         if title_prefix.is_empty() {
             title.to_string()
@@ -396,6 +399,7 @@ mod tests {
         *(global_next.lock().unwrap()) = value;
     }
 
+    #[derive(Clone, Copy)]
     pub struct TestTimer {
         start: u128,
         hz: u128,
@@ -406,6 +410,12 @@ mod tests {
             let start = 0;
 
             TestTimer { start, hz }
+        }
+
+        pub fn new_box(hz: u128) -> TimerBox {
+            let timer = TestTimer::new(hz);
+
+            Rc::from(RefCell::new(timer))
         }
     }
 

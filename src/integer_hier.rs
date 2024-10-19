@@ -12,6 +12,8 @@
 use std::any::Any;
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::sync::Arc;
+use std::sync::Mutex;
 
 use super::Rustics;
 use super::Histogram;
@@ -20,6 +22,7 @@ use super::running_integer::RunningInteger;
 use crate::running_integer::RunningExporter;
 
 use crate::Hier;
+use crate::HierBox;
 use crate::HierDescriptor;
 use crate::HierConfig;
 use crate::HierGenerator;
@@ -88,6 +91,12 @@ impl IntegerHier {
         let config = HierConfig { descriptor, generator, name, title, class, printer };
 
         Hier::new(config)
+    }
+
+    pub fn new_hier_box(configuration: IntegerHierConfig) -> HierBox {
+        let hier = IntegerHier::new_hier(configuration);
+
+        Arc::from(Mutex::new(hier))
     }
 }
 
@@ -218,8 +227,8 @@ mod tests {
 
         // Now make an actual hier struct.
 
-        let     generator     = Rc::from(RefCell::new(generator));
-        let mut hier          = make_hier_gen(generator);
+        let     generator = Rc::from(RefCell::new(generator));
+        let mut hier      = make_hier_gen(generator);
 
         let mut events = 0;
 

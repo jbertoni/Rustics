@@ -685,7 +685,7 @@ pub mod tests {
     use crate::running_integer::RunningInteger;
     use crate::time_hier::TimeHier;
     use crate::time_hier::TimeHierConfig;
-    use crate::running_time::RunningTime;
+    use crate::running_time::RunningTime;    
 
     // Make a Hier struct for testing.  The tests use the RunningInteger
     // implementation via IntegerHier.
@@ -1235,7 +1235,8 @@ pub mod tests {
 
         // Now make the Hier instance.
 
-        let mut integer_hier = IntegerHier::new_hier(configuration);
+        let     integer_hier = IntegerHier::new_hier_box(configuration);
+        let mut integer_hier = integer_hier.lock().unwrap();
 
         // Now record some events with boring data.
 
@@ -1303,7 +1304,7 @@ pub mod tests {
 
         // Test the histograms while we have a Hier.
 
-        run_histogram_tests(&mut integer_hier);
+        run_histogram_tests(&mut (*integer_hier) as &mut dyn Rustics);
     }
 
     #[test]

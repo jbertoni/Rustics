@@ -176,11 +176,6 @@ impl<T> Window<T> {
             internal_index -= self.size_limit;
         }
 
-        if internal_index >= self.data.len() {
-            println!("index_all:  index_all[{}] = {}, size {}, self.current_index {}, self.size_limit {}",
-                index, internal_index, self.data.len(), self.current_index, self.size_limit);
-        }
-
         assert!(internal_index < self.data.len());
         Some(&self.data[internal_index])
     }
@@ -213,11 +208,6 @@ impl<T> Window<T> {
 
         if internal_index >= self.size_limit {
             internal_index -= self.size_limit;
-        }
-
-        if internal_index >= self.data.len() {
-            println!("index_live:  index_live[{}] = {}, size {}, current_index {}, size_limit {}, live_limit {}",
-                index, internal_index, self.data.len(), self.current_index, self.size_limit, self.live_limit);
         }
 
         assert!(internal_index < self.data.len());
@@ -468,7 +458,7 @@ mod tests {
             let (data, oldest, oldest_live) = window.data(verbose);
 
             if verbose {
-                println!("simple_window_test:  overwrite {} len {}:  oldest {} -> {}, oldest_live {} -> {}",
+                println!("simple_window_test:  at {} len {}:  all {} -> {}, live {} -> {}",
                     i,
                     data.len(),
                     oldest,
@@ -539,7 +529,7 @@ mod tests {
             let mut current_index = window.current_index;
 
             if verbose {
-                println!("simple_window_test:  overwrite iteration {}, oldest {}, oldest value {}",
+                println!("simple_window_test:  at iteration {}, current {}, data {}",
                     i,
                     current_index,
                     window.data[current_index]
@@ -552,7 +542,7 @@ mod tests {
                 let expect = 2 * window_size + i + j;
 
                 if verbose {
-                    println!("simple_window_test:  at iteration [{} {}], data[{}] == {}, expect {}",
+                    println!("simple_window_test:  at [{} {}], data[{}] == {}, expect {}",
                         i,
                         j,
                         current_index,

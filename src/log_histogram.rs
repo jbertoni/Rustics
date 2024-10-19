@@ -9,10 +9,10 @@
 use super::Printer;
 use super::printable::Printable;
 
-// This function returns an array index to record a log value
-// in a histogram.  Callers are expected to use two arrays,
-// one for positive and one for negative values, so this routine
-// ignores the sign of its input.
+// This function returns an array index to record a log value in a
+// histogram.  Callers are expected to use two arrays, one for
+// positive and one for negative values, so this routine ignores the
+// sign of its input.
 //
 // The algorithm implements a simple log-like function of the
 // absolute value of its input.  It is intended only for making
@@ -21,11 +21,12 @@ use super::printable::Printable;
 // The pseudo-log of most negative integers n is defined as -log(-n)
 // to give a reasonable histogram structure.  The pseudo-log of
 // i64::MIN is defined as 63 for convenience.  This routine always
-// returns a positive index for an array, so the return value is
-// pseudo-log(-n).  The calling routine handles the negation by using
-// separate arrays for positive and negative pseudo-log values.
+// returns a non-negative index for an array, so the return value is
+// pseudo-log(-n) for negative valeus.  The calling routine handles
+// the negation by using separate arrays for positive and negative
+// pseudo-log values.
 //
-// In addition, pseudo-log(0) is defined as 0.
+// In addition to the above notes, pseudo-log(0) is defined as 0.
 //
 
 pub fn pseudo_log_index(value: i64) -> usize {

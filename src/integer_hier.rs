@@ -134,10 +134,12 @@ impl HierGenerator for IntegerHier {
 
     fn push(&self, exporter: ExporterRc, member_rc: MemberRc) {
         let mut exporter_borrow = exporter.borrow_mut();
-        let     exporter_impl   = exporter_borrow.as_any_mut().downcast_mut::<RunningExporter>().unwrap();
+        let     exporter_any    = exporter_borrow.as_any_mut();
+        let     exporter_impl   = exporter_any.downcast_mut::<RunningExporter>().unwrap();
 
-        let     member_borrow = member_rc.borrow();
-        let     member_impl   = member_borrow.as_any().downcast_ref::<RunningInteger>().unwrap();
+        let     member_borrow   = member_rc.borrow();
+        let     member_any      = member_borrow.as_any();
+        let     member_impl     = member_any.downcast_ref::<RunningInteger>().unwrap();
 
         exporter_impl.push(member_impl.export());
     }
@@ -215,7 +217,10 @@ mod tests {
 
         generator.push(exporter_clone, member_rc);
 
-        let new_member_rc = generator.make_from_exporter("member export", stdout_printer(), exporter_rc);
+        let name    = "member export";
+        let printer = stdout_printer();
+
+        let new_member_rc = generator.make_from_exporter(name, printer, exporter_rc);
 
 
         // See that the new member matches expectations.

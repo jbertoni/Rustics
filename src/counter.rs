@@ -201,6 +201,10 @@ mod tests {
             counter.record_i64(i);
         }
 
+        // Now compute what we expect as the total count, and
+        // check that against the counter's value.  record_event
+        // increments by one.
+
         let events   = test_limit;
         let sequence = ((test_limit + 1) * test_limit) / 2;
         let expected = events + sequence;

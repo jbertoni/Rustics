@@ -389,15 +389,10 @@ mod tests {
         }
     }
 
-    static global_next: Mutex<u128> = Mutex::new(0 as u128);
-
-    fn get_global_next() -> u128 {
-        *(global_next.lock().unwrap())
-    }
-
-    fn set_global_next(value: u128) {
-        *(global_next.lock().unwrap()) = value;
-    }
+    // Define a testing clock that allows us to define the
+    // intervals that the clock returns.  We do this through
+    // a global variable, although creating a list might be
+    // more rust-like.
 
     #[derive(Clone, Copy)]
     pub struct TestTimer {
@@ -428,6 +423,7 @@ mod tests {
         fn finish(&mut self) -> u128 {
             assert!(self.start > 0);
             assert!(get_global_next() >= self.start);
+
             let elapsed_time = get_global_next() - self.start;
             self.start = 0;
             set_global_next(0);
@@ -438,6 +434,22 @@ mod tests {
             self.hz
         }
     }
+
+    static global_next: Mutex<u128> = Mutex::new(0 as u128);
+
+    // Get the current "next" time to read.
+
+    fn get_global_next() -> u128 {
+        *(global_next.lock().unwrap())
+    }
+
+    // Set the next time to be read.
+
+    fn set_global_next(value: u128) {
+        *(global_next.lock().unwrap()) = value;
+    }
+
+    // Set up the next interval to be returned.
 
     pub fn setup_elapsed_time(timer: &mut TimerBox, ticks: i64) {
         assert!(ticks >= 0);
@@ -450,10 +462,10 @@ mod tests {
     pub fn test_running_time() {
         println!("Testing running time statistics.");
 
-        let     hz              = 1_000_000_000;
-        let mut timer: TimerBox = Rc::from(RefCell::new(TestTimer::new(hz)));
-        let     printer         = Some(stdout_printer());
-        let mut time_stat       = RunningTime::new("Test Running Time 1", timer.clone(), printer);
+        let     hz        = 1_000_000_000;
+        let mut timer     = TestTimer::new_box(hz);
+        let     printer   = Some(stdout_printer());
+        let mut time_stat = RunningTime::new("Test Running Time 1", timer.clone(), printer);
 
         setup_elapsed_time(&mut timer, i64::MAX);
         time_stat.record_event();
@@ -475,8 +487,10 @@ mod tests {
             let random: i32 = rng.gen();
 
             let interval =
-                if random >= 0 {
+                if random > 0 {
                     random as i64
+                } else if random == 0 {
+                    1 as i64
                 } else {
                     -(random + 1) as i64
                 };
@@ -492,7 +506,7 @@ mod tests {
 
         // Okay, use a more restricted range of times.
 
-        let mut timer: TimerBox = Rc::from(RefCell::new(TestTimer::new(1_000_000_000)));
+        let mut timer     = TestTimer::new_box(hz);
         let     printer   = Some(stdout_printer());
         let mut time_stat = RunningTime::new("Test Running Time 2", timer.clone(), printer);
 
@@ -501,6 +515,8 @@ mod tests {
         for i in 0..limit + 1 {
             let interval = i * i * i;
             setup_elapsed_time(&mut timer, interval);
+
+            // Test both record_event and record_interval.
 
             if i & 1 != 0 {
                 time_stat.record_event();
@@ -516,9 +532,9 @@ mod tests {
 
         // Get a sample with easily calculated summary statistics
 
-        let mut timer: TimerBox = Rc::from(RefCell::new(TestTimer::new(1_000_000_000)));
-        let     printer         = Some(stdout_printer());
-        let mut time_stat       = RunningTime::new("Test Time => 1..100", timer.clone(), printer);
+        let mut timer     = TestTimer::new_box(hz);
+        let     printer   = Some(stdout_printer());
+        let mut time_stat = RunningTime::new("Test Time => 1..100", timer.clone(), printer);
 
         for i in 1..101 {
             setup_elapsed_time(&mut timer, i);
@@ -529,9 +545,9 @@ mod tests {
 
         // Cover all the scales.
 
-        let mut timer: TimerBox = Rc::from(RefCell::new(TestTimer::new(1_000_000_000)));
-        let     printer         = Some(stdout_printer());
-        let mut time_stat       = RunningTime::new("Time => Scale", timer.clone(), printer);
+        let mut timer     = TestTimer::new_box(hz);
+        let     printer   = Some(stdout_printer());
+        let mut time_stat = RunningTime::new("Time => Scale", timer.clone(), printer);
 
         let mut time    = 1;
         let     printer = &mut StdioPrinter::new(StreamKind::Stdout);
@@ -558,9 +574,9 @@ mod tests {
     fn test_time_window() {
         println!("Testing time windows.");
 
-        let     hz              = 1_000_000_000;
-        let mut timer: TimerBox = Rc::from(RefCell::new(TestTimer::new(hz)));
-        let mut time_stat       = TimeWindow::new("Test Time Window 1", 50, timer.clone(), None);
+        let     hz        = 1_000_000_000;
+        let mut timer     = TestTimer::new_box(hz);
+        let mut time_stat = TimeWindow::new("Test Time Window 1", 50, timer.clone(), None);
 
         assert!(time_stat.class() == "time");
 
@@ -598,9 +614,9 @@ mod tests {
 
         // Okay, use a more restricted range of times.
 
-        let mut timer: TimerBox = Rc::from(RefCell::new(TestTimer::new(1_000_000_000)));
-        let     printer         = Some(stdout_printer());
-        let mut time_stat       = RunningTime::new("Test Time Window 2", timer.clone(), printer);
+        let mut timer     = TestTimer::new_box(hz);
+        let     printer   = Some(stdout_printer());
+        let mut time_stat = RunningTime::new("Test Time Window 2", timer.clone(), printer);
 
         assert!(time_stat.class() == "time");
 
@@ -619,9 +635,9 @@ mod tests {
 
         // Get a sample with easily calculated summary statistics
 
-        let mut timer: TimerBox = Rc::from(RefCell::new(TestTimer::new(1_000_000_000)));
-        let     printer         = Some(stdout_printer());
-        let mut time_stat       = RunningTime::new("Time Window => 1..100", timer.clone(), printer);
+        let mut timer     = TestTimer::new_box(hz);
+        let     printer   = Some(stdout_printer());
+        let mut time_stat = RunningTime::new("Time Window => 1..100", timer.clone(), printer);
 
         for i in 1..101 {
             setup_elapsed_time(&mut timer, i);
@@ -632,9 +648,9 @@ mod tests {
 
         // Cover all the scales.
 
-        let mut timer: TimerBox = Rc::from(RefCell::new(TestTimer::new(1_000_000_000)));
-        let     printer         = Some(stdout_printer());
-        let mut time_stat       = RunningTime::new("Time => Scale", timer.clone(), printer);
+        let mut timer     = TestTimer::new_box(hz);
+        let     printer   = Some(stdout_printer());
+        let mut time_stat = RunningTime::new("Time => Scale", timer.clone(), printer);
 
         let mut time    = 1;
         let     printer = &mut StdioPrinter::new(StreamKind::Stdout);
@@ -654,9 +670,9 @@ mod tests {
     fn run_all_histo_tests() {
         let     timer           = continuing_box();
         let mut running_integer = RunningInteger::new("RunningInteger", None);
-        let mut running_time    = RunningTime::new("RunningTime", timer.clone(), None);
-        let mut integer_window  = IntegerWindow::new("IntegerWindow", 100, None);
-        let mut time_window     = TimeWindow::new("IntegerWindow", 100, timer.clone(), None);
+        let mut running_time    = RunningTime::new   ("RunningTime",    timer.clone(), None);
+        let mut integer_window  = IntegerWindow::new ("IntegerWindow",  100, None);
+        let mut time_window     = TimeWindow::new    ("TimeWindow",     100, timer.clone(), None);
 
         run_histogram_tests(&mut running_integer);
         run_histogram_tests(&mut running_time   );
@@ -698,7 +714,8 @@ mod tests {
         // when negating and adding.  Consider MAX and MIN...
 
         if rustics.class() == "time" && value <= 0 {
-            value = std::cmp::max(-(value + 2) + 1, 1);
+            //value = std::cmp::max((value + 2).abs() + 1, 1);
+            value = (value + 2).abs() + 1;
         }
 
         // Record the values and count the events.

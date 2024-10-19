@@ -154,6 +154,7 @@ impl Printable {
 
         (scaled_time, unit)
     }
+
     pub fn print_integer(name: &str, value: i64, printer: &mut dyn Printer) {
         let output = format!("    {:<12} {:>12}", name, Self::commas_i64(value));
         printer.print(&output);
@@ -295,8 +296,10 @@ mod tests {
     use super::*;
 
     pub fn test_commas() {
-        let     test   = [ 123456, 12, -1, -1234, 4000000, -200, -2000, -20000 ];
-        let     expect = [ "123,456", "12", "-1", "-1,234", "4,000,000", "-200", "-2,000", "-20,000" ];
+        let test   = [ 123456, 12, -1, -1234, 4000000, -200, -2000, -20000 ];
+        let expect =
+            [ "123,456", "12", "-1", "-1,234", "4,000,000", "-200", "-2,000", "-20,000" ];
+
         for i in 0..test.len() {
             println!("Test:  {} vs {}", Printable::commas_i64(test[i]), expect[i]);
 

@@ -103,7 +103,7 @@ pub trait HierTraverser {
 
 //
 // HierGenerator is implemented for a type implementing
-// Rustics.  This interfaces with the struct Hier coder
+// Rustics.  This interfaces with the struct Hier impl
 // to provide hierarchical statistics.  This trait
 // provides functions needed by the Hier code that are
 // not bound to a specific instance of a Rustics object,
@@ -171,6 +171,11 @@ pub struct HierConfig {
 }
 
 impl Hier {
+    // This function generally should be called from the constructor
+    // for the specific type in the hierarchy.  For example, the
+    // IntegerHier impl provides constructors that will invoke this
+    // function.
+
     pub fn new(configuration: HierConfig) -> Hier {
         let     descriptor    = configuration.descriptor;
         let     generator     = configuration.generator;
@@ -300,7 +305,9 @@ impl Hier {
 
             if self.advance_count % advance_point == 0 {
                 let exporter = self.make_exporter(i);
-                let new_stat = generator.make_from_exporter(&self.name, self.printer.clone(), exporter);
+                let printer  = self.printer.clone();
+                let name     = &self.name;
+                let new_stat = generator.make_from_exporter(name, printer, exporter);
 
                 self.stats[i + 1].push(new_stat);
             } else {
@@ -911,7 +918,6 @@ pub mod tests {
         assert!(hier_integer.max_i64() == 2 * signed_auto - 1);
         assert!(hier_integer.mean()    == expected_mean      );
 
-
         // Record two windows worth of events and check that
         // our size expectations are correct.  Also, keep the
         // sum of the last "window" of events so that we can
@@ -1099,6 +1105,8 @@ pub mod tests {
 
         hier_integer.traverse_live(&mut traverser);
 
+        // Now compute how many members the traverser should have seen.
+
         for level in 0..hier_integer.dimensions.len() {
             predicted += hier_integer.live_len(level) as i64;
         }
@@ -1128,20 +1136,18 @@ pub mod tests {
     }
 
     fn test_time_hier_sanity() {
-        //  First, just make a generator and a member, then record one event.
-
-        let     name         = "time_hier sanity test".to_string();
-        let     title        = "time_hier sanity test title".to_string();
-        let     timer        = crate::tests::ContinuingTimer::new(1_000_0000);
-        let     timer        = Rc::from(RefCell::new(timer));
-        let     printer      = stdout_printer();
+        let     name     = "time_hier sanity test".to_string();
+        let     title    = "time_hier sanity test title".to_string();
+        let     timer    = crate::tests::ContinuingTimer::new(1_000_0000);
+        let     timer    = Rc::from(RefCell::new(timer));
+        let     printer  = stdout_printer();
 
         // Create the dimensions.
 
-        let dimension_0 = HierDimension::new(4, 4);
-        let dimension_1 = HierDimension::new(100, 200);
+        let dimension_0  = HierDimension::new(4, 4);
+        let dimension_1  = HierDimension::new(100, 200);
 
-        let dimensions = vec![ dimension_0.clone(), dimension_1.clone() ];
+        let dimensions   = vec![ dimension_0.clone(), dimension_1.clone() ];
 
         let auto_next    = 20;
         let auto_advance = Some(auto_next);
@@ -1185,6 +1191,7 @@ pub mod tests {
         assert!(proper_type);
         assert!(rustics.count() == events_per_level_1 as u64);
         assert!(rustics.class() == "time");
+
         println!("test_time_hier_sanity:  got \"{}\" for class", rustics.class());
     }
 

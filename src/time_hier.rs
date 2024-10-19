@@ -263,8 +263,8 @@ mod tests {
 
         // Now make an actual hier struct.
 
-        let     generator     = Rc::from(RefCell::new(generator));
-        let mut hier          = make_hier_gen(generator);
+        let     generator = Rc::from(RefCell::new(generator));
+        let mut hier      = make_hier_gen(generator);
 
         let mut events = 0;
 

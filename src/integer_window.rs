@@ -401,8 +401,8 @@ mod tests {
     use crate::log_histogram::pseudo_log_index;
 
     pub fn test_simple_integer_window() {
-        let window_size = 100;
-        let mut stats = IntegerWindow::new(&"Test Statistics", window_size, None);
+        let     window_size = 100;
+        let mut stats       = IntegerWindow::new(&"Test Statistics", window_size, None);
 
         assert!(stats.class() == "integer");
 

@@ -151,15 +151,12 @@ mod tests {
     use crate::stdout_printer;
     use crate::hier::HierDescriptor;
     use crate::hier::HierDimension;
-    use crate::hier::GeneratorRc;
 
-    fn make_hier_gen(generator:  GeneratorRc) -> Hier {
-        let     auto_next      = 4;
+    fn make_test_hier(auto_next: i64) -> Hier {
         let     levels         = 4;
         let     level_0_period = 8;
         let     dimension      = HierDimension::new(level_0_period, 3 * level_0_period);
         let mut dimensions     = Vec::<HierDimension>::with_capacity(levels);
-        let     class          = "integer".to_string();
 
         // Push the level 0 descriptor.
 
@@ -178,6 +175,9 @@ mod tests {
         }
 
         let descriptor    = HierDescriptor::new(dimensions, Some(auto_next));
+        let generator     = IntegerHier::new_raw();
+        let generator     = Rc::from(RefCell::new(generator));
+        let class         = "integer".to_string();
         let name          = "test hier".to_string();
         let title         = "test hier".to_string();
         let printer       = stdout_printer();
@@ -222,7 +222,6 @@ mod tests {
 
         let new_member_rc = generator.make_from_exporter(name, printer, exporter_rc);
 
-
         // See that the new member matches expectations.
 
         let new_member = new_member_rc.borrow();
@@ -232,17 +231,20 @@ mod tests {
 
         // Now make an actual hier struct.
 
-        let     generator = Rc::from(RefCell::new(generator));
-        let mut hier      = make_hier_gen(generator);
+        let     auto_next = 200;
+        let mut hier      = make_test_hier(auto_next);
+        let mut events    = 0;
 
-        let mut events = 0;
-
-        for i in 0..100 {
+        for i in 1..auto_next / 2 {
             hier.record_i64(i);
 
             events += 1;
         }
 
+        let float    = events as f64;
+        let mean     = (float * (float + 1.0) / 2.0) / float; 
+
+        assert!(hier.mean() == mean);
         assert!(hier.event_count() == events);
         hier.print();
     }

@@ -5,6 +5,8 @@
 //
 
 use std::time::Instant;
+use std::rc::Rc;
+use std::cell::RefCell;
 
 //  A Timer is an abstraction of a clock to be used for performance
 //  monitoring.  It is intended to allow for many implementations.
@@ -34,6 +36,8 @@ pub trait Timer {
 
 //  DurationTimer uses the Rust standard time function "Duration" to
 //  measure time intervals.  This timer thus returns wall-clock time.
+
+pub type DurationTimerBox = Rc<RefCell<DurationTimer>>;
 
 pub struct DurationTimer {
     start:      Instant,
@@ -71,6 +75,12 @@ impl DurationTimer {
         let previous = 0;
 
         DurationTimer { start, previous }
+    }
+
+    pub fn new_box() -> DurationTimerBox {
+        let timer = DurationTimer::new();
+
+        Rc::from(RefCell::new(timer))
     }
 }
 

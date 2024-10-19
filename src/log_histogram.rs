@@ -18,6 +18,9 @@ use super::printable::Printable;
 // absolute value of its input.  It is intended only for making
 // histograms.
 //
+// The pseudo-log of a positive integer is its base 2 log rounded
+// up to an integer.
+//
 // The pseudo-log of most negative integers n is defined as -log(-n)
 // to give a reasonable histogram structure.  The pseudo-log of
 // i64::MIN is defined as 63 for convenience.  This routine always
@@ -145,7 +148,7 @@ impl LogHistogram {
 
     pub fn log_mode(&self) -> isize {
         let mut mode = 0;
-        let mut max  =  0;
+        let mut max  = 0;
 
         for i in 0..self.negative.len() {
             if self.negative[i] > max {
@@ -167,6 +170,7 @@ impl LogHistogram {
     pub fn print(&self, printer: &mut dyn Printer) {
         printer.print("  Log Histogram");
         self.print_negative(printer);
+
         printer.print("  -----------------------");
         self.print_positive(printer);
     }
@@ -219,4 +223,3 @@ mod tests {
         test_pseudo_log();
     }
 }
-

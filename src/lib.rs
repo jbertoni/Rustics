@@ -352,6 +352,97 @@ mod tests {
         }
     }
 
+    // Define a testing clock that allows us to define the
+    // intervals that the clock returns.  We do this through
+    // a global variable, although creating a list might be
+    // more rust-like.
+
+    #[derive(Clone, Copy)]
+    pub struct TestTimer {
+        started: bool,
+        ticks:   i64,
+        hz:      u128,
+    }
+
+    impl TestTimer {
+        pub fn new(hz: u128) -> TestTimer {
+            let started = false;
+            let ticks   = 0;
+
+            TestTimer { started, ticks, hz }
+        }
+
+        pub fn new_box(hz: u128) -> Rc<RefCell<TestTimer>> {
+            let timer = TestTimer::new(hz);
+
+            Rc::from(RefCell::new(timer))
+        }
+
+        pub fn setup_elapsed_time(&mut self, ticks: i64) {
+            assert!(ticks >= 0);
+
+            self.started = true;
+            self.ticks   = ticks;
+        }
+    }
+
+    impl Timer for TestTimer {
+        fn start(&mut self) {
+            assert!(self.started);
+        }
+
+        fn finish(&mut self) -> u128 {
+            assert!(self.started);
+            assert!(self.ticks >= 0);
+
+            self.started = false;
+            self.ticks as u128
+        }
+
+        fn hz(&self) -> u128 {
+            self.hz
+        }
+    }
+
+    // We need dynamic conversion.
+
+    pub trait TestTimerTrait {
+        fn setup(&mut self, ticks: i64);
+    }
+
+    impl TestTimerTrait for TestTimer {
+        fn setup(&mut self, ticks: i64) {
+            self.setup_elapsed_time(ticks);
+        }
+    }
+
+    pub trait ConverterTrait : Timer + TestTimerTrait {
+        fn as_timer(it: Rc<RefCell<Self>>) -> Rc<RefCell<dyn Timer>>;
+        fn as_test_timer(it: Rc<RefCell<Self>>) -> Rc<RefCell<dyn TestTimerTrait>>;
+    }
+
+    impl ConverterTrait for TestTimer {
+        fn as_timer(it: Rc<RefCell<Self>>) -> Rc<RefCell<dyn Timer>> {
+            it
+        }
+
+        fn as_test_timer(it: Rc<RefCell<Self>>) -> Rc<RefCell<dyn TestTimerTrait>> {
+            it
+        }
+    }
+
+    fn test_test_timer() {
+        let hz    = 1_000_000_000;
+        let both  = TestTimer::new_box(hz);
+        let setup = ConverterTrait::as_test_timer(both.clone());
+        let value = ConverterTrait::as_timer(both.clone());
+
+        for i in 1..100 {
+            setup.borrow_mut().setup(i);
+            assert!(value.borrow_mut().finish() == i as u128);
+        }
+    }
+
     // Define a simple timer for testing that just counts up by 1000 ticks
     // for each event interval.  This strucet is used by other modules.
 
@@ -389,91 +480,31 @@ mod tests {
         }
     }
 
-    // Define a testing clock that allows us to define the
-    // intervals that the clock returns.  We do this through
-    // a global variable, although creating a list might be
-    // more rust-like.
+    pub fn setup_elapsed_time(timer: &mut Rc<RefCell<TestTimer>>, ticks: i64) {
+        let mut timer = timer.borrow_mut();
 
-    #[derive(Clone, Copy)]
-    pub struct TestTimer {
-        start: u128,
-        hz: u128,
-    }
-
-    impl TestTimer {
-        pub fn new(hz: u128) -> TestTimer {
-            let start = 0;
-
-            TestTimer { start, hz }
-        }
-
-        pub fn new_box(hz: u128) -> TimerBox {
-            let timer = TestTimer::new(hz);
-
-            Rc::from(RefCell::new(timer))
-        }
-    }
-
-    impl Timer for TestTimer {
-        fn start(&mut self) {
-            assert!(get_global_next() > 0);
-            self.start = get_global_next();
-        }
-
-        fn finish(&mut self) -> u128 {
-            assert!(self.start > 0);
-            assert!(get_global_next() >= self.start);
-
-            let elapsed_time = get_global_next() - self.start;
-            self.start = 0;
-            set_global_next(0);
-            elapsed_time
-        }
-
-        fn hz(&self) -> u128 {
-            self.hz
-        }
-    }
-
-    static global_next: Mutex<u128> = Mutex::new(0 as u128);
-
-    // Get the current "next" time to read.
-
-    fn get_global_next() -> u128 {
-        *(global_next.lock().unwrap())
-    }
-
-    // Set the next time to be read.
-
-    fn set_global_next(value: u128) {
-        *(global_next.lock().unwrap()) = value;
+        timer.setup_elapsed_time(ticks);
     }
 
     // Set up the next interval to be returned.
 
-    pub fn setup_elapsed_time(timer: &mut TimerBox, ticks: i64) {
-        assert!(ticks >= 0);
-        let mut timer = (**timer).borrow_mut();
-        set_global_next(1);
-        timer.start();
-        set_global_next(ticks as u128 + 1);
-    }
-
     pub fn test_running_time() {
         println!("Testing running time statistics.");
 
-        let     hz        = 1_000_000_000;
-        let mut timer     = TestTimer::new_box(hz);
-        let     printer   = Some(stdout_printer());
-        let mut time_stat = RunningTime::new("Test Running Time 1", timer.clone(), printer);
+        let     hz         = 1_000_000_000;
+        let     both       = TestTimer::new_box(hz);
+        let     test_timer = ConverterTrait::as_test_timer(both.clone());
+        let mut stat_timer = ConverterTrait::as_timer(both.clone());
+        let     printer    = Some(stdout_printer());
+        let mut time_stat  = RunningTime::new("Test Running Time 1", stat_timer.clone(), printer);
 
-        setup_elapsed_time(&mut timer, i64::MAX);
+        test_timer.borrow_mut().setup(i64::MAX);
         time_stat.record_event();
 
         assert!(time_stat.min_i64() == i64::MAX);
         assert!(time_stat.max_i64() == i64::MAX);
 
-        setup_elapsed_time(&mut timer, 0);
+        test_timer.borrow_mut().setup(0);
         time_stat.record_event();
 
         assert!(time_stat.min_i64() == 0);
@@ -495,7 +526,7 @@ mod tests {
                     -(random + 1) as i64
                 };
 
-            setup_elapsed_time(&mut timer, interval);
+            test_timer.borrow_mut().setup(interval);
             time_stat.record_event();
         }
 
@@ -506,22 +537,21 @@ mod tests {
 
         // Okay, use a more restricted range of times.
 
-        let mut timer     = TestTimer::new_box(hz);
-        let     printer   = Some(stdout_printer());
-        let mut time_stat = RunningTime::new("Test Running Time 2", timer.clone(), printer);
+        let     printer    = Some(stdout_printer());
+        let mut time_stat  = RunningTime::new("Test Running Time 2", stat_timer.clone(), printer);
 
         let limit = 99;
 
         for i in 0..limit + 1 {
             let interval = i * i * i;
-            setup_elapsed_time(&mut timer, interval);
+            test_timer.borrow_mut().setup(interval);
 
             // Test both record_event and record_interval.
 
             if i & 1 != 0 {
                 time_stat.record_event();
             } else {
-                time_stat.record_interval(&mut timer);
+                time_stat.record_interval(&mut stat_timer);
             }
         }
 
@@ -532,38 +562,62 @@ mod tests {
 
         // Get a sample with easily calculated summary statistics
 
-        let mut timer     = TestTimer::new_box(hz);
         let     printer   = Some(stdout_printer());
-        let mut time_stat = RunningTime::new("Test Time => 1..100", timer.clone(), printer);
+        let mut time_stat = RunningTime::new("Test Time => 1..100", stat_timer.clone(), printer);
 
         for i in 1..101 {
-            setup_elapsed_time(&mut timer, i);
+            test_timer.borrow_mut().setup(i);
             time_stat.record_event();
+
+            assert!(time_stat.max_i64() == i);
         }
 
         time_stat.print();
 
         // Cover all the scales.
 
-        let mut timer     = TestTimer::new_box(hz);
         let     printer   = Some(stdout_printer());
-        let mut time_stat = RunningTime::new("Time => Scale", timer.clone(), printer);
+        let mut time_stat = RunningTime::new("Time => Scale", stat_timer.clone(), printer);
 
         let mut time    = 1;
-        let     printer = &mut StdioPrinter::new(StreamKind::Stdout);
+        let mut printer = TestPrinter::new("Time Scale Test");
+
+        /* To-do:  create a printer that saves the string for examination.
+        let expected_output =
+            [
+                (  1.000, "ns"     ),
+                ( 10.000, "ns"     ),
+                (100.000, "ns"     ),
+                (  1.000, "us"     ),
+                ( 10.000, "us"     ),
+                (100.000, "us"     ),
+                (  1.000, "ms"     ),
+                ( 10.000, "ms"     ),
+                (100.000, "ms"     ),
+                (  1.000, "second" ),
+                ( 10.000, "seconds"),
+                (  1.667, "minutes"),
+                ( 16.667, "minutes"),
+                (  2.778, "hours"  ),
+                (  1.157, "days"   )
+            ];
+        */
 
         for i in 1..16 {
-            setup_elapsed_time(&mut timer, time);
+            let elapsed = i * 100;
+
+            test_timer.borrow_mut().setup(elapsed);
 
             if i & 1 != 0 {
                 time_stat.record_event();
             } else {
-                time_stat.record_interval(&mut timer);
+                time_stat.record_interval(&mut stat_timer);
             }
 
+            assert!(time_stat.max_i64() == elapsed);
 
-            let header = format!("{} => ", Printable::commas_i64(time));
-            Printable::print_time(&header, time as f64, hz as i64, printer);
+            let header = format!("{}", Printable::commas_i64(time));
+            Printable::print_time(&header, time as f64, hz as i64, &mut printer);
 
             time *= 10;
         }
@@ -575,18 +629,20 @@ mod tests {
         println!("Testing time windows.");
 
         let     hz        = 1_000_000_000;
-        let mut timer     = TestTimer::new_box(hz);
-        let mut time_stat = TimeWindow::new("Test Time Window 1", 50, timer.clone(), None);
+        let     both       = TestTimer::new_box(hz);
+        let     test_timer = ConverterTrait::as_test_timer(both.clone());
+        let     stat_timer = ConverterTrait::as_timer(both.clone());
+        let mut time_stat = TimeWindow::new("Test Time Window 1", 50, stat_timer.clone(), None);
 
         assert!(time_stat.class() == "time");
 
-        setup_elapsed_time(&mut timer, i64::MAX);
+        test_timer.borrow_mut().setup(i64::MAX);
         time_stat.record_event();
 
         assert!(time_stat.min_i64() == i64::MAX);
         assert!(time_stat.max_i64() == i64::MAX);
 
-        setup_elapsed_time(&mut timer, 0);
+        test_timer.borrow_mut().setup(0);
         time_stat.record_event();
 
         assert!(time_stat.min_i64() == 0);
@@ -606,7 +662,7 @@ mod tests {
                     -(random + 1) as i64
                 };
 
-            setup_elapsed_time(&mut timer, interval);
+            test_timer.borrow_mut().setup(interval);
             time_stat.record_event();
         }
 
@@ -614,9 +670,8 @@ mod tests {
 
         // Okay, use a more restricted range of times.
 
-        let mut timer     = TestTimer::new_box(hz);
         let     printer   = Some(stdout_printer());
-        let mut time_stat = RunningTime::new("Test Time Window 2", timer.clone(), printer);
+        let mut time_stat = RunningTime::new("Test Time Window 2", stat_timer.clone(), printer);
 
         assert!(time_stat.class() == "time");
 
@@ -624,7 +679,8 @@ mod tests {
 
         for i in 0..limit + 1 {
             let interval = i * i * i;
-            setup_elapsed_time(&mut timer, interval);
+
+            test_timer.borrow_mut().setup(interval);
             time_stat.record_event();
         }
 
@@ -635,14 +691,21 @@ mod tests {
 
         // Get a sample with easily calculated summary statistics
 
-        let mut timer     = TestTimer::new_box(hz);
         let     printer   = Some(stdout_printer());
-        let mut time_stat = RunningTime::new("Time Window => 1..100", timer.clone(), printer);
+        let mut time_stat = RunningTime::new("Time Window => 1..100", stat_timer.clone(), printer);
 
         for i in 1..101 {
-            setup_elapsed_time(&mut timer, i);
+            test_timer.borrow_mut().setup(i);
             time_stat.record_event();
+
+            assert!(time_stat.max_i64() == i);
         }
+
+        let float_count = time_stat.count() as f64;
+        let sum         = (100 * (100 + 1) / 2) as f64;
+        let mean        = sum / float_count;
+
+        assert!(time_stat.mean() == mean);
 
         time_stat.print();
 
@@ -763,9 +826,10 @@ mod tests {
     }
 
     #[test]
-    pub fn run_tests() {
+    pub fn run_tests_dyn() {
         test_time_window();
         test_running_time();
         run_all_histo_tests();
+        test_test_timer();
     }
 }

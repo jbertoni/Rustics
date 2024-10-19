@@ -4,6 +4,96 @@
 //  permitted by law.
 //
 
+///
+/// This module
+///
+/// ## Types
+///
+/// * ArcSet
+///     * ArcSet implements a set that can contain statistics objects
+///       and other ArcSet structs as subsets.
+///     * Members of an ArcSet are kept as Arc structs to allow for
+///       multithreaded usage.
+///
+/// ## Examples
+///```
+///    use std::rc::Rc;
+///    use std::cell::RefCell;
+///    use std::time::Instant;
+///    use rustics::time::Timer;
+///    use rustics::time::DurationTimer;
+///    use rustics::arc_sets::ArcSet;
+///
+///    // Create a set.  We're expecting 8 statistics objects but
+///    // no subsets, so we set those hints appropriately.  The
+//     // default print output goes to stdout, and that's fine for
+///    // an example, so just give "None" to accept the default.
+///    // See the Printer trait to implement a custom printer.
+///
+///    let mut set = ArcSet::new("Main Statistics", None, 8, 0);
+///
+///    // Add a statistic to record query latencies.  It's a time
+///    // statistics, so we need a timer.  Use an adapter for the
+///    // rust standard Duration timer.  The add_running_timer
+///    // function is a help for creating RunningTime structs.
+///
+///    let timer = DurationTimer::new_box();
+///
+///    let mut query_latency = set.add_running_time("Query Latency", timer);
+///
+///    // By way of example, we assume that the queries are single-
+///    // threaded, so we can use the "record_time" routine to
+///    // query the timer and restart it.  Multi-threaded apps will
+///    // need to use record_interval and manage the clocks themselves.
+///    // if they want to share a single RunningTime struct.
+///    //
+///    // So record one event time for the single-threaded case.
+///
+///    query_latency.lock().unwrap().record_event();
+///
+///    // For the multithreaded case, you can use DurationTimer manually.
+///
+///    let mut local_timer = DurationTimer::new();
+///
+///    // Do our query.
+///    // ...
+///
+///    query_latency.lock().unwrap().record_time(local_timer.finish() as i64);
+///
+///    // If you want to use your own timer, you'll need to implement
+///    // the Timer trait to initialize the RunningTime struct, but you
+///    //can use it directly to get data. Let's use Duration timer directly
+///    // as an example.  Make a new object for this example.
+///
+///    let timer = Rc::from(RefCell::new(DurationTimer::new()));
+///
+///    let mut query_latency = set.add_running_time("Custom Timer Query Latency", timer.clone());
+///
+///    // Start the Duration timer.
+///
+///    let start = Instant::now();
+///
+///    // Do our query.
+///
+///    // Now get the elapsed timer.  DurationTimer works in nanoseconds,
+///    // so use that interface.
+///
+///    let time_spent = start.elapsed().as_nanos();
+///
+///    query_latency.lock().unwrap().record_time(time_spent as i64);
+///
+///    // Print our statistics.  This example has only one event recorded.
+///
+///    let query_lock = query_latency.lock().unwrap();
+///
+///    query_lock.print();
+///
+///    assert!(query_lock.count() == 1);
+///    assert!(query_lock.mean() == time_spent as f64);
+///    assert!(query_lock.standard_deviation() == 0.0);
+/// 
+///```
+
 use std::sync::Mutex;
 use std::sync::Arc;
 use super::Rustics;
@@ -67,6 +157,13 @@ impl ArcSet {
             };
 
         ArcSet { name, title, id, next_id, members, subsets, printer }
+    }
+
+    pub fn new_box(name: &str, printer: PrinterOption, members_hint: usize, subsets_hint: usize)
+            -> ArcSetBox {
+        let set = ArcSet::new(name, printer, members_hint, subsets_hint);
+
+        Arc::from(Mutex::new(set))
     }
 
     // Returns the name of the set.
@@ -296,7 +393,7 @@ impl ArcSet {
 pub mod tests {
     use super::*;
     use crate::tests::TestTimer;
-    use crate::tests::setup_elapsed_time;
+    use crate::tests::ConverterTrait;
     use crate::tests::continuing_box;
     use crate::hier::Hier;
     use crate::Printer;
@@ -388,8 +485,8 @@ pub mod tests {
 
         //  Create timers for time statistics.
 
-        let window_timer:  TimerBox = continuing_box();
-        let running_timer: TimerBox = continuing_box();
+        let window_timer  = continuing_box();
+        let running_timer = continuing_box();
 
         //  Now create the statistics in our set.
 
@@ -407,24 +504,43 @@ pub mod tests {
 
         //  Create some simple timers to be started manually.
 
-        let mut running_interval = TestTimer::new_box(test_hz);
-        let mut window_interval  = TestTimer::new_box(test_hz);
+        let     running_both  = TestTimer::new_box(test_hz);
+        let     running_test  = ConverterTrait::as_test_timer(running_both.clone());
+        let mut running_stat  = ConverterTrait::as_timer(running_both.clone());
+
+        let     window_both   = TestTimer::new_box(test_hz);
+        let     window_test   = ConverterTrait::as_test_timer(window_both.clone());
+        let mut window_stat   = ConverterTrait::as_timer(window_both.clone());
 
         //  Now record some data in all the statistics.
 
         for i in lower..upper {
-            println!("first loop i {} ({}, {})", i, lower, upper);
             window.record_i64(i);
             running.record_i64(i);
 
-            running_time.record_event();
-            time_window.record_event();
+            assert!(window.max_i64()  == i);
+            assert!(running.max_i64() == i);
 
-            setup_elapsed_time(&mut running_interval, 10 + i.abs() * 10);
-            running_time.record_interval(&mut running_interval);
+            // Get a test value to use.  It must be positive.
 
-            setup_elapsed_time(&mut window_interval, 1000 + i.abs() * 10000);
-            time_window.record_interval(&mut window_interval);
+            let expected = 10 + (i + -lower) * 10;
+
+            running_test.borrow_mut().setup(expected);
+            running_time.record_interval(&mut running_stat);
+
+            // Now this value should set the max.  See what happened.
+
+            let elapsed = running_time.max_i64();
+
+            assert!(running_time.max_i64() == elapsed);
+
+            // Try this with the window.
+
+            let expected = 100 + (i + -lower) * 100;
+            window_test.borrow_mut().setup(expected);
+            time_window.record_interval(&mut window_stat);
+
+            assert!(time_window.max_i64() == expected);
         }
 
         //  Make sure the titles are being created properly.
@@ -608,9 +724,85 @@ pub mod tests {
         set.print();
     }
 
+    use crate::time::Timer;
+    use crate::time::DurationTimer;
+    use std::time::Instant;
+
+    fn documentation() {
+       // Create a set.  We're expecting 8 statistics objects but
+       // no subsets, so we set those hints appropriately.  The
+//     // default print output goes to stdout, and that's fine for
+       // an example, so just give "None" to accept the default.
+       // See the Printer trait to implement a custom printer.
+   
+       let mut set = ArcSet::new("Main Statistics", None, 8, 0);
+   
+       // Add a statistic to record query latencies.  It's a time
+       // statistics, so we need a timer.  Use an adapter for the
+       // rust standard Duration timer.  The add_running_timer
+       // function is a help for creating RunningTime structs.
+   
+       let timer = DurationTimer::new_box();
+   
+       let query_latency = set.add_running_time("Query Latency", timer);
+   
+       // By way of example, we assume that the queries are single-
+       // threaded, so we can use the "record_time" routine to
+       // query the timer and restart it.  Multi-threaded apps will
+       // need to use record_interval and manage the clocks themselves.
+       // if they want to share a single RunningTime struct.
+       //
+       // So record one event time for the single-threaded case.
+   
+       query_latency.lock().unwrap().record_event();
+   
+       // For the multithreaded case, you can use DurationTimer manually.
+   
+       let mut local_timer = DurationTimer::new();
+   
+       // Do our query.
+       // ...
+   
+       query_latency.lock().unwrap().record_time(local_timer.finish() as i64);
+   
+       // If you want to use your own timer, you'll need to implement
+       // the Timer trait to initialize the RunningTime struct, but you
+       //can use it directly to get data. Let's use Duration timer directly
+       // as an example.  Make a new object for this example.
+   
+       let timer = DurationTimer::new_box();
+   
+       let query_latency = set.add_running_time("Custom Timer Query Latency", timer);
+   
+       // Start the Duration timer.
+   
+       let start = Instant::now();
+   
+       // Do our query.
+   
+       // Now get the elapsed timer.  DurationTimer works in nanoseconds,
+       // so use that interface.
+   
+       let time_spent = start.elapsed().as_nanos();
+   
+       query_latency.lock().unwrap().record_time(time_spent as i64);
+   
+       // Print our statistics.  This example has only one event recorded.
+   
+       let query_lock = query_latency.lock().unwrap();
+   
+       query_lock.print();
+   
+       assert!(query_lock.count() == 1);
+       assert!(query_lock.mean() == time_spent as f64);
+       assert!(query_lock.standard_deviation() == 0.0);
+
+    }
+
     #[test]
     pub fn run_tests() {
         simple_test();
         sample_usage();
+        documentation();
     }
 }

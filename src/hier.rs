@@ -276,7 +276,7 @@ pub trait HierGenerator {
     fn make_member       (&self, name: &str, printer: PrinterBox)  -> MemberRc;
     fn make_exporter     (&self)                                   -> ExporterRc;
 
-    fn push              (&self, exports: ExporterRc, member: MemberRc);
+    fn push              (&self, exports: &mut dyn HierExporter, member: MemberRc);
 }
 
 //
@@ -340,10 +340,10 @@ pub struct HierConfig {
 }
 
 impl Hier {
-    // This function generally should be called from the constructor
-    // for the specific type in the hierarchy.  For example, the
-    // IntegerHier impl provides constructors that will invoke this
-    // function.
+    /// This function create a new hier struct. It generally should
+    /// be called from the constructor for the specific type in the
+    /// hierarchy.  For example, the IntegerHier impl provides
+    /// constructors that will invoke this function.
 
     pub fn new(configuration: HierConfig) -> Hier {
         let     descriptor    = configuration.descriptor;
@@ -385,9 +385,9 @@ impl Hier {
         }
     }
 
-    // Returns the newest statistic at the lowest level, which
-    // is the only statistic that records data.  The other
-    // members are all read-only.
+    /// This function returns the newest statistic at the lowest level,
+    /// which is the only statistic that records data.  The other
+    /// members are all read-only.
 
     pub fn current(&self) -> MemberRc {
         let member = self.stats[0].newest().unwrap();
@@ -395,13 +395,13 @@ impl Hier {
         member.clone()
     }
 
-    // Print the given element in the statistics matrix.
+    /// print_index_optinos prints the given element in the statistics matrix.
 
     pub fn print_index_opts(&self, index: HierIndex, printer: PrinterOption, title: Option<&str>) {
         self.local_print(index, printer, title);
     }
 
-    // Print all members in this object.
+    /// print_all prints every member of the Hier struct.
 
     pub fn print_all(&self, printer: PrinterOption, title: Option<&str>) {
         for i in 0..self.stats.len() {
@@ -415,11 +415,11 @@ impl Hier {
         }
     }
 
-    // Clear all the statistics from the windows.  Reset the
-    // event and advance counters. Finally, push a new level 0
-    // statistic to receive data.
-    //
-    // This operation sets the struct back to its initial state.
+    /// This function clears all the statistics from the windows,
+    /// resets the event and advance counters. Finally, it pushes
+    /// a new level 0 statistic struct to receive data.
+    ///
+    /// This operation sets the struct back to its initial state.
 
     pub fn clear_all(&mut self) {
         self.advance_count = 0;
@@ -437,7 +437,8 @@ impl Hier {
         }
     }
 
-    // Provide a traverser for users to look at the that are live.
+    /// This function implements a traverser for users to look at
+    /// the members that are live.
 
     pub fn traverse_live(&mut self, traverser: &mut dyn HierTraverser) {
         for level in &mut self.stats {
@@ -450,9 +451,68 @@ impl Hier {
         }
     }
 
-    // Push a new level 0 statistics into the level 0 window.
-    // Update the upper levels as needed.  The user can
-    // call this directly, use auto_advance, or do both.
+    /// The index method returns the member at the given index, if
+    /// such exists.
+
+    pub fn index(&self, index: HierIndex) -> Option<MemberRc> {
+        let level = index.level;
+        let which = index.which;
+
+        let target =
+            match index.set {
+                HierSet::Live => { self.stats[level].index_live(which) }
+                HierSet::All  => { self.stats[level].index_all (which) }
+            }?;
+
+        Some(target.clone())
+    }
+
+    /// The sum function allows the user to sum an arbitrary list of
+    /// members of the hierarchy into a new statistic. The result is
+    /// not maintained in the hierarchy.
+
+    pub fn sum(&self, addends: Vec<HierIndex>, name: &str, printer: PrinterOption)
+            -> (Option<MemberRc>, usize) {
+        let     generator    = self.generator.borrow();
+        let     exporter_rc  = generator.make_exporter();
+        let     mut exporter = exporter_rc.borrow_mut();
+        let mut misses       = 0;
+
+        let printer =
+            if let Some(printer) = printer {
+                printer
+            } else {
+                self.printer.clone()
+            };
+
+        // Gather a list of the members to sum.
+
+        for index in &addends {
+            match self.index(*index) {
+                Some(member) => { generator.push(&mut *exporter, member); }
+                None         => { misses += 1; }
+            }
+        }
+
+        let valid = addends.len() - misses;
+
+        if valid == 0 {
+            return (None, 0)
+        }
+
+        drop(exporter);
+        
+        // Now make the sum statistics struct.
+
+        let sum = generator.make_from_exporter(name, printer, exporter_rc);
+
+        (Some(sum), valid)
+    }
+
+    /// This routine pushes a new level 0 statistics struct into
+    /// the level 0 window.  It also updates the upper levels as
+    /// needed.  The user can call this directly, use auto_advance,
+    /// or do both.
 
     pub fn advance(&mut self) {
         // Increment the advance op count.  This counts the
@@ -492,18 +552,23 @@ impl Hier {
         self.stats[0].push(member);
     }
 
+    /// This function returns the number of live members at the given level.
+
     pub fn live_len(&self, level: usize) -> usize {
         self.stats[level].live_len()
     }
+
+    /// This function returns the count of all the members at the given
+    /// level.
 
     pub fn all_len(&self, level: usize) -> usize {
         self.stats[level].all_len()
     }
 
-    // Return the total number of statistics events seen by
-    // all the statistics seen by this window since its
-    // create or the last clear_all invocation, whichever
-    // is later.
+    /// This function returns the total number of statistics events
+    /// seen by all the statistics recorded by this Hier struct since
+    /// its creation or since the the last clear_all invocation, whichever
+    /// is later.
 
     pub fn event_count(&self) -> i64 {
         self.event_count
@@ -546,11 +611,12 @@ impl Hier {
             return;
         }
 
-        let target =
-            match index.set {
-                HierSet::Live => { self.stats[level].index_live(which) }
-                HierSet::All  => { self.stats[level].index_all (which) }
-            };
+        let target = self.index(index);
+
+        //    match index.set {
+        //        HierSet::Live => { self.stats[level].index_live(which) }
+        //        HierSet::All  => { self.stats[level].index_all (which) }
+        //    };
 
         let target =
             if let Some(target) = target {
@@ -573,17 +639,19 @@ impl Hier {
     // the data necessary for the actual Rustics implementation.
 
     fn make_exporter(&self, level: usize) -> ExporterRc {
-        let generator    = self.generator.borrow();
-        let exporter_rc  = generator.make_exporter();
+        let     generator    = self.generator.borrow();
+        let     exporter_rc  = generator.make_exporter();
+        let mut exporter     = exporter_rc.borrow_mut();
 
         let level = &self.stats[level];
 
-        // Gather the statistics to sum.
+        // Gather the statistics to sum into a new member.
 
         for stat in level.iter_live() {
-            generator.push(exporter_rc.clone(), stat.clone());
+            generator.push(&mut *exporter, stat.clone());
         }
 
+        drop(exporter);
         exporter_rc
     }
 

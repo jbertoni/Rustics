@@ -147,6 +147,7 @@ use hier::HierDescriptor;
 use hier::HierConfig;
 use hier::HierGenerator;
 use hier::HierMember;
+use hier::HierExporter;
 use hier::ExporterRc;
 use hier::MemberRc;
 use log_histogram::LogHistogram;

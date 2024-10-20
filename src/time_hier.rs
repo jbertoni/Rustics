@@ -42,6 +42,7 @@ use crate::HierDescriptor;
 use crate::HierConfig;
 use crate::HierGenerator;
 use crate::HierMember;
+use crate::HierExporter;
 use crate::ExporterRc;
 use crate::MemberRc;
 
@@ -155,10 +156,9 @@ impl HierGenerator for TimeHier {
     // Push another statistic onto the export list.  We will sum all of
     // them at some point.
 
-    fn push(&self, exporter: ExporterRc, member_rc: MemberRc) {
-        let mut exporter_borrow = exporter.borrow_mut();
-        let     exporter_any    = exporter_borrow.as_any_mut();
-        let     exporter_impl   = exporter_any.downcast_mut::<RunningExporter>().unwrap();
+    fn push(&self, exporter: &mut dyn HierExporter, member_rc: MemberRc) {
+        let     exporter_any  = exporter.as_any_mut();
+        let     exporter_impl = exporter_any.downcast_mut::<RunningExporter>().unwrap();
 
         let     member_borrow = member_rc.borrow();
         let     member_impl   = member_borrow.as_any().downcast_ref::<RunningTime>().unwrap();
@@ -264,11 +264,10 @@ mod tests {
         // Now try try making an exporter and check basic sanity of as_any_mut.
 
         let exporter_rc     = generator.make_exporter();
-        let exporter_clone  = exporter_rc.clone();
 
         // Push the member's numbers onto the exporter.
 
-        generator.push(exporter_clone, member_rc);
+        generator.push(&mut *exporter_rc.borrow_mut(), member_rc);
 
         let new_member_rc = generator.make_from_exporter("member export", stdout_printer(), exporter_rc);
 

@@ -40,8 +40,8 @@
 ///        TimeWindow::new("Packet Latency", window_size, timer.clone(), None);
 ///
 ///    // Record some hypothetical packet latencies.  The clock started
-///    // running when we created the timer, but restart it here as in
-///    // a real program, you'll need to do that..
+///    // running when we created the timer.  Use the start() method
+///    // to set a new start time.
 ///
 ///    timer.borrow_mut().start();
 ///

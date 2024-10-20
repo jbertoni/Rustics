@@ -157,14 +157,14 @@ pub type PrinterBox    = Arc<Mutex<dyn Printer>>;
 pub type PrinterOption = Option<Arc<Mutex<dyn Printer>>>;
 pub type TimerBox      = Rc<RefCell<dyn Timer>>;
 
-/// This helper function just returns the herz rating
+/// timer_box_hz() is a helper function just returns the herz
 /// of a timer in a box.  It just saves a bit of typing.
 
 pub fn timer_box_hz(timer:  &TimerBox) -> u128 {
     (**timer).borrow().hz()
 }
 
-/// This function creates a Printer object that sends output
+/// stdout_printer() creates a Printer object that sends output
 /// to stdout.  This is the default type for all statistics
 /// types.
 
@@ -225,11 +225,10 @@ pub fn compute_kurtosis(count: u64, moment_2: f64, moment_4: f64) -> f64 {
     correction * kurtosis_factor
 }
 
-/// This function concatenates two strings, insering the
-/// "=>" marker for set hierarchy specification.  It is
-/// probably of interest only to implementors of new statistics
-/// types.  It does omit the "=?" if the title prefix is
-/// empty.
+/// The make_title() function concatenates two strings, insering the
+/// "=>" marker for set hierarchy specification.  It is probably of
+/// interest only to implementors of new statistics types.  It does
+/// omit the "=?" if the title prefix is empty.
 
 pub fn make_title(title_prefix: &str, title: &str) -> String {
     if title_prefix.is_empty() {
@@ -242,11 +241,11 @@ pub fn make_title(title_prefix: &str, title: &str) -> String {
     }
 }
 
-/// The Printer trait allows users to create custom output
-/// structs to match their I/O needs.
+/// The Printer trait allows users to create custom output structs to
+/// match their I/O needs.
 ///
-/// This routine is invoked for each line to be printed.  The print()
-/// member is responsible for adding the newline.
+/// An instance of this type is invoked for each line to be printed.
+/// The print() member is responsible for adding the newline.
 
 pub trait Printer {
     fn print(&self, output: &str);
@@ -255,8 +254,8 @@ pub trait Printer {
 // Define a printer that will send output to Stdout or Stderr, as
 // configured.
 
-/// This struct is used as the default printer by Rustics.  It
-/// serves as an example of a very simple Printer implementation.
+/// The StdioPrinter struct is used as the default printer by Rustics.
+/// It serves as an example of a very simple Printer implementation.
 
 #[derive(Clone)]
 pub struct StdioPrinter {
@@ -332,7 +331,7 @@ pub trait Rustics {
     fn histogram(&self                     ) -> LogHistogram;
 }
 
-/// Define the trait for using a LogHistogram struct.
+/// Histogram defines the trait for using a LogHistogram struct.
 
 pub trait Histogram {
     fn log_histogram(&self) -> LogHistogram;

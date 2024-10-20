@@ -8,10 +8,12 @@
 ///
 /// * LogHistogram
 ///     * LogHistogram implements a histogram based on a pseudo-log
-///       function.  For positive numbers, the pseudo-log is define
-///       as the base 2 log of the value, rounded up to an integer.
-///       For a negative number n, the pseudo-log is defined as 
-///       pseudo-log(-n).
+///       function.
+///     * For positive numbers, the pseudo-log is define as the base 2
+///       log of the value, rounded up to an integer.
+///     * For a negative number n, the pseudo-log is defined as 
+///       -pseudo-log(-n)
+///     * The pseudo-log of zero is defined as zero.
 ///
 /// ## Example
 ///```
@@ -21,12 +23,13 @@
 ///     use rustics::stdout_printer;
 ///
 ///     // This is a simple sanity test of the LogHistogram code.  It
-///     // hopefull will help you understand the data it produces.
+///     // provides an example of what you should expect from its data.
 ///
 ///     let mut histogram = LogHistogram::new();
 ///     let     printer   = &mut stdout_printer();
 ///
-///     let     test      = [ 1, -1, 4, 25, 4109, -4108, -8, -9, -16, -17, 3, 8, 16 ];
+///     let test =
+///        [ 1, -1, 4, 25, 4109, -4108, -8, -9, -16, -17, 3, 8, 16 ];
 ///
 ///     for i in test.iter() {
 ///         let pseudo_log_index = pseudo_log_index(*i) as usize;
@@ -79,9 +82,9 @@ use super::printable::Printable;
 // In addition to the above notes, pseudo-log(0) is defined as 0.
 //
 
-/// This function returns integer indexs for histograms.  The caller
-/// handles the sign.  This routine works on the absolute value of
-/// its input.
+/// pseudo_log_index returns integer indexs for histograms.  The
+/// caller handles the sign.  This routine works on the absolute value
+/// of its input.
 
 pub fn pseudo_log_index(value: i64) -> usize {
     let mut place = 1;

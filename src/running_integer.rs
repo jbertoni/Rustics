@@ -32,7 +32,7 @@
 ///       assert!(packet_sizes.count() == i as u64);
 ///    }
 ///
-///    // Print our statistics.  This example has only one event recorded.
+///    // Print our statistics.
 ///
 ///    packet_sizes.print();
 ///
@@ -51,7 +51,8 @@
 ///
 ///    assert!(packet_sizes.mean() == mean);
 ///
-///    // Let's record more samples.
+///    // Let's record more samples, and verify the sample count
+///    // as we go.
 ///
 ///    let next_sample_count = 100;
 ///
@@ -120,7 +121,7 @@ pub struct RunningExporter {
     addends: Vec<RunningExport>,
 }
 
-/// This type is intend mostly for internal use by Hier structs.
+/// RunningExporter is intend mostly for internal use by Hier structs.
 /// It is used to sum a list of RunningInteger statistics structs.
 
 impl RunningExporter {
@@ -160,8 +161,8 @@ impl HierExporter for RunningExporter {
     }
 }
 
-/// This structure is used by various modules to create
-/// sums of statistics objects of type RunningInteger.
+/// RunningExport is used by various modules to create sums of
+/// statistics objects of type RunningInteger.
 
 #[derive(Clone)]
 pub struct RunningExport {
@@ -177,8 +178,8 @@ pub struct RunningExport {
     pub log_histogram:    LogHistogram,
 }
 
-/// This function is used interally to create sums of RunningIntefer
-/// for Hier structs.
+/// sum_log_histogram() is used internally to create sums of
+///  RunningInteger instances.
 
 pub fn sum_log_histogram(sum:  &mut LogHistogram, addend: &LogHistogram) {
     for i in 0..sum.negative.len() {
@@ -190,8 +191,7 @@ pub fn sum_log_histogram(sum:  &mut LogHistogram, addend: &LogHistogram) {
     }
 }
 
-/// This function merges a vector of exported statistics.  Many
-/// fields are just sums of the parts.
+/// The sum_running() function merges a vector of exported statistics.
 
 pub fn sum_running(exports: &Vec::<RunningExport>) -> RunningExport {
     let mut count          = 0;

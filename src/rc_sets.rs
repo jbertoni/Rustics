@@ -9,7 +9,7 @@
 ///
 /// * RcSet
 ///     * RcSet implements a set that can contain statistics objects
-///       and other RcSet structs as subsets.
+///       and other RcSet structs.
 ///     * Members of an RcSet are kept as Rc structs to allow for
 ///       single-threaded sharing.
 ///
@@ -116,17 +116,15 @@ use super::time_window::TimeWindow;
 pub type RusticsRc = Rc<RefCell<dyn Rustics>>;
 pub type RcSetBox  = Rc<RefCell<RcSet>>;
 
-/// This trait defines the interface the user must
-/// implement to traverse the elements in an Rc
-/// set hierarchy.
+/// The RcTraverser trait defines an interface the user can implement
+/// to traverse the elements in an Rc set hierarchy.
 
 pub trait RcTraverser {
     fn visit_set(&mut self, set: &mut RcSet);
     fn visit_member(&mut self, member: &mut dyn Rustics);
 }
 
-/// Define the actual set type.  A set can contain Rustics
-/// members and subsets of type RcSet.
+/// RcSet is the base implementation type of the set.
 
 #[derive(Clone)]
 pub struct RcSet {

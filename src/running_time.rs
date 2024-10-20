@@ -46,7 +46,7 @@
 ///    // Do our query.
 ///    // ...
 ///
-///    // You can use the finish function if this RuningTime struct
+///    // You can use the finish() function if this RunningTime struct
 ///    // is shared.
 ///
 ///    query_latency.record_time(local_timer.finish() as i64);
@@ -70,8 +70,8 @@
 ///    // Now get the elapsed timer.  DurationTimer works in nanoseconds,
 ///    // so use that interface.
 ///
-///    assert!(timer.borrow().hz() == 1_000_000_000);
 ///    let time_spent = start.elapsed().as_nanos();
+///    assert!(timer.borrow().hz() == 1_000_000_000);
 ///
 ///    query_latency.record_time(time_spent as i64);
 ///

@@ -8,8 +8,8 @@
 /// ## Type
 ///
 /// * ArcSet
-///     * ArcSet implements a set that can contain statistics objects
-///       and other ArcSet structs as subsets.
+///     * ArcSet implements a collection that can contain statistics objects
+///       and other ArcSet structs.
 ///     * Members of an ArcSet are kept as Arc structs to allow for
 ///       multithreaded usage.
 ///
@@ -22,20 +22,22 @@
 ///    use rustics::time::DurationTimer;
 ///    use rustics::arc_sets::ArcSet;
 ///
-///    // Create a set.  We're expecting 8 statistics objects but
-///    // no subsets, so we set those hints appropriately.  The
-//     // default print output goes to stdout, and that's fine for
-///    // an example, so just give "None" to accept the default.
+///    // Create a set.  By way of example, assume that we're expecting
+///    // 8 statistics objects but no subsets, and set those hints
+///    // appropriately.  The default print output goes to stdout, and
+///    // that's fine for an example, so just give "None" to accept the
+///    // default.
 ///
 ///    let mut set = ArcSet::new("Main Statistics", 8, 0, None);
 ///
 ///    // Add a statistic to record query latencies.  It's a time
-///    // statistic, so we need a timer.  Here we use an adapter
-///    // for the rust standard Duration timer.  The add_running_timer
-///    // function is a helper routine for creating RunningTime
-///    // structs.
+///    // statistic, so we need a timer.  Here we use an adapter for the
+///    // rust standard Duration timer.
 ///
 ///    let timer = DurationTimer::new_box();
+///
+///    // The add_running_timer() function is a helper routine for
+///    // creating RunningTime structs.
 ///
 ///    let mut query_latency = set.add_running_time("Query Latency", timer);
 ///
@@ -43,14 +45,13 @@
 ///    // threaded, so we can use the "record_time" routine to query
 ///    // the timer and restart it.
 ///    //
-///    // Record one time sample for the single-threaded case.  The
-///    // clock started running when we created the DurationTimer.
-///    // You can reset it with the start() function.
+///    // The clock started running when we created the DurationTimer.
+///    // You can reset it with the start() function as needed.
 ///
 ///    query_latency.lock().unwrap().record_event();
 ///
 ///    // Do more work, then record another time sample.
-
+///
 ///    // do_work();
 ///
 ///    query_latency.lock().unwrap().record_event();
@@ -60,7 +61,8 @@
 ///    let mut local_timer = DurationTimer::new();
 ///
 ///    // Do our query.
-///    // ...
+///
+///    // do_work();
 ///
 ///    query_latency.lock().unwrap().record_time(local_timer.finish() as i64);
 ///
@@ -73,7 +75,8 @@
 ///
 ///    let timer = DurationTimer::new_box();
 ///
-///    let mut query_latency = set.add_running_time("Custom Timer Query Latency", timer.clone());
+///    let mut query_latency =
+///        set.add_running_time("Custom Timer Query Latency", timer.clone());
 ///
 ///    // Start the Duration timer.
 ///
@@ -83,15 +86,16 @@
 ///
 ///    // do_query();
 ///
-///    // Now get the elapsed timer.  DurationTimer works in nanoseconds,
-///    // so use that interface.
+///    // Now get the elapsed timer.  DurationTimer can works in
+///    // nanoseconds, so use that method.
 ///
 ///    assert!(timer.borrow().hz() == 1_000_000_000);
 ///    let time_spent = start.elapsed().as_nanos();
 ///
 ///    query_latency.lock().unwrap().record_time(time_spent as i64);
 ///
-///    // Print our statistics.  This example has only one event recorded.
+///    // Print our statistics.  This example has only one event
+///    // recorded.
 ///
 ///    let query_lock = query_latency.lock().unwrap();
 ///
@@ -122,16 +126,16 @@ use super::make_title;
 pub type RusticsArc = Arc<Mutex<dyn Rustics>>;
 pub type ArcSetBox  = Arc<Mutex<ArcSet>>;
 
-/// This trait is used to traverse all the elements in a
-/// set.
+/// The ArcTraverser trait is used to traverse all the elements in a
+/// set and its subsets.
 
 pub trait ArcTraverser {
     fn visit_set(&mut self, set: &mut ArcSet);
     fn visit_member(&mut self, member: &mut dyn Rustics);
 }
 
-/// This struct is the implementation type for an ArcSet.
-/// A set can contain statistics and subsets of type ArcSet.
+/// ArcSet is the implementation type for a set of Rustics structs
+/// wrapped as Arc<Mutex<dyn Rustics>>.
 
 #[derive(Clone)]
 pub struct ArcSet {

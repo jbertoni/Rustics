@@ -13,9 +13,13 @@
 ///     how to used that type.
 ///   * See the Hier documentation on how to use hierarchical
 ///     statistics.
-///   * The routines TimerHier::new_hier are wrappers for the
-///     Hier constructor and do the initialization specific to
-///     the TimeHier type.
+///   * The routines TimerHier::new_hier and new_hier_box are
+///     wrappers for the Hier constructor and do the initialization
+///     specific to the TimeHier type.  They are the preferred
+///     interface for creating a Hier struct that use RunningTime
+///     instances.
+///   * This struct is very similar to IntegerHier, so please refer
+///     to that module for examples.
 ///
 
 //
@@ -34,6 +38,7 @@ use super::Histogram;
 use super::HierBox;
 use super::TimerBox;
 use super::PrinterBox;
+use super::PrinterOption;
 use super::running_time::RunningTime;
 use crate::running_integer::RunningExporter;
 
@@ -79,26 +84,29 @@ pub struct TimeHier {
     timer:  TimerBox,
 }
 
-/// Define the configuration parameters for a TimerHier
-/// object.
+/// TimeHierConfig is used to pass the configuration parameters
+/// for a TimerHier object.
 
 #[derive(Clone)]
 pub struct TimeHierConfig {
     pub descriptor:  HierDescriptor,
     pub timer:       TimerBox,
     pub name:        String,
-    pub title:       String,
-    pub printer:     PrinterBox,
+    pub title:       Option<String>,
+    pub printer:     PrinterOption,
 }
 
 impl TimeHier {
+    /// The new_raw() function constructs a TimeHier struct, which is an
+    /// implementation of HierGenerator for the RunningTime type.
+
     pub fn new_raw(timer: TimerBox) -> TimeHier  {
         TimeHier { timer }
     }
 
-    // Create a new Hier object from the given configuration.
-    // This routine does the grunt work specific to the
-    // RunningTime type.
+    /// new_hier() constructs a new Hier object from the given
+    /// configuration.  It does the grunt work specific to the
+    /// RunningTime type.
 
     pub fn new_hier(configuration: TimeHierConfig) -> Hier {
         let generator  = TimeHier::new_raw(configuration.timer);
@@ -110,10 +118,14 @@ impl TimeHier {
         let title      = configuration.title;
         let printer    = configuration.printer;
 
-        let config = HierConfig { descriptor, generator, name, title, class, printer };
+        let config =
+            HierConfig { descriptor, generator, name, title, class, printer };
 
         Hier::new(config)
     }
+
+    /// new_hier_box() returns a Hier struct as an Arc<Mutex<Hier>>
+    /// for multithreaded access.
 
     pub fn new_hier_box(configuration: TimeHierConfig) -> HierBox {
         let hier = TimeHier::new_hier(configuration);
@@ -206,8 +218,8 @@ mod tests {
         let descriptor    = make_descriptor();
         let class         = "integer".to_string();
         let name          = "test hier".to_string();
-        let title         = "test hier".to_string();
-        let printer       = stdout_printer();
+        let title         = None;
+        let printer       = None;
 
         let configuration = HierConfig { descriptor, generator, class, name, title, printer };
 
@@ -217,8 +229,8 @@ mod tests {
     fn test_new_hier_box() {
         let     descriptor    = make_descriptor();
         let     name          = "test hier".to_string();
-        let     title         = "test hier".to_string();
-        let     printer       = stdout_printer();
+        let     title         = None;
+        let     printer       = Some(stdout_printer());
         let     timer         = continuing_box();
         let     configuration = TimeHierConfig { descriptor, name, timer, title, printer };
 

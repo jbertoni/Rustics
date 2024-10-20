@@ -20,11 +20,12 @@
 ///     * When k level 0 objects have been collected into the window,
 ///       they are summed into one level 1 RunningInteger struct.
 ///       The value k is a configuration parameter.
-///     * An upper level j is a sum of of i structs from level j - 1
+///     * An upper level j is a sum of of i structs from level j - 1,
 ///       where i is configured per level.
-///     * Each window can retain RunningInteger structs that have
+///     * Each window retains RunningInteger structs that have
 ///       already been summed, in case they are wanted for queries.
-///       The total window size is configured per level.
+///       The total window size is configured per level, and limits
+///       the number of retained members.
 ///
 /// ## Example
 ///```
@@ -49,25 +50,23 @@
 ///
 ///     let dimension_0 = HierDimension::new(1000, 1000);
 ///
-///     // At level 1, we want to sum 100 level 1 statistics into one level 2
-///     // statistics.  This level is smaller, so let's retain 200
+///     // At level 1, we want to sum 100 level 1 statistics into one level
+///     // 2 statistics struct.  This level is smaller, so let's retain 200
 ///     // RunningInteger structs here.
 ///
 ///     let dimension_1 = HierDimension::new(100, 200);
 ///
-///     // Level two isn't summed, so the period isn't used.  Tell it to
-///     // sum one event to keep the contructor happy.  Let's pretend this
-///     // level isn't used much, so retain only 100 structs in it.
+///     // Level two isn't summed, so the period isn't used.  Set the
+///     // value to one one event to keep the contructor happy.  Let's
+///     // pretend this level isn't used much, so retain only 100 structs
+///     // in it.
 ///
 ///     let dimension_2 = HierDimension::new(1, 100);
 ///
-///     //  Now create the Vec of the dimensions.  Save the dimension
-///     //  structs for future use.
+///     //  Now create the Vec of the dimensions.
 ///
 ///     let dimensions =
-///         vec![
-///             dimension_0.clone(), dimension_1.clone(), dimension_2.clone()
-///         ];
+///         vec![ dimension_0, dimension_1, dimension_2 ];
 ///
 ///     // Now create the entire descriptor for the hier struct.  Let's
 ///     // record 2000 events into each level 0 RunningInteger instance.
@@ -75,11 +74,13 @@
 ///     let auto_advance = Some(2000);
 ///     let descriptor   = HierDescriptor::new(dimensions, auto_advance);
 ///
-///     // Now create some items used by Hier to do printing.
+///     // Now specify some parameters used by Hier to do printing.  The
+///     // defaults for the title and printer are fine, so just pass None.
+///     // The title defaults to the name and output will go to stdout.
 ///
 ///     let name    = "test hierarchical integer".to_string();
-///     let title   = "test hierarchical integer".to_string();
-///     let printer = stdout_printer();
+///     let title   = None;
+///     let printer = None;
 ///
 ///     // Finally, create the configuration description for the
 ///     // constructor.
@@ -87,10 +88,9 @@
 ///     let configuration =
 ///         IntegerHierConfig { descriptor, name, title, printer };
 ///
-///     // Now make the Hier instance.
+///     // Now make the Hier instance and lock it.
 ///
 ///     let     integer_hier = IntegerHier::new_hier_box(configuration);
-///
 ///     let mut integer_hier = integer_hier.lock().unwrap();
 ///
 ///     // Now record some events with boring data.
@@ -114,8 +114,8 @@
 ///     assert!(integer_hier.live_len(1)   == 0     );
 ///     assert!(integer_hier.live_len(2)   == 0     );
 ///
-///     // Now record some data to force the creation of
-///     // the second level 1 struct.
+///     // Now record some data to force the creation of the second
+///     // level 1 struct.
 ///
 ///     events += 1;
 ///     integer_hier.record_i64(10);
@@ -158,7 +158,7 @@
 ///     assert!(integer_hier.event_count() == events);
 ///
 ///     // Now print an element from the hierarchy.  In this
-///     // case, we will index into level 2, and printer the
+///     // case, we will index into level 2, and print the
 ///     // third element of the vector (index 2).  We use the
 ///     // set All to look at all the elements in the window,
 ///     // not just the live elements.
@@ -185,6 +185,7 @@ use std::sync::Mutex;
 use super::Rustics;
 use super::Histogram;
 use super::PrinterBox;
+use super::PrinterOption;
 use super::running_integer::RunningInteger;
 use crate::running_integer::RunningExporter;
 
@@ -225,21 +226,22 @@ impl HierMember for RunningInteger {
 
 /// IntegerHier provides an interface from the Hier code to
 /// the RunningInteger impl code that is not in methods.
+/// Most users will construct a Hier instance via functions
+/// that handle this type for them.
 
 #[derive(Default)]
 pub struct IntegerHier {
 }
 
-/// This struct is used to pass the constructor
-/// parameters for a Hier object that uses RunningInteger
-/// statistics.
+/// IntegerHierConfig is used to pass the constructor parameters
+/// for a Hier object that uses RunningInteger statistics.
 
 #[derive(Clone)]
 pub struct IntegerHierConfig {
     pub descriptor:  HierDescriptor,
     pub name:        String,
-    pub title:       String,
-    pub printer:     PrinterBox,
+    pub title:       Option<String>,
+    pub printer:     PrinterOption,
 }
 
 impl IntegerHier {
@@ -247,9 +249,9 @@ impl IntegerHier {
         IntegerHier { }
     }
 
-    // Create a new Hier object from the given configuration.
-    // This routine does the grunt work specific to the
-    // RunningInteger type.
+    /// new_hier() creates a new Hier object from the given
+    /// configuration.  This routine does the grunt work specific
+    /// to the RunningInteger type.
 
     pub fn new_hier(configuration: IntegerHierConfig) -> Hier {
         let generator  = IntegerHier::new_raw();
@@ -265,6 +267,10 @@ impl IntegerHier {
 
         Hier::new(config)
     }
+
+    /// new_hier_box() uses new_hier() to create a Hier struct and
+    /// returns it as an Arc<Mutex<Hier>> for multi-threaded
+    /// use.
 
     pub fn new_hier_box(configuration: IntegerHierConfig) -> HierBox {
         let hier = IntegerHier::new_hier(configuration);
@@ -351,8 +357,8 @@ mod tests {
         let generator     = Rc::from(RefCell::new(generator));
         let class         = "integer".to_string();
         let name          = "test hier".to_string();
-        let title         = "test hier".to_string();
-        let printer       = stdout_printer();
+        let title         = None;
+        let printer       = Some(stdout_printer());
 
         let configuration = HierConfig { descriptor, generator, class, name, title, printer };
 

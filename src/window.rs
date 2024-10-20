@@ -11,7 +11,7 @@
 ///   * The Window struct implements a set of n objects of type T.
 ///   * The set has a configurable size limit.
 ///   * When a new element of type T is pushed into the window,
-///     the oldest element is deleted if the size limit has been
+///     the oldest element is deleted once the size limit has been
 ///     reached.
 ///   * The windows code provides the concept of "live" entries,
 ///     which are the last k items pushed, for a configurable

@@ -37,7 +37,7 @@
 ///       assert!(packet_sizes.count() == i as u64);
 ///    }
 ///
-///    // Print our statistics.  This example has only one event recorded.
+///    // Print our statistics.
 ///
 ///    packet_sizes.print();
 ///
@@ -116,10 +116,10 @@ pub struct IntegerWindow {
 // The Crunched structure contains all the data needed to
 // compute the summary statistics that we need to print.
 
-/// This struct is used to pass summary data from a
+/// The Crunched struct is used to pass summary data from a
 /// statistics set to printing routines.  It is used
-/// internally and is use mostly to code implementing
-/// data type, not users collecting data.
+/// internally and is intended for use by code implementing data
+/// types, not users collecting data.
 
 #[derive(Clone, Copy, Default)]
 pub struct Crunched {

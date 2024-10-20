@@ -22,19 +22,18 @@
 ///     let test_limit  = 20;
 ///     let mut counter = Counter::new("test counter", None);
 ///
-///     // Add some counts to the counter.  record_event adds
-///     // one, to implement an event counter.  record_i64
-///     // adds any i64 value, for keeping a count when
-///     // statistics like the mean aren't useful.
+///     // Add some counts to the counter.  record_event adds one,
+///     // to implement an event counter.  record_i64() adds any i64
+///     // value to the counter, for keeping a sum when statistics
+///     // like the mean aren't useful.
 ///
 ///     for i in 1..test_limit + 1 {
 ///         counter.record_event();
 ///         counter.record_i64(i);
 ///     }
 ///
-///     // Now compute what we expect as the total count, and
-///     // check that against the counter's value.  The sum
-///     // of the sequence
+///     // Now compute what we expect as the total count, and check
+///     // that against the counter's value.  The sum of the sequence
 ///     //     1 + 2 + 3 ... + n 
 ///     // is
 ///     //     (n * (n + 1)) / 2
@@ -57,7 +56,8 @@ use super::TimerBox;
 use super::stdout_printer;
 use super::printable::Printable;
 
-/// Define a simple counter struct that implements Rustics.
+/// The Counter struct provides a simple counter that implements
+/// the Rustics trait.
 
 #[derive(Clone)]
 pub struct Counter {

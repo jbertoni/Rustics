@@ -161,7 +161,7 @@ impl Default for DurationTimer {
     }
 }
 
-///  This trait can be implemented for platform-specific clocks.
+///  SimpleClock can be implemented for platform-specific clocks.
 ///  The structures can then be wrapped in a ClockTimer struct.
 
 pub trait SimpleClock {
@@ -169,8 +169,8 @@ pub trait SimpleClock {
     fn hz(&self) -> u128;
 }
 
-///  This struct is a wrapper class for platform-specific clocks
-///  that are useful to support.
+///  The ClockTimer struct is a wrapper class for platform-specific
+/// clocks.
 
 #[derive(Clone)]
 pub struct ClockTimer {

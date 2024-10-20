@@ -11,6 +11,11 @@
 ///     * Hier is a framework class that should be created using a
 ///       concrete type via IntegerHier::new_hier or TimeHier::new_hier.
 ///       This example uses IntegerHier.
+///     * Hier implements a hierarchy of Rustics structs.  The lowest
+///       level receives data and records it into the newest object at
+///       that level.
+///     * Upper levels of the hierarchy contains sums of a programmable
+///       number of lower-level structs.
 ///
 /// ## Example
 ///```
@@ -22,7 +27,6 @@
 ///     use rustics::hier::HierSet;
 ///     use rustics::integer_hier::IntegerHier;
 ///     use rustics::integer_hier::IntegerHierConfig;
-///     use rustics::stdout_printer;
 ///
 ///     // Make a descriptor of the first level.  We have chosen to sum 1000
 ///     // level 0 RunningInteger structs into one level 1 RunningInteger
@@ -36,18 +40,16 @@
 ///
 ///     let dimension_1 = HierDimension::new(100, 200);
 ///
-///     // Level two isn't summed, so the period isn't used.  Tell it to
-///     // sum one event to keep the contructor happy.  Let's pretend this
-///     // level isn't used much, so retain only 100 structs in it.
+///     // Level two isn't summed, so the period isn't used.  Set a period
+///     // of one to keep the contructor happy.  Let's pretend this level
+///     // isn't used much, so retain only 100 structs in it.
 ///
 ///     let dimension_2 = HierDimension::new(1, 100);
 ///
 ///     //  Now create the Vec.  Save the dimension structs for future use.
 ///
 ///     let dimensions =
-///         vec![
-///             dimension_0.clone(), dimension_1.clone(), dimension_2.clone()
-///         ];
+///         vec![ dimension_0, dimension_1, dimension_2 ];
 ///
 ///     // Now create the entire descriptor for the hier struct.  Let's
 ///     // record 2000 events into each level 0 RunningInteger instance.
@@ -55,11 +57,13 @@
 ///     let auto_advance = Some(2000);
 ///     let descriptor   = HierDescriptor::new(dimensions, auto_advance);
 ///
-///     // Now create some items used by Hier to do printing.
+///     // Now create some items used by Hier to do printing.  The defaults
+///     // for the title and printer are fine, so just pass None.  By
+///     // default, the title is the name and output is to stdout.
 ///
 ///     let name    = "test hierarchical integer".to_string();
-///     let title   = "test hierarchical integer".to_string();
-///     let printer = stdout_printer();
+///     let title   = None;     // default to the name
+///     let printer = None;     // default to stdout
 ///
 ///     // Finally, create the configuration description for the
 ///     // constructor.
@@ -96,8 +100,8 @@
 ///     assert!(integer_hier.live_len(1)   == 0     );
 ///     assert!(integer_hier.live_len(2)   == 0     );
 ///
-///     // Now record some data to force the creation of
-///     // the second level 1 struct.
+///     // Now record some data to force the creation of the second
+///     // level 1 struct.
 ///
 ///     events += 1;
 ///     integer_hier.record_i64(10);
@@ -167,6 +171,7 @@ use super::LogHistogram;
 use super::Printer;
 use super::PrinterBox;
 use super::PrinterOption;
+use super::stdout_printer;
 use super::TimerBox;
 use super::window::Window;
 use std::cell::RefCell;
@@ -177,8 +182,8 @@ pub type MemberRc    = Rc<RefCell<dyn HierMember   >>;
 pub type GeneratorRc = Rc<RefCell<dyn HierGenerator>>;
 pub type ExporterRc  = Rc<RefCell<dyn HierExporter >>;
 
-/// This struct is used to describe the configuration of
-/// a hierarchy to be created by a Hier struct.
+/// HierDescriptor is used to describe the configuration of
+/// a hierarchy to a constructor like new().
 
 #[derive(Clone)]
 pub struct HierDescriptor {
@@ -206,7 +211,7 @@ impl HierDescriptor {
 // around for queries.  It must be at least "period" elements, but
 // can be more to keep more history.
 
-/// This struct is used to define one level in a Hier struct.
+/// HierDimensions is used to define one level in a Hier struct.
 
 #[derive(Clone, Copy)]
 pub struct HierDimension {
@@ -232,7 +237,7 @@ impl HierDimension {
     }
 }
 
-/// This struct allows users to index into a hierarchical statistic
+/// HierIndex allows users to index into a hierarchical statistic
 /// to look at any statistics struct therein.
 
 #[derive(Clone, Copy)]
@@ -242,10 +247,10 @@ pub struct HierIndex {
     which: usize,
 }
 
-/// The Hier implementation allows examining the statistics
-/// at a level.  The user can choose to look at all the
-/// statistics, or only the newest entries, the live set,
-/// as defined in descriptor.
+/// HierSet allows the user to refer to a specific subset of a level
+/// in the hierarchy when using a HierIndex struct.  The user can
+/// choose to look at all of the statistics, or only the newest entries,
+/// the live set.
 
 #[derive(Clone, Copy)]
 pub enum HierSet {
@@ -253,8 +258,8 @@ pub enum HierSet {
     Live,
 }
 
-/// HierIndex is used to refer to a specific statistics
-/// struct in a Hier struct.
+/// HierIndex is used to refer to a specific statistics struct in a
+/// Hier struct.
 
 impl HierIndex {
     pub fn new(set: HierSet, level: usize, which: usize) -> HierIndex {
@@ -265,8 +270,9 @@ impl HierIndex {
 // The exporter needs to be downcast to be used, so
 // provide that interface.
 
-/// This struct is used internally to create a sum statistics
-/// object.
+/// The HierExporter trait is used internally to create a sum
+/// statistics object.  It can be used in applications, as well,
+/// although the predefined functions probably cover all bases.
 
 pub trait HierExporter {
     fn as_any    (&self)     -> &dyn Any;
@@ -274,30 +280,30 @@ pub trait HierExporter {
 }
 
 /// Users can traverse all the statistics objects in a Hier
-/// struct using this trait and the traverse functions.
+/// struct using this trait and the traverse functions
+/// traverse_live() and traverse_all().
 
 pub trait HierTraverser {
     fn visit(&mut self, member: &mut dyn Rustics);
 }
 
 //
-// HierGenerator is implemented for a type implementing
-// Rustics.  This interfaces with the struct Hier impl
-// to provide hierarchical statistics.  This trait
-// provides functions needed by the Hier code that are
-// not bound to a specific instance of a Rustics object,
-// and so can't be in trait Rustics.  It is an abstraction
-// and extension of the impl code of the type that
-// implements Rustics.  For example, there is a
-// HierGenerator implementation for the RunningInteger
-// type.
+// The HierGenerator trait is implement to allow a Rustics type to
+// support hierarchial statistics.  Rustics.  This code connects
+// the struct Hier impl code with the Rustic types impl code.
+// HierGenerator is thus an abstraction of the associated functions
+// that are not members (in the impl code, but not taking &self as
+// a parameter.
+//
+// The HierGenerator implementation for the RunningInteger
+// type is a good example to read if you want to understand
+// this code..
 //
 
-/// This struct is used to create an interface between a
-/// statistics type, like RunningInteger, and the hier
-/// code.  It is used only to add interfaces for types.
-/// Most users will use only the standard types already
-/// implemented.
+/// HierGenerator is used to create an interface between a statistics
+/// type, like RunningInteger, and the hier code.  It is used only
+/// to add interfaces for types, so users will need it only if they
+/// implement a custom type implementing Rustics.
 
 pub trait HierGenerator {
     fn make_from_exporter(&self, name: &str, printer: PrinterBox, exports: ExporterRc) -> MemberRc;
@@ -318,9 +324,9 @@ pub trait HierGenerator {
 //  trait, but it's easier to use them without that step.
 //
 
-/// This trait extends a Rustics implementation to interface
-/// with the Hier code.  It is needed only to support
-/// custom statistics type.
+/// The HierMember trait extends a Rustics implementation to interface
+/// with the Hier code.  This trait is of use only if implementing a
+/// custom Rustics type.
 
 pub trait HierMember {
     fn to_rustics    (&self    ) -> &dyn Rustics;
@@ -354,8 +360,8 @@ pub struct Hier {
     printer:        PrinterBox,
 }
 
-/// Define the configuration parameters for a Hier struct.
-/// Most users will use the prepackaged Hier constructors
+/// HierConfig defines the configuration parameters for a Hier
+/// struct.  Most users will use the prepackaged Hier constructors
 /// like IntegerHier::new_hier and TimeHier::new_heir.
 
 #[derive(Clone)]
@@ -364,12 +370,12 @@ pub struct HierConfig {
     pub generator:   GeneratorRc,
     pub class:       String,
     pub name:        String,
-    pub title:       String,
-    pub printer:     PrinterBox,
+    pub title:       Option<String>,
+    pub printer:     PrinterOption,
 }
 
 impl Hier {
-    /// This function create a new hier struct. It generally should
+    /// The new() function create a new hier struct. It generally should
     /// be called from the constructor for the specific type in the
     /// hierarchy.  For example, the IntegerHier impl provides
     /// constructors that will invoke this function.
@@ -378,8 +384,6 @@ impl Hier {
         let     descriptor    = configuration.descriptor;
         let     generator     = configuration.generator;
         let     name          = configuration.name;
-        let     title         = configuration.title;
-        let     printer       = configuration.printer;
         let     class         = configuration.class;
 
         let     auto_next     = descriptor.auto_next;
@@ -388,6 +392,20 @@ impl Hier {
         let     advance_count = 0;
         let     event_count   = 0;
         let mut stats         = Vec::with_capacity(dimensions.len());
+
+        let title =
+            if let Some(title) = configuration.title {
+                title
+            } else {
+                name.clone()
+            };
+
+        let printer =
+            if let Some(printer) = configuration.printer {
+                printer
+            } else {
+                stdout_printer()
+            };
 
         //
         // Create the set of windows that we use to hold all
@@ -414,9 +432,9 @@ impl Hier {
         }
     }
 
-    /// This function returns the newest statistic at the lowest level,
-    /// which is the only statistic that records data.  The other
-    /// members are all read-only.
+    /// The current() function returns the newest statistics struct
+    /// at the lowest level, hich is the only statistic that records
+    /// data.  The other members are read-only.
 
     pub fn current(&self) -> MemberRc {
         let member = self.stats[0].newest().unwrap();
@@ -424,7 +442,7 @@ impl Hier {
         member.clone()
     }
 
-    /// print_index_optinos prints the given element in the statistics matrix.
+    /// print_index_options() prints the given element in the statistics matrix.
 
     pub fn print_index_opts(&self, index: HierIndex, printer: PrinterOption, title: Option<&str>) {
         self.local_print(index, printer, title);
@@ -444,9 +462,9 @@ impl Hier {
         }
     }
 
-    /// This function clears all the statistics from the windows,
-    /// resets the event and advance counters. Finally, it pushes
-    /// a new level 0 statistic struct to receive data.
+    /// The clear_all() function clears all the statistics structs
+    /// from the windows, as well as any related data.  Finally, it
+    /// pushes a new level 0 statistic struct to receive data.
     ///
     /// This operation sets the struct back to its initial state.
 
@@ -466,8 +484,8 @@ impl Hier {
         }
     }
 
-    /// This function implements a traverser for users to look at
-    /// the members that are live.
+    /// The traverse_live() function calls a user-defined function
+    /// on all the live members on every level.
 
     pub fn traverse_live(&mut self, traverser: &mut dyn HierTraverser) {
         for level in &mut self.stats {
@@ -480,7 +498,7 @@ impl Hier {
         }
     }
 
-    /// The index method returns the member at the given index, if
+    /// The index() method returns the member at the given index, if
     /// such exists.
 
     pub fn index(&self, index: HierIndex) -> Option<MemberRc> {
@@ -496,7 +514,7 @@ impl Hier {
         Some(target.clone())
     }
 
-    /// The sum function allows the user to sum an arbitrary list of
+    /// The sum() function allows the user to sum an arbitrary list of
     /// members of the hierarchy into a new statistic. The result is
     /// not maintained in the hierarchy.
 
@@ -538,10 +556,9 @@ impl Hier {
         (Some(sum), valid)
     }
 
-    /// This routine pushes a new level 0 statistics struct into
-    /// the level 0 window.  It also updates the upper levels as
-    /// needed.  The user can call this directly, use auto_advance,
-    /// or do both.
+    /// The advance() method pushes a new level 0 statistics struct into
+    /// the level 0 window.  It also updates the upper levels as needed.
+    /// The user can call this directly, use auto_advance, or do both.
 
     pub fn advance(&mut self) {
         // Increment the advance op count.  This counts the
@@ -581,23 +598,22 @@ impl Hier {
         self.stats[0].push(member);
     }
 
-    /// This function returns the number of live members at the given level.
+    /// live_len() returns the number of live members at the given level.
 
     pub fn live_len(&self, level: usize) -> usize {
         self.stats[level].live_len()
     }
 
-    /// This function returns the count of all the members at the given
+    /// all_len() returns the count of all the members at the given
     /// level.
 
     pub fn all_len(&self, level: usize) -> usize {
         self.stats[level].all_len()
     }
 
-    /// This function returns the total number of statistics events
-    /// seen by all the statistics recorded by this Hier struct since
-    /// its creation or since the the last clear_all invocation, whichever
-    /// is later.
+    /// event_count() returns the total number of statistics events
+    /// recorded into the Hier object since its creation or since the
+    /// the last clear_all invocation.
 
     pub fn event_count(&self) -> i64 {
         self.event_count
@@ -1002,8 +1018,8 @@ pub mod tests {
         // us.
 
         let name    = "hier".to_string();
-        let title   = "hier title".to_string();
-        let printer = stdout_printer();
+        let title   = None;
+        let printer = None;
 
         // Finally, create the configuration description for the
         // constructor.
@@ -1403,10 +1419,10 @@ pub mod tests {
 
     fn test_time_hier_sanity() {
         let     name     = "time_hier sanity test".to_string();
-        let     title    = "time_hier sanity test title".to_string();
+        let     title    = None;
         let     timer    = crate::tests::ContinuingTimer::new(1_000_0000);
         let     timer    = Rc::from(RefCell::new(timer));
-        let     printer  = stdout_printer();
+        let     printer  = None;
 
         // Create the dimensions.
 
@@ -1497,8 +1513,8 @@ pub mod tests {
         // Now create some items used by Hier to do printing.
 
         let name    = "test hierarchical integer".to_string();
-        let title   = "test hierarchical integer".to_string();
-        let printer = stdout_printer();
+        let title   = None;
+        let printer = Some(stdout_printer());
 
         // Finally, create the configuration description for the
         // constructor.

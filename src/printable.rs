@@ -76,8 +76,9 @@
 use super::Printer;
 
 /// The Printable struct is used to pass data to the standard
-/// print routines shared by all the code.  It might be of
-/// some interest to users who have specific output requirements.
+/// print routines shared by all the code.  Developers who are
+/// implementing the Rustics trait for a new struct might use
+/// this module.
 
 #[derive(Copy, Clone)]
 pub struct Printable {
@@ -92,9 +93,10 @@ pub struct Printable {
 }
 
 impl Printable {
-    /// Insert commas into a string containing the character
-    /// form of an integer.  This string might or might not
-    /// have a leading "+" or "-".
+    /// The commas() function inserts  commas into a string
+    /// containing the character form of an integer.  This
+    /// input string might or might not have a leading "+" or
+    /// "-" sign.
 
     pub fn commas(value: &str) -> String {
         if value.len() <= 3 {
@@ -156,8 +158,9 @@ impl Printable {
         Self::commas(&base)
     }
 
-    /// Format a time value for printing.  This routine converts
-    /// the time in ticks to human units.
+    /// scale_time() converts a time value in clock ticks into
+    /// a human-readable value and unit.  The unit is returned
+    /// as a string for printing.
 
     pub fn scale_time(time: f64, hz: i64) -> (f64, String) {
         let microsecond = 1_000.0;
@@ -313,10 +316,10 @@ impl Printable {
         }
     }
 
-    /// Convert the log_mode of the histogram into an approximate
-    /// time for the bucket.  Note that this approximation can
-    /// be bigger than the record max value since the pseudo-log
-    /// function rounds up.
+    /// log_mode_to_time converts the log_mode of the histogram
+    /// into an approximate time for the bucket.  Note that this
+    /// approximation can be bigger than the record max value since
+    /// the pseudo-log function rounds up.
 
     pub fn log_mode_to_time(&self) -> f64 {
         // Time values should never be negative...

@@ -11,7 +11,8 @@
 ///       RunningInteger type, q.v.
 ///     * Each level uses a Window struct to hold i RunningInteger
 ///       structs, where i is configured per level.  See the window
-///       module documentation for more information.
+///       module documentation for more information on how the
+///       windows work.
 ///     * Level 0 statistics structs are used to collect data.  Each
 ///       struct collects n samples, where n is a configuration
 ///       parameter.  After n samples are gathered, a new statistics
@@ -27,13 +28,17 @@
 ///
 /// ## Example
 ///```
-///    // This example also is used in the Hier documentation.
+///    // This example also is used in the Hier documentation, but
+///    // some of the assertions have been removed from that
+///    // code.
 ///
 ///    use rustics::Rustics;
 ///    use rustics::stdout_printer;
 ///    use rustics::hier::Hier;
 ///    use rustics::hier::HierDescriptor;
 ///    use rustics::hier::HierDimension;
+///    use rustics::hier::HierIndex;
+///    use rustics::hier::HierSet;
 ///    use rustics::integer_hier::IntegerHier;
 ///    use rustics::integer_hier::IntegerHierConfig;
 ///
@@ -151,6 +156,19 @@
 ///
 ///     assert!(integer_hier.live_len(1)   == 1     );
 ///     assert!(integer_hier.event_count() == events);
+///
+///     // Now print an element from the hierarchy.  In this
+///     // case, we will index into level 2, and printer the
+///     // third element of the vector (index 2).  We use the
+///     // set All to look at all the elements in the window,
+///     // not just the live elements.
+///
+///     let index = HierIndex::new(HierSet::All, 1, 2);
+///
+///     // The default printer and default title are fine for our
+//      // example, so pass None for the printer and title options.
+///
+///     integer_hier.print_index_opts(index, None, None);
 ///```
 
 //
@@ -392,7 +410,7 @@ mod tests {
         }
 
         let float    = events as f64;
-        let mean     = (float * (float + 1.0) / 2.0) / float; 
+        let mean     = (float * (float + 1.0) / 2.0) / float;
 
         assert!(hier.mean() == mean);
         assert!(hier.event_count() == events);

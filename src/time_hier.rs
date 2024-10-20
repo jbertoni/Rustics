@@ -13,6 +13,9 @@
 ///     how to used that type.
 ///   * See the Hier documentation on how to use hierarchical
 ///     statistics.
+///   * The routines TimerHier::new_hier are wrappers for the
+///     Hier constructor and do the initialization specific to
+///     the TimeHier type.
 ///
 
 //

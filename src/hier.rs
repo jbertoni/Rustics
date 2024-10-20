@@ -11,6 +11,8 @@
 ///     * Hier is a framework class that should be created using a 
 ///       concrete type via IntegerHier::new_hier or TimeHier::new_hier.
 ///       This example uses IntegerHier.
+///
+/// ## Example
 ///```
 ///    use rustics::Rustics;
 ///    use rustics::hier::Hier;
@@ -28,7 +30,7 @@
 ///     let dimension_0 = HierDimension::new(1000, 1000);
 ///
 ///     // At level 1, we want to sum 100 level 1 statistics into one level 2
-///     // statistics.  Let's retain 200 RunningInteger structs here.
+///     // statistics.  Let's retain 200 RunningInteger structs at level 1.
 ///
 ///     let dimension_1 = HierDimension::new(100, 200);
 ///
@@ -63,10 +65,9 @@
 ///     let configuration =
 ///         IntegerHierConfig { descriptor, name, title, printer };
 ///
-///     // Now make the Hier instance.
+///     // Now make the Hier instance and lock it.
 ///
 ///     let     integer_hier = IntegerHier::new_hier_box(configuration);
-///
 ///     let mut integer_hier = integer_hier.lock().unwrap();
 ///
 ///     // Now record some events with boring data.
@@ -83,6 +84,9 @@
 ///     // the implementation creates the next struct only when
 ///     // it has data to record, so there should be only one level
 ///     // zero struct, and nothing at level 1 or level 2.
+///     //
+///     // event_count() returns all events seen by the integer_hier
+///     // struct from creation onward.
 ///
 ///     assert!(integer_hier.event_count() == events);
 ///     assert!(integer_hier.count()       == events as u64);
@@ -99,12 +103,6 @@
 ///     // The new level 0 struct should have only one event
 ///     // recorded.  The Rustics implementatio for Hier returns
 ///     // the data in the current level 0 struct, so check it.
-///
-///     assert!(integer_hier.event_count() == events);
-///     assert!(integer_hier.count()       == 1     );
-///     assert!(integer_hier.live_len(0)   == 2     );
-///     assert!(integer_hier.live_len(1)   == 0     );
-///     assert!(integer_hier.live_len(2)   == 0     );
 ///
 ///     let events_per_level_1 =
 ///         auto_advance * dimension_0.period() as i64;

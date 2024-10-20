@@ -4,6 +4,70 @@
 //  permitted by law.
 //
 
+///
+/// ## Type
+///
+/// * Printable
+///     * Printable implement the output formatting used by all the
+///       statistics types, like RunningInteger.
+//      * This module provides helper functions for formatting integers
+///       and time values.
+///
+///```
+/// use rustics::printable::Printable;
+///
+/// fn documentation() {
+///     let hz       = 1_000_000_000;
+///     let day      = 24 * 60 * 60 * hz;
+///     let week     = day * 7;
+///
+///     let day      = day as f64;
+///     let week     = week as f64;
+///
+///     let examples =
+///         [
+///             (         100.0,   100.0,   "ns"  ),
+///             (        1000.0,     1.0,   "us"  ),
+///             (   1_000_000.0,     1.0,   "ms"  ),
+///             (           day,     1.0,   "day" ),
+///             (          week,     7.0,   "days"),
+///         ];
+///
+///     // Convert a time in ticks to a scaled value and
+///     // and a string for units.  For example, 1000 ns
+///     // should return (1.0, "us").
+///
+///     for example in examples {
+///         let (ticks, time, units) = example;
+///
+///         let (result_time, result_units) = Printable::scale_time(ticks, hz);
+///
+///         println!("documentation:  expect ({} {}) from {}, got ({} {})",
+///             time, units,
+///             ticks,
+///             result_time, result_units
+///         );
+///
+///         assert!(result_time  == time as f64);
+///         assert!(result_units == units);
+///
+///         // The commas functions works to add commas
+///         // to integer output.  It handles "+" and "-"
+///         // signs.  The interface routines commas_64
+///         // and commas_u64 are a bit more convenient
+///         // to use.
+///
+///         assert_eq!(Printable::commas(   "+20"),        "20");
+///         assert_eq!(Printable::commas(  "-200"),      "-200");
+///         assert_eq!(Printable::commas(  "2000"),     "2,000");
+///         assert_eq!(Printable::commas("+12345"),   "+12,345");
+///         assert_eq!(Printable::commas("-12345"),   "-12,345");
+///         assert_eq!(Printable::commas("200000"),   "200,000");
+///     }
+///
+/// }
+///```
+
 // These structures and routines are common code for printing
 // statistics.
 //
@@ -26,7 +90,9 @@ pub struct Printable {
 }
 
 impl Printable {
-    // Insert commas into a string containing an integer.
+    /// Insert commas into a string containing the character
+    /// form of an integer.  This string might or might not
+    /// have a leading "+" or "-".
 
     pub fn commas(value: &str) -> String {
         if value.len() <= 3 {
@@ -63,17 +129,14 @@ impl Printable {
                 .unwrap()
                 .join(",");                 // join the blocks of three digits with commas
 
-        let result =
-            match sign {
-                "+" => "+".to_string() + &result,
-                "-" => "-".to_string() + &result,
-                _   => result,
-            };
-
-        result
+        match sign {
+            "+" => "+".to_string() + &result,
+            "-" => "-".to_string() + &result,
+            _   => result,
+        }
     }
 
-    // Convert an i64 into a string with comma separators.
+    /// Convert an i64 into a string with comma separators.
 
     pub fn commas_i64(value: i64) -> String {
         let base = value.to_string();
@@ -81,7 +144,7 @@ impl Printable {
         Self::commas(&base)
     }
 
-    // Convert an u64 into a string with comma separators.
+    /// Convert a u64 into a string with comma separators.
 
     pub fn commas_u64(value: u64) -> String {
         let base = value.to_string();
@@ -89,7 +152,8 @@ impl Printable {
         Self::commas(&base)
     }
 
-    // Format a time value for printing.
+    /// Format a time value for printing.  This routine converts
+    /// the time in ticks to human units.
 
     pub fn scale_time(time: f64, hz: i64) -> (f64, String) {
         let microsecond = 1_000.0;
@@ -245,12 +309,12 @@ impl Printable {
         }
     }
 
-    // Convert the log_mode of the histogram into an approximate
-    // time for the bucket.  Note that this approximation can
-    // be bigger than the record max value since the pseudo-log
-    // function rounds up.
+    /// Convert the log_mode of the histogram into an approximate
+    /// time for the bucket.  Note that this approximation can
+    /// be bigger than the record max value since the pseudo-log
+    /// function rounds up.
 
-    fn log_mode_to_time(&self) -> f64 {
+    pub fn log_mode_to_time(&self) -> f64 {
         // Time values should never be negative...
 
         if self.log_mode < 0 {
@@ -353,9 +417,43 @@ mod tests {
         assert!(printable.log_mode_to_time() == expected);
     }
 
+    fn documentation() {
+        let hz       = 1_000_000_000;
+        let day      = 24 * 60 * 60 * hz;
+        let week     = day * 7;
+
+        let day  = day as f64;
+        let week = week as f64;
+
+        let examples =
+            [
+                (         100.0,   100.0,   "ns"  ),
+                (        1000.0,     1.0,   "us"  ),
+                (   1_000_000.0,     1.0,   "ms"  ),
+                (           day,     1.0,   "day" ),
+                (          week,     7.0,   "days"),
+            ];
+
+        for example in examples {
+            let (ticks, time, units) = example;
+
+            let (result_time, result_units) = Printable::scale_time(ticks, hz);
+
+            println!("documentation:  expect ({} {}) from {}, got ({} {})",
+                time, units,
+                ticks,
+                result_time, result_units
+            );
+
+            assert!(result_time  == time as f64);
+            assert!(result_units == units);
+        }
+    }
+
     #[test]
     fn run_tests() {
         test_commas();
         test_log_mode_to_time();
+        documentation();
     }
 }

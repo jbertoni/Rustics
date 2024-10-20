@@ -12,6 +12,8 @@
 ///       as the base 2 log of the value, rounded up to an integer.
 ///       For a negative number n, the pseudo-log is defined as 
 ///       pseudo-log(-n).
+///
+/// ## Example
 ///```
 ///     use rustics::log_histogram::LogHistogram;
 ///     use rustics::log_histogram::pseudo_log_index;

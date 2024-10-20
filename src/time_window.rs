@@ -29,6 +29,8 @@
 ///    // Duration.  This example is for a single-threaded statistic.
 ///    // See ArcSet for an example of multi-threading a time statistic.
 ///
+///    // Retain 1000 samples.
+///
 ///    let window_size = 1000;
 ///    let mut timer = DurationTimer::new_box();
 ///

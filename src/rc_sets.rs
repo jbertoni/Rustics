@@ -10,8 +10,10 @@
 /// * RcSet
 ///     * RcSet implements a set that can contain statistics objects
 ///       and other RcSet structs as subsets.
-///     * Members of an RcSet are kept as Arc structs to allow for
+///     * Members of an RcSet are kept as Rc structs to allow for
 ///       single-threaded sharing.
+///
+/// ## Example
 ///```
 ///    // RcSet and ArcSet provide a nearly identical interface.  This
 ///    // code is mostly lifted from the ArcSet comments.
@@ -32,18 +34,20 @@
 ///    let mut set = RcSet::new("Main Statistics", 8, 0, None);
 ///
 ///    // Add a statistic to record query latencies.  It's a time
-///    // statistics, so we need a timer.  Use an adapter for the
-///    // rust standard Duration timer.  The add_running_timer
-///    // function is a help for creating RunningTime structs.
+///    // statistic, so we need a timer.  Use an adapter for the
+///    // rust standard Duration timer.
 ///
 ///    let timer = DurationTimer::new_box();
+///
+///    // The add_running_timer function is a helper function for
+///    // creating RunningTime structs.
 ///
 ///    let mut query_latency = set.add_running_time("Query Latency", timer);
 ///
 ///    // By way of example, we assume that the queries are single-
-///    // threaded, so we can use the "record_time" routine to
-///    // query the timer and restart it.  Multi-threaded apps will
-///    // need to use record_interval and manage the clocks themselves.
+///    // threaded, so we can use the "record_time" routine to query
+///    // the timer and restart it.  Multi-threaded apps will need
+///    // to use record_interval and manage the clocks themselves
 ///    // if they want to share a single RunningTime struct.
 ///    //
 ///    // So record one event time for the single-threaded case.
@@ -51,17 +55,20 @@
 ///    query_latency.borrow_mut().record_event();
 ///
 ///    // For the multithreaded case, you can use DurationTimer manually.
+///    // Usually, ArcSet structs are more convenient for multi-threaded
+///    // applications.
 ///
 ///    let mut local_timer = DurationTimer::new();
 ///
 ///    // Do our query.
 ///    // ...
+///    // Apply a lock to get to query_latency...
 ///
 ///    query_latency.borrow_mut().record_time(local_timer.finish() as i64);
 ///
 ///    // If you want to use your own timer, you'll need to implement
 ///    // the Timer trait to initialize the RunningTime struct, but you
-///    //can use it directly to get data. Let's use Duration timer directly
+///    // can use it directly to get data. Let's use DurationTimer directly
 ///    // as an example.  Make a new object for this example.
 ///
 ///    let timer = DurationTimer::new_box();

@@ -22,8 +22,8 @@
 ///    // Create a statistic to record query latencies.  It's a time
 ///    // statistic, so we need a timer.  Use an adapter for the
 ///    // rust standard Duration timer.  The default for printing
-///    // output is stdout, which we'll assume is fine, so None is
-///    // fine for the priner option.  See the Printer trait in lib.rs
+///    // output is stdout, which we'll assume is fine, so None will
+///    // work for the printer option.  See the Printer trait in lib.rs
 ///    // for information on writing a custom Printer.
 ///
 ///    let timer = DurationTimer::new_box();
@@ -33,7 +33,7 @@
 ///    // By way of example, we assume that the queries are single-
 ///    // threaded, so we can use the "record_time" routine to
 ///    // query the timer and restart it.  Multi-threaded apps will
-///    // need to use record_interval and manage the clocks themselves.
+///    // need to use record_interval and manage the clocks themselves
 ///    // if they want to share a single RunningTime struct.
 ///    //
 ///    // So record one time sample for the single-threaded case.  The
@@ -47,6 +47,9 @@
 ///
 ///    // Do our query.
 ///    // ...
+///
+///    // You can use the finish function if this RuningTime struct
+///    // is shared.
 ///
 ///    query_latency.record_time(local_timer.finish() as i64);
 ///

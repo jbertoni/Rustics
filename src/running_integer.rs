@@ -24,7 +24,7 @@
 ///
 ///    let mut packet_sizes = RunningInteger::new("Packet Sizes", None);
 ///
-///    // Record some hypothetical packet sizes.  Let's fill the window.
+///    // Record some hypothetical packet sizes.
 ///
 ///    let sample_count = 1000;
 ///
@@ -37,12 +37,14 @@
 ///
 ///    packet_sizes.print();
 ///
-///    // We should have seen "window_size" events.
+///    // We should have seen "sample_count" events.
 ///
 ///    assert!(packet_sizes.count() == sample_count as u64);
 ///
 ///    // Compute the expected mean.  We need the sum of
-///    // 1 + 2 + ... + n, which is n * (n + 1) / 2.
+///    //     1 + 2 + ... + n
+///    // which is
+///    //     n * (n + 1) / 2.
 ///
 ///    let float_count = sample_count as f64;
 ///    let float_sum   = float_count * (float_count + 1.0) / 2.0;

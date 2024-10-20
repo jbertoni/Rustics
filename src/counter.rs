@@ -10,7 +10,11 @@
 /// * Counter
 ///     * Counter implements a simple i64 counter that can be
 ///       printed with other statistics.
-///       and other ArcSet structs as subsets.
+///
+///     * It is intended to be used for counting events or
+///       summing values for which statistics are not wanted.
+///
+/// ## Example
 ///```
 ///     use rustics::Rustics;
 ///     use rustics::counter::Counter;
@@ -29,8 +33,11 @@
 ///     }
 ///
 ///     // Now compute what we expect as the total count, and
-///     // check that against the counter's value.  record_event
-///     // increments by one.
+///     // check that against the counter's value.  The sum
+///     // of the sequence
+///     //     1 + 2 + 3 ... + n 
+///     // is
+///     //     (n * (n + 1)) / 2
 ///
 ///     let events   = test_limit;
 ///     let sequence = ((test_limit + 1) * test_limit) / 2;

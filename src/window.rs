@@ -16,8 +16,11 @@
 ///   * The windows code provides the concept of "live" entries,
 ///     which are the last k items pushed, for a configurable
 ///     limit k.
-///   * The interface proves iterators to examine the contents,
-///     and various indexing functions.
+///   * The interface proves iterators to examine the contents
+///     of the window, as well as  various indexing functions
+///     to look into the window at arbitrary points.
+///
+/// ## Example
 ///```
 ///     use rustics::window::Window;
 ///     use std::cmp::min;

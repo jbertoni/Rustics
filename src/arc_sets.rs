@@ -31,19 +31,20 @@
 ///    let mut set = ArcSet::new("Main Statistics", 8, 0, None);
 ///
 ///    // Add a statistic to record query latencies.  It's a time
-///    // statistics, so we need a timer.  Use an adapter for the
-///    // rust standard Duration timer.  The add_running_timer
-///    // function is a help for creating RunningTime structs.
+///    // statistic, so we need a timer.  Here we use an adapter
+///    // for the rust standard Duration timer.  The add_running_timer
+///    // function is a helper routine for creating RunningTime
+///    // structs.
 ///
 ///    let timer = DurationTimer::new_box();
 ///
 ///    let mut query_latency = set.add_running_time("Query Latency", timer);
 ///
 ///    // By way of example, we assume that the queries are single-
-///    // threaded, so we can use the "record_time" routine to
-///    // query the timer and restart it.  Multi-threaded apps will
-///    // need to use record_interval and manage the clocks themselves.
-///    // if they want to share a single RunningTime struct.
+///    // threaded, so we can use the "record_time" routine to query
+///    // the timer and restart it.  Multi-threaded apps will need to
+///    // use record_interval and manage the clocks themselves if it
+///    // wants to share a single RunningTime struct.
 ///    //
 ///    // So record one time sample for the single-threaded case.  The
 ///    // clock started running when we created the DurationTimer.  You
@@ -51,7 +52,9 @@
 ///
 ///    query_latency.lock().unwrap().record_event();
 ///
-///    // Do more work, then reocrd another time.
+///    // Do more work, then record another time.
+
+///    // do_work();
 ///
 ///    query_latency.lock().unwrap().record_event();
 ///
@@ -65,9 +68,10 @@
 ///    query_latency.lock().unwrap().record_time(local_timer.finish() as i64);
 ///
 ///    // If you want to use your own timer, you'll need to implement
-///    // the Timer trait to initialize the RunningTime struct, but you
-///    //can use it directly to get data. Let's use Duration timer directly
-///    // as an example.  Make a new object for this example.
+///    // the Timer trait or SimpleClock and ClockTimer to initialize
+///    // the RunningTime struct, but you can use that timer directly
+///    // to get data. Let's use Duration timer directly as an example.
+///    // Make a new object for this example.
 ///
 ///    let timer = DurationTimer::new_box();
 ///
@@ -78,6 +82,8 @@
 ///    let start = Instant::now();
 ///
 ///    // Do our query.
+///
+///    // do_query();
 ///
 ///    // Now get the elapsed timer.  DurationTimer works in nanoseconds,
 ///    // so use that interface.
@@ -92,6 +98,8 @@
 ///    let query_lock = query_latency.lock().unwrap();
 ///
 ///    query_lock.print();
+///
+///    // Check the statistics gather.
 ///
 ///    assert!(query_lock.count() == 1);
 ///    assert!(query_lock.mean() == time_spent as f64);

@@ -27,24 +27,24 @@ use std::time::Instant;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-//  A Timer is an abstraction of a clock to be used for performance
-//  monitoring.  It is intended to allow for many implementations.
-//  The underlying clock implementation determines the meaning of an
-//  interval value.  For example, a DurationTimer uses the standard
-//  Rust Duration type, which returns wall-clock time.
-//
-//  The start method starts a timing interval.  It may be called
-//  multiple times on a single structure.  The last invocation of
-//  the start method overrides any previous calls.
-//
-//  The finish routine is used at the end of a sample interval.  It
-//  returns the interval time in nanoseconds and also starts a new
-//  interval, since the restart cost is nearly zero.  Thus, "finish"
-//  can be called multiple times after a "start" invocation to return
-//  the times for a sequence of events.  If a more precise timing is
-//  required, "start" will start an interval.
-//
-//  hz returns the herz of the underlying clock.
+///  A Timer is an abstraction of a clock to be used for performance
+///  monitoring.  It is intended to allow for many implementations.
+///  The underlying clock implementation determines the meaning of an
+///  interval value.  For example, a DurationTimer uses the standard
+///  Rust Duration type, which returns wall-clock time.
+///
+///  The start method starts a timing interval.  It may be called
+///  multiple times on a single structure.  The last invocation of
+///  the start method overrides any previous calls.
+///
+///  The finish routine is used at the end of a sample interval.  It
+///  returns the interval time in nanoseconds and also starts a new
+///  interval, since the restart cost is nearly zero.  Thus, "finish"
+///  can be called multiple times after a "start" invocation to return
+///  the times for a sequence of events.  If a more precise timing is
+///  required, "start" will start an interval.
+///
+///  hz returns the herz of the underlying clock.
 
 pub trait Timer {
     fn start(&mut self);            // start or restart a timer
@@ -52,9 +52,8 @@ pub trait Timer {
     fn hz(&self) -> u128;           // get the clock hz
 }
 
-
-//  DurationTimer uses the Rust standard time function "Duration" to
-//  measure time intervals.  This timer thus returns wall-clock time.
+///  DurationTimer uses the Rust standard time function "Duration" to
+///  measure time intervals.  This timer thus returns wall-clock time.
 
 pub type DurationTimerBox = Rc<RefCell<DurationTimer>>;
 

@@ -9,8 +9,8 @@
 /// * IntegerWindow
 ///     * IntegerWindow maintains a set consisting of the last n samples
 ///       recorded into it.
-///     * It also maintains a log histogram that contains counts of all
-//        events seen, not just the window of n samples.
+///     * This struct also maintains a log histogram that contains counts
+///       of all events seen, not just the window of n samples.
 ///
 /// ## Example
 ///```
@@ -23,7 +23,8 @@
 ///    // for printing output is stdout, which we'll assume is fine
 ///    // for this example, so None works for the printer.  See
 ///    // lib.rs for information on the Printer trait.  Assume that
-///    // retaining 1000 samples is fine.
+///    // retaining 1000 samples is fine for our hypothetical
+///    // application.
 ///
 ///    let window_size = 1000;
 ///
@@ -57,7 +58,8 @@
 ///    assert!(packet_sizes.mean() == mean);
 ///
 ///    // Let's record more samples.  The count only includes the
-///    // last "window_size" samples.
+///    // last "window_size" samples, so it should be constant
+///    // now.
 ///
 ///    for i in 1..window_size / 2 + 1 {
 ///       packet_sizes.record_i64(i as i64);
@@ -301,15 +303,13 @@ impl Rustics for IntegerWindow {
     fn variance(&self) -> f64 {
         let count = self.vector.len() as u64;
 
-        let variance =
-            if self.stats_valid {
-                compute_variance(count, self.moment_2)
-            } else {
-                let crunched = self.crunch();
-                compute_variance(count, crunched.moment_2)
-            };
+        if self.stats_valid {
+            compute_variance(count, self.moment_2)
+        } else {
+            let crunched = self.crunch();
 
-        variance
+            compute_variance(count, crunched.moment_2)
+        }
     }
 
     fn skewness(&self) -> f64 {

@@ -6,7 +6,7 @@
 
 //  Sort a set by absolute value to improve the accuracy of summation.
 
-pub fn sort(input: &mut [f64]) {
+fn sort(input: &mut [f64]) {
     input.sort_by(|a, b| a.abs().partial_cmp(&b.abs()).unwrap())
 }
 

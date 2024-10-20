@@ -52,10 +52,10 @@ pub trait Timer {
     fn hz(&self) -> u128;           // get the clock hz
 }
 
+pub type DurationTimerBox = Rc<RefCell<DurationTimer>>;
+
 ///  DurationTimer uses the Rust standard time function "Duration" to
 ///  measure time intervals.  This timer thus returns wall-clock time.
-
-pub type DurationTimerBox = Rc<RefCell<DurationTimer>>;
 
 #[derive(Clone)]
 pub struct DurationTimer {
@@ -114,21 +114,21 @@ impl Default for DurationTimer {
     }
 }
 
-//  This trait can be implemented for platform-specific clocks.
-//  The structures can then be wrapped in a ClockTimer struct.
-//  See the test routine "simple_test_clock" for an example.
+///  This trait can be implemented for platform-specific clocks.
+///  The structures can then be wrapped in a ClockTimer struct.
+///  See the test routine "simple_test_clock" for an example.
 
 pub trait SimpleClock {
     fn get_time(&mut self) -> u128;
     fn hz(&self) -> u128;
 }
 
-//  This is a wrapper class for platform-specific clocks that
-//  would be useful to support.
-//
-//  For efficiency, using 64-bit math internally might be useful.
-//  On the other hand, using femtoseconds might be useful for
-//  particularly hostile hz ratings.
+///  This is a wrapper class for platform-specific clocks that
+///  would be useful to support.
+///
+///  For efficiency, using 64-bit math internally might be useful.
+///  On the other hand, using femtoseconds might be useful for
+///  particularly hostile hz ratings.
 
 #[derive(Clone)]
 pub struct ClockTimer {

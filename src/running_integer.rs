@@ -19,8 +19,7 @@
 ///
 ///    // Create  a statistic to record packet sizes.  The default
 ///    // for printing output is stdout, which we'll assume is fine
-///    // for this example, so None works for the printer.  See
-///    // lib.rs for information on the Printer trait.
+///    // for this example, so None works for the printer.
 ///
 ///    let mut packet_sizes = RunningInteger::new("Packet Sizes", None);
 ///
@@ -83,7 +82,7 @@ use super::sum::kbk_sum;
 use crate::hier::HierExporter;
 use crate::LogHistogram;
 
-// Define the implementation of a very simple running integer sample space.
+/// Define the implementation of a very simple running integer sample space.
 
 #[derive(Clone)]
 pub struct RunningInteger {
@@ -112,10 +111,15 @@ pub struct RunningInteger {
 // RunningInteger struct underneath a wrapper, so TimeHier uses this
 // code.
 
+/// RunningExport is for internal use.  It is available for general
+/// use, but most commonly, it will be used by a Hier struct.
+
 #[derive(Clone, Default)]
 pub struct RunningExporter {
     addends: Vec<RunningExport>,
 }
+
+/// This type is intend mostly for internal use by  Hier structs.
 
 impl RunningExporter {
     pub fn new() -> RunningExporter {
@@ -154,6 +158,9 @@ impl HierExporter for RunningExporter {
     }
 }
 
+/// This structure is used by various modules to create
+/// sums of statistics objects of type RunningInteger.
+
 #[derive(Clone)]
 pub struct RunningExport {
     pub count:      u64,
@@ -168,6 +175,9 @@ pub struct RunningExport {
     pub log_histogram:    LogHistogram,
 }
 
+/// This function is used interally to create sums of RunningIntefer
+/// for Hier structs.
+
 pub fn sum_log_histogram(sum:  &mut LogHistogram, addend: &LogHistogram) {
     for i in 0..sum.negative.len() {
         sum.negative[i] += addend.negative[i];
@@ -178,8 +188,8 @@ pub fn sum_log_histogram(sum:  &mut LogHistogram, addend: &LogHistogram) {
     }
 }
 
-// Merge the vector of exported statistics.  Many fields are just
-// sums of the parts.
+/// Merge the vector of exported statistics.  Many fields are just
+/// sums of the parts.
 
 pub fn sum_running(exports: &Vec::<RunningExport>) -> RunningExport {
     let mut count          = 0;

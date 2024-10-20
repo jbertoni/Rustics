@@ -85,6 +85,10 @@
 // last "size_limit" events pushed into the window.
 //
 
+/// A Window struct maintains a set of items of type T.  The
+/// set size is limited and the oldest item is dropped when
+/// a new item is entered and the window is full.
+
 #[derive(Clone)]
 pub struct Window<T> {
     size_limit:     usize,
@@ -96,6 +100,8 @@ pub struct Window<T> {
 
 //  The Window structure supports scans of all live entries
 //  and of the entire contents of the window.
+
+/// Define the sets that can be traversed.
 
 pub enum ScanType {
     Live,
@@ -356,7 +362,7 @@ impl<T> Window<T> {
     }
 }
 
-// Implement the iterator 
+/// Implement the iterator for the contents of a window.
 
 pub struct WindowIterator<'a, T> {
     window:     &'a Window<T>,

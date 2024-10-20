@@ -23,11 +23,13 @@
 ///    // Create  a statistic to record packet latencies.  The default
 ///    // for printing output is stdout, which we'll assume is fine
 ///    // for this example, so None works for the printer.  See lib.rs
-///    // for information on the Printer trait.  Assume that retaining
-///    // 1000 samples is fine, and use the DurationTimer to measure
-///    // time.  DurationTimer is a wrapper for the standard rust
-///    // Duration.  This example is for a single-threaded statistic.
-///    // See ArcSet for an example of multi-threading a time statistic.
+///    // for information on the Printer trait.
+///    //
+///    // Assume that retaining 1000 samples is fine, and use the
+///    // DurationTimer to measure time.  DurationTimer is a wrapper
+///    // for the standard rust Duration.  This example is for a
+///    // single-threaded statistic.  See ArcSet for an example of
+///    // multi-threading a time statistic.
 ///
 ///    // Retain 1000 samples.
 ///
@@ -80,6 +82,10 @@ use super::compute_variance;
 use super::compute_skewness;
 use super::compute_kurtosis;
 use super::stdout_printer;
+
+/// TimeWindow implements a statistics object that
+/// retains a window of the last n samples of a
+/// stream of data samples.
 
 #[derive(Clone)]
 pub struct TimeWindow {

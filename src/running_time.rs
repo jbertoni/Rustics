@@ -32,9 +32,7 @@
 ///
 ///    // By way of example, we assume that the queries are single-
 ///    // threaded, so we can use the "record_time" routine to
-///    // query the timer and restart it.  Multi-threaded apps will
-///    // need to use record_interval and manage the clocks themselves
-///    // if they want to share a single RunningTime struct.
+///    // query the timer and restart it.
 ///    //
 ///    // So record one time sample for the single-threaded case.  The
 ///    // timer started running when we created the Duration timer.
@@ -55,8 +53,8 @@
 ///
 ///    // If you want to use your own timer, you'll need to implement
 ///    // the Timer trait to initialize the RunningTime struct, but you
-///    //can use it directly to get data. Let's use Duration timer directly
-///    // as an example.  Make a new object for this example.
+///    // can use it directly to get data. Let's use Duration timer
+///    // directly as an example.  Make a new object for this example.
 ///
 ///    let timer = DurationTimer::new_box();
 ///
@@ -101,6 +99,9 @@ use super::timer_box_hz;
 use super::printable::Printable;
 use super::running_integer::RunningInteger;
 use super::running_integer::RunningExport;
+
+/// Define the base type for a statistic collection
+/// of a stream of integers.
 
 #[derive(Clone)]
 pub struct RunningTime {

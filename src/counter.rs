@@ -57,6 +57,8 @@ use super::TimerBox;
 use super::stdout_printer;
 use super::printable::Printable;
 
+/// Define a simple counter struct.
+
 #[derive(Clone)]
 pub struct Counter {
     name:       String,

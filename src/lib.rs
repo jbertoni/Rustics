@@ -10,10 +10,11 @@
 //!
 //! * Statistics for Integer Values
 //!     * Integer statistics provide basic parameters, like the mean, and a pseudo-log histogram.
-//!     * For the pseudo-log histogram, the pseudo-log of a negative number n is defines as -log(-n).
-//!       The pseudo-log of 0 is defined as 0, and for convenience, the pseudo-log of -(2^64) is defined
-//!       as 63.  Logs of positive values are computed by rounding up any fractional part, so the
-//!       pseudo-log of 5 is 3.  From the definition, the pseudo-log of -5 is -3.
+//!     * For the pseudo-log histogram, the pseudo-log of a negative number n is defines as 
+//!       -log(-n).  The pseudo-log of 0 is defined as 0, and for convenience, the pseudo-log of
+//!       -(2^64) is defined as 63.  Logs of positive values are computed by rounding up any
+//!       fractional part, so the pseudo-log of 5 is 3.  From the definition, the pseudo-log of
+//!       -5 is -3.
 //!     * The values can be interpreted as time periods with a given hertz.
 //!
 //! * Integer statistics structs
@@ -159,13 +160,16 @@ pub fn timer_box_hz(timer:  &TimerBox) -> u128 {
     (**timer).borrow().hz()
 }
 
+/// Create a Printer object that sends output to stdout.
+/// This is the default type for all statistics types.
+
 pub fn stdout_printer() -> PrinterBox {
     let printer = StdioPrinter::new(StreamKind::Stdout);
 
     Arc::new(Mutex::new(printer))
 }
 
-// Compute a variance estimator.
+/// Compute a variance estimator.
 
 pub fn compute_variance(count: u64, moment_2: f64) -> f64 {
     if count < 2 {
@@ -177,9 +181,9 @@ pub fn compute_variance(count: u64, moment_2: f64) -> f64 {
     moment_2 / (n - 1.0)
 }
 
-// Compute the sample skewness.
-//
-// This formula is from brownmath.com.
+/// Compute the sample skewness.
+///
+/// This formula is from brownmath.com.
 
 pub fn compute_skewness(count: u64, moment_2: f64, moment_3: f64) -> f64 {
     if count < 3 || moment_2 == 0.0 {
@@ -197,9 +201,9 @@ pub fn compute_skewness(count: u64, moment_2: f64, moment_3: f64) -> f64 {
     skewness * correction
 }
 
-// Compute the sample kurtosis.
-//
-// This formula is from brownmath.com
+/// Compute the sample kurtosis.
+///
+/// This formula is from brownmath.com
 
 pub fn compute_kurtosis(count: u64, moment_2: f64, moment_4: f64) -> f64 {
     if count < 4 || moment_2 == 0.0 {
@@ -245,6 +249,7 @@ pub trait Printer {
 
 /// This struct is used as the default printer by Rustics.  It
 /// serves as an example of a very simple Printer implementation.
+
 #[derive(Clone)]
 pub struct StdioPrinter {
     which: StreamKind,
@@ -271,8 +276,8 @@ impl Printer for StdioPrinter {
     }
 }
 
-// Define the main trait for collecting statistics.  Eventually, this
-// library will support floating point samples.
+/// Define the main trait for collecting statistics.  Eventually, this
+/// library will support floating point samples.
 
 pub trait Rustics {
     fn record_i64  (&mut self, sample: i64);  // add an i64 sample
@@ -318,6 +323,8 @@ pub trait Rustics {
     fn generic  (&self                     ) -> &dyn Any;
     fn histogram(&self                     ) -> LogHistogram;
 }
+
+/// Define the trait for using a LogHistogram struct.
 
 pub trait Histogram {
     fn log_histogram(&self) -> LogHistogram;

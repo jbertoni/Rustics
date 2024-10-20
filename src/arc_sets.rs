@@ -26,7 +26,6 @@
 ///    // no subsets, so we set those hints appropriately.  The
 //     // default print output goes to stdout, and that's fine for
 ///    // an example, so just give "None" to accept the default.
-///    // See the Printer trait to implement a custom printer.
 ///
 ///    let mut set = ArcSet::new("Main Statistics", 8, 0, None);
 ///
@@ -42,17 +41,15 @@
 ///
 ///    // By way of example, we assume that the queries are single-
 ///    // threaded, so we can use the "record_time" routine to query
-///    // the timer and restart it.  Multi-threaded apps will need to
-///    // use record_interval and manage the clocks themselves if it
-///    // wants to share a single RunningTime struct.
+///    // the timer and restart it.
 ///    //
-///    // So record one time sample for the single-threaded case.  The
-///    // clock started running when we created the DurationTimer.  You
-///    // can reset it with the start() function if you clone a copy.
+///    // Record one time sample for the single-threaded case.  The
+///    // clock started running when we created the DurationTimer.
+///    // You can reset it with the start() function.
 ///
 ///    query_latency.lock().unwrap().record_event();
 ///
-///    // Do more work, then record another time.
+///    // Do more work, then record another time sample.
 
 ///    // do_work();
 ///
@@ -71,7 +68,8 @@
 ///    // the Timer trait or SimpleClock and ClockTimer to initialize
 ///    // the RunningTime struct, but you can use that timer directly
 ///    // to get data. Let's use Duration timer directly as an example.
-///    // Make a new object for this example.
+///    // Make a new Timer object for this example.  This is used only
+///    // to pass the clock herz to the RunningTimer code.
 ///
 ///    let timer = DurationTimer::new_box();
 ///
@@ -124,15 +122,15 @@ use super::make_title;
 pub type RusticsArc = Arc<Mutex<dyn Rustics>>;
 pub type ArcSetBox  = Arc<Mutex<ArcSet>>;
 
-// Define the trait for traversing a set and its hierarchy.
+/// Define the trait for traversing a set and its hierarchy.
 
 pub trait ArcTraverser {
     fn visit_set(&mut self, set: &mut ArcSet);
     fn visit_member(&mut self, member: &mut dyn Rustics);
 }
 
-// Define the set type.  A set can contain statistics and
-// subsets of type ArcSet.
+/// Define the set type.  A set can contain statistics and
+/// subsets of type ArcSet.
 
 #[derive(Clone)]
 pub struct ArcSet {

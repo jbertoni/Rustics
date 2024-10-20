@@ -70,13 +70,16 @@ impl HierMember for RunningTime {
     }
 }
 
-// TimeHier provides an interface from the Hier code to
-// the RunningTime code.
+/// TimeHier provides an interface from the Hier code to
+/// the RunningTime code.
 
 #[derive(Clone)]
 pub struct TimeHier {
     timer:  TimerBox,
 }
+
+/// Define the configuration parameters for a TimerHier
+/// object.
 
 #[derive(Clone)]
 pub struct TimeHierConfig {

@@ -29,7 +29,6 @@
 ///    // no subsets, so we set those hints appropriately.  The
 //     // default print output goes to stdout, and that's fine for
 ///    // an example, so just give "None" to accept the default.
-///    // See the Printer trait to implement a custom printer.
 ///
 ///    let mut set = RcSet::new("Main Statistics", 8, 0, None);
 ///
@@ -46,9 +45,7 @@
 ///
 ///    // By way of example, we assume that the queries are single-
 ///    // threaded, so we can use the "record_time" routine to query
-///    // the timer and restart it.  Multi-threaded apps will need
-///    // to use record_interval and manage the clocks themselves
-///    // if they want to share a single RunningTime struct.
+///    // the timer and restart it.
 ///    //
 ///    // So record one event time for the single-threaded case.
 ///
@@ -119,15 +116,15 @@ use super::time_window::TimeWindow;
 pub type RusticsRc = Rc<RefCell<dyn Rustics>>;
 pub type RcSetBox  = Rc<RefCell<RcSet>>;
 
-// Define the trait for traversing a set and its hierarchy.
+/// Define the trait for traversing an Rc set and its hierarchy.
 
 pub trait RcTraverser {
     fn visit_set(&mut self, set: &mut RcSet);
     fn visit_member(&mut self, member: &mut dyn Rustics);
 }
 
-// Define the actual set type.  A set can contain Rustics
-// members and subsets of type RcSet.
+/// Define the actual set type.  A set can contain Rustics
+/// members and subsets of type RcSet.
 
 #[derive(Clone)]
 pub struct RcSet {

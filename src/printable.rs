@@ -129,6 +129,8 @@ impl Printable {
                 .unwrap()
                 .join(",");                 // join the blocks of three digits with commas
 
+        // Add the sign back in front as needed.
+
         match sign {
             "+" => "+".to_string() + &result,
             "-" => "-".to_string() + &result,
@@ -371,16 +373,16 @@ mod tests {
             assert_eq!(Printable::commas_i64(test[i]), expect[i]);
         }
 
-        assert_eq!(Printable::commas("+21"),     "+21"     );
-        assert_eq!(Printable::commas("+212"),    "+212"    );
-        assert_eq!(Printable::commas("+2123"),   "+2,123"  );
-        assert_eq!(Printable::commas("+21234"),  "+21,234" );
+        assert_eq!(Printable::commas(    "+21"),      "+21");
+        assert_eq!(Printable::commas(   "+212"),     "+212");
+        assert_eq!(Printable::commas(  "+2123"),   "+2,123");
+        assert_eq!(Printable::commas( "+21234"),  "+21,234");
         assert_eq!(Printable::commas("+212345"), "+212,345");
 
-        assert_eq!(Printable::commas("+20"),     "+20"     );
-        assert_eq!(Printable::commas("+200"),    "+200"    );
-        assert_eq!(Printable::commas("+2000"),   "+2,000"  );
-        assert_eq!(Printable::commas("+20000"),  "+20,000" );
+        assert_eq!(Printable::commas(    "+20"),      "+20");
+        assert_eq!(Printable::commas(   "+200"),     "+200");
+        assert_eq!(Printable::commas(  "+2000"),   "+2,000");
+        assert_eq!(Printable::commas( "+20000"),  "+20,000");
         assert_eq!(Printable::commas("+200000"), "+200,000");
     }
 
@@ -427,26 +429,29 @@ mod tests {
 
         let examples =
             [
-                (         100.0,   100.0,   "ns"  ),
-                (        1000.0,     1.0,   "us"  ),
-                (   1_000_000.0,     1.0,   "ms"  ),
-                (           day,     1.0,   "day" ),
-                (          week,     7.0,   "days"),
+                (         100.0,   100.0,  "ns"  ),
+                (       1_000.0,     1.0,  "us"  ),
+                (      29_000.0,    29.0,  "us"  ),
+                (   1_000_000.0,     1.0,  "ms"  ),
+                (  29_000_000.0,    29.0,  "ms"  ),
+                (           day,     1.0,  "day" ),
+                (     2.0 * day,     2.0,  "days"),
+                (          week,     7.0,  "days"),
             ];
 
         for example in examples {
-            let (ticks, time, units) = example;
+            let (ticks, time, unit) = example;
 
-            let (result_time, result_units) = Printable::scale_time(ticks, hz);
+            let (result_time, result_unit) = Printable::scale_time(ticks, hz);
 
             println!("documentation:  expect ({} {}) from {}, got ({} {})",
-                time, units,
+                time, unit,
                 ticks,
-                result_time, result_units
+                result_time, result_unit
             );
 
             assert!(result_time  == time as f64);
-            assert!(result_units == units);
+            assert!(result_unit  == unit);
         }
     }
 

@@ -83,6 +83,9 @@ use super::compute_skewness;
 use super::compute_kurtosis;
 use super::stdout_printer;
 
+/// Define a statistics type that collects a fixed-size
+/// window of data samples.
+
 #[derive(Clone)]
 pub struct IntegerWindow {
     name:           String,
@@ -111,6 +114,10 @@ pub struct IntegerWindow {
 
 // The Crunched structure contains all the data needed to
 // compute the summary statistics that we need to print.
+
+/// This struct is used to pass summary data from a
+/// statistics set.  It is useful mostly for creating
+/// new statistics types.
 
 #[derive(Clone, Copy, Default)]
 pub struct Crunched {

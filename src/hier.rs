@@ -148,6 +148,9 @@ pub type MemberRc    = Rc<RefCell<dyn HierMember   >>;
 pub type GeneratorRc = Rc<RefCell<dyn HierGenerator>>;
 pub type ExporterRc  = Rc<RefCell<dyn HierExporter >>;
 
+/// This struct is used to describe the configuration of
+/// a hierarch to be used by a Hier struct.
+
 #[derive(Clone)]
 pub struct HierDescriptor {
     dimensions:     Vec<HierDimension>,
@@ -174,6 +177,9 @@ impl HierDescriptor {
 // around for queries.  It must be at least "period" elements, but
 // can be more to keep more history.
 
+/// This struct is used to define a specific level in a
+/// Hier struct.
+
 #[derive(Clone, Copy)]
 pub struct HierDimension {
     period:        usize,   // the number of statistics to be summed for the next level
@@ -198,12 +204,20 @@ impl HierDimension {
     }
 }
 
+/// This struct allows users to index into a hierarchical statistic
+/// to look at past and current data sets.
+
 #[derive(Clone, Copy)]
 pub struct HierIndex {
     set:   HierSet,
     level: usize,
     which: usize,
 }
+
+/// The Hier implementation allows examining the statistics
+/// at a level.  The user can choose to look at all the 
+/// statistics, or only the newest entries, the live set,
+/// as defined in descriptor.
 
 #[derive(Clone, Copy)]
 pub enum HierSet {
@@ -217,13 +231,19 @@ impl HierIndex {
     }
 }
 
-// The exporter needs to be downcasted to be used, so
+// The exporter needs to be downcast to be used, so
 // provide that interface.
+
+/// This struct is used internally to create a sum statistics
+/// object.
 
 pub trait HierExporter {
     fn as_any    (&self)     -> &dyn Any;
     fn as_any_mut(&mut self) -> &mut dyn Any;
 }
+
+/// Users can traverse all the statistics objects in a Hier
+/// struct using this trait and the traverse functions.
 
 pub trait HierTraverser {
     fn visit(&mut self, member: &mut dyn Rustics);
@@ -241,6 +261,12 @@ pub trait HierTraverser {
 // HierGenerator implementation for the RunningInteger
 // type.
 //
+
+/// This struct is used to create an interface between a
+/// statistics type, like RunningInteger, and the hier
+/// code.  It is used only to add interfaces for new types.
+/// Most users will use only the standard types already
+/// implemented.
 
 pub trait HierGenerator {
     fn make_from_exporter(&self, name: &str, printer: PrinterBox, exports: ExporterRc) -> MemberRc;
@@ -261,6 +287,10 @@ pub trait HierGenerator {
 //  trait, but it's easier to use them without that step.
 //
 
+/// This trait extends a Rustics implementation to interface
+/// with the Hier code.  It is needed only to support
+/// custom statistics type.
+
 pub trait HierMember {
     fn to_rustics    (&self    ) -> &dyn Rustics;
     fn to_rustics_mut(&mut self) -> &mut dyn Rustics;
@@ -274,6 +304,9 @@ pub trait HierMember {
 // statistics using a HierGenerator object and HierMember
 // structs.
 //
+
+/// Hier objects are the concrete type for a statistics
+/// hierarchy.
 
 #[derive(Clone)]
 pub struct Hier {
@@ -289,6 +322,10 @@ pub struct Hier {
     event_count:    i64,
     printer:        PrinterBox,
 }
+
+/// Define the configuration parameters for a Hier struct.
+/// Most users will use the prepackaged Hier constructors
+/// like IntegerHier::new_hier.
 
 #[derive(Clone)]
 pub struct HierConfig {

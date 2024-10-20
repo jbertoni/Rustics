@@ -14,9 +14,9 @@
 ///       and time values.
 ///
 ///```
-/// use rustics::printable::Printable;
+///     use rustics::printable::Printable;
 ///
-/// fn documentation() {
+///
 ///     let hz       = 1_000_000_000;
 ///     let day      = 24 * 60 * 60 * hz;
 ///     let week     = day * 7;
@@ -57,15 +57,13 @@
 ///         // and commas_u64 are a bit more convenient
 ///         // to use.
 ///
-///         assert_eq!(Printable::commas(   "+20"),        "20");
+///         assert_eq!(Printable::commas(   "+20"),       "+20");
 ///         assert_eq!(Printable::commas(  "-200"),      "-200");
 ///         assert_eq!(Printable::commas(  "2000"),     "2,000");
 ///         assert_eq!(Printable::commas("+12345"),   "+12,345");
 ///         assert_eq!(Printable::commas("-12345"),   "-12,345");
 ///         assert_eq!(Printable::commas("200000"),   "200,000");
 ///     }
-///
-/// }
 ///```
 
 // These structures and routines are common code for printing

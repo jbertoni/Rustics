@@ -32,15 +32,15 @@
 ///    // some of the assertions have been removed from that
 ///    // code.
 ///
-///    use rustics::Rustics;
-///    use rustics::stdout_printer;
-///    use rustics::hier::Hier;
-///    use rustics::hier::HierDescriptor;
-///    use rustics::hier::HierDimension;
-///    use rustics::hier::HierIndex;
-///    use rustics::hier::HierSet;
-///    use rustics::integer_hier::IntegerHier;
-///    use rustics::integer_hier::IntegerHierConfig;
+///     use rustics::Rustics;
+///     use rustics::stdout_printer;
+///     use rustics::hier::Hier;
+///     use rustics::hier::HierDescriptor;
+///     use rustics::hier::HierDimension;
+///     use rustics::hier::HierIndex;
+///     use rustics::hier::HierSet;
+///     use rustics::integer_hier::IntegerHier;
+///     use rustics::integer_hier::IntegerHierConfig;
 ///
 ///     // Make a descriptor of the first level.  We have chosen to sum
 ///     // 1000 level 0 RunningInteger structs into one level 1

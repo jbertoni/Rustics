@@ -23,37 +23,36 @@
 ///     to ClockTimer::new to read time.
 ///
 ///```
-/// use rustics::time::SimpleClock;
+///     use rustics::time::SimpleClock;
 ///
-/// // This is a example implementation of the SimpleClock
-/// // trait.  It simple returns a series of time values
-/// // incrementing by one in size per invocation.
+///     // This is a example implementation of the SimpleClock
+///     // trait.  It simple returns a series of time values
+///     // incrementing by one in size per invocation.
 ///
-/// struct ExampleClock {
-///     current_time: u128,
-///     hz:           u128,
-/// }
-///
-/// impl ExampleClock {
-///     fn new(start_time: u128, hz: u128) -> ExampleClock {
-///         let current_time = start_time;
-///
-///         ExampleClock { current_time, hz }
-///     }
-/// }
-///
-/// impl SimpleClock for ExampleClock {
-///     fn get_time(&mut self) -> u128 {
-///         self.current_time += 1;
-///         self.current_time
+///     struct ExampleClock {
+///         current_time: u128,
+///         hz:           u128,
 ///     }
 ///
-///     fn hz(&self) -> u128 {
-///         self.hz
-///     }
-/// }
+///     impl ExampleClock {
+///         fn new(start_time: u128, hz: u128) -> ExampleClock {
+///             let current_time = start_time;
 ///
-/// fn example_clock() {
+///             ExampleClock { current_time, hz }
+///         }
+///     }
+///
+///     impl SimpleClock for ExampleClock {
+///         fn get_time(&mut self) -> u128 {
+///             self.current_time += 1;
+///             self.current_time
+///         }
+///
+///         fn hz(&self) -> u128 {
+///             self.hz
+///         }
+///     }
+///
 ///     let     start_time  = 1;
 ///     let     hz          = 1_000_000_000;
 ///     let mut clock       = ExampleClock::new(start_time, hz);
@@ -65,7 +64,8 @@
 ///
 ///         assert!(time == start_time + i);
 ///     }
-/// }
+///
+///     assert!(clock.hz() == hz);
 ///```
 
 use std::time::Instant;
@@ -312,6 +312,8 @@ mod tests {
 
             assert!(time == start_time + i);
         }
+
+        assert!(clock.hz() == hz);
     }
 
     #[test]

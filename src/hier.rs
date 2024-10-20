@@ -8,19 +8,19 @@
 /// ## Type
 ///
 /// * Hier
-///     * Hier is a framework class that should be created using a 
+///     * Hier is a framework class that should be created using a
 ///       concrete type via IntegerHier::new_hier or TimeHier::new_hier.
 ///       This example uses IntegerHier.
 ///
 /// ## Example
 ///```
-///    use rustics::Rustics;
-///    use rustics::hier::Hier;
-///    use rustics::hier::HierDescriptor;
-///    use rustics::hier::HierDimension;
-///    use rustics::integer_hier::IntegerHier;
-///    use rustics::integer_hier::IntegerHierConfig;
-///    use rustics::stdout_printer;
+///     use rustics::Rustics;
+///     use rustics::hier::Hier;
+///     use rustics::hier::HierDescriptor;
+///     use rustics::hier::HierDimension;
+///     use rustics::integer_hier::IntegerHier;
+///     use rustics::integer_hier::IntegerHierConfig;
+///     use rustics::stdout_printer;
 ///
 ///     // Make a descriptor of the first level.  We have chosen to sum 1000
 ///     // level 0 RunningInteger structs into one level 1 RunningInteger
@@ -214,7 +214,7 @@ pub struct HierIndex {
 }
 
 /// The Hier implementation allows examining the statistics
-/// at a level.  The user can choose to look at all the 
+/// at a level.  The user can choose to look at all the
 /// statistics, or only the newest entries, the live set,
 /// as defined in descriptor.
 
@@ -604,7 +604,7 @@ impl Hier {
         &&  self.event_count % self.auto_next == 0 {
             self.advance();
         }
-        
+
         // Advance the event count.  This routine should only be
         // called when a statistical value is being recorded.
 
@@ -861,7 +861,7 @@ pub mod tests {
     use crate::running_integer::RunningInteger;
     use crate::time_hier::TimeHier;
     use crate::time_hier::TimeHierConfig;
-    use crate::running_time::RunningTime;    
+    use crate::running_time::RunningTime;
 
     // Make a Hier struct for testing.  The tests use the RunningInteger
     // implementation via IntegerHier.
@@ -942,7 +942,7 @@ pub mod tests {
         let recorded_events =
             if level == 0 {
                 let auto_next = hier_integer.auto_next as i64;
-                
+
                 roundup(events, auto_next)
             } else {
                 events - 1
@@ -953,7 +953,7 @@ pub mod tests {
         let     period           = hier_integer.dimensions[level].period as i64;
         let     size_limit       = hier_integer.dimensions[level].retention as i64;
 
-        let mut length = 
+        let mut length =
             match set {
                 HierSet::Live => { std::cmp::min(pushes, period    ) }
                 HierSet::All  => { std::cmp::min(pushes, size_limit) }

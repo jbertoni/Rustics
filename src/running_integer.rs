@@ -59,7 +59,6 @@
 ///       packet_sizes.record_i64(i + sample_count as i64);
 ///       assert!(packet_sizes.count() == (sample_count + i) as u64);
 ///    }
-/// 
 ///```
 
 use std::any::Any;

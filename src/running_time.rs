@@ -82,7 +82,6 @@
 ///    assert!(query_latency.count() == 1);
 ///    assert!(query_latency.mean() == time_spent as f64);
 ///    assert!(query_latency.standard_deviation() == 0.0);
-/// 
 ///```
 
 use std::any::Any;

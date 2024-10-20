@@ -109,6 +109,12 @@
 //!     *  SimpleClock
 //!         * This trait defines the interface used by ClockTimer to query a clock.
 //!
+//!     *  Printer
+//!         * This trait provides a method to use custom printers.  By default, output from the
+//!           print routines goes to stdout.
+//!         * See StdioPrinter for a very simple sample implementation.  This struct is used
+//!           as the default printer by the Rustics code.
+//!
 
 use std::sync::Mutex;
 use std::sync::Arc;
@@ -133,7 +139,7 @@ pub mod integer_hier;
 pub mod time_hier;
 pub mod log_histogram;
 
-mod printable;
+pub mod printable;
 
 use hier::Hier;
 use hier::HierDescriptor;
@@ -167,9 +173,8 @@ pub fn compute_variance(count: u64, moment_2: f64) -> f64 {
     }
 
     let n = count as f64;
-    let sample_variance = moment_2 / (n - 1.0);
 
-    sample_variance
+    moment_2 / (n - 1.0)
 }
 
 // Compute the sample skewness.
@@ -188,9 +193,8 @@ pub fn compute_skewness(count: u64, moment_2: f64, moment_3: f64) -> f64 {
     let m2              = moment_2 / n;
     let skewness        = m3 / m2.powf(1.5);
     let correction      = (n * (n - 1.0)).sqrt() / (n - 2.0);
-    let sample_skewness = correction * skewness;
 
-    sample_skewness
+    skewness * correction
 }
 
 // Compute the sample kurtosis.
@@ -209,33 +213,28 @@ pub fn compute_kurtosis(count: u64, moment_2: f64, moment_4: f64) -> f64 {
     let correction      = (n - 1.0) / ((n - 2.0) * (n - 3.0));
     let kurtosis_factor = (n + 1.0) * kurtosis + 6.0;
 
-    let sample_excess_kurtosis = correction * kurtosis_factor;
-
-    sample_excess_kurtosis
+    correction * kurtosis_factor
 }
 
 // Insert a delimiter and concatenate the parent and child names
 // when creating a hierarchical title.
 
 pub fn make_title(title_prefix: &str, title: &str) -> String {
-    let title =
-        if title_prefix.is_empty() {
-            title.to_string()
-        } else {
-            let mut full_title = String::from(title_prefix);
-            full_title.push_str(" ==> ");
-            full_title.push_str(title);
-            full_title
-        };
-
-    title
+    if title_prefix.is_empty() {
+        title.to_string()
+    } else {
+        let mut full_title = String::from(title_prefix);
+        full_title.push_str(" ==> ");
+        full_title.push_str(title);
+        full_title
+    }
 }
 
-// Define a Printer trait to allow a custom stream for print() operations.
-//
-// This routine is invoked for each line to be printed.  The print() member
-// is responsible for adding the newline, either via println!() or some
-// other mechanism.
+/// Define a Printer trait to allow custom ouput targets for print()
+/// operations.
+///
+/// This routine is invoked for each line to be printed.  The print()
+/// member is responsible for adding the newline.
 
 pub trait Printer {
     fn print(&self, output: &str);
@@ -244,6 +243,8 @@ pub trait Printer {
 // Define a printer that will send output to Stdout or Stderr, as
 // configured.
 
+/// This struct is used as the default printer by Rustics.  It
+/// serves as an example of a very simple Printer implementation.
 #[derive(Clone)]
 pub struct StdioPrinter {
     which: StreamKind,

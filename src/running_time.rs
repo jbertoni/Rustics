@@ -100,8 +100,10 @@ use super::printable::Printable;
 use super::running_integer::RunningInteger;
 use super::running_integer::RunningExport;
 
-/// Define the base type for a statistic collection
-/// of a stream of integers.
+/// A RunningTime struct accumulates statistics on a stream
+/// of integer data samples representing time intervals.
+/// Underneath, it uses a RunningTime struct, but most
+/// output is printed as time periods.
 
 #[derive(Clone)]
 pub struct RunningTime {

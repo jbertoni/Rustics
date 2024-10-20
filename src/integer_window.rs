@@ -83,8 +83,9 @@ use super::compute_skewness;
 use super::compute_kurtosis;
 use super::stdout_printer;
 
-/// Define a statistics type that collects a fixed-size
-/// window of data samples.
+/// An IntegerWindow struct collects integer data samples into
+/// a fixed-size window. It also maintinas a histogram based on
+/// all the samples seen.
 
 #[derive(Clone)]
 pub struct IntegerWindow {
@@ -116,8 +117,9 @@ pub struct IntegerWindow {
 // compute the summary statistics that we need to print.
 
 /// This struct is used to pass summary data from a
-/// statistics set.  It is useful mostly for creating
-/// new statistics types.
+/// statistics set to printing routines.  It is used
+/// internally and is use mostly to code implementing
+/// data type, not users collecting data.
 
 #[derive(Clone, Copy, Default)]
 pub struct Crunched {

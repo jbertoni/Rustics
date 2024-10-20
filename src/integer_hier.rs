@@ -223,14 +223,15 @@ impl HierMember for RunningInteger {
 }
 
 /// IntegerHier provides an interface from the Hier code to
-/// the RunningInteger code.
+/// the RunningInteger impl code that is not in methods.
 
 #[derive(Default)]
 pub struct IntegerHier {
 }
 
-/// Define the configuration parameters for a Hier object
-/// that uses RunningInteger statistics.
+/// This struct is used to pass the constructor
+/// parameters for a Hier object that uses RunningInteger
+/// statistics.
 
 #[derive(Clone)]
 pub struct IntegerHierConfig {

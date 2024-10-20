@@ -77,6 +77,10 @@
 
 use super::Printer;
 
+/// The Printable struct is used to pass data to the standard
+/// print routines shared by all the code.  It might be of
+/// some interest to users who have specific output requirements.
+
 #[derive(Copy, Clone)]
 pub struct Printable {
     pub n:          u64,

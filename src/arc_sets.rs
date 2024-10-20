@@ -122,15 +122,16 @@ use super::make_title;
 pub type RusticsArc = Arc<Mutex<dyn Rustics>>;
 pub type ArcSetBox  = Arc<Mutex<ArcSet>>;
 
-/// Define the trait for traversing a set and its hierarchy.
+/// This trait is used to traverse all the elements in a
+/// set.
 
 pub trait ArcTraverser {
     fn visit_set(&mut self, set: &mut ArcSet);
     fn visit_member(&mut self, member: &mut dyn Rustics);
 }
 
-/// Define the set type.  A set can contain statistics and
-/// subsets of type ArcSet.
+/// This struct is the implementation type for an ArcSet.
+/// A set can contain statistics and subsets of type ArcSet.
 
 #[derive(Clone)]
 pub struct ArcSet {

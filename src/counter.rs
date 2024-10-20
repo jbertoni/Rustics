@@ -57,7 +57,7 @@ use super::TimerBox;
 use super::stdout_printer;
 use super::printable::Printable;
 
-/// Define a simple counter struct.
+/// Define a simple counter struct that implements Rustics.
 
 #[derive(Clone)]
 pub struct Counter {

@@ -116,7 +116,9 @@ use super::time_window::TimeWindow;
 pub type RusticsRc = Rc<RefCell<dyn Rustics>>;
 pub type RcSetBox  = Rc<RefCell<RcSet>>;
 
-/// Define the trait for traversing an Rc set and its hierarchy.
+/// This trait defines the interface the user must
+/// implement to traverse the elements in an Rc
+/// set hierarchy.
 
 pub trait RcTraverser {
     fn visit_set(&mut self, set: &mut RcSet);

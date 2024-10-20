@@ -82,7 +82,8 @@ use super::sum::kbk_sum;
 use crate::hier::HierExporter;
 use crate::LogHistogram;
 
-/// Define the implementation of a very simple running integer sample space.
+/// RunningInteger provides very simple statistics on a
+/// stream of integer data samples.
 
 #[derive(Clone)]
 pub struct RunningInteger {
@@ -111,15 +112,17 @@ pub struct RunningInteger {
 // RunningInteger struct underneath a wrapper, so TimeHier uses this
 // code.
 
-/// RunningExport is for internal use.  It is available for general
-/// use, but most commonly, it will be used by a Hier struct.
+/// RunningExport mostly is for internal use.  It is available for
+/// general use, but most commonly, it will be used by a Hier struct
+/// to make summations of statistics objects.
 
 #[derive(Clone, Default)]
 pub struct RunningExporter {
     addends: Vec<RunningExport>,
 }
 
-/// This type is intend mostly for internal use by  Hier structs.
+/// This type is intend mostly for internal use by Hier structs.
+/// It is used to sum a list of RunningInteger statistics structs.
 
 impl RunningExporter {
     pub fn new() -> RunningExporter {
@@ -188,8 +191,8 @@ pub fn sum_log_histogram(sum:  &mut LogHistogram, addend: &LogHistogram) {
     }
 }
 
-/// Merge the vector of exported statistics.  Many fields are just
-/// sums of the parts.
+/// This function merges a vector of exported statistics.  Many
+/// fields are just sums of the parts.
 
 pub fn sum_running(exports: &Vec::<RunningExport>) -> RunningExport {
     let mut count          = 0;

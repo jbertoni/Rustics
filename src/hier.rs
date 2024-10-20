@@ -149,7 +149,7 @@ pub type GeneratorRc = Rc<RefCell<dyn HierGenerator>>;
 pub type ExporterRc  = Rc<RefCell<dyn HierExporter >>;
 
 /// This struct is used to describe the configuration of
-/// a hierarch to be used by a Hier struct.
+/// a hierarchy to be created by a Hier struct.
 
 #[derive(Clone)]
 pub struct HierDescriptor {
@@ -177,8 +177,7 @@ impl HierDescriptor {
 // around for queries.  It must be at least "period" elements, but
 // can be more to keep more history.
 
-/// This struct is used to define a specific level in a
-/// Hier struct.
+/// This struct is used to define one level in a Hier struct.
 
 #[derive(Clone, Copy)]
 pub struct HierDimension {
@@ -205,7 +204,7 @@ impl HierDimension {
 }
 
 /// This struct allows users to index into a hierarchical statistic
-/// to look at past and current data sets.
+/// to look at any statistics struct therein.
 
 #[derive(Clone, Copy)]
 pub struct HierIndex {
@@ -224,6 +223,9 @@ pub enum HierSet {
     All,
     Live,
 }
+
+/// HierIndex is used to refer to a specific statistics
+/// struct in a Hier struct.
 
 impl HierIndex {
     pub fn new(set: HierSet, level: usize, which: usize) -> HierIndex {
@@ -264,7 +266,7 @@ pub trait HierTraverser {
 
 /// This struct is used to create an interface between a
 /// statistics type, like RunningInteger, and the hier
-/// code.  It is used only to add interfaces for new types.
+/// code.  It is used only to add interfaces for types.
 /// Most users will use only the standard types already
 /// implemented.
 
@@ -325,7 +327,7 @@ pub struct Hier {
 
 /// Define the configuration parameters for a Hier struct.
 /// Most users will use the prepackaged Hier constructors
-/// like IntegerHier::new_hier.
+/// like IntegerHier::new_hier and TimeHier::new_heir.
 
 #[derive(Clone)]
 pub struct HierConfig {

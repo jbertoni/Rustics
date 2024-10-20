@@ -156,12 +156,16 @@ pub type PrinterBox    = Arc<Mutex<dyn Printer>>;
 pub type PrinterOption = Option<Arc<Mutex<dyn Printer>>>;
 pub type TimerBox      = Rc<RefCell<dyn Timer>>;
 
+/// This helper function just returns the herz rating
+/// of a timer in a box.  It just saves a bit of typing.
+
 pub fn timer_box_hz(timer:  &TimerBox) -> u128 {
     (**timer).borrow().hz()
 }
 
-/// Create a Printer object that sends output to stdout.
-/// This is the default type for all statistics types.
+/// This function creates a Printer object that sends output
+/// to stdout.  This is the default type for all statistics
+/// types.
 
 pub fn stdout_printer() -> PrinterBox {
     let printer = StdioPrinter::new(StreamKind::Stdout);
@@ -201,9 +205,9 @@ pub fn compute_skewness(count: u64, moment_2: f64, moment_3: f64) -> f64 {
     skewness * correction
 }
 
-/// Compute the sample kurtosis.
+/// Compute the sample kurtosis estimator.
 ///
-/// This formula is from brownmath.com
+/// This formula is from brownmath.com.
 
 pub fn compute_kurtosis(count: u64, moment_2: f64, moment_4: f64) -> f64 {
     if count < 4 || moment_2 == 0.0 {
@@ -220,8 +224,11 @@ pub fn compute_kurtosis(count: u64, moment_2: f64, moment_4: f64) -> f64 {
     correction * kurtosis_factor
 }
 
-// Insert a delimiter and concatenate the parent and child names
-// when creating a hierarchical title.
+/// This function concatenates two strings, insering the
+/// "=>" marker for set hierarchy specification.  It is
+/// probably of interest only to implementors of new statistics
+/// types.  It does omit the "=?" if the title prefix is
+/// empty.
 
 pub fn make_title(title_prefix: &str, title: &str) -> String {
     if title_prefix.is_empty() {
@@ -234,8 +241,8 @@ pub fn make_title(title_prefix: &str, title: &str) -> String {
     }
 }
 
-/// Define a Printer trait to allow custom ouput targets for print()
-/// operations.
+/// The Printer trait allows users to create custom output
+/// structs to match their I/O needs.
 ///
 /// This routine is invoked for each line to be printed.  The print()
 /// member is responsible for adding the newline.
@@ -276,8 +283,8 @@ impl Printer for StdioPrinter {
     }
 }
 
-/// Define the main trait for collecting statistics.  Eventually, this
-/// library will support floating point samples.
+/// The Rustics trait is the main interface for collecting
+/// and querying statistics.
 
 pub trait Rustics {
     fn record_i64  (&mut self, sample: i64);  // add an i64 sample

@@ -85,7 +85,8 @@ use super::stdout_printer;
 
 /// TimeWindow implements a statistics object that
 /// retains a window of the last n samples of a
-/// stream of data samples.
+/// stream of data samples and a histogram of all
+/// data samples.
 
 #[derive(Clone)]
 pub struct TimeWindow {

@@ -22,6 +22,51 @@
 ///   * ClockTimer uses a Rc<RefCell<dyn SimpleClock>> provided
 ///     to ClockTimer::new to read time.
 ///
+///```
+/// use rustics::time::SimpleClock;
+///
+/// // This is a example implementation of the SimpleClock
+/// // trait.  It simple returns a series of time values
+/// // incrementing by one in size per invocation.
+///
+/// struct ExampleClock {
+///     current_time: u128,
+///     hz:           u128,
+/// }
+///
+/// impl ExampleClock {
+///     fn new(start_time: u128, hz: u128) -> ExampleClock {
+///         let current_time = start_time;
+///
+///         ExampleClock { current_time, hz }
+///     }
+/// }
+///
+/// impl SimpleClock for ExampleClock {
+///     fn get_time(&mut self) -> u128 {
+///         self.current_time += 1;
+///         self.current_time
+///     }
+///
+///     fn hz(&self) -> u128 {
+///         self.hz
+///     }
+/// }
+///
+/// fn example_clock() {
+///     let     start_time  = 1;
+///     let     hz          = 1_000_000_000;
+///     let mut clock       = ExampleClock::new(start_time, hz);
+///
+///     // Get a few time values.
+///
+///     for i in 1..100 {
+///         let time = clock.get_time();
+///
+///         assert!(time == start_time + i);
+///     }
+/// }
+///```
 
 use std::time::Instant;
 use std::rc::Rc;
@@ -31,7 +76,8 @@ use std::cell::RefCell;
 ///  monitoring.  It is intended to allow for many implementations.
 ///  The underlying clock implementation determines the meaning of an
 ///  interval value.  For example, a DurationTimer uses the standard
-///  Rust Duration type, which returns wall-clock time.
+///  Rust Duration type, which returns wall-clock time.  It operates
+///  in nanoseconds.
 ///
 ///  The start method starts a timing interval.  It may be called
 ///  multiple times on a single structure.  The last invocation of
@@ -56,6 +102,7 @@ pub type DurationTimerBox = Rc<RefCell<DurationTimer>>;
 
 ///  DurationTimer uses the Rust standard time function "Duration" to
 ///  measure time intervals.  This timer thus returns wall-clock time.
+///  It currently works in units of nanoseconds.
 
 #[derive(Clone)]
 pub struct DurationTimer {
@@ -116,19 +163,14 @@ impl Default for DurationTimer {
 
 ///  This trait can be implemented for platform-specific clocks.
 ///  The structures can then be wrapped in a ClockTimer struct.
-///  See the test routine "simple_test_clock" for an example.
 
 pub trait SimpleClock {
     fn get_time(&mut self) -> u128;
     fn hz(&self) -> u128;
 }
 
-///  This is a wrapper class for platform-specific clocks that
-///  would be useful to support.
-///
-///  For efficiency, using 64-bit math internally might be useful.
-///  On the other hand, using femtoseconds might be useful for
-///  particularly hostile hz ratings.
+///  This struct is a wrapper class for platform-specific clocks
+///  that are useful to support.
 
 #[derive(Clone)]
 pub struct ClockTimer {
@@ -230,9 +272,52 @@ mod tests {
         }
     }
 
+    // This is a example implementation of the SimpleClock
+    // trait.  It simple returns a series of time values
+    // incrementing by one in size per invocation.
+
+    struct ExampleClock {
+        current_time: u128,
+        hz:           u128,
+    }
+
+    impl ExampleClock {
+        fn new(start_time: u128, hz: u128) -> ExampleClock {
+            let current_time = start_time;
+
+            ExampleClock { current_time, hz }
+        }
+    }
+
+    impl SimpleClock for ExampleClock {
+        fn get_time(&mut self) -> u128 {
+            self.current_time += 1;
+            self.current_time
+        }
+
+        fn hz(&self) -> u128 {
+            self.hz
+        }
+    }
+
+    fn example_clock() {
+        let     start_time  = 1;
+        let     hz          = 1_000_000_000;
+        let mut clock       = ExampleClock::new(start_time, hz);
+
+        // Get a few time values.
+
+        for i in 1..100 {
+            let time = clock.get_time();
+
+            assert!(time == start_time + i);
+        }
+    }
+
     #[test]
     pub fn run_tests() {
         simple_test_duration();
         simple_test_clock();
+        example_clock();
     }
 }

@@ -79,6 +79,10 @@ use super::printable::Printable;
 // In addition to the above notes, pseudo-log(0) is defined as 0.
 //
 
+/// This function returns integer indexs for histograms.  The caller
+/// handles the sign.  This routine works on the absolute value of
+/// its input.
+
 pub fn pseudo_log_index(value: i64) -> usize {
     let mut place = 1;
     let mut log   = 0;
@@ -100,6 +104,9 @@ pub fn pseudo_log_index(value: i64) -> usize {
 
     log
 }
+
+/// LogHistogram is the implementation type for the current
+/// pseudo-log histogram.
 
 #[derive(Clone)]
 pub struct LogHistogram {

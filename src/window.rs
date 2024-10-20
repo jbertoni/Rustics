@@ -86,8 +86,9 @@
 //
 
 /// A Window struct maintains a set of items of type T.  The
-/// set size is limited and the oldest item is dropped when
-/// a new item is entered and the window is full.
+/// set size is limited to a configurable parameter.  The
+/// oldest item is dropped when  a new item is entered and the
+/// window is full.
 
 #[derive(Clone)]
 pub struct Window<T> {

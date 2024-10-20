@@ -18,6 +18,8 @@
 ///     use rustics::hier::Hier;
 ///     use rustics::hier::HierDescriptor;
 ///     use rustics::hier::HierDimension;
+///     use rustics::hier::HierIndex;
+///     use rustics::hier::HierSet;
 ///     use rustics::integer_hier::IntegerHier;
 ///     use rustics::integer_hier::IntegerHierConfig;
 ///     use rustics::stdout_printer;
@@ -130,6 +132,33 @@
 ///
 ///     assert!(integer_hier.live_len(1)   == 1     );
 ///     assert!(integer_hier.event_count() == events);
+///
+///     // Sum the current live entries in level 0.
+///
+///     let     level   = 0;
+///     let     count   = integer_hier.live_len(0);
+///     let mut addends = Vec::new();
+///
+///     // First create a vector of indices.
+///
+///     for i in 0..count {
+///         addends.push(HierIndex::new(HierSet::Live, level, i));
+///     }
+///
+///     // Now compute the sum and print it.
+///
+///     let sum = integer_hier.sum(addends, "Level 0 Summary", None);
+///
+///     let sum =
+///         match sum {
+///             (Some(member), count)  => { member }
+///             (None,         count)  => { panic!("The sum wasn't created"); }
+///         };
+///
+///     let borrow  = sum.borrow();
+///     let rustics = borrow.to_rustics();
+///
+///     rustics.print()
 ///```
 
 use super::Rustics;

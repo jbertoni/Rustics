@@ -98,7 +98,9 @@ pub struct TimeWindow {
 }
 
 impl TimeWindow {
-    pub fn new(name_in: &str, window_size: usize, timer:  TimerBox, printer: PrinterOption)
+    /// TimeWindow Constructor
+
+    pub fn new(name: &str, window_size: usize, timer:  TimerBox, printer: PrinterOption)
             -> TimeWindow {
         let hz = timer_box_hz(&timer);
 
@@ -107,7 +109,7 @@ impl TimeWindow {
         }
 
         let hz             = hz as i64;
-        let integer_window = IntegerWindow::new(name_in, window_size, printer.clone());
+        let integer_window = IntegerWindow::new(name, window_size, printer.clone());
         let integer_window = Box::new(integer_window);
 
         let printer =

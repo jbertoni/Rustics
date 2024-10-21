@@ -114,6 +114,8 @@ pub struct RunningTime {
 }
 
 impl RunningTime {
+    /// RunningTime Constructor
+
     pub fn new(name_in: &str, timer: TimerBox, printer: PrinterOption) -> RunningTime {
         let hz = timer_box_hz(&timer);
 
@@ -134,6 +136,9 @@ impl RunningTime {
         RunningTime { printer, running_integer, timer, hz }
     }
 
+    /// Create a RunningTime instance from a RunningInteger.  This procedure
+    /// is used internally to support the Hier code.
+
     pub fn from_integer(timer: TimerBox, printer: PrinterBox, running: RunningInteger)
             -> RunningTime {
         let hz              = timer_box_hz(&timer) as i64;
@@ -145,6 +150,10 @@ impl RunningTime {
     pub fn hz(&self) -> i64 {
         self.hz
     }
+
+    /// Export the statistics for this instance.  Internally, the
+    /// RunningTime code uses a RunningInteger instancd to store
+    /// all the data.
 
     pub fn export(&self) -> RunningExport {
         self.running_integer.export()

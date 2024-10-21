@@ -125,17 +125,22 @@ pub struct RunningExporter {
 /// It is used to sum a list of RunningInteger statistics instances.
 
 impl RunningExporter {
+    /// RunningExporter Constructor.
+
     pub fn new() -> RunningExporter {
         let addends = Vec::new();
 
         RunningExporter { addends }
     }
 
+    /// Push a statistics instance onto the list of instances to
+    /// be summed.
+
     pub fn push(&mut self, addend: RunningExport) {
         self.addends.push(addend);
     }
 
-    // Make a member based on the summed exports.
+    /// Make a member based on the summed exports.
 
     pub fn make_member(&mut self, name: &str, printer: PrinterBox) -> RunningInteger {
         let title   = name;
@@ -226,6 +231,8 @@ pub fn sum_running(exports: &Vec::<RunningExport>) -> RunningExport {
 }
 
 impl RunningInteger {
+    /// RunningInteger Constructor
+
     pub fn new(name_in: &str, printer: PrinterOption) -> RunningInteger {
         let name            = String::from(name_in);
         let title           = String::from(name_in);
@@ -253,6 +260,9 @@ impl RunningInteger {
             min,        max,        printer
         }
     }
+
+    /// Create a RunningInteger instance from data from a list of
+    /// instances.
 
     pub fn new_from_exporter(name: &str, title: &str, printer: PrinterOption, import: RunningExport)
             -> RunningInteger {
@@ -283,8 +293,8 @@ impl RunningInteger {
         }
     }
 
-    // Export all the statistics from a given instance to
-    // be used to create a sum of many instances.
+    /// Export all the statistics kept for a given instance to
+    /// be used to create a sum of many instances.
 
     pub fn export(&self) -> RunningExport {
         let count           = self.count;

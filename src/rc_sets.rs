@@ -139,11 +139,11 @@ pub struct RcSet {
 
 impl RcSet {
 
-    // Create a new set.
-    //
-    // The "members_hint" and "subsets_hint" parameters are hints as to the number
-    // of elements to be expected.  "members_hint" refers to the number of Rustics
-    // statistics in the set.  These hints can improve performance a bit.
+    /// Create a new set.
+    ///
+    /// The "members_hint" and "subsets_hint" parameters are hints as to the number
+    /// of elements to be expected.  "members_hint" refers to the number of Rustics
+    /// statistics in the set.  These hints can improve performance a bit.
 
     pub fn new(name_in: &str, members: usize, subsets: usize, printer: PrinterOption) -> RcSet {
         let name    = String::from(name_in);
@@ -163,14 +163,14 @@ impl RcSet {
         RcSet { name, title, id, next_id, members, subsets, printer }
     }
 
-    // Returns the name of the set.
+    /// Returns the name of the set.
 
     pub fn name(&self) -> String {
         self.name.clone()
     }
 
-    // Traverses the statistics and subsets in the set invoking a
-    // user-defined callback.
+    /// Traverse the statistics and subsets.  Invoke a user-defined
+    /// function for each element.
 
     pub fn traverse(&mut self, traverser: &mut dyn RcTraverser) {
         traverser.visit_set(self);
@@ -188,7 +188,7 @@ impl RcSet {
         }
     }
 
-    // Print the set and all its constituents (subsets and statistics).
+    /// Print the set and all its constituents (subsets and statistics).
 
     pub fn print(&self) {
         self.print_opts(None, None);
@@ -214,8 +214,8 @@ impl RcSet {
         self.title = String::from(title);
     }
 
-    // Do a recursive clear of all statistics in the set and its
-    // entire subset hierarachy.
+    /// Do a recursive clear of all statistics in the set and its
+    /// entire subset hierarachy.
 
     pub fn clear(&mut self) {
         for subset in self.subsets.iter() {
@@ -229,7 +229,7 @@ impl RcSet {
         }
     }
 
-    // Add a member given an Rc instance
+    /// Add a member given a Rustics instance.
 
     pub fn add_member(&mut self, member: RusticsRc) {
         let mut stat   = member.borrow_mut();
@@ -243,7 +243,7 @@ impl RcSet {
         self.members.push(member);
     }
 
-    // Create a RunningInteger statistics instance and add it to the set.
+    /// Create a RunningInteger instance and add it to the set.
 
     pub fn add_running_integer(&mut self, name: &str) -> RusticsRc {
         let printer = Some(self.printer.clone());
@@ -254,7 +254,7 @@ impl RcSet {
         member
     }
 
-    // Create a IntegerWindow statistics instance and add it to the set.
+    /// Create a IntegerWindow statistics instance and add it to the set.
 
     pub fn add_integer_window(&mut self, window_size: usize, name: &str) -> RusticsRc {
         let printer = Some(self.printer.clone());
@@ -265,6 +265,8 @@ impl RcSet {
         member
     }
 
+    /// Create a RunningTime instance and add it to the set.
+
     pub fn add_running_time(&mut self, name: &str, timer: TimerBox) -> RusticsRc {
         let printer = Some(self.printer.clone());
         let member  = RunningTime::new(name, timer, printer);
@@ -273,6 +275,8 @@ impl RcSet {
         self.add_member(member.clone());
         member
     }
+
+    /// Create a TimeWindow instance and add it to the set.
 
     pub fn add_time_window(&mut self, name: &str, window_size: usize, timer: TimerBox) -> RusticsRc {
         let printer = Some(self.printer.clone());
@@ -283,6 +287,8 @@ impl RcSet {
         member
     }
 
+    /// Create a Counter instance and add it to the set.
+
     pub fn add_counter(&mut self, name: &str) -> RusticsRc {
         let printer = Some(self.printer.clone());
         let member  = Counter::new(name, printer);
@@ -292,7 +298,7 @@ impl RcSet {
         member
     }
 
-    // Remove a statistic from the set.
+    /// Remove a Rustics element from the set.
 
     pub fn remove_stat(&mut self, target: RusticsRc) -> bool {
         let mut found     = false;
@@ -321,7 +327,7 @@ impl RcSet {
         found
     }
 
-    // Create a new subset and add it to the set.
+    /// Create a new subset and add it to the set.
 
     pub fn add_subset(&mut self, name: &str, members: usize, subsets: usize) -> RcSetBox {
         let     printer = Some(self.printer.clone());
@@ -338,9 +344,9 @@ impl RcSet {
         subset
     }
 
-    // Remove a subset from the set.  We find the element by id.
-    // There might be some way to do pointer comparison, but it
-    // doesn't seem to be trivial.
+    /// Remove a subset from the set.  We find the element by id.
+    /// There might be some way to do pointer comparison, but it
+    /// doesn't seem to be trivial.
 
     pub fn remove_subset(&mut self, target: &RcSetBox) -> bool {
         let mut found     = false;

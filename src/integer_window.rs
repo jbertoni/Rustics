@@ -196,6 +196,9 @@ impl IntegerWindow {
         sum
     }
 
+    /// Gather the statistics and compute summary statistics
+    /// for the current samples in the window.
+
     pub fn crunch(&self) -> Crunched {
         if self.vector.is_empty() {
             return Crunched::new();

@@ -157,7 +157,7 @@ pub type PrinterBox    = Arc<Mutex<dyn Printer>>;
 pub type PrinterOption = Option<Arc<Mutex<dyn Printer>>>;
 pub type TimerBox      = Rc<RefCell<dyn Timer>>;
 
-/// timer_box_hz() is a helper function just returns the herz
+/// timer_box_hz() is a helper function just returns the hertz
 /// of a timer in a box.  It just saves a bit of typing.
 
 pub fn timer_box_hz(timer:  &TimerBox) -> u128 {

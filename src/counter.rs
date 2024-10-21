@@ -69,6 +69,8 @@ pub struct Counter {
 }
 
 impl Counter {
+    /// Counter Constructor
+
     pub fn new(name: &str, printer: PrinterOption) -> Counter {
         let name    = String::from(name);
         let title   = name.clone();

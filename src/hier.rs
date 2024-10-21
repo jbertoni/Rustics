@@ -441,13 +441,13 @@ impl Hier {
         member.clone()
     }
 
-    /// print_index_options() prints the given element in the statistics matrix.
+    /// Print the given element in the statistics matrix.
 
     pub fn print_index_opts(&self, index: HierIndex, printer: PrinterOption, title: Option<&str>) {
         self.local_print(index, printer, title);
     }
 
-    /// print_all prints every member of the Hier instance.
+    /// Print every member of the Hier instance.
 
     pub fn print_all(&self, printer: PrinterOption, title: Option<&str>) {
         for i in 0..self.stats.len() {
@@ -896,6 +896,8 @@ impl Rustics for Hier {
 
         rustics.precompute();
     }
+
+    /// The clear() method deletes all data in the Hier object.
 
     fn clear(&mut self) {
         self.clear_all();

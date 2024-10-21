@@ -125,7 +125,7 @@ impl LogHistogram {
         LogHistogram { negative, positive }
     }
 
-    // Record a sample value.
+    /// Record a sample value.
 
     pub fn record(&mut self, sample: i64) {
         if sample < 0 {
@@ -201,7 +201,7 @@ impl LogHistogram {
         }
     }
 
-    // Find the most common "log" bucket
+    /// Find the most common pseudo-log of the sample data.
 
     pub fn log_mode(&self) -> isize {
         let mut mode = 0;
@@ -231,6 +231,8 @@ impl LogHistogram {
         printer.print("  -----------------------");
         self.print_positive(printer);
     }
+
+    /// Clear the histogram back to its initial state.
 
     pub fn clear(&mut self) {
         self.negative = [0; 64];

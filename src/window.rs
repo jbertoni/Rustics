@@ -196,8 +196,7 @@ impl<T> Window<T> {
         Some(result)
     }
 
-    /// Return a pointer to the newest item, if there
-    /// is one.
+    /// Return a pointer to the newest item, if there is one.
 
     pub fn newest(&self) -> Option<&T> {
         if self.data.is_empty() {

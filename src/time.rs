@@ -90,7 +90,7 @@ use std::cell::RefCell;
 ///  the times for a sequence of events.  If a more precise timing is
 ///  required, "start" will start an interval.
 ///
-///  hz returns the herz of the underlying clock.
+///  hz returns the hertz of the underlying clock.
 
 pub trait Timer {
     fn start(&mut self);            // start or restart a timer

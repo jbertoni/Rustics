@@ -71,7 +71,7 @@
 ///    // the RunningTime instance, but you can use that timer directly
 ///    // to get data. Let's use Duration timer directly as an example.
 ///    // Make a new Timer instance for this example.  This is used only
-///    // to pass the clock herz to the RunningTimer code.
+///    // to pass the clock hertz to the RunningTimer code.
 ///
 ///    let timer = DurationTimer::new_box();
 ///
@@ -150,12 +150,12 @@ pub struct ArcSet {
 
 impl ArcSet {
 
-    // Create a new set.
-    //
-    // The "members_hint" and "subsets_hint" parameters are hints as to the number
-    // of elements to be expected.  "members_hint" refers to the number of Rustics
-    // statistics in the set.  These hints can improve performance a bit.  They
-    // might be especially useful in embedded environments.
+    /// ArcSet Constructor
+    ///
+    /// The "members_hint" and "subsets_hint" parameters are hints as to the number
+    /// of elements to be expected.  "members_hint" refers to the number of Rustics
+    /// statistics in the set.  These hints can improve performance a bit.  They
+    /// might be especially useful in embedded environments.
 
     pub fn new(name_in: &str, members_hint: usize, subsets_hint: usize, printer: PrinterOption)
             -> ArcSet {
@@ -176,6 +176,8 @@ impl ArcSet {
         ArcSet { name, title, id, next_id, members, subsets, printer }
     }
 
+    /// Create a new ArcSet and wraps it as an Arc<Mutex<ArcSet>>.
+
     pub fn new_box(name: &str, members_hint: usize, subsets_hint: usize, printer: PrinterOption)
             -> ArcSetBox {
         let set = ArcSet::new(name, members_hint, subsets_hint, printer);
@@ -183,14 +185,14 @@ impl ArcSet {
         Arc::from(Mutex::new(set))
     }
 
-    // Returns the name of the set.
+    /// Returns the name of the set.
 
     pub fn name(&self) -> String {
         self.name.clone()
     }
 
-    // Traverses the statistics and subsets in the set invoking a
-    // user-defined callback.
+    /// Traverse the statistics and subsets in the set invoking a
+    /// user-defined callback.
 
     pub fn traverse(&mut self, traverser: &mut dyn ArcTraverser) {
         traverser.visit_set(self);
@@ -208,11 +210,13 @@ impl ArcSet {
         }
     }
 
-    // Print the set and all its constituents (subsets and statistics).
+    /// Print the set and all its constituents (subsets and statistics).
 
     pub fn print(&self) {
         self.print_opts(None, None);
     }
+
+    /// Print the set and override the standard printer and title.
 
     pub fn print_opts(&self, printer: PrinterOption, title: Option<&str>) {
         for mutex in self.members.iter() {
@@ -236,8 +240,8 @@ impl ArcSet {
         self.title = String::from(title);
     }
 
-    // Do a recursive clear of all statistics in the set and its
-    // entire subset hierarachy.
+    /// Do a recursive clear of all statistics in the set and its
+    /// entire subset hierarachy.
 
     pub fn clear(&mut self) {
         for mutex in self.subsets.iter() {
@@ -253,8 +257,9 @@ impl ArcSet {
         }
     }
 
-    // Add a member statistic.  The user creates the statistics instance
-    // and passes it in an Arc.
+    /// Add a member statistic.  The user creates the statistics instance
+    /// and passes it in an Arc.  This is a bit more manual than
+    /// add_running_integer() and similar methods.
 
     pub fn add_member(&mut self, member: RusticsArc) {
         let mut stat  = member.lock().unwrap();
@@ -268,7 +273,7 @@ impl ArcSet {
         self.members.push(member);
     }
 
-    // Create a RunningInteger statistics instance and add it to the set.
+    /// Create a RunningInteger statistics instance and add it to the set.
 
     pub fn add_running_integer(&mut self, name: &str) -> RusticsArc {
         let printer = Some(self.printer.clone());
@@ -279,7 +284,7 @@ impl ArcSet {
         member
     }
 
-    // Create a IntegerWindow statistics instance and add it to the set.
+    /// Create a IntegerWindow statistics instance and add it to the set.
 
     pub fn add_integer_window(&mut self, window_size: usize, name: &str) -> RusticsArc {
         let printer = Some(self.printer.clone());
@@ -290,6 +295,11 @@ impl ArcSet {
         member
     }
 
+    /// Create a RunningTime instance and add it to the set.  The user
+    /// must provide a timer.  The timer can be used with the
+    /// record_event method and is queried to determine the hertz
+    /// for the samples.
+
     pub fn add_running_time(&mut self, name: &str, timer: TimerBox) -> RusticsArc {
         let printer = Some(self.printer.clone());
         let member  = RunningTime::new(name, timer, printer);
@@ -299,7 +309,10 @@ impl ArcSet {
         member
     }
 
-    pub fn add_time_window(&mut self, name: &str, window_size: usize, timer: TimerBox) -> RusticsArc {
+    /// Create a TimeWindow instance and add it to the set.
+
+    pub fn add_time_window(&mut self, name: &str, window_size: usize, timer: TimerBox)
+            -> RusticsArc {
         let printer = Some(self.printer.clone());
         let member  = TimeWindow::new(name, window_size, timer, printer);
         let member  = Arc::from(Mutex::new(member));
@@ -307,6 +320,8 @@ impl ArcSet {
         self.add_member(member.clone());
         member
     }
+
+    /// Create a Counter and add it to the set.
 
     pub fn add_counter(&mut self, name: &str) -> RusticsArc {
         let printer = Some(self.printer.clone());
@@ -317,7 +332,7 @@ impl ArcSet {
         member
     }
 
-    // Remove a statistic from the set.
+    /// Remove a statistic from the set.
 
     pub fn remove_stat(&mut self, target_box: RusticsArc) -> bool {
         let mut found       = false;
@@ -346,7 +361,7 @@ impl ArcSet {
         found
     }
 
-    // Create a new subset and add it to the set.
+    /// Create a new subset and add it to the set.
 
     pub fn add_subset(&mut self, name: &str, members: usize, subsets: usize) -> ArcSetBox {
         let printer = Some(self.printer.clone());
@@ -366,7 +381,7 @@ impl ArcSet {
         last.clone()
     }
 
-    // Remove a subset from the set.
+    /// Remove a subset from the set.
 
     pub fn remove_subset(&mut self, target_box: ArcSetBox) -> bool {
         let mut found         = false;
@@ -395,7 +410,7 @@ impl ArcSet {
         found
     }
 
-    // The following methods are for internal use only.
+    /// The following methods are for internal use only.
 
     fn set_id(&mut self, id: usize) {
         self.id = id;

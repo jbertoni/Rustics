@@ -246,14 +246,20 @@ impl Printable {
         (scaled_time, unit)
     }
 
+    /// Print an integer statistic and its name in the standard format.
+
     pub fn print_integer(name: &str, value: i64, printer: &mut dyn Printer) {
         let output = format!("    {:<12} {:>12}", name, Self::commas_i64(value));
         printer.print(&output);
     }
 
+    /// Print an integer statistic and its name in the standard format.
+
     pub fn print_float(name: &str, value: f64, printer: &mut dyn Printer) {
         Self::print_float_unit(name, value, "", printer)
     }
+
+    /// Print a float value with a possible unit string.
 
     pub fn print_float_unit(name: &str, value: f64, unit: &str, printer: &mut dyn Printer) {
         assert!(!value.is_nan());
@@ -298,6 +304,8 @@ impl Printable {
         printer.print(&output);
     }
 
+    /// Print a time value in human-usable form.
+
     pub fn print_time(name: &str, time: f64, hz: i64, printer: &mut dyn Printer) {
         let (scaled_time, unit) = Self::scale_time(time, hz);
 
@@ -309,7 +317,7 @@ impl Printable {
         }
     }
 
-    // Print the common integer statistics as passed in a Printable instance.
+    /// Print the common integer statistics as passed in a Printable instance.
 
     pub fn print_common_integer(&self, printer: &mut dyn Printer) {
         Self::print_integer("Count", self.n as i64, printer);
@@ -321,9 +329,9 @@ impl Printable {
         }
     }
 
-    // Print the common computed statistics as passed in a Printable instance.
-    // This includes values like the mean, which should be limited to an integer
-    // value.
+    /// Print the common float statistics as passed in a Printable instance.
+    /// This includes values like the mean, which should be limited to an integer
+    /// value.
 
     pub fn print_common_float(&self, printer: &mut dyn Printer) {
         if self.n > 0 {
@@ -356,8 +364,8 @@ impl Printable {
         ticks as f64
     }
 
-    // Print integer values that are in time units as actual times. The
-    // mode of the pseudo-log is an exception.
+    /// Print integer values that are in time units as actual times. The
+    /// mode of the pseudo-log is an exception.
 
     pub fn print_common_integer_times(&self, hz: i64, printer: &mut dyn Printer) {
         Self::print_integer("Count", self.n as i64, printer);
@@ -370,6 +378,8 @@ impl Printable {
             Self::print_time("Log Mode", approximation,   hz, printer);
         }
     }
+
+    /// Print the common f64 summary statistics.
 
     pub fn print_common_float_times(&self, hz: i64, printer: &mut dyn Printer) {
         if self.n > 0 {

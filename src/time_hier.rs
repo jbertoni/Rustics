@@ -189,8 +189,7 @@ mod tests {
     use crate::tests::continuing_box;
     use crate::tests::continuing_timer_increment;
 
-    fn make_descriptor() -> HierDescriptor {
-        let     auto_next      = 4;
+    fn make_descriptor(auto_next: i64) -> HierDescriptor {
         let     levels         = 4;
         let     level_0_period = 8;
         let     dimension      = HierDimension::new(level_0_period, 3 * level_0_period);
@@ -216,7 +215,7 @@ mod tests {
     }
 
     fn make_hier_gen(generator:  GeneratorRc) -> Hier {
-        let descriptor    = make_descriptor();
+        let descriptor    = make_descriptor(4);
         let class         = "integer".to_string();
         let name          = "test hier".to_string();
         let title         = None;
@@ -228,7 +227,8 @@ mod tests {
     }
 
     fn test_new_hier_box() {
-        let     descriptor    = make_descriptor();
+        let     auto_next     = 200;
+        let     descriptor    = make_descriptor(auto_next);
         let     name          = "test hier".to_string();
         let     title         = None;
         let     printer       = Some(stdout_printer());
@@ -241,8 +241,9 @@ mod tests {
         // Now just record a few events.
 
         let mut events = 0;
+        let mut sum    = 0;
 
-        for i in 0..100 {
+        for i in 0..auto_next / 2 {
             hier_impl.record_event();
 
             // Make sure that this event was recorded properly.
@@ -250,15 +251,23 @@ mod tests {
             let expected = (i + 1) * continuing_timer_increment();
 
             assert!(hier_impl.max_i64() == expected);
+            sum += expected;
 
             // Now try record_time()
 
             hier_impl.record_time(i);
 
+            sum += i;
             events += 2;
         }
 
+        let mean  = sum as f64 / events as f64;
+
+        // Check that the event count and mean match our
+        // expectations.
+
         assert!(hier_impl.event_count() == events);
+        assert!(hier_impl.mean() == mean);
         hier_impl.print();
     }
 

@@ -459,17 +459,18 @@ mod tests {
         }
     }
 
-    // Define a simple timer for testing that just counts up by 1000 ticks
-    // for each event interval.  This strucet is used by other modules.
+    // Define a simple timer for testing that just starts at 1000 ticks
+    // and then counts up by 1000 ticks for each event interval.  This
+    // type is used by other test modules.
+
+    pub fn continuing_timer_increment() -> i64 {
+        1000
+    }
 
     pub fn continuing_box() -> TimerBox {
         let hz = 1_000_000_000;
 
         Rc::from(RefCell::new(ContinuingTimer::new(hz)))
-    }
-
-    pub fn continuing_timer_increment() -> i64 {
-        1000
     }
 
     pub struct ContinuingTimer {

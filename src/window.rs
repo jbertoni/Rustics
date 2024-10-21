@@ -4,7 +4,7 @@
 //  permitted by law.
 //
 
-//
+///
 /// ## Type
 ///
 /// * Window<T>
@@ -99,8 +99,8 @@ pub struct Window<T> {
     data:           Vec<T>,
 }
 
-//  The Window type supports scans of all live entries
-//  and of the entire contents of the window.
+// The Window type supports scans of all live entries and of
+// the entire contents of the window.
 
 /// Define the sets that can be traversed.
 
@@ -110,6 +110,8 @@ pub enum ScanType {
 }
 
 impl<T> Window<T> {
+    /// Construct a new window instance.
+
     pub fn new(size_limit: usize, live_limit: usize) -> Window<T> {
         if size_limit == 0 {
             panic!("Window:  The size limit must be positive");
@@ -125,8 +127,7 @@ impl<T> Window<T> {
         Window { size_limit, live_limit, current_index, data }
     }
 
-    //  Add a new entry to the window.  It is always considered to be
-    //  the newest entry.
+    ///  Add a new entry to the window.
 
     pub fn push(&mut self, data:  T) {
         // If this is the first entry, set the "current_index"
@@ -195,8 +196,8 @@ impl<T> Window<T> {
         Some(result)
     }
 
-    // Return a pointer to the newest item, if there
-    // is one.
+    /// Return a pointer to the newest item, if there
+    /// is one.
 
     pub fn newest(&self) -> Option<&T> {
         if self.data.is_empty() {
@@ -207,7 +208,7 @@ impl<T> Window<T> {
         Some(&self.data[index_newest])
     }
 
-    // Return a mutable reference to the current instance.
+    /// Return a mutable reference to the current instance.
 
     pub fn newest_mut(&mut self) -> Option<&mut T> {
         let index_newest = self.index_newest()?;
@@ -215,11 +216,13 @@ impl<T> Window<T> {
         Some(&mut self.data[index_newest])
     }
 
+    /// Return the number of elements in the set.
+
     pub fn all_len(&self) -> usize {
         self.data.len()
     }
 
-    // Return the number of live elements.
+    /// Return the number of live elements.
 
     pub fn live_len(&self) -> usize {
         let mut result = self.data.len();
@@ -231,9 +234,9 @@ impl<T> Window<T> {
         result
     }
 
-    // Return a pointer to a given element in the window.
-    // The array is indexed with element zero being the
-    // oldest.
+    /// Return a pointer to a given element in the window.
+    /// The array is indexed with element zero being the
+    /// oldest.
 
     pub fn index_all(&self, index: usize) -> Option<&T> {
         if index >= self.size_limit {
@@ -259,8 +262,8 @@ impl<T> Window<T> {
         Some(&self.data[internal_index])
     }
 
-    // Return a point to a live element.  The items are
-    // ordered by age wth the oldest at index 0.
+    /// Return a point to a live element.  The items are
+    /// ordered by age wth the oldest at index 0.
 
     pub fn index_live(&self, index: usize) -> Option<&T> {
         if index >= self.live_limit {
@@ -342,21 +345,21 @@ impl<T> Window<T> {
         (&self.data, oldest, oldest_live)
     }
 
-    //  Delete all data from the window.  This puts it back into
-    //  its initial state.
+    ///  Delete all data from the window.  This puts it back into
+    ///  its initial state.
 
     pub fn clear(&mut self) {
         self.current_index = 0;
         self.data.clear();
     }
 
-    // Iterate over all the items in the window.
+    /// Iterate over all the items in the window.
 
     pub fn iter_all(&self) -> WindowIterator<T> {
         WindowIterator::<T>::new(self, ScanType::All)
     }
 
-    // Iterate over all the live items in the window.
+    /// Iterate over all the live items in the window.
 
     pub fn iter_live(&self) -> WindowIterator<T> {
         WindowIterator::<T>::new(self, ScanType::Live)

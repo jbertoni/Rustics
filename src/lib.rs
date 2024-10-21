@@ -292,11 +292,11 @@ pub trait Rustics {
     fn record_time (&mut self, sample: i64);  // add a time sample
 
     fn record_interval(&mut self, timer: &mut TimerBox);
-                                             // Add a duration sample ending now
+                                             // Add a time sample ending now
 
-    fn name(&self)               -> String;  // a text (UTF-8) name to print
-    fn title(&self)              -> String;  // a text (UTF-8) name to print
-    fn class(&self)              -> &str;    // the type of a sample:  integer or floating
+    fn name(&self)               -> String;  // a text (UTF-8) name
+    fn title(&self)              -> String;  // a text (UTF-8) title to print
+    fn class(&self)              -> &str;    // the type of a sample:  "integer", etc
     fn count(&self)              -> u64;     // the current sample count
     fn log_mode(&self)           -> isize;   // the most common pseudo-log
     fn mean(&self)               -> f64;
@@ -468,16 +468,22 @@ mod tests {
         Rc::from(RefCell::new(ContinuingTimer::new(hz)))
     }
 
+    pub fn continuing_timer_increment() -> i64 {
+        1000
+    }
+
     pub struct ContinuingTimer {
-        time: i64,
-        hz:   u128,
+        time:       i64,
+        increment:  i64,
+        hz:         u128,
     }
 
     impl ContinuingTimer {
         pub fn new(hz: u128) -> ContinuingTimer {
-            let time = 0;
+            let time      = 0;
+            let increment = continuing_timer_increment();
 
-            ContinuingTimer { time, hz }
+            ContinuingTimer { time, increment, hz }
         }
     }
 
@@ -487,7 +493,7 @@ mod tests {
         }
 
         fn finish(&mut self) -> i64 {
-            self.time += 1000;
+            self.time += self.increment;
             self.time
         }
 

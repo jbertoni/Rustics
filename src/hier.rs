@@ -749,7 +749,13 @@ impl Rustics for Hier {
     }
 
     fn record_event(&mut self) {
-        self.record_i64(1);
+        self.check_and_advance();
+
+        let     member  = self.stats[0].newest_mut().unwrap();
+        let mut borrow  = member.borrow_mut();
+        let     rustics = borrow.to_rustics_mut();
+
+        rustics.record_event();
     }
 
     fn record_time(&mut self, sample: i64) {

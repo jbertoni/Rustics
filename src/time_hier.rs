@@ -187,6 +187,7 @@ mod tests {
     use crate::hier::HierDimension;
     use crate::hier::GeneratorRc;
     use crate::tests::continuing_box;
+    use crate::tests::continuing_timer_increment;
 
     fn make_descriptor() -> HierDescriptor {
         let     auto_next      = 4;
@@ -242,12 +243,22 @@ mod tests {
         let mut events = 0;
 
         for i in 0..100 {
-            hier_impl.record_time(i + 1);
+            hier_impl.record_event();
 
-            events += 1;
+            // Make sure that this event was recorded properly.
+
+            let expected = (i + 1) * continuing_timer_increment();
+
+            assert!(hier_impl.max_i64() == expected);
+
+            // Now try record_time()
+
+            hier_impl.record_time(i);
+
+            events += 2;
         }
 
-        assert!(hier_impl.event_count() <= events);
+        assert!(hier_impl.event_count() == events);
         hier_impl.print();
     }
 

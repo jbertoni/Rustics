@@ -134,6 +134,9 @@ impl Rustics for TimeWindow {
         panic!("Rustics::TimeWindow:  f64 events are not permitted.");
     }
 
+    /// Read the time period recorded by the timer instance
+    /// used to create this TimeWindow instance.
+
     fn record_event(&mut self) {
         let interval = (*self.timer).borrow_mut().finish();
 

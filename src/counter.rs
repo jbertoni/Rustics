@@ -22,7 +22,7 @@
 ///     let test_limit  = 20;
 ///     let mut counter = Counter::new("test counter", None);
 ///
-///     // Add some counts to the counter.  record_event adds one,
+///     // Add some counts to the counter.  record_event() adds one,
 ///     // to implement an event counter.  record_i64() adds any i64
 ///     // value to the counter, for keeping a sum when statistics
 ///     // like the mean aren't useful.
@@ -98,6 +98,8 @@ impl Rustics for Counter {
     fn record_f64(&mut self, _sample: f64) {
         panic!("Counter::record_f64:  not supported");
     }
+
+    /// Increment the counter by one.
 
     fn record_event(&mut self) {
         self.count += 1;

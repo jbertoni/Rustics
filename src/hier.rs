@@ -272,7 +272,8 @@ impl HierIndex {
 
 /// The HierExporter trait is used internally to create a sum
 /// statistics instance.  It can be used in applications, as well,
-/// although the predefined functions probably cover all bases.
+/// although the predefined functions probably cover  most use
+/// cases.
 
 pub trait HierExporter {
     fn as_any    (&self)     -> &dyn Any;
@@ -360,7 +361,7 @@ pub struct Hier {
 }
 
 /// HierConfig defines the configuration parameters for a Hier
-/// instance.  Most users will use the prepackaged Hier constructors
+/// instance.  Most users should use the prepackaged Hier constructors
 /// like IntegerHier::new_hier and TimeHier::new_heir.
 
 #[derive(Clone)]
@@ -374,10 +375,10 @@ pub struct HierConfig {
 }
 
 impl Hier {
-    /// The new() function creates a new hier instance. It generally should
-    /// be called from the constructor for the specific type in the
-    /// hierarchy.  For example, the IntegerHier impl provides constructors
-    /// that will invoke this function.
+    /// The new() function creates a new hier instance. It generally
+    /// should be called from the constructor for the specific type
+    /// in the hierarchy.  For example, the IntegerHier impl provides
+    /// constructors like new_hier() that will invoke this function.
 
     pub fn new(configuration: HierConfig) -> Hier {
         let     descriptor    = configuration.descriptor;
@@ -432,8 +433,8 @@ impl Hier {
     }
 
     /// The current() method returns the newest statistics instance
-    /// at the lowest level, hich is the only statistic that records
-    /// data.  The other members are read-only.
+    /// at the lowest level, which is the only statistics instance
+    /// that records data.  The other members are read-only.
 
     pub fn current(&self) -> MemberRc {
         let member = self.stats[0].newest().unwrap();
@@ -483,7 +484,22 @@ impl Hier {
         }
     }
 
-    /// The traverse_live() method calls a user-defined function
+    /// traverse_all() invokes a user-supplied functions on every
+    /// member of the set hierarchy.
+
+    pub fn traverse_all(&mut self, traverser: &mut dyn HierTraverser) {
+        for level in &mut self.stats {
+            for member in level.iter_all() {
+                let mut borrow  = member.borrow_mut();
+                let     rustics = borrow.to_rustics_mut();
+
+                traverser.visit(rustics);
+            }
+        }
+    }
+
+
+    /// The traverse_live() method calls a user-supplied function
     /// on all the live members on every level.
 
     pub fn traverse_live(&mut self, traverser: &mut dyn HierTraverser) {
@@ -514,8 +530,8 @@ impl Hier {
     }
 
     /// The sum() method allows the user to sum an arbitrary list of
-    /// members of the hierarchy into a new statistic. The result is
-    /// not maintained in the hierarchy.
+    /// members of the hierarchy into a new statistic instance. The
+    /// result is not maintained in the hierarchy.
 
     pub fn sum(&self, addends: Vec<HierIndex>, name: &str, printer: PrinterOption)
             -> (Option<MemberRc>, usize) {
@@ -698,9 +714,9 @@ impl Hier {
         exporter_rc
     }
 
-    // Check the event count to see whether it's time to
-    // push a new level 0 statistics.  This routine
-    // implements the auto_next feature.
+    // Check the event count to see whether it's time to push a new
+    // level 0 statistics.  This method implements the auto_next
+    // feature.
 
     fn check_and_advance(&mut self) {
         // Push a new statistic if we've reached the event limit
@@ -716,7 +732,7 @@ impl Hier {
             self.advance();
         }
 
-        // Advance the event count.  This routine should only be
+        // Advance the event count.  This method should only be
         // called when a statistical value is being recorded.
 
         self.event_count += 1;
@@ -1385,21 +1401,41 @@ pub mod tests {
             hier_integer.print_all(None, None);
         }
 
-        // Do a quick test of the traverser.  It should see each
-        // statistic in the matrix.
+        // Do a quick test of traverse_live().  It should see each
+        // "live" statistic in the matrix.
 
         let mut traverser = TestTraverser::new();
-        let mut predicted = 0;
 
         hier_integer.traverse_live(&mut traverser);
 
         // Now compute how many members the traverser should have seen.
 
+        let mut predicted = 0;
+
         for level in 0..hier_integer.dimensions.len() {
             predicted += hier_integer.live_len(level) as i64;
         }
 
-        println!("long_test:  traversed {} stats instances, predicted {}",
+        println!("long_test:  traverse_live saw {} stats instances, predicted {}",
+            traverser.count, predicted);
+        assert!(traverser.count == predicted);
+
+        // Do a quick test of traverse_all().  It should see each
+        // statistic in the matrix.
+
+        let mut traverser = TestTraverser::new();
+
+        hier_integer.traverse_all(&mut traverser);
+
+        // Now compute how many members the traverser should have seen.
+
+        let mut predicted = 0;
+
+        for level in 0..hier_integer.dimensions.len() {
+            predicted += hier_integer.all_len(level) as i64;
+        }
+
+        println!("long_test:  traverse_all saw {} stats instances, predicted {}",
             traverser.count, predicted);
         assert!(traverser.count == predicted);
 

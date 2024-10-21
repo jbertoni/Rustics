@@ -9,19 +9,19 @@
 /// * IntegerHier
 ///     * This type implements hierarchical statistics using the
 ///       RunningInteger type, q.v.
-///     * Each level uses a Window instance i RunningInteger
+///     * Each level uses a Window instance containing i RunningInteger
 ///       instances, where i is configured per level.  See the window
 ///       module documentation for more information on how the
 ///       windows work.
-///     * Level 0 statistics instances are used to collect data.  Each
-///       instance collects n samples, where n is a configuration
+///     * Level 0 RunningInteger instances are used to collect data.
+///       Each instance collects n samples, where n is a configuration
 ///       parameter.  After n samples are gathered, a new statistics
 ///       instance is pushed into the window.
 ///     * When k level 0 instances have been collected into the window,
 ///       they are summed into one level 1 RunningInteger instance.
 ///       The value k is a configuration parameter.
-///     * An upper level j is a sum of of i instance from level j - 1,
-///       where i is configured per level.
+///     * A Rustics intance at level j is a sum of of i instance from
+///       level j - 1, where i is configured per level.
 ///     * Each window retains RunningInteger instances that have
 ///       already been summed, in case they are wanted for queries.
 ///       The total window size is configured per level, and limits
@@ -250,7 +250,7 @@ impl IntegerHier {
     }
 
     /// new_hier() creates a new Hier instance from the given
-    /// configuration.  This routine does the grunt work specific
+    /// configuration.  This function does the grunt work specific
     /// to the RunningInteger type.
 
     pub fn new_hier(configuration: IntegerHierConfig) -> Hier {

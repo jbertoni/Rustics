@@ -9,7 +9,7 @@
 ///
 /// * Timer
 ///   * Timer is the trait for time operations needed by the
-///     statistics routines.
+///     statistics functions.
 /// * DurationTimer
 ///   * DurationTimer provides a Timer interface to the standard
 ///     rust Duration type, which measures wall-clock time.
@@ -83,12 +83,12 @@ use std::cell::RefCell;
 ///  multiple times on a single instance.  The last invocation of
 ///  the start method overrides any previous calls.
 ///
-///  The finish routine is used at the end of a sample interval.  It
+///  The finish() function is used at the end of a sample interval.  It
 ///  returns the interval time in nanoseconds and also starts a new
-///  interval, since the restart cost is nearly zero.  Thus, "finish"
-///  can be called multiple times after a "start" invocation to return
+///  interval, since the restart cost is nearly zero.  Thus, finish()
+///  can be called multiple times after a start() invocation to return
 ///  the times for a sequence of events.  If a more precise timing is
-///  required, "start" will start an interval.
+///  required, start() will start an interval.
 ///
 ///  hz returns the hertz of the underlying clock.
 
@@ -100,7 +100,7 @@ pub trait Timer {
 
 pub type DurationTimerBox = Rc<RefCell<DurationTimer>>;
 
-///  DurationTimer uses the Rust standard time struct "Duration" to
+///  DurationTimer uses the Rust standard time struct Duration to
 ///  measure time intervals.  This timer thus returns wall-clock time.
 ///  It currently works in units of nanoseconds.
 

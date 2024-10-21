@@ -136,8 +136,9 @@ impl Rustics for TimeWindow {
         panic!("Rustics::TimeWindow:  f64 events are not permitted.");
     }
 
-    /// Read the time period recorded by the timer instance
-    /// used to create this TimeWindow instance.
+    /// Record a time value obtained from the timer instance used to
+    /// to create this TimeWindow instance.  Calling finish() on the
+    /// timer automatically starts the new interval.
 
     fn record_event(&mut self) {
         let interval = (*self.timer).borrow_mut().finish();
@@ -145,10 +146,14 @@ impl Rustics for TimeWindow {
         self.integer_window.record_i64(interval);
     }
 
+    /// Record a time sample measured in ticks.
+
     fn record_time(&mut self, sample: i64) {
         assert!(sample >= 0);
         self.integer_window.record_i64(sample);
     }
+
+    /// Record an interval by reading the timer provided.
 
     fn record_interval(&mut self, timer: &mut TimerBox) {
         let mut timer = (*timer).borrow_mut();
@@ -172,6 +177,8 @@ impl Rustics for TimeWindow {
     fn count(&self) ->u64 {
         self.integer_window.count()
     }
+
+    /// Return the most common pseudo-log value from the data.
 
     fn log_mode(&self) -> isize {
         self.integer_window.log_mode()
@@ -269,6 +276,7 @@ impl Rustics for TimeWindow {
     }
 
     // For internal use only.
+
     fn set_title(&mut self, title: &str) {
         self.integer_window.set_title(title)
     }

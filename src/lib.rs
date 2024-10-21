@@ -65,12 +65,12 @@
 //! * Hierarchical statistics types
 //!     * Hier
 //!         * The Hier struct implements the framework for hierarchical statistics.
-//!         * The HierGenerator trait provides the interface from a Rustics implementation
-//!           to the Hier struct.
+//!         * The HierGenerator trait provides the interface for a Rustics implementation
+//!           to be usable in a Hier instance.
 //!     * IntegerHier
 //!         * This struct wraps the RunningInteger type to support the Hier code.  See
 //!           "Integer::new_hier" for a simple interface to get going.  The hier.rs test
-//!            module also contains "sample_usage" and "make_hier" routines as examples.
+//!            module also contains sample_usage() and make_hier() functions as examples.
 //!
 //!     * TimeHier
 //!         * TimeHier implements Hier for the RunningTime type. As with IntegerHier,
@@ -112,7 +112,7 @@
 //!
 //!     *  Printer
 //!         * This trait provides a method to use custom printers.  By default, output from the
-//!           print routines goes to stdout.
+//!           print function goes to stdout.
 //!         * See StdioPrinter for a very simple sample implementation.  This trait is used
 //!           as the default printer by the Rustics code.
 //!

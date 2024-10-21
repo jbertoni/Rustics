@@ -89,6 +89,8 @@ impl Counter {
 }
 
 impl Rustics for Counter {
+    /// Add a value to the counter.
+
     fn record_i64(&mut self, sample: i64) {
         if sample < 0 {
             panic!("Counter::record_i64:  The sample is negative.");

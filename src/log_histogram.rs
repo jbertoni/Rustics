@@ -61,7 +61,7 @@ use super::printable::Printable;
 
 // pseudo_log_index() returns an array index to record a log value in
 // a histogram.  Callers are expected to use two arrays, one for
-// positive and one for negative values, so this routine ignores the
+// positive and one for negative values, so this function ignores the
 // sign of its input.
 //
 // The algorithm implements a simple log-like function of the
@@ -73,17 +73,17 @@ use super::printable::Printable;
 //
 // The pseudo-log of most negative integers n is defined as -log(-n)
 // to give a reasonable histogram structure.  The pseudo-log of
-// i64::MIN is defined as 63 for convenience.  This routine always
+// i64::MIN is defined as 63 for convenience.  This function always
 // returns a non-negative index for an array, so the return value is
-// pseudo-log(-n) for negative valeus.  The calling routine handles
+// pseudo-log(-n) for negative valeus.  The calling function handles
 // the negation by using separate arrays for positive and negative
 // pseudo-log values.
 //
 // In addition to the above notes, pseudo-log(0) is defined as 0.
 //
 
-/// pseudo_log_index returns integer indexs for histograms.  The
-/// caller handles the sign.  This routine works on the absolute value
+/// pseudo_log_index returns integer indexes for histograms.  The
+/// caller handles the sign.  This function works on the absolute value
 /// of its input.
 
 pub fn pseudo_log_index(value: i64) -> usize {

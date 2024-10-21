@@ -31,8 +31,8 @@
 ///    let mut query_latency = RunningTime::new("Query Latency", timer, None);
 ///
 ///    // By way of example, we assume that the queries are single-
-///    // threaded, so we can use the "record_time" routine to
-///    // query the timer and restart it.
+///    // threaded, so we can use the record_time() method to query
+///    // the timer and restart it.
 ///    //
 ///    // So record one time sample for the single-threaded case.  The
 ///    // timer started running when we created the Duration timer.
@@ -152,7 +152,7 @@ impl RunningTime {
     }
 
     /// Export the statistics for this instance.  Internally, the
-    /// RunningTime code uses a RunningInteger instancd to store
+    /// RunningTime code uses a RunningInteger instance to store
     /// all the data.
 
     pub fn export(&self) -> RunningExport {

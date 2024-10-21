@@ -36,13 +36,13 @@
 ///
 ///    let timer = DurationTimer::new_box();
 ///
-///    // The add_running_timer() method is a helper routine for
+///    // The add_running_timer() method is a helper method for
 ///    // creating RunningTime instances.
 ///
 ///    let mut query_latency = set.add_running_time("Query Latency", timer);
 ///
 ///    // By way of example, we assume that the queries are single-
-///    // threaded, so we can use the "record_time" routine to query
+///    // threaded, so we can use the record_event() method to query
 ///    // the timer and restart it.
 ///    //
 ///    // The clock started running when we created the DurationTimer.
@@ -126,8 +126,9 @@ use super::make_title;
 pub type RusticsArc = Arc<Mutex<dyn Rustics>>;
 pub type ArcSetBox  = Arc<Mutex<ArcSet>>;
 
-/// The ArcTraverser trait is used to traverse all the elements in a
-/// set and its subsets.
+/// The ArcTraverser trait is used by the traverse() method to
+/// call a user-defined function at each element in an ArcSet
+/// and its subsets.
 
 pub trait ArcTraverser {
     fn visit_set(&mut self, set: &mut ArcSet);
@@ -176,7 +177,7 @@ impl ArcSet {
         ArcSet { name, title, id, next_id, members, subsets, printer }
     }
 
-    /// Create a new ArcSet and wraps it as an Arc<Mutex<ArcSet>>.
+    /// Create a new ArcSet and wrap it as an Arc<Mutex<ArcSet>>.
 
     pub fn new_box(name: &str, members_hint: usize, subsets_hint: usize, printer: PrinterOption)
             -> ArcSetBox {
@@ -185,14 +186,14 @@ impl ArcSet {
         Arc::from(Mutex::new(set))
     }
 
-    /// Returns the name of the set.
+    /// Return the name of the set.
 
     pub fn name(&self) -> String {
         self.name.clone()
     }
 
     /// Traverse the statistics and subsets in the set invoking a
-    /// user-defined callback.
+    /// user-supplied callback.
 
     pub fn traverse(&mut self, traverser: &mut dyn ArcTraverser) {
         traverser.visit_set(self);
@@ -216,7 +217,8 @@ impl ArcSet {
         self.print_opts(None, None);
     }
 
-    /// Print the set and override the standard printer and title.
+    /// Print the set and override the standard printer and title
+    /// as desired.
 
     pub fn print_opts(&self, printer: PrinterOption, title: Option<&str>) {
         for mutex in self.members.iter() {
@@ -284,7 +286,7 @@ impl ArcSet {
         member
     }
 
-    /// Create a IntegerWindow statistics instance and add it to the set.
+    /// Create a IntegerWindow instance and add it to the set.
 
     pub fn add_integer_window(&mut self, window_size: usize, name: &str) -> RusticsArc {
         let printer = Some(self.printer.clone());
@@ -297,8 +299,8 @@ impl ArcSet {
 
     /// Create a RunningTime instance and add it to the set.  The user
     /// must provide a timer.  The timer can be used with the
-    /// record_event method and is queried to determine the hertz
-    /// for the samples.
+    /// record_event method and is queried to determine the hertz for
+    /// the samples.
 
     pub fn add_running_time(&mut self, name: &str, timer: TimerBox) -> RusticsArc {
         let printer = Some(self.printer.clone());
@@ -779,7 +781,7 @@ pub mod tests {
        let query_latency = set.add_running_time("Query Latency", timer);
    
        // By way of example, we assume that the queries are single-
-       // threaded, so we can use the "record_time" routine to
+       // threaded, so we can use the record_time() method to
        // query the timer and restart it.  Multi-threaded apps will
        // need to use record_interval and manage the clocks themselves.
        // if they want to share a single RunningTime instance.

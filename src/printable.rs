@@ -72,11 +72,9 @@
 ///         assert!(result_time  == time);
 ///         assert!(result_units == units);
 ///
-///         // The commas functions works to add commas
-///         // to integer output.  It handles "+" and "-"
-///         // signs.  The interface routines commas_64
-///         // and commas_u64 are a bit more convenient
-///         // to use.
+///         // The commas functions works to add commas to integer output.
+///         // It handles "+" and "-" signs.  The interface functions
+///         // commas_64 and commas_u64 are a bit more convenient to use.
 ///
 ///         assert_eq!(Printable::commas(   "+20"),       "+20");
 ///         assert_eq!(Printable::commas(  "-200"),      "-200");
@@ -91,12 +89,12 @@
 // printing statistics.
 //
 // The Printable struct allows passing common values to be printed to
-// generic routines for RunningInteger and IntegerWindow instances.
+// generic functions for RunningInteger and IntegerWindow instances.
 
 use super::Printer;
 
 /// The Printable struct is used to pass data to the standard print
-/// routines shared by all the code.  Developers who are implementing
+/// functions shared by all the code.  Developers who are implementing
 /// the Rustics trait for a new type might use this module.
 
 #[derive(Copy, Clone)]
@@ -259,7 +257,8 @@ impl Printable {
         Self::print_float_unit(name, value, "", printer)
     }
 
-    /// Print a float value with a possible unit string.
+    /// Print a float value and its name along with a string specifying
+    /// the unit.
 
     pub fn print_float_unit(name: &str, value: f64, unit: &str, printer: &mut dyn Printer) {
         assert!(!value.is_nan());

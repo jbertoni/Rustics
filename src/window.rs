@@ -261,7 +261,7 @@ impl<T> Window<T> {
         Some(&self.data[internal_index])
     }
 
-    /// Return a point to a live element.  The items are
+    /// Return a pointer to a live element.  The items are
     /// ordered by age wth the oldest at index 0.
 
     pub fn index_live(&self, index: usize) -> Option<&T> {
@@ -743,7 +743,7 @@ mod tests {
         }
     }
 
-    // This test is redundant since the simple_window_test routine now
+    // This test is redundant since the simple_window_test() function now
     // checks all the iterators, but it is a simple example of how to
     // use a window.
 

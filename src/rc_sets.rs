@@ -44,10 +44,11 @@
 ///    let mut query_latency = set.add_running_time("Query Latency", timer);
 ///
 ///    // By way of example, we assume that the queries are single-
-///    // threaded, so we can use the "record_time" routine to query
+///    // threaded, so we can use the record_event() method to query
 ///    // the timer and restart it.
 ///    //
-///    // So record one event time for the single-threaded case.
+///    // So record one event time for the single-threaded case.  The
+///    // record_event code uses the timer we passed at construction.
 ///
 ///    query_latency.borrow_mut().record_event();
 ///
@@ -163,7 +164,7 @@ impl RcSet {
         RcSet { name, title, id, next_id, members, subsets, printer }
     }
 
-    /// Returns the name of the set.
+    /// Return the name of the set.
 
     pub fn name(&self) -> String {
         self.name.clone()

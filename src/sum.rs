@@ -10,7 +10,7 @@ fn sort(input: &mut [f64]) {
     input.sort_by(|a, b| a.abs().partial_cmp(&b.abs()).unwrap())
 }
 
-/// The kbk_sum() routine performs a Kahan-Babushka-Klein summation.
+/// The kbk_sum() function performs a Kahan-Babushka-Klein summation.
 /// It has a sort on the inputs in addition to the normal algoritm.
 ///
 /// See the Wikipedia page on Kahan summation for details of this

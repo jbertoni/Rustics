@@ -125,7 +125,7 @@ pub struct RunningExporter {
 /// It is used to sum a list of RunningInteger statistics instances.
 
 impl RunningExporter {
-    /// RunningExporter Constructor.
+    /// RunningExporter Constructor
 
     pub fn new() -> RunningExporter {
         let addends = Vec::new();

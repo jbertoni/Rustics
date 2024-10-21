@@ -13,7 +13,7 @@
 ///     how to used that type.
 ///   * See the Hier documentation on how to use hierarchical
 ///     statistics.
-///   * The routines TimerHier::new_hier and new_hier_box are
+///   * The functions TimerHier::new_hier and new_hier_box are
 ///     wrappers for the Hier constructor and do the initialization
 ///     specific to the TimeHier type.  They are the preferred
 ///     interface for creating a Hier instance that use RunningTime

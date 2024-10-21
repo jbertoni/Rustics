@@ -18,19 +18,40 @@
 ///
 ///
 ///     let hz       = 1_000_000_000;
-///     let day      = 24 * 60 * 60 * hz;
-///     let week     = day * 7;
-///
-///     let day      = day as f64;
-///     let week     = week as f64;
+///     let second   = hz as f64;
+///     let ms       = second / 1000.0;
+///     let us       = second / 1000_000.0;
+///     let ns       = second / 1_000_000_000.0;
+///     let minute   = second * 60.0;
+///     let hour     = minute * 60.0;
+///     let day      = 24.0 * hour;
+///     let week     = day * 7.0;
 ///
 ///     let examples =
 ///         [
-///             (         100.0,   100.0,   "ns"  ),
-///             (        1000.0,     1.0,   "us"  ),
-///             (   1_000_000.0,     1.0,   "ms"  ),
-///             (           day,     1.0,   "day" ),
-///             (          week,     7.0,   "days"),
+///             (         100.0,   100.0,  "ns"     ),
+///             (         102.4,   102.4,  "ns"     ),
+///             (       1_000.0,     1.0,  "us"     ),
+///             (       1_200.0,     1.2,  "us"     ),
+///             (      29_000.0,    29.0,  "us"     ),
+///             (   1_000_000.0,     1.0,  "ms"     ),
+///             (  29_000_000.0,    29.0,  "ms"     ),
+///
+///             (       us - ns,   999.0,  "ns"     ),
+///             (       ms - us,   999.0,  "us"     ),
+///             (   second - ms,   999.0,  "ms"     ),
+///
+///             (        second,     1.0,  "second" ),
+///             (  1.5 * second,     1.5,  "seconds"),
+///             (  3.0 * second,     3.0,  "seconds"),
+///             (  3.0 * second,     3.0,  "seconds"),
+///             ( 42.0 * second,    42.0,  "seconds"),
+///             (          hour,     1.0,  "hour"   ),
+///             (   12.6 * hour,    12.6,  "hours"  ),
+///             (           day,     1.0,  "day"    ),
+///             (     2.0 * day,     2.0,  "days"   ),
+///             (   999.0 * day,   999.0,  "days"   ),
+///             (          week,     7.0,  "days"   ),
 ///         ];
 ///
 ///     // Convert a time in ticks to a scaled value and
@@ -48,7 +69,7 @@
 ///             result_time, result_units
 ///         );
 ///
-///         assert!(result_time  == time as f64);
+///         assert!(result_time  == time);
 ///         assert!(result_units == units);
 ///
 ///         // The commas functions works to add commas
@@ -71,13 +92,13 @@
 //
 // The Printable struct allows passing common values to be
 // printed to generic routines for RunningInteger and
-// IntegerWindow structs.
+// IntegerWindow instances.
 
 use super::Printer;
 
 /// The Printable struct is used to pass data to the standard
 /// print routines shared by all the code.  Developers who are
-/// implementing the Rustics trait for a new struct might use
+/// implementing the Rustics trait for a new type might use
 /// this module.
 
 #[derive(Copy, Clone)]
@@ -290,7 +311,7 @@ impl Printable {
         }
     }
 
-    // Print the common integer statistics as passed in a Printable structure.
+    // Print the common integer statistics as passed in a Printable instance.
 
     pub fn print_common_integer(&self, printer: &mut dyn Printer) {
         Self::print_integer("Count", self.n as i64, printer);
@@ -302,7 +323,7 @@ impl Printable {
         }
     }
 
-    // Print the common computed statistics as passed in a Printable structure.
+    // Print the common computed statistics as passed in a Printable instance.
     // This includes values like the mean, which should be limited to an integer
     // value.
 
@@ -426,22 +447,48 @@ mod tests {
 
     fn documentation() {
         let hz       = 1_000_000_000;
-        let day      = 24 * 60 * 60 * hz;
-        let week     = day * 7;
-
-        let day  = day as f64;
-        let week = week as f64;
+        let second   = hz as f64;
+        let ms       = second / 1000.0;
+        let us       = second / 1000_000.0;
+        let ns       = second / 1_000_000_000.0;
+        let minute   = second * 60.0;
+        let hour     = minute * 60.0;
+        let day      = 24.0 * hour;
+        let week     = day * 7.0;
 
         let examples =
             [
-                (         100.0,   100.0,  "ns"  ),
-                (       1_000.0,     1.0,  "us"  ),
-                (      29_000.0,    29.0,  "us"  ),
-                (   1_000_000.0,     1.0,  "ms"  ),
-                (  29_000_000.0,    29.0,  "ms"  ),
-                (           day,     1.0,  "day" ),
-                (     2.0 * day,     2.0,  "days"),
-                (          week,     7.0,  "days"),
+                (          100.0,   100.0,  "ns"     ),
+                (          102.4,   102.4,  "ns"     ),
+                (        1_000.0,     1.0,  "us"     ),
+                (        1_200.0,     1.2,  "us"     ),
+                (       29_000.0,    29.0,  "us"     ),
+                (    1_000_000.0,     1.0,  "ms"     ),
+                (   29_000_000.0,    29.0,  "ms"     ),
+
+                (        us - ns,   999.0,  "ns"     ),
+                (        ms - us,   999.0,  "us"     ),
+                (    second - ms,   999.0,  "ms"     ),
+                (minute - second,    59.0,  "seconds"),
+                (  hour - minute,    59.0,  "minutes"),
+                (     day - hour,    23.0,  "hours"  ),
+
+                (   3.0 * second,     3.0,  "seconds"),
+                (   3.0 * second,     3.0,  "seconds"),
+                (   1.5 * second,     1.5,  "seconds"),
+                (  42.0 * second,    42.0,  "seconds"),
+                (    999.0 * day,   999.0,  "days"   ),
+                (    12.6 * hour,    12.6,  "hours"  ),
+                (           week,     7.0,  "days"   ),
+
+                (         second,     1.0,  "second" ),
+                (   2.0 * second,     2.0,  "seconds"),
+                (         minute,     1.0,  "minute" ),
+                (   2.0 * minute,     2.0,  "minutes"),
+                (           hour,     1.0,  "hour"   ),
+                (     2.0 * hour,     2.0,  "hours"  ),
+                (            day,     1.0,  "day"    ),
+                (      2.0 * day,     2.0,  "days"   ),
             ];
 
         for example in examples {
@@ -455,7 +502,7 @@ mod tests {
                 result_time, result_unit
             );
 
-            assert!(result_time  == time as f64);
+            assert!(result_time  == time);
             assert!(result_unit  == unit);
         }
     }

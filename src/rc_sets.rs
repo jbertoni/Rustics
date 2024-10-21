@@ -8,9 +8,9 @@
 /// ## Type
 ///
 /// * RcSet
-///     * RcSet implements a set that can contain statistics objects
-///       and other RcSet structs.
-///     * Members of an RcSet are kept as Rc structs to allow for
+///     * RcSet implements a set that can contain statistics instances
+///       and other RcSet instances.
+///     * Members of an RcSet are kept as Rc instances to allow for
 ///       single-threaded sharing.
 ///
 /// ## Example
@@ -25,7 +25,7 @@
 ///    use rustics::time::DurationTimer;
 ///    use rustics::rc_sets::RcSet;
 ///
-///    // Create a set.  We're expecting 8 statistics objects but
+///    // Create a set.  We're expecting 8 statistics instances but
 ///    // no subsets, so we set those hints appropriately.  The
 //     // default print output goes to stdout, and that's fine for
 ///    // an example, so just give "None" to accept the default.
@@ -38,8 +38,8 @@
 ///
 ///    let timer = DurationTimer::new_box();
 ///
-///    // The add_running_timer function is a helper function for
-///    // creating RunningTime structs.
+///    // The add_running_timer method is a helper function for
+///    // creating RunningTime instances.
 ///
 ///    let mut query_latency = set.add_running_time("Query Latency", timer);
 ///
@@ -52,7 +52,7 @@
 ///    query_latency.borrow_mut().record_event();
 ///
 ///    // For the multithreaded case, you can use DurationTimer manually.
-///    // Usually, ArcSet structs are more convenient for multi-threaded
+///    // Usually, ArcSet instances are more convenient for multi-threaded
 ///    // applications.
 ///
 ///    let mut local_timer = DurationTimer::new();
@@ -64,9 +64,9 @@
 ///    query_latency.borrow_mut().record_time(local_timer.finish() as i64);
 ///
 ///    // If you want to use your own timer, you'll need to implement
-///    // the Timer trait to initialize the RunningTime struct, but you
+///    // the Timer trait to initialize the RunningTime instance, but you
 ///    // can use it directly to get data. Let's use DurationTimer directly
-///    // as an example.  Make a new object for this example.
+///    // as an example.  Make a new instance for this example.
 ///
 ///    let timer = DurationTimer::new_box();
 ///
@@ -229,7 +229,7 @@ impl RcSet {
         }
     }
 
-    // Add a member given an Rc struct
+    // Add a member given an Rc instance
 
     pub fn add_member(&mut self, member: RusticsRc) {
         let mut stat   = member.borrow_mut();
@@ -243,7 +243,7 @@ impl RcSet {
         self.members.push(member);
     }
 
-    // Create a RunningInteger statistics object and add it to the set.
+    // Create a RunningInteger statistics instance and add it to the set.
 
     pub fn add_running_integer(&mut self, name: &str) -> RusticsRc {
         let printer = Some(self.printer.clone());
@@ -254,7 +254,7 @@ impl RcSet {
         member
     }
 
-    // Create a IntegerWindow statistics object and add it to the set.
+    // Create a IntegerWindow statistics instance and add it to the set.
 
     pub fn add_integer_window(&mut self, window_size: usize, name: &str) -> RusticsRc {
         let printer = Some(self.printer.clone());
@@ -368,7 +368,7 @@ impl RcSet {
         found
     }
 
-    // The following functions are for internal use only.
+    // The following methods are for internal use only.
 
     fn set_id(&mut self, id: usize) {
         self.id = id;
@@ -537,7 +537,7 @@ mod tests {
         // Remove two stats and check that they go away.
         //
         // First, do the remove operations.  We must clone the
-        // rc objects since the call moves them.
+        // rc instances since the call moves them.
 
         let found = set.remove_stat(window.clone());
         assert!(found);

@@ -11,11 +11,11 @@
 ///     * Hier is a framework class that should be created using a
 ///       concrete type via IntegerHier::new_hier or TimeHier::new_hier.
 ///       This example uses IntegerHier.
-///     * Hier implements a hierarchy of Rustics structs.  The lowest
-///       level receives data and records it into the newest object at
+///     * Hier implements a hierarchy of Rustics instances.  The lowest
+///       level receives data and records it into the newest instance at
 ///       that level.
 ///     * Upper levels of the hierarchy contains sums of a programmable
-///       number of lower-level structs.
+///       number of lower-level instances.
 ///
 /// ## Example
 ///```
@@ -29,29 +29,29 @@
 ///     use rustics::integer_hier::IntegerHierConfig;
 ///
 ///     // Make a descriptor of the first level.  We have chosen to sum 1000
-///     // level 0 RunningInteger structs into one level 1 RunningInteger
-///     // struct.  We will keep only 1000 level 0 structs in the window as
+///     // level 0 RunningInteger instances into one level 1 RunningInteger
+///     // instance.  We will keep only 1000 level 0 instances in the window as
 ///     // that seems large enough for a window back in time.
 ///
 ///     let dimension_0 = HierDimension::new(1000, 1000);
 ///
 ///     // At level 1, we want to sum 100 level 1 statistics into one level 2
-///     // statistics.  Let's retain 200 RunningInteger structs at level 1.
+///     // statistics.  Let's retain 200 RunningInteger instances at level 1.
 ///
 ///     let dimension_1 = HierDimension::new(100, 200);
 ///
 ///     // Level two isn't summed, so the period isn't used.  Set a period
 ///     // of one to keep the contructor happy.  Let's pretend this level
-///     // isn't used much, so retain only 100 structs in it.
+///     // isn't used much, so retain only 100 instances in it.
 ///
 ///     let dimension_2 = HierDimension::new(1, 100);
 ///
-///     //  Now create the Vec.  Save the dimension structs for future use.
+///     //  Now create the Vec.  Save the dimension instances for future use.
 ///
 ///     let dimensions =
 ///         vec![ dimension_0, dimension_1, dimension_2 ];
 ///
-///     // Now create the entire descriptor for the hier struct.  Let's
+///     // Now create the entire descriptor for the hier constructor.  Let's
 ///     // record 2000 events into each level 0 RunningInteger instance.
 ///
 ///     let auto_advance = Some(2000);
@@ -86,13 +86,13 @@
 ///         integer_hier.record_i64(i + 10);
 ///     }
 ///
-///     // We have just completed the first level 0 structure, but
-///     // the implementation creates the next struct only when
+///     // The first level 0 instance is ready to be retired, but
+///     // the implementation creates the next instance only when
 ///     // it has data to record, so there should be only one level
-///     // zero struct, and nothing at level 1 or level 2.
+///     // zero instance, and nothing at level 1 or level 2.
 ///     //
 ///     // event_count() returns all events seen by the integer_hier
-///     // struct from creation onward.
+///     // instance from creation onward.
 ///
 ///     assert!(integer_hier.event_count() == events);
 ///     assert!(integer_hier.count()       == events as u64);
@@ -101,14 +101,14 @@
 ///     assert!(integer_hier.live_len(2)   == 0     );
 ///
 ///     // Now record some data to force the creation of the second
-///     // level 1 struct.
+///     // level 1 instance.
 ///
 ///     events += 1;
 ///     integer_hier.record_i64(10);
 ///
-///     // The new level 0 struct should have only one event
+///     // The new level 0 instance should have only one event
 ///     // recorded.  The Rustics implementatio for Hier returns
-///     // the data in the current level 0 struct, so check it.
+///     // the data in the current level 0 instance, so check it.
 ///
 ///     let events_per_level_1 =
 ///         auto_advance * dimension_0.period() as i64;
@@ -238,7 +238,7 @@ impl HierDimension {
 }
 
 /// HierIndex allows users to index into a hierarchical statistic
-/// to look at any statistics struct therein.
+/// to look at any statistics instance therein.
 
 #[derive(Clone, Copy)]
 pub struct HierIndex {
@@ -248,7 +248,7 @@ pub struct HierIndex {
 }
 
 /// HierSet allows the user to refer to a specific subset of a level
-/// in the hierarchy when using a HierIndex struct.  The user can
+/// in the hierarchy when using a HierIndex instance.  The user can
 /// choose to look at all of the statistics, or only the newest entries,
 /// the live set.
 
@@ -258,8 +258,8 @@ pub enum HierSet {
     Live,
 }
 
-/// HierIndex is used to refer to a specific statistics struct in a
-/// Hier struct.
+/// HierIndex is used to refer to a specific statistics instance in a
+/// Hier instance.
 
 impl HierIndex {
     pub fn new(set: HierSet, level: usize, which: usize) -> HierIndex {
@@ -271,7 +271,7 @@ impl HierIndex {
 // provide that interface.
 
 /// The HierExporter trait is used internally to create a sum
-/// statistics object.  It can be used in applications, as well,
+/// statistics instance.  It can be used in applications, as well,
 /// although the predefined functions probably cover all bases.
 
 pub trait HierExporter {
@@ -279,8 +279,8 @@ pub trait HierExporter {
     fn as_any_mut(&mut self) -> &mut dyn Any;
 }
 
-/// Users can traverse all the statistics objects in a Hier
-/// struct using this trait and the traverse functions
+/// Users can traverse all the statistics instances in a Hier
+/// instance using this trait and the traverse methods
 /// traverse_live() and traverse_all().
 
 pub trait HierTraverser {
@@ -290,10 +290,11 @@ pub trait HierTraverser {
 //
 // The HierGenerator trait is implement to allow a Rustics type to
 // support hierarchial statistics.  Rustics.  This code connects
-// the struct Hier impl code with the Rustic types impl code.
+// the Hier impl code with the Rustic types impl code.
+//
 // HierGenerator is thus an abstraction of the associated functions
 // that are not members (in the impl code, but not taking &self as
-// a parameter.
+// a parameter).
 //
 // The HierGenerator implementation for the RunningInteger
 // type is a good example to read if you want to understand
@@ -315,13 +316,11 @@ pub trait HierGenerator {
 }
 
 //
-//  The HierMember trait is used to extend a specific object
-//  implementing the Rustics trait to work with the Hier
-//  type.  The code for the Hier type and the HierGenerator
-//  just need to be able to upcast and downcast into the member types.
-//  It is thus a very rough abstraction of a Rustics struct.
-//  The as_any* function actually are available via the Rustics
-//  trait, but it's easier to use them without that step.
+//  The HierMember trait is used to extend a specific type
+//  implementing the Rustics trait to work with the Hier code.
+//
+//  The code for the Hier type and the HierGenerator just need to
+//  be able to upcast and downcast into the member types.
 //
 
 /// The HierMember trait extends a Rustics implementation to interface
@@ -337,12 +336,12 @@ pub trait HierMember {
 }
 
 //
-// This structure implements an implementation of hierarchical
-// statistics using a HierGenerator object and HierMember
-// structs.
+// The Hier structure implements an implementation of hierarchical
+// statistics using a HierGenerator instance and HierMember
+// instances.
 //
 
-/// Hier objects are the concrete type for a statistics
+/// Hier instances are the concrete type for a statistics
 /// hierarchy.
 
 #[derive(Clone)]
@@ -375,10 +374,10 @@ pub struct HierConfig {
 }
 
 impl Hier {
-    /// The new() function create a new hier struct. It generally should
+    /// The new() function creates a new hier instance. It generally should
     /// be called from the constructor for the specific type in the
-    /// hierarchy.  For example, the IntegerHier impl provides
-    /// constructors that will invoke this function.
+    /// hierarchy.  For example, the IntegerHier impl provides constructors
+    /// that will invoke this function.
 
     pub fn new(configuration: HierConfig) -> Hier {
         let     descriptor    = configuration.descriptor;
@@ -409,7 +408,7 @@ impl Hier {
 
         //
         // Create the set of windows that we use to hold all
-        // the actual statistics objects.
+        // the actual statistics instances.
         //
 
         for dimension in &dimensions {
@@ -432,7 +431,7 @@ impl Hier {
         }
     }
 
-    /// The current() function returns the newest statistics struct
+    /// The current() method returns the newest statistics instance
     /// at the lowest level, hich is the only statistic that records
     /// data.  The other members are read-only.
 
@@ -448,7 +447,7 @@ impl Hier {
         self.local_print(index, printer, title);
     }
 
-    /// print_all prints every member of the Hier struct.
+    /// print_all prints every member of the Hier instance.
 
     pub fn print_all(&self, printer: PrinterOption, title: Option<&str>) {
         for i in 0..self.stats.len() {
@@ -462,11 +461,11 @@ impl Hier {
         }
     }
 
-    /// The clear_all() function clears all the statistics structs
+    /// The clear_all() method clears all the statistics instances
     /// from the windows, as well as any related data.  Finally, it
-    /// pushes a new level 0 statistic struct to receive data.
+    /// pushes a new level 0 statistic instance to receive data.
     ///
-    /// This operation sets the struct back to its initial state.
+    /// This operation sets the instance back to its initial state.
 
     pub fn clear_all(&mut self) {
         self.advance_count = 0;
@@ -484,7 +483,7 @@ impl Hier {
         }
     }
 
-    /// The traverse_live() function calls a user-defined function
+    /// The traverse_live() method calls a user-defined function
     /// on all the live members on every level.
 
     pub fn traverse_live(&mut self, traverser: &mut dyn HierTraverser) {
@@ -514,7 +513,7 @@ impl Hier {
         Some(target.clone())
     }
 
-    /// The sum() function allows the user to sum an arbitrary list of
+    /// The sum() method allows the user to sum an arbitrary list of
     /// members of the hierarchy into a new statistic. The result is
     /// not maintained in the hierarchy.
 
@@ -549,21 +548,21 @@ impl Hier {
 
         drop(exporter);
         
-        // Now make the sum statistics struct.
+        // Now make the sum statistics instance.
 
         let sum = generator.make_from_exporter(name, printer, exporter_rc);
 
         (Some(sum), valid)
     }
 
-    /// The advance() method pushes a new level 0 statistics struct into
+    /// The advance() method pushes a new level 0 statistics instance into
     /// the level 0 window.  It also updates the upper levels as needed.
     /// The user can call this directly, use auto_advance, or do both.
 
     pub fn advance(&mut self) {
         // Increment the advance op count.  This counts the
-        // number of statistics objects pushed, and thus tells
-        // us when we need to push a new higher-level object.
+        // number of statistics instances pushed, and thus tells
+        // us when we need to push a new higher-level instance.
 
         self.advance_count += 1;
 
@@ -572,7 +571,7 @@ impl Hier {
         let mut advance_point = 1;
         let     generator     = self.generator.borrow();
 
-        // Check whether we have enough new objects at a given level
+        // Check whether we have enough new instances at a given level
         // to push a new sum of those statistics to a higher level.
 
         for i in 0..self.dimensions.len() - 1 {
@@ -612,16 +611,15 @@ impl Hier {
     }
 
     /// event_count() returns the total number of statistics events
-    /// recorded into the Hier object since its creation or since the
+    /// recorded into the Hier instance since its creation or since the
     /// the last clear_all invocation.
 
     pub fn event_count(&self) -> i64 {
         self.event_count
     }
 
-    // Print one statistics object using the Rustics trait.
-    // We always append the indices to the title that is
-    // given.
+    // Print one statistics instance using the Rustics trait.
+    // We always append the indices to the title that is given.
 
     fn local_print(&self, index: HierIndex, printer_opt: PrinterOption, title_opt: Option<&str>) {
         let level = index.level;
@@ -725,8 +723,8 @@ impl Hier {
     }
 }
 
-// Implement the Rustics trait for the Hier object.  It
-// returns data mostly from the newest level 0 object,
+// Implement the Rustics trait for the Hier instance.  It
+// returns data mostly from the newest level 0 instance,
 // which is the only one receiving data.
 
 impl Rustics for Hier {
@@ -774,7 +772,7 @@ impl Rustics for Hier {
         rustics.record_interval(timer);
     }
 
-    // We return the name and title of the Hier structure itself.
+    // We return the name and title of the Hier instance itself.
     // We do the same for class, as well.
 
     fn name(&self) -> String {
@@ -911,7 +909,7 @@ impl Rustics for Hier {
         self.local_print(index, printer, title);
     }
 
-    // The title is kept in the Hier object.
+    // The title is kept in the Hier instance.
 
     fn set_title(&mut self, title: &str) {
         self.title = title.to_string();
@@ -976,7 +974,7 @@ pub mod tests {
     use crate::time_hier::TimeHierConfig;
     use crate::running_time::RunningTime;
 
-    // Make a Hier struct for testing.  The tests use the RunningInteger
+    // Make a Hier instance for testing.  The tests use the RunningInteger
     // implementation via IntegerHier.
     //
     // Make a 4-level hierarchical statistic for testing.
@@ -1006,14 +1004,14 @@ pub mod tests {
             period += 2;
         }
 
-        // Finish creating the Hier description structure.  This
+        // Finish creating the Hier description instance.  This
         // just describes the windows and how the statistics
-        // structures are advanced.
+        // instances are advanced.
 
         let auto_next  = Some(auto_next as i64);
         let descriptor = HierDescriptor::new(dimensions, auto_next);
 
-        // Now create the RunningInteger-based Hier struct via
+        // Now create the RunningInteger-based Hier instance via
         // IntegerHier, which does some of the work for
         // us.
 
@@ -1027,7 +1025,7 @@ pub mod tests {
         let configuration =
             IntegerHierConfig { descriptor, name, title, printer };
 
-        // Make the actual Hier structure.  new_hier() handles the
+        // Make the actual Hier instance.  new_hier() handles the
         // parameters specific for using RunningInteger statistics.
 
         IntegerHier::new_hier(configuration)
@@ -1103,7 +1101,7 @@ pub mod tests {
     }
 
     // This is a fairly straightforward test that just pushes a lot of
-    // values into a Hier struct.  It is long because it takes a fair
+    // values into a Hier instance.  It is long because it takes a fair
     // number of operations to force higer-level statistics into existence.
 
     fn simple_hier_test() {
@@ -1120,7 +1118,7 @@ pub mod tests {
         assert!( hier_integer.equals(&hier_integer));
         assert!(!hier_integer.equals(&hier_integer_2));
 
-        // Check that the struct matches our expectations.
+        // Check that the instance matches our expectations.
 
         let live_len  = hier_integer.stats[0].live_len();
         let all_len   = hier_integer.stats[0].all_len();
@@ -1233,7 +1231,7 @@ pub mod tests {
         assert!(hier_integer.max_i64() == -signed_auto          );
         assert!(hier_integer.mean()    == expected_mean         );
 
-        // Now force a level 1 stat object.
+        // Now force a level 1 stat instance.
 
         for i in 0..(auto_next * level_0_period) as i64 {
             hier_integer.record_i64(i);
@@ -1245,7 +1243,7 @@ pub mod tests {
             check_sizes(&hier_integer, events, false);
         }
 
-        // Check that we have at least one level 1 object.  This
+        // Check that we have at least one level 1 instance.  This
         // is a test of the test itself, for the most part.
 
         let expected_len = compute_len(&hier_integer, 1, HierSet::All,  events);
@@ -1393,7 +1391,7 @@ pub mod tests {
             predicted += hier_integer.live_len(level) as i64;
         }
 
-        println!("long_test:  traversed {} stats structs, predicted {}",
+        println!("long_test:  traversed {} stats instances, predicted {}",
             traverser.count, predicted);
         assert!(traverser.count == predicted);
 
@@ -1435,7 +1433,7 @@ pub mod tests {
         let auto_advance = Some(auto_next);
         let descriptor   = HierDescriptor::new(dimensions, auto_advance);
 
-        // Now make an actual time_hier struct from a configuration.
+        // Now make an actual time_hier instance from a configuration.
 
         let configuration =
             TimeHierConfig { descriptor, timer, name, title, printer };
@@ -1479,32 +1477,32 @@ pub mod tests {
 
     fn sample_usage() {
         // Make a descriptor of the first level.  We have chosen to sum 1000
-        // level 0 RunningInteger structs into one level 1 RunningInteger
-        // struct.  This level is large, so we will keep only 1000 level 0
-        // structs in the window.
+        // level 0 RunningInteger instances into one level 1 RunningInteger
+        // instance.  This level is large, so we will keep only 1000 level 0
+        // instances in the window.
 
         let dimension_0 = HierDimension::new(1000, 1000);
 
         // At level 1, we want to sum 100 level 1 statistics into one level 2
         // statistics.  This level is smaller, so let's retain 200
-        // RunningInteger structs here.
+        // RunningInteger instances here.
 
         let dimension_1 = HierDimension::new(100, 200);
 
         // Level two isn't summed, so the period isn't used.  Tell it to
         // sum one event to keep the contructor happy.  Let's pretend this
-        // level isn't used much, so retain only 100 structs in it.
+        // level isn't used much, so retain only 100 instances in it.
 
         let dimension_2 = HierDimension::new(1, 100);
 
-        //  Now create the Vec.  Save the dimension structs for future use.
+        //  Now create the Vec.  Save the dimension instances for future use.
 
         let dimensions =
             vec![
                 dimension_0.clone(), dimension_1.clone(), dimension_2.clone()
             ];
 
-        // Now create the entire descriptor for the hier struct.  Let's
+        // Now create the entire descriptor for the hier instance.  Let's
         // record 2000 events into each level 0 RunningInteger instance.
 
         let auto_advance = Some(2000);
@@ -1537,10 +1535,10 @@ pub mod tests {
             integer_hier.record_i64(i + 10);
         }
 
-        // We have just completed the first level 0 structure, but
-        // the implementation creates the next struct only when
+        // We have just completed the first level 0 instance, but
+        // the implementation creates the next instance only when
         // it has data to record, so there should be only one level
-        // zero struct, and nothing at level 1 or level 2.
+        // zero instance, and nothing at level 1 or level 2.
 
         assert!(integer_hier.event_count() == events);
         assert!(integer_hier.count()       == events as u64);
@@ -1549,14 +1547,14 @@ pub mod tests {
         assert!(integer_hier.live_len(2)   == 0     );
 
         // Now record some data to force the creation of
-        // the second level 1 struct.
+        // the second level 1 instance.
 
         events += 1;
         integer_hier.record_i64(10);
 
-        // The new level 0 struct should have only one event
+        // The new level 0 instance should have only one event
         // recorded.  The Rustics implementatio for Hier returns
-        // the data in the current level 0 struct, so check it.
+        // the data in the current level 0 instance, so check it.
 
         assert!(integer_hier.event_count() == events);
         assert!(integer_hier.count()       == 1     );

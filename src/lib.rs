@@ -17,7 +17,7 @@
 //!       -5 is -3.
 //!     * The values can be interpreted as time periods with a given hertz.
 //!
-//! * Integer statistics structs
+//! * Integer statistics types
 //!     * RunningInteger
 //!         * This type implements a few running statistics for a series of i64 sample values.
 //!         * It also provides a pseudo-log histogram.
@@ -32,7 +32,7 @@
 //!         * This type implements a simple counter that generates no further statistics.  It
 //!           can be used for counting events, for example.
 //!
-//! * Time statistics structs
+//! * Time statistics types
 //!     * RunningTime
 //!         * This type uses the RunningInteger code to handle time intervals.  Values will be
 //!           printed using units of time.
@@ -42,39 +42,39 @@
 //!           RunningTime type, values are printed in units of time.
 //!
 //! * Hierarchial Statistics
-//!     * Hierarchical statistics contain sums of integer statistics objects, and can be
+//!     * Hierarchical statistics contain sums of integer statistics instances, and can be
 //!       multi-level.  Values are recorded into an integer statistic of some kind.  When
-//!       the hierarchical struct receives a request to advance to a new statistics object,
+//!       a hierarchical instance receives a request to advance to a new statistics instance,
 //!       the current statistic that is collecting data is pushed into a window, and a new
-//!       statistics object will be created to hold any new values to be recorded.
+//!       statistics instance will be created to hold any new values to be recorded.
 //!
-//!     * When a programmable number of statistics objects have been pushed into a window,
+//!     * When a programmable number of statistics instances have been pushed into a window,
 //!       these statistics are summed and the sum placed in a high level window.  The
 //!       summation is done recursively up to a programmed number of levels.  Each level
-//!       has a parameter specifying the number of objects to be summed.
+//!       has a parameter specifying the number of instances to be summed.
 //!
 //!     * The lowest level, the one to which statistical data is recorded, can be configured
-//!       to push the current object and start a new one after a certain number of samples
+//!       to push the current instance and start a new one after a certain number of samples
 //!       have been recorded, or the advance() method can be invoked to move to a new
-//!       statistics object.
+//!       statistics instance.
 //!
 //!     * Each level of statistics has a programmable "live" count that gives the number of
-//!       objects that are summed and pushed to the higher level, and a retention window, so
+//!       instances that are summed and pushed to the higher level, and a retention window, so
 //!       that statistics are kept for some time period after being summed.
 //!
-//! * Hierarchical statistics struct
+//! * Hierarchical statistics types
 //!     * Hier
 //!         * The Hier struct implements the framework for hierarchical statistics.
 //!         * The HierGenerator trait provides the interface from a Rustics implementation
 //!           to the Hier struct.
 //!     * IntegerHier
-//!         * This structure provides RunningInteger types in a Hier structure.  See
+//!         * This struct provides RunningInteger types in a Hier struct.  See
 //!           "Integer::new_hier" for a simple interface to get going.  The hier.rs test
 //!            module also contains "sample_usage" and "make_hier" routines as examples.
 //!
 //!     * TimeHier
 //!         * TimeHier implements Hier for the RunningTime struct. As with IntegerHier,
-//!           see "TimeHier::new_hier" for an easy way to make a Hier object that uses
+//!           see "TimeHier::new_hier" for an easy way to make a Hier instance that uses
 //!           RunningTime statistics.
 //!
 //! * Creating Sets
@@ -164,9 +164,8 @@ pub fn timer_box_hz(timer:  &TimerBox) -> u128 {
     (**timer).borrow().hz()
 }
 
-/// stdout_printer() creates a Printer object that sends output
-/// to stdout.  This is the default type for all statistics
-/// types.
+/// stdout_printer() creates a Printer instance that sends output
+/// to stdout.  This is the default type for all statistics types.
 
 pub fn stdout_printer() -> PrinterBox {
     let printer = StdioPrinter::new(StreamKind::Stdout);
@@ -770,7 +769,7 @@ mod tests {
         }
     }
 
-    // Put some samples into the struct, then check the
+    // Put some samples into the instance, then check the
     // contents.
 
     fn test_histogram(rustics: &mut dyn Rustics, mut value: i64) {
@@ -790,7 +789,7 @@ mod tests {
             assert!(item == 0);
         }
 
-        // Time structs only get positive values...  Avoid overflow
+        // Time instances only get positive values...  Avoid overflow
         // when negating and adding.  Consider MAX and MIN...
 
         if rustics.class() == "time" && value <= 0 {

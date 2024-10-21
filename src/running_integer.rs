@@ -105,24 +105,24 @@ pub struct RunningInteger {
     printer:    PrinterBox,
 }
 
-// RunningExporter structs are used to export statistics from a
-// RunningInteger struct so that multiple structures can be summed.
+// RunningExporter instances are used to export statistics from a
+// RunningInteger instance so that multiple instances can be summed.
 // This is used by IntegerHier to implement a Hier struct that uses
 // RunningInteger statistics.  The RunningTime code uses a
-// RunningInteger struct underneath a wrapper, so TimeHier uses this
+// RunningInteger instance underneath a wrapper, so TimeHier uses this
 // code.
 
 /// RunningExport mostly is for internal use.  It is available for
-/// general use, but most commonly, it will be used by a Hier struct
-/// to make summations of statistics objects.
+/// general use, but most commonly, it will be used by a Hier instance
+/// to make summations of statistics instances.
 
 #[derive(Clone, Default)]
 pub struct RunningExporter {
     addends: Vec<RunningExport>,
 }
 
-/// RunningExporter is intend mostly for internal use by Hier structs.
-/// It is used to sum a list of RunningInteger statistics structs.
+/// RunningExporter is intend mostly for internal use by Hier instances.
+/// It is used to sum a list of RunningInteger statistics instances.
 
 impl RunningExporter {
     pub fn new() -> RunningExporter {
@@ -162,7 +162,7 @@ impl HierExporter for RunningExporter {
 }
 
 /// RunningExport is used by various modules to create sums of
-/// statistics objects of type RunningInteger.
+/// statistics instances of type RunningInteger.
 
 #[derive(Clone)]
 pub struct RunningExport {
@@ -283,8 +283,8 @@ impl RunningInteger {
         }
     }
 
-    // Export all the statistics from a given structure to
-    // be used to create a sum of many structures.
+    // Export all the statistics from a given instance to
+    // be used to create a sum of many instances.
 
     pub fn export(&self) -> RunningExport {
         let count           = self.count;

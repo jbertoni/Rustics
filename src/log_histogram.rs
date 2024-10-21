@@ -59,8 +59,8 @@
 use super::Printer;
 use super::printable::Printable;
 
-// This function returns an array index to record a log value in a
-// histogram.  Callers are expected to use two arrays, one for
+// pseudo_log_index() returns an array index to record a log value in
+// a histogram.  Callers are expected to use two arrays, one for
 // positive and one for negative values, so this routine ignores the
 // sign of its input.
 //
@@ -135,7 +135,7 @@ impl LogHistogram {
         }
     }
 
-    // This helper function prints the negative buckets.
+    // This helper method prints the negative buckets.
 
     fn print_negative(&self, printer: &mut dyn Printer) {
         // Skip printing buckets that would appear before the first non-zero bucket.
@@ -175,7 +175,7 @@ impl LogHistogram {
         }
     }
 
-    // This helper function prints the positive buckets.
+    // This helper method prints the positive buckets.
 
     fn print_positive(&self, printer: &mut dyn Printer) {
         let mut last = self.positive.len() - 1;

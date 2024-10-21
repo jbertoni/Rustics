@@ -16,9 +16,9 @@
 ///   * The routines TimerHier::new_hier and new_hier_box are
 ///     wrappers for the Hier constructor and do the initialization
 ///     specific to the TimeHier type.  They are the preferred
-///     interface for creating a Hier struct that use RunningTime
+///     interface for creating a Hier instance that use RunningTime
 ///     instances.
-///   * This struct is very similar to IntegerHier, so please refer
+///   * This type is very similar to IntegerHier, so please refer
 ///     to that module for examples.
 ///
 
@@ -85,7 +85,7 @@ pub struct TimeHier {
 }
 
 /// TimeHierConfig is used to pass the configuration parameters
-/// for a TimerHier object.
+/// for a TimerHier instance.
 
 #[derive(Clone)]
 pub struct TimeHierConfig {
@@ -97,14 +97,14 @@ pub struct TimeHierConfig {
 }
 
 impl TimeHier {
-    /// The new_raw() function constructs a TimeHier struct, which is an
+    /// The new_raw() function constructs a TimeHier instance, which is an
     /// implementation of HierGenerator for the RunningTime type.
 
     pub fn new_raw(timer: TimerBox) -> TimeHier  {
         TimeHier { timer }
     }
 
-    /// new_hier() constructs a new Hier object from the given
+    /// new_hier() constructs a new Hier instance from the given
     /// configuration.  It does the grunt work specific to the
     /// RunningTime type.
 
@@ -124,7 +124,7 @@ impl TimeHier {
         Hier::new(config)
     }
 
-    /// new_hier_box() returns a Hier struct as an Arc<Mutex<Hier>>
+    /// new_hier_box() returns a Hier instance as an Arc<Mutex<Hier>>
     /// for multithreaded access.
 
     pub fn new_hier_box(configuration: TimeHierConfig) -> HierBox {
@@ -134,7 +134,7 @@ impl TimeHier {
     }
 }
 
-// These are the functions that the Hier struct needs implemented
+// These are the methods that the Hier code needs implemented
 // for a given statistic type that are not specific to a member
 // of that type.  It's thus the bridge between "impl RunningTime"
 // and the Hier code.
@@ -291,7 +291,7 @@ mod tests {
         assert!(new_member.to_rustics().count() == 1);
         assert!(new_member.to_rustics().mean()  == value as f64);
 
-        // Now make an actual hier struct.
+        // Now make an actual hier instance.
 
         let     generator = Rc::from(RefCell::new(generator));
         let mut hier      = make_hier_gen(generator);

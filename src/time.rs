@@ -15,7 +15,7 @@
 ///     rust Duration type, which measures wall-clock time.
 /// * SimpleClock
 ///   * SimpleClock is an abstraction that can be used to implement
-///     platform-specific Timer objects.  Something like a simple
+///     platform-specific Timer instances.  Something like a simple
 ///     cycle counter would be an example.
 /// * ClockTimer
 ///   * Clock timer is an implementation of Timer for a SimpleClock.
@@ -80,7 +80,7 @@ use std::cell::RefCell;
 ///  in nanoseconds.
 ///
 ///  The start method starts a timing interval.  It may be called
-///  multiple times on a single structure.  The last invocation of
+///  multiple times on a single instance.  The last invocation of
 ///  the start method overrides any previous calls.
 ///
 ///  The finish routine is used at the end of a sample interval.  It
@@ -100,7 +100,7 @@ pub trait Timer {
 
 pub type DurationTimerBox = Rc<RefCell<DurationTimer>>;
 
-///  DurationTimer uses the Rust standard time function "Duration" to
+///  DurationTimer uses the Rust standard time struct "Duration" to
 ///  measure time intervals.  This timer thus returns wall-clock time.
 ///  It currently works in units of nanoseconds.
 
@@ -162,7 +162,7 @@ impl Default for DurationTimer {
 }
 
 ///  SimpleClock can be implemented for platform-specific clocks.
-///  The structures can then be wrapped in a ClockTimer struct.
+///  The instances can then be wrapped in a ClockTimer struct.
 
 pub trait SimpleClock {
     fn get_time(&mut self) -> u128;

@@ -46,15 +46,15 @@
 ///    // Do our query.
 ///    // ...
 ///
-///    // You can use the finish() function if this RunningTime struct
+///    // You can use the finish() method if this RunningTime instance
 ///    // is shared.
 ///
 ///    query_latency.record_time(local_timer.finish() as i64);
 ///
 ///    // If you want to use your own timer, you'll need to implement
-///    // the Timer trait to initialize the RunningTime struct, but you
+///    // the Timer trait to initialize the RunningTime instance, but you
 ///    // can use it directly to get data. Let's use Duration timer
-///    // directly as an example.  Make a new object for this example.
+///    // directly as an example.  Make a new instance for this example.
 ///
 ///    let timer = DurationTimer::new_box();
 ///
@@ -99,9 +99,9 @@ use super::printable::Printable;
 use super::running_integer::RunningInteger;
 use super::running_integer::RunningExport;
 
-/// A RunningTime struct accumulates statistics on a stream
+/// A RunningTime instance accumulates statistics on a stream
 /// of integer data samples representing time intervals.
-/// Underneath, it uses a RunningTime struct, but most
+/// Underneath, it uses a RunningTime instance, but most
 /// output is printed as time periods.
 
 #[derive(Clone)]

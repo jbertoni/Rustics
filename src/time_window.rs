@@ -83,7 +83,7 @@ use super::compute_skewness;
 use super::compute_kurtosis;
 use super::stdout_printer;
 
-/// TimeWindow implements a statistics object that
+/// TimeWindow implements a statistics instance that
 /// retains a window of the last n samples of a
 /// stream of data samples and a histogram of all
 /// data samples.

@@ -8,9 +8,9 @@
 /// ## Type
 ///
 /// * ArcSet
-///     * ArcSet implements a collection that can contain statistics objects
-///       and other ArcSet structs.
-///     * Members of an ArcSet are kept as Arc structs to allow for
+///     * ArcSet implements a collection that can contain statistics
+///       instances and other ArcSet instances.
+///     * Members of an ArcSet are kept as Arc instances to allow for
 ///       multithreaded usage.
 ///
 /// ## Example
@@ -23,7 +23,7 @@
 ///    use rustics::arc_sets::ArcSet;
 ///
 ///    // Create a set.  By way of example, assume that we're expecting
-///    // 8 statistics objects but no subsets, and set those hints
+///    // 8 statistics instances but no subsets, and set those hints
 ///    // appropriately.  The default print output goes to stdout, and
 ///    // that's fine for an example, so just give "None" to accept the
 ///    // default.
@@ -36,8 +36,8 @@
 ///
 ///    let timer = DurationTimer::new_box();
 ///
-///    // The add_running_timer() function is a helper routine for
-///    // creating RunningTime structs.
+///    // The add_running_timer() method is a helper routine for
+///    // creating RunningTime instances.
 ///
 ///    let mut query_latency = set.add_running_time("Query Latency", timer);
 ///
@@ -46,7 +46,7 @@
 ///    // the timer and restart it.
 ///    //
 ///    // The clock started running when we created the DurationTimer.
-///    // You can reset it with the start() function as needed.
+///    // You can reset it with the start() method as needed.
 ///
 ///    query_latency.lock().unwrap().record_event();
 ///
@@ -68,9 +68,9 @@
 ///
 ///    // If you want to use your own timer, you'll need to implement
 ///    // the Timer trait or SimpleClock and ClockTimer to initialize
-///    // the RunningTime struct, but you can use that timer directly
+///    // the RunningTime instance, but you can use that timer directly
 ///    // to get data. Let's use Duration timer directly as an example.
-///    // Make a new Timer object for this example.  This is used only
+///    // Make a new Timer instance for this example.  This is used only
 ///    // to pass the clock herz to the RunningTimer code.
 ///
 ///    let timer = DurationTimer::new_box();
@@ -134,7 +134,7 @@ pub trait ArcTraverser {
     fn visit_member(&mut self, member: &mut dyn Rustics);
 }
 
-/// ArcSet is the implementation type for a set of Rustics structs
+/// ArcSet is the implementation type for a set of Rustics instances
 /// wrapped as Arc<Mutex<dyn Rustics>>.
 
 #[derive(Clone)]
@@ -253,7 +253,7 @@ impl ArcSet {
         }
     }
 
-    // Add a member statistic.  The user creates the statistics object
+    // Add a member statistic.  The user creates the statistics instance
     // and passes it in an Arc.
 
     pub fn add_member(&mut self, member: RusticsArc) {
@@ -268,7 +268,7 @@ impl ArcSet {
         self.members.push(member);
     }
 
-    // Create a RunningInteger statistics object and add it to the set.
+    // Create a RunningInteger statistics instance and add it to the set.
 
     pub fn add_running_integer(&mut self, name: &str) -> RusticsArc {
         let printer = Some(self.printer.clone());
@@ -279,7 +279,7 @@ impl ArcSet {
         member
     }
 
-    // Create a IntegerWindow statistics object and add it to the set.
+    // Create a IntegerWindow statistics instance and add it to the set.
 
     pub fn add_integer_window(&mut self, window_size: usize, name: &str) -> RusticsArc {
         let printer = Some(self.printer.clone());
@@ -395,7 +395,7 @@ impl ArcSet {
         found
     }
 
-    // The following functions are for internal use only.
+    // The following methods are for internal use only.
 
     fn set_id(&mut self, id: usize) {
         self.id = id;
@@ -746,7 +746,7 @@ pub mod tests {
     use std::time::Instant;
 
     fn documentation() {
-       // Create a set.  We're expecting 8 statistics objects but
+       // Create a set.  We're expecting 8 statistics instances but
        // no subsets, so we set those hints appropriately.  The
        // default print output goes to stdout, and that's fine for
        // an example, so just give "None" to accept the default.
@@ -757,7 +757,7 @@ pub mod tests {
        // Add a statistic to record query latencies.  It's a time
        // statistics, so we need a timer.  Use an adapter for the
        // rust standard Duration timer.  The add_running_timer
-       // function is a help for creating RunningTime structs.
+       // function is a help for creating RunningTime instances.
    
        let timer = DurationTimer::new_box();
    
@@ -767,7 +767,7 @@ pub mod tests {
        // threaded, so we can use the "record_time" routine to
        // query the timer and restart it.  Multi-threaded apps will
        // need to use record_interval and manage the clocks themselves.
-       // if they want to share a single RunningTime struct.
+       // if they want to share a single RunningTime instance.
        //
        // So record one event time for the single-threaded case.
    
@@ -783,9 +783,9 @@ pub mod tests {
        query_latency.lock().unwrap().record_time(local_timer.finish() as i64);
    
        // If you want to use your own timer, you'll need to implement
-       // the Timer trait to initialize the RunningTime struct, but you
+       // the Timer trait to initialize the RunningTime instance, but you
        //can use it directly to get data. Let's use Duration timer directly
-       // as an example.  Make a new object for this example.
+       // as an example.  Make a new instance for this example.
    
        let timer = DurationTimer::new_box();
    

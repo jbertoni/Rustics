@@ -8,7 +8,7 @@
 /// ## Type
 ///
 /// * Window<T>
-///   * The Window struct implements a set of n objects of type T.
+///   * The Window struct implements a set of n instances of type T.
 ///   * The set has a configurable size limit.
 ///   * When a new element of type T is pushed into the window,
 ///     the oldest element is deleted once the size limit has been
@@ -81,11 +81,11 @@
 // supports the concept of "live" entries, which are the last
 // "live_limit" entries pushed onto the window.  When the window
 // is full and a new item is pushed, the oldest item is dropped.
-// Thus, this struct can be thought of as a window into the
+// Thus, this type can be thought of as a window into the
 // last "size_limit" events pushed into the window.
 //
 
-/// A Window struct maintains a set of items of type T.  The
+/// A Window instance maintains a set of items of type T.  The
 /// set size is limited to a configurable parameter.  The
 /// oldest item is dropped when  a new item is entered and the
 /// window is full.
@@ -99,7 +99,7 @@ pub struct Window<T> {
     data:           Vec<T>,
 }
 
-//  The Window structure supports scans of all live entries
+//  The Window type supports scans of all live entries
 //  and of the entire contents of the window.
 
 /// Define the sets that can be traversed.
@@ -207,7 +207,7 @@ impl<T> Window<T> {
         Some(&self.data[index_newest])
     }
 
-    // Return a mutable reference to the current object.
+    // Return a mutable reference to the current instance.
 
     pub fn newest_mut(&mut self) -> Option<&mut T> {
         let index_newest = self.index_newest()?;

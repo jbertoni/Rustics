@@ -162,14 +162,14 @@ impl Default for DurationTimer {
 }
 
 ///  SimpleClock can be implemented for platform-specific clocks.
-///  The instances can then be wrapped in a ClockTimer struct.
+///  The instances can then be wrapped in a ClockTimer instance.
 
 pub trait SimpleClock {
     fn get_time(&mut self) -> u128;
     fn hz(&self) -> u128;
 }
 
-///  The ClockTimer struct is a wrapper class for platform-specific
+///  The ClockTimer type is a wrapper class for platform-specific
 /// clocks.
 
 #[derive(Clone)]

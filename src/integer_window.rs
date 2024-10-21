@@ -9,7 +9,7 @@
 /// * IntegerWindow
 ///     * IntegerWindow maintains a set consisting of the last n samples
 ///       recorded into it.
-///     * This struct also maintains a log histogram that contains counts
+///     * This type also maintains a log histogram that contains counts
 ///       of all events seen, not just the window of n samples.
 ///
 /// ## Example
@@ -83,7 +83,7 @@ use super::compute_skewness;
 use super::compute_kurtosis;
 use super::stdout_printer;
 
-/// An IntegerWindow struct collects integer data samples into
+/// An IntegerWindow instance collects integer data samples into
 /// a fixed-size window. It also maintinas a histogram based on
 /// all the samples seen.
 

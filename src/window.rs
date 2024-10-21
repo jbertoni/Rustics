@@ -8,7 +8,7 @@
 /// ## Type
 ///
 /// * Window<T>
-///   * The Window struct implements a set of n instances of type T.
+///   * The Window type implements a set of n instances of type T.
 ///   * The set has a configurable size limit.
 ///   * When a new element of type T is pushed into the window,
 ///     the oldest element is deleted once the size limit has been

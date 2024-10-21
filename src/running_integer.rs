@@ -106,11 +106,11 @@ pub struct RunningInteger {
 }
 
 // RunningExporter instances are used to export statistics from a
-// RunningInteger instance so that multiple instances can be summed.
-// This is used by IntegerHier to implement a Hier struct that uses
-// RunningInteger statistics.  The RunningTime code uses a
-// RunningInteger instance underneath a wrapper, so TimeHier uses this
-// code.
+// RunningInteger instance so that multiple RunningInteger instances
+// can be summed.  This is used by IntegerHier to allow the Hier
+// code to use RunningInteger statistics.  The RunningTime code uses
+// a RunningInteger instance underneath a wrapper, so TimeHier uses this
+// code, as well.
 
 /// RunningExport mostly is for internal use.  It is available for
 /// general use, but most commonly, it will be used by a Hier instance

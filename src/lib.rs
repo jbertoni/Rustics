@@ -68,12 +68,12 @@
 //!         * The HierGenerator trait provides the interface from a Rustics implementation
 //!           to the Hier struct.
 //!     * IntegerHier
-//!         * This struct provides RunningInteger types in a Hier struct.  See
+//!         * This struct wraps the RunningInteger type to support the Hier code.  See
 //!           "Integer::new_hier" for a simple interface to get going.  The hier.rs test
 //!            module also contains "sample_usage" and "make_hier" routines as examples.
 //!
 //!     * TimeHier
-//!         * TimeHier implements Hier for the RunningTime struct. As with IntegerHier,
+//!         * TimeHier implements Hier for the RunningTime type. As with IntegerHier,
 //!           see "TimeHier::new_hier" for an easy way to make a Hier instance that uses
 //!           RunningTime statistics.
 //!
@@ -113,7 +113,7 @@
 //!     *  Printer
 //!         * This trait provides a method to use custom printers.  By default, output from the
 //!           print routines goes to stdout.
-//!         * See StdioPrinter for a very simple sample implementation.  This struct is used
+//!         * See StdioPrinter for a very simple sample implementation.  This trait is used
 //!           as the default printer by the Rustics code.
 //!
 
@@ -240,7 +240,7 @@ pub fn make_title(title_prefix: &str, title: &str) -> String {
     }
 }
 
-/// The Printer trait allows users to create custom output structs to
+/// The Printer trait allows users to create custom output types to
 /// match their I/O needs.
 ///
 /// An instance of this type is invoked for each line to be printed.
@@ -330,7 +330,7 @@ pub trait Rustics {
     fn histogram(&self                     ) -> LogHistogram;
 }
 
-/// Histogram defines the trait for using a LogHistogram struct.
+/// Histogram defines the trait for using a LogHistogram instance.
 
 pub trait Histogram {
     fn log_histogram(&self) -> LogHistogram;

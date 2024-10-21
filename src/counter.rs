@@ -56,7 +56,7 @@ use super::TimerBox;
 use super::stdout_printer;
 use super::printable::Printable;
 
-/// The Counter struct provides a simple counter that implements
+/// The Counter type provides a simple counter that implements
 /// the Rustics trait.
 
 #[derive(Clone)]

@@ -8,7 +8,7 @@
 /// ## Type
 ///
 /// * TimeHier
-///   * This struct implements hierarchical statistics using the
+///   * This type implements hierarchical statistics using the
 ///     RunningTime type.  See the RunningTime documentation for
 ///     how to used that type.
 ///   * See the Hier documentation on how to use hierarchical

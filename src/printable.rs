@@ -87,19 +87,17 @@
 ///     }
 ///```
 
-// These structures and routines are common code for printing
-// statistics.
+// The Printable struct and associated functions are common code for
+// printing statistics.
 //
-// The Printable struct allows passing common values to be
-// printed to generic routines for RunningInteger and
-// IntegerWindow instances.
+// The Printable struct allows passing common values to be printed to
+// generic routines for RunningInteger and IntegerWindow instances.
 
 use super::Printer;
 
-/// The Printable struct is used to pass data to the standard
-/// print routines shared by all the code.  Developers who are
-/// implementing the Rustics trait for a new type might use
-/// this module.
+/// The Printable struct is used to pass data to the standard print
+/// routines shared by all the code.  Developers who are implementing
+/// the Rustics trait for a new type might use this module.
 
 #[derive(Copy, Clone)]
 pub struct Printable {

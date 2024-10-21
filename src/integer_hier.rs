@@ -7,7 +7,7 @@
 /// ## Type
 ///
 /// * IntegerHier
-///     * This struct implements hierarchical statistics using the
+///     * This type implements hierarchical statistics using the
 ///       RunningInteger type, q.v.
 ///     * Each level uses a Window instance i RunningInteger
 ///       instances, where i is configured per level.  See the window
@@ -68,7 +68,7 @@
 ///     let dimensions =
 ///         vec![ dimension_0, dimension_1, dimension_2 ];
 ///
-///     // Now create the entire descriptor for the hier struct.  Let's
+///     // Now create the entire descriptor for the hier instance.  Let's
 ///     // record 2000 events into each level 0 RunningInteger instance.
 ///
 ///     let auto_advance = Some(2000);

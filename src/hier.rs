@@ -203,7 +203,7 @@ impl HierDescriptor {
     }
 }
 
-// This struct is used to describe one level of the statistics
+// This type is used to describe one level of the statistics
 // hierarchy.  "period" specifies the number of pushes into this
 // window before a sum statistic is pushed to the upper level.
 //
@@ -211,7 +211,7 @@ impl HierDescriptor {
 // around for queries.  It must be at least "period" elements, but
 // can be more to keep more history.
 
-/// HierDimensions is used to define one level in a Hier struct.
+/// HierDimensions is used to define one level in a Hier instance.
 
 #[derive(Clone, Copy)]
 pub struct HierDimension {
@@ -336,7 +336,7 @@ pub trait HierMember {
 }
 
 //
-// The Hier structure implements an implementation of hierarchical
+// The Hier type implements an implementation of hierarchical
 // statistics using a HierGenerator instance and HierMember
 // instances.
 //
@@ -360,7 +360,7 @@ pub struct Hier {
 }
 
 /// HierConfig defines the configuration parameters for a Hier
-/// struct.  Most users will use the prepackaged Hier constructors
+/// instance.  Most users will use the prepackaged Hier constructors
 /// like IntegerHier::new_hier and TimeHier::new_heir.
 
 #[derive(Clone)]
@@ -1131,9 +1131,9 @@ pub mod tests {
 
         let expected_count = auto_next as u64;
 
-        // Push one full window and see whether the data
-        // and structure matches what we expect as we
-        // record each event.
+        // Push one full window and see whether the data and
+        // structure matches what we expect as we record each
+        // event.
 
         for i in 0..signed_auto {
             hier_integer.record_i64(i);

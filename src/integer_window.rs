@@ -4,69 +4,69 @@
 //  permitted by law.
 //
 
-/// ## Type
-///
-/// * IntegerWindow
-///     * IntegerWindow maintains a set consisting of the last n samples
-///       recorded into it.
-///     * This type also maintains a log histogram that contains counts
-///       of all events seen, not just the window of n samples.
-///
-/// ## Example
-///```
-///    use std::rc::Rc;
-///    use std::cell::RefCell;
-///    use rustics::Rustics;
-///    use rustics::integer_window::IntegerWindow;
-///
-///    // Create  a statistic to record packet sizes.  The default
-///    // for printing output is stdout, which we'll assume is fine
-///    // for this example, so None works for the printer.  See
-///    // lib.rs for information on the Printer trait.  Assume that
-///    // retaining 1000 samples is fine for our hypothetical
-///    // application.
-///
-///    let window_size = 1000;
-///
-///    let mut packet_sizes = IntegerWindow::new("Packet Sizes", window_size, None);
-///
-///    // Record some hypothetical packet sizes.  Let's fill the window.
-///
-///    for i in 1..window_size + 1 {
-///       packet_sizes.record_i64(i as i64);
-///       assert!(packet_sizes.count() == i as u64);
-///    }
-///
-///    // Print our statistics.
-///
-///    packet_sizes.print();
-///
-///    // We should have seen "window_size" events.
-///
-///    assert!(packet_sizes.count() == window_size as u64);
-///
-///    // Compute the expected mean.  We need the sum of all the
-///    // pacet sizes:
-///    //     1 + 2 + ... + n
-///    // The formula is:
-///    //     n * (n + 1) / 2
-///
-///    let float_count = window_size as f64;
-///    let float_sum   = float_count * (float_count + 1.0) / 2.0;
-///    let mean        = float_sum / float_count;
-///
-///    assert!(packet_sizes.mean() == mean);
-///
-///    // Let's record more samples.  The count only includes the
-///    // last "window_size" samples, so it should be constant
-///    // now.
-///
-///    for i in 1..window_size / 2 + 1 {
-///       packet_sizes.record_i64(i as i64);
-///       assert!(packet_sizes.count() == window_size as u64);
-///    }
-/// 
-///```
+//! ## Type
+//!
+//! * IntegerWindow
+//!     * IntegerWindow maintains a set consisting of the last n samples
+//!       recorded into it.
+//!     * This type also maintains a log histogram that contains counts
+//!       of all events seen, not just the window of n samples.
+//!
+//! ## Example
+//!```
+//!    use std::rc::Rc;
+//!    use std::cell::RefCell;
+//!    use rustics::Rustics;
+//!    use rustics::integer_window::IntegerWindow;
+//!
+//!    // Create  a statistic to record packet sizes.  The default
+//!    // for printing output is stdout, which we'll assume is fine
+//!    // for this example, so None works for the printer.  See
+//!    // lib.rs for information on the Printer trait.  Assume that
+//!    // retaining 1000 samples is fine for our hypothetical
+//!    // application.
+//!
+//!    let window_size = 1000;
+//!
+//!    let mut packet_sizes = IntegerWindow::new("Packet Sizes", window_size, None);
+//!
+//!    // Record some hypothetical packet sizes.  Let's fill the window.
+//!
+//!    for i in 1..window_size + 1 {
+//!       packet_sizes.record_i64(i as i64);
+//!       assert!(packet_sizes.count() == i as u64);
+//!    }
+//!
+//!    // Print our statistics.
+//!
+//!    packet_sizes.print();
+//!
+//!    // We should have seen "window_size" events.
+//!
+//!    assert!(packet_sizes.count() == window_size as u64);
+//!
+//!    // Compute the expected mean.  We need the sum of all the
+//!    // pacet sizes:
+//!    //     1 + 2 + ... + n
+//!    // The formula is:
+//!    //     n * (n + 1) / 2
+//!
+//!    let float_count = window_size as f64;
+//!    let float_sum   = float_count * (float_count + 1.0) / 2.0;
+//!    let mean        = float_sum / float_count;
+//!
+//!    assert!(packet_sizes.mean() == mean);
+//!
+//!    // Let's record more samples.  The count only includes the
+//!    // last "window_size" samples, so it should be constant
+//!    // now.
+//!
+//!    for i in 1..window_size / 2 + 1 {
+//!       packet_sizes.record_i64(i as i64);
+//!       assert!(packet_sizes.count() == window_size as u64);
+//!    }
+//! 
+//!```
 
 use std::any::Any;
 

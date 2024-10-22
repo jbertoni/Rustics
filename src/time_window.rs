@@ -4,68 +4,68 @@
 //  permitted by law.
 //      
 
-/// ## Type
-///
-/// * TimerWindow
-///     * TimerWindow maintains a set consisting of the last n samples
-///       recorded into it.
-///
-/// ## Example
-///```
-///    use std::rc::Rc;
-///    use std::cell::RefCell;
-///    use rustics::Rustics;
-///    use rustics::time_window::TimeWindow;
-///    use rustics::time::Timer;
-///    use rustics::time::DurationTimer;
-///    use rustics::running_time::RunningTime;
-///
-///    // Create  a statistic to record packet latencies.  The default
-///    // for printing output is stdout, which we'll assume is fine
-///    // for this example, so None works for the printer.  See lib.rs
-///    // for information on the Printer trait.
-///    //
-///    // Assume that retaining 1000 samples is fine, and use the
-///    // DurationTimer to measure time.  DurationTimer is a wrapper
-///    // for the standard rust Duration.  This example is for a
-///    // single-threaded statistic.  See ArcSet for an example of
-///    // multi-threading a time statistic.
-///
-///    // Retain 1000 samples.
-///
-///    let window_size = 1000;
-///    let mut timer = DurationTimer::new_box();
-///
-///    let mut packet_latency =
-///        TimeWindow::new("Packet Latency", window_size, timer.clone(), None);
-///
-///    // Record some hypothetical packet latencies.  The clock started
-///    // running when we created the timer.  Use the start() method
-///    // to set a new start time.
-///
-///    timer.borrow_mut().start();
-///
-///    for i in 1..window_size + 1 {
-///       // Do work...
-///
-///       packet_latency.record_event();
-///       assert!(packet_latency.count() == i as u64);
-///    }
-///
-///    // Print our statistics.  This example has only one event recorded.
-///
-///    packet_latency.print();
-///
-///    // We should have seen "window_size" events.
-///
-///    assert!(packet_latency.count() == window_size as u64);
-///
-///    for i in 1..window_size / 2 + 1 {
-///       packet_latency.record_event();
-///       assert!(packet_latency.count() == window_size as u64);
-///    }
-/// 
-///```
+//! ## Type
+//!
+//! * TimerWindow
+//!     * TimerWindow maintains a set consisting of the last n samples
+//!       recorded into it.
+//!
+//! ## Example
+//!```
+//!    use std::rc::Rc;
+//!    use std::cell::RefCell;
+//!    use rustics::Rustics;
+//!    use rustics::time_window::TimeWindow;
+//!    use rustics::time::Timer;
+//!    use rustics::time::DurationTimer;
+//!    use rustics::running_time::RunningTime;
+//!
+//!    // Create  a statistic to record packet latencies.  The default
+//!    // for printing output is stdout, which we'll assume is fine
+//!    // for this example, so None works for the printer.  See lib.rs
+//!    // for information on the Printer trait.
+//!    //
+//!    // Assume that retaining 1000 samples is fine, and use the
+//!    // DurationTimer to measure time.  DurationTimer is a wrapper
+//!    // for the standard rust Duration.  This example is for a
+//!    // single-threaded statistic.  See ArcSet for an example of
+//!    // multi-threading a time statistic.
+//!
+//!    // Retain 1000 samples.
+//!
+//!    let window_size = 1000;
+//!    let mut timer = DurationTimer::new_box();
+//!
+//!    let mut packet_latency =
+//!        TimeWindow::new("Packet Latency", window_size, timer.clone(), None);
+//!
+//!    // Record some hypothetical packet latencies.  The clock started
+//!    // running when we created the timer.  Use the start() method
+//!    // to set a new start time.
+//!
+//!    timer.borrow_mut().start();
+//!
+//!    for i in 1..window_size + 1 {
+//!       // Do work...
+//!
+//!       packet_latency.record_event();
+//!       assert!(packet_latency.count() == i as u64);
+//!    }
+//!
+//!    // Print our statistics.  This example has only one event recorded.
+//!
+//!    packet_latency.print();
+//!
+//!    // We should have seen "window_size" events.
+//!
+//!    assert!(packet_latency.count() == window_size as u64);
+//!
+//!    for i in 1..window_size / 2 + 1 {
+//!       packet_latency.record_event();
+//!       assert!(packet_latency.count() == window_size as u64);
+//!    }
+//! 
+//!```
 
 use std::any::Any;
 
@@ -83,10 +83,9 @@ use super::compute_skewness;
 use super::compute_kurtosis;
 use super::stdout_printer;
 
-/// TimeWindow implements a statistics instance that
-/// retains a window of the last n samples of a
-/// stream of data samples and a histogram of all
-/// data samples.
+/// TimeWindow implements a statistics instance that retains
+/// a window of the last n samples of astream of data samples
+/// and a histogram of all data samples recorded.
 
 #[derive(Clone)]
 pub struct TimeWindow {
@@ -98,7 +97,7 @@ pub struct TimeWindow {
 }
 
 impl TimeWindow {
-    /// TimeWindow Constructor
+    /// Make a new TimeWindow instance.
 
     pub fn new(name: &str, window_size: usize, timer:  TimerBox, printer: PrinterOption)
             -> TimeWindow {
@@ -122,6 +121,9 @@ impl TimeWindow {
         TimeWindow { printer, integer_window, timer, hz }
     }
 
+    /// Returns the hertz rating of the Timer instance being used
+    /// by this instance.
+
     pub fn hz(&self) -> i64 {
         self.hz
     }
@@ -136,9 +138,10 @@ impl Rustics for TimeWindow {
         panic!("Rustics::TimeWindow:  f64 events are not permitted.");
     }
 
-    /// Record a time value obtained from the timer instance used to
+    /// Records a time value obtained from the timer instance used to
     /// to create this TimeWindow instance.  Calling finish() on the
-    /// timer automatically starts the new interval.
+    /// timer automatically starts the new interval.  This method
+    /// only works for single-threaded statistics gathering.
 
     fn record_event(&mut self) {
         let interval = (*self.timer).borrow_mut().finish();
@@ -146,14 +149,14 @@ impl Rustics for TimeWindow {
         self.integer_window.record_i64(interval);
     }
 
-    /// Record a time sample measured in ticks.
+    /// Records a time sample measured in ticks.
 
     fn record_time(&mut self, sample: i64) {
         assert!(sample >= 0);
         self.integer_window.record_i64(sample);
     }
 
-    /// Record an interval by reading the timer provided.
+    /// Records an interval by reading the timer provided.
 
     fn record_interval(&mut self, timer: &mut TimerBox) {
         let mut timer = (*timer).borrow_mut();
@@ -178,7 +181,7 @@ impl Rustics for TimeWindow {
         self.integer_window.count()
     }
 
-    /// Return the most common pseudo-log value from the data.
+    /// Returns the most common pseudo-log value from the data.
 
     fn log_mode(&self) -> isize {
         self.integer_window.log_mode()

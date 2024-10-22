@@ -4,86 +4,86 @@
 //  permitted by law.
 //
 
-///
-/// ## Type
-///
-/// * Printable
-///     * Printable implement the output formatting used by all the
-///       statistics types, like RunningInteger.
+//!
+//! ## Type
+//!
+//! * Printable
+//!     * Printable implement the output formatting used by all the
+//!       statistics types, like RunningInteger.
 //      * This module provides helper functions for formatting integers
-///       and time values.
-///
-///```
-///     use rustics::printable::Printable;
-///
-///
-///     let hz       = 1_000_000_000;
-///     let second   = hz as f64;
-///     let ms       = second / 1000.0;
-///     let us       = second / 1000_000.0;
-///     let ns       = second / 1_000_000_000.0;
-///     let minute   = second * 60.0;
-///     let hour     = minute * 60.0;
-///     let day      = 24.0 * hour;
-///     let week     = day * 7.0;
-///
-///     let examples =
-///         [
-///             (         100.0,   100.0,  "ns"     ),
-///             (         102.4,   102.4,  "ns"     ),
-///             (       1_000.0,     1.0,  "us"     ),
-///             (       1_200.0,     1.2,  "us"     ),
-///             (      29_000.0,    29.0,  "us"     ),
-///             (   1_000_000.0,     1.0,  "ms"     ),
-///             (  29_000_000.0,    29.0,  "ms"     ),
-///
-///             (       us - ns,   999.0,  "ns"     ),
-///             (       ms - us,   999.0,  "us"     ),
-///             (   second - ms,   999.0,  "ms"     ),
-///
-///             (        second,     1.0,  "second" ),
-///             (  1.5 * second,     1.5,  "seconds"),
-///             (  3.0 * second,     3.0,  "seconds"),
-///             (  3.0 * second,     3.0,  "seconds"),
-///             ( 42.0 * second,    42.0,  "seconds"),
-///             (          hour,     1.0,  "hour"   ),
-///             (   12.6 * hour,    12.6,  "hours"  ),
-///             (           day,     1.0,  "day"    ),
-///             (     2.0 * day,     2.0,  "days"   ),
-///             (   999.0 * day,   999.0,  "days"   ),
-///             (          week,     7.0,  "days"   ),
-///         ];
-///
-///     // Convert a time in ticks to a scaled value and
-///     // and a string for units.  For example, 1000 ns
-///     // should return (1.0, "us").
-///
-///     for example in examples {
-///         let (ticks, time, units) = example;
-///
-///         let (result_time, result_units) = Printable::scale_time(ticks, hz);
-///
-///         println!("documentation:  expect ({} {}) from {}, got ({} {})",
-///             time, units,
-///             ticks,
-///             result_time, result_units
-///         );
-///
-///         assert!(result_time  == time);
-///         assert!(result_units == units);
-///
-///         // The commas functions works to add commas to integer output.
-///         // It handles "+" and "-" signs.  The interface functions
-///         // commas_64 and commas_u64 are a bit more convenient to use.
-///
-///         assert_eq!(Printable::commas(   "+20"),       "+20");
-///         assert_eq!(Printable::commas(  "-200"),      "-200");
-///         assert_eq!(Printable::commas(  "2000"),     "2,000");
-///         assert_eq!(Printable::commas("+12345"),   "+12,345");
-///         assert_eq!(Printable::commas("-12345"),   "-12,345");
-///         assert_eq!(Printable::commas("200000"),   "200,000");
-///     }
-///```
+//!       and time values.
+//!
+//!```
+//!     use rustics::printable::Printable;
+//!
+//!
+//!     let hz       = 1_000_000_000;
+//!     let second   = hz as f64;
+//!     let ms       = second / 1000.0;
+//!     let us       = second / 1000_000.0;
+//!     let ns       = second / 1_000_000_000.0;
+//!     let minute   = second * 60.0;
+//!     let hour     = minute * 60.0;
+//!     let day      = 24.0 * hour;
+//!     let week     = day * 7.0;
+//!
+//!     let examples =
+//!         [
+//!             (         100.0,   100.0,  "ns"     ),
+//!             (         102.4,   102.4,  "ns"     ),
+//!             (       1_000.0,     1.0,  "us"     ),
+//!             (       1_200.0,     1.2,  "us"     ),
+//!             (      29_000.0,    29.0,  "us"     ),
+//!             (   1_000_000.0,     1.0,  "ms"     ),
+//!             (  29_000_000.0,    29.0,  "ms"     ),
+//!
+//!             (       us - ns,   999.0,  "ns"     ),
+//!             (       ms - us,   999.0,  "us"     ),
+//!             (   second - ms,   999.0,  "ms"     ),
+//!
+//!             (        second,     1.0,  "second" ),
+//!             (  1.5 * second,     1.5,  "seconds"),
+//!             (  3.0 * second,     3.0,  "seconds"),
+//!             (  3.0 * second,     3.0,  "seconds"),
+//!             ( 42.0 * second,    42.0,  "seconds"),
+//!             (          hour,     1.0,  "hour"   ),
+//!             (   12.6 * hour,    12.6,  "hours"  ),
+//!             (           day,     1.0,  "day"    ),
+//!             (     2.0 * day,     2.0,  "days"   ),
+//!             (   999.0 * day,   999.0,  "days"   ),
+//!             (          week,     7.0,  "days"   ),
+//!         ];
+//!
+//!     // Convert a time in ticks to a scaled value and
+//!     // and a string for units.  For example, 1000 ns
+//!     // should return (1.0, "us").
+//!
+//!     for example in examples {
+//!         let (ticks, time, units) = example;
+//!
+//!         let (result_time, result_units) = Printable::scale_time(ticks, hz);
+//!
+//!         println!("documentation:  expect ({} {}) from {}, got ({} {})",
+//!             time, units,
+//!             ticks,
+//!             result_time, result_units
+//!         );
+//!
+//!         assert!(result_time  == time);
+//!         assert!(result_units == units);
+//!
+//!         // The commas functions works to add commas to integer output.
+//!         // It handles "+" and "-" signs.  The interface functions
+//!         // commas_64 and commas_u64 are a bit more convenient to use.
+//!
+//!         assert_eq!(Printable::commas(   "+20"),       "+20");
+//!         assert_eq!(Printable::commas(  "-200"),      "-200");
+//!         assert_eq!(Printable::commas(  "2000"),     "2,000");
+//!         assert_eq!(Printable::commas("+12345"),   "+12,345");
+//!         assert_eq!(Printable::commas("-12345"),   "-12,345");
+//!         assert_eq!(Printable::commas("200000"),   "200,000");
+//!     }
+//!```
 
 // The Printable struct and associated functions are common code for
 // printing statistics.
@@ -159,7 +159,7 @@ impl Printable {
         }
     }
 
-    /// Convert an i64 into a string with comma separators.
+    /// Converts an i64 into a string with comma separators.
 
     pub fn commas_i64(value: i64) -> String {
         let base = value.to_string();
@@ -167,7 +167,7 @@ impl Printable {
         Self::commas(&base)
     }
 
-    /// Convert a u64 into a string with comma separators.
+    /// Converts a u64 into a string with comma separators.
 
     pub fn commas_u64(value: u64) -> String {
         let base = value.to_string();
@@ -175,8 +175,8 @@ impl Printable {
         Self::commas(&base)
     }
 
-    /// scale_time() converts a time value in clock ticks into
-    /// a human-readable value and unit.  The unit is returned
+    /// scale_time() converts a time value in clock ticks into a
+    /// human-readable value and unit.  The chosen unit is returned
     /// as a string for printing.
 
     pub fn scale_time(time: f64, hz: i64) -> (f64, String) {
@@ -244,20 +244,20 @@ impl Printable {
         (scaled_time, unit)
     }
 
-    /// Print an integer statistic and its name in the standard format.
+    /// Prints an integer statistic and its name in the standard format.
 
     pub fn print_integer(name: &str, value: i64, printer: &mut dyn Printer) {
         let output = format!("    {:<12} {:>12}", name, Self::commas_i64(value));
         printer.print(&output);
     }
 
-    /// Print an integer statistic and its name in the standard format.
+    /// Prints an integer statistic and its name in the standard format.
 
     pub fn print_float(name: &str, value: f64, printer: &mut dyn Printer) {
         Self::print_float_unit(name, value, "", printer)
     }
 
-    /// Print a float value and its name along with a string specifying
+    /// Prints a float value and its name along with a string specifying
     /// the unit.
 
     pub fn print_float_unit(name: &str, value: f64, unit: &str, printer: &mut dyn Printer) {
@@ -303,7 +303,7 @@ impl Printable {
         printer.print(&output);
     }
 
-    /// Print a time value in human-usable form.
+    /// Prints a time value in human-usable form.
 
     pub fn print_time(name: &str, time: f64, hz: i64, printer: &mut dyn Printer) {
         let (scaled_time, unit) = Self::scale_time(time, hz);
@@ -316,7 +316,7 @@ impl Printable {
         }
     }
 
-    /// Print the common integer statistics as passed in a Printable instance.
+    /// Prints the common integer statistics as passed in a Printable instance.
 
     pub fn print_common_integer(&self, printer: &mut dyn Printer) {
         Self::print_integer("Count", self.n as i64, printer);
@@ -328,7 +328,7 @@ impl Printable {
         }
     }
 
-    /// Print the common float statistics as passed in a Printable instance.
+    /// Prints the common float statistics as passed in a Printable instance.
     /// This includes values like the mean, which should be limited to an integer
     /// value.
 
@@ -342,7 +342,7 @@ impl Printable {
         }
     }
 
-    /// log_mode_to_time converts the log_mode of the histogram
+    /// log_mode_to_time converts the log_mode of a time-based histogram
     /// into an approximate time for the bucket.  Note that this
     /// approximation can be bigger than the record max value since
     /// the pseudo-log function rounds up.
@@ -363,7 +363,7 @@ impl Printable {
         ticks as f64
     }
 
-    /// Print integer values that are in time units as actual times. The
+    /// Prints integer values that are in time units as actual times. The
     /// mode of the pseudo-log is an exception.
 
     pub fn print_common_integer_times(&self, hz: i64, printer: &mut dyn Printer) {
@@ -378,7 +378,7 @@ impl Printable {
         }
     }
 
-    /// Print the common f64 summary statistics.
+    /// Prints the common f64 summary statistics.
 
     pub fn print_common_float_times(&self, hz: i64, printer: &mut dyn Printer) {
         if self.n > 0 {

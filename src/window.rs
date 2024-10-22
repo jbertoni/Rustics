@@ -4,77 +4,77 @@
 //  permitted by law.
 //
 
-///
-/// ## Type
-///
-/// * Window<T>
-///   * The Window type implements a set of n instances of type T.
-///   * The set has a configurable size limit.
-///   * When a new element of type T is pushed into the window,
-///     the oldest element is deleted once the size limit has been
-///     reached.
-///   * The windows code provides the concept of "live" entries,
-///     which are the last k items pushed, for a configurable
-///     limit k.
-///   * The interface proves iterators to examine the contents
-///     of the window, as well as  various indexing functions
-///     to look into the window at arbitrary points.
-///
-/// ## Example
-///```
-///     use rustics::window::Window;
-///     use std::cmp::min;
-///
-///     let     size_limit  = 96;
-///     let     live_limit  = 32;
-///     let mut window      = Window::<usize>::new(size_limit, live_limit);
-///
-///     // Fill the window while checking that the results match expectations.
-///
-///     for _i in window.iter_all() {
-///         panic!("iterator_test:  The window should be empty.");
-///     }
-///
-///     for _i in window.iter_live() {
-///         panic!("iterator_test:  The window should be empty.");
-///     }
-///
-///     // First, just fill the array.
-///
-///     for i in 1..size_limit + 1 {
-///         println!("iterator_test:  at {} filling the window.", i);
-///
-///         window.push(i);
-///
-///         // Do a sanity check.
-///
-///         assert!(window.live_len() == min(i, live_limit));
-///         assert!(window.all_len()  == i);
-///     }
-///
-///     // Check the contents a bit...
-///
-///     let mut i = 1;
-///
-///     for value in window.iter_all() {
-///         assert!(*value == i);
-///
-///         i += 1;
-///     }
-///
-///     // Now keep pushing, and make sure that old elements disappear.
-///
-///     for i in 0..size_limit {
-///         let next_data = i + size_limit;
-///
-///         window.push(next_data);
-///
-///         // Let verify_window run the iterators.
-///
-///         assert!(window.live_len() == live_limit);
-///         assert!(window.all_len()  == size_limit);
-///     }
-///```
+//!
+//! ## Type
+//!
+//! * Window<T>
+//!   * The Window type implements a set of n instances of type T.
+//!   * The set has a configurable size limit.
+//!   * When a new element of type T is pushed into the window,
+//!     the oldest element is deleted once the size limit has been
+//!     reached.
+//!   * The windows code provides the concept of "live" entries,
+//!     which are the last k items pushed, for a configurable
+//!     limit k.
+//!   * The interface proves iterators to examine the contents
+//!     of the window, as well as  various indexing functions
+//!     to look into the window at arbitrary points.
+//!
+//! ## Example
+//!```
+//!     use rustics::window::Window;
+//!     use std::cmp::min;
+//!
+//!     let     size_limit  = 96;
+//!     let     live_limit  = 32;
+//!     let mut window      = Window::<usize>::new(size_limit, live_limit);
+//!
+//!     // Fill the window while checking that the results match expectations.
+//!
+//!     for _i in window.iter_all() {
+//!         panic!("iterator_test:  The window should be empty.");
+//!     }
+//!
+//!     for _i in window.iter_live() {
+//!         panic!("iterator_test:  The window should be empty.");
+//!     }
+//!
+//!     // First, just fill the array.
+//!
+//!     for i in 1..size_limit + 1 {
+//!         println!("iterator_test:  at {} filling the window.", i);
+//!
+//!         window.push(i);
+//!
+//!         // Do a sanity check.
+//!
+//!         assert!(window.live_len() == min(i, live_limit));
+//!         assert!(window.all_len()  == i);
+//!     }
+//!
+//!     // Check the contents a bit...
+//!
+//!     let mut i = 1;
+//!
+//!     for value in window.iter_all() {
+//!         assert!(*value == i);
+//!
+//!         i += 1;
+//!     }
+//!
+//!     // Now keep pushing, and make sure that old elements disappear.
+//!
+//!     for i in 0..size_limit {
+//!         let next_data = i + size_limit;
+//!
+//!         window.push(next_data);
+//!
+//!         // Let verify_window run the iterators.
+//!
+//!         assert!(window.live_len() == live_limit);
+//!         assert!(window.all_len()  == size_limit);
+//!     }
+//!```
 
 //
 // A window contains at most "size_limit" items.  The window also
@@ -85,10 +85,12 @@
 // last "size_limit" events pushed into the window.
 //
 
-/// A Window instance maintains a set of items of type T.  The
-/// set size is limited to a configurable parameter.  The
-/// oldest item is dropped when  a new item is entered and the
-/// window is full.
+/// The Window struct is used internally and is of interest primarily
+/// to developers creating a new statistics type.
+///
+/// A Window instance maintains a set of items of type T.  The set size
+/// is limited to a configurable parameter.  The oldest item is dropped
+/// when  a new item is entered and the window is full.
 
 #[derive(Clone)]
 pub struct Window<T> {
@@ -102,7 +104,7 @@ pub struct Window<T> {
 // The Window type supports scans of all live entries and of
 // the entire contents of the window.
 
-/// Define the sets that can be traversed.
+/// Defines the sets that can be traversed.
 
 pub enum ScanType {
     Live,
@@ -110,7 +112,7 @@ pub enum ScanType {
 }
 
 impl<T> Window<T> {
-    /// Construct a new window instance.
+    /// Constructs a new window instance.
 
     pub fn new(size_limit: usize, live_limit: usize) -> Window<T> {
         if size_limit == 0 {
@@ -127,7 +129,7 @@ impl<T> Window<T> {
         Window { size_limit, live_limit, current_index, data }
     }
 
-    ///  Add a new entry to the window.
+    ///  Adds a new entry to the window.
 
     pub fn push(&mut self, data:  T) {
         // If this is the first entry, set the "current_index"
@@ -196,7 +198,7 @@ impl<T> Window<T> {
         Some(result)
     }
 
-    /// Return a pointer to the newest item, if there is one.
+    /// Returns a pointer to the newest item, if there is one.
 
     pub fn newest(&self) -> Option<&T> {
         if self.data.is_empty() {
@@ -207,7 +209,7 @@ impl<T> Window<T> {
         Some(&self.data[index_newest])
     }
 
-    /// Return a mutable reference to the current instance.
+    /// Returns a mutable reference to the current instance.
 
     pub fn newest_mut(&mut self) -> Option<&mut T> {
         let index_newest = self.index_newest()?;
@@ -215,13 +217,13 @@ impl<T> Window<T> {
         Some(&mut self.data[index_newest])
     }
 
-    /// Return the number of elements in the set.
+    /// Returns the number of elements in the set.
 
     pub fn all_len(&self) -> usize {
         self.data.len()
     }
 
-    /// Return the number of live elements.
+    /// Returns the number of live elements.
 
     pub fn live_len(&self) -> usize {
         let mut result = self.data.len();
@@ -233,7 +235,7 @@ impl<T> Window<T> {
         result
     }
 
-    /// Return a pointer to a given element in the window.
+    /// Returns a pointer to a given element in the window.
     /// The array is indexed with element zero being the
     /// oldest.
 
@@ -261,7 +263,7 @@ impl<T> Window<T> {
         Some(&self.data[internal_index])
     }
 
-    /// Return a pointer to a live element.  The items are
+    /// Returns a pointer to a live element.  The items are
     /// ordered by age wth the oldest at index 0.
 
     pub fn index_live(&self, index: usize) -> Option<&T> {
@@ -344,7 +346,7 @@ impl<T> Window<T> {
         (&self.data, oldest, oldest_live)
     }
 
-    ///  Delete all data from the window.  This puts it back into
+    ///  Deletes all data from the window.  This puts it back into
     ///  its initial state.
 
     pub fn clear(&mut self) {
@@ -352,20 +354,20 @@ impl<T> Window<T> {
         self.data.clear();
     }
 
-    /// Iterate over all the items in the window.
+    /// Iterates over all the items in the window.
 
     pub fn iter_all(&self) -> WindowIterator<T> {
         WindowIterator::<T>::new(self, ScanType::All)
     }
 
-    /// Iterate over all the live items in the window.
+    /// Iterates over all the live items in the window.
 
     pub fn iter_live(&self) -> WindowIterator<T> {
         WindowIterator::<T>::new(self, ScanType::Live)
     }
 }
 
-/// Implement the iterator for the contents of a window.
+/// Implements the iterator for the contents of a window.
 
 pub struct WindowIterator<'a, T> {
     window:     &'a Window<T>,

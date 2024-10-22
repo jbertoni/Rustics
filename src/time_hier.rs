@@ -4,23 +4,23 @@
 //  permitted by law.
 //
 
-///
-/// ## Type
-///
-/// * TimeHier
-///   * This type implements hierarchical statistics using the
-///     RunningTime type.  See the RunningTime documentation for
-///     how to used that type.
-///   * See the Hier documentation on how to use hierarchical
-///     statistics.
-///   * The functions TimerHier::new_hier and new_hier_box are
-///     wrappers for the Hier constructor and do the initialization
-///     specific to the TimeHier type.  They are the preferred
-///     interface for creating a Hier instance that use RunningTime
-///     instances.
-///   * This type is very similar to IntegerHier, so please refer
-///     to that module for examples.
-///
+//!
+//! ## Type
+//!
+//! * TimeHier
+//!   * This type implements hierarchical statistics using the
+//!     RunningTime type.  See the RunningTime documentation for
+//!     how to used that type.
+//!   * See the Hier documentation on how to use hierarchical
+//!     statistics.
+//!   * The functions TimerHier::new_hier and new_hier_box are
+//!     wrappers for the Hier constructor and do the initialization
+//!     specific to the TimeHier type.  They are the preferred
+//!     interface for creating a Hier instance that use RunningTime
+//!     instances.
+//!   * This type is very similar to IntegerHier, so please refer
+//!     to that module for examples.
+//!
 
 //
 // This module provides the interface between RunningTime and the Hier
@@ -98,7 +98,8 @@ pub struct TimeHierConfig {
 
 impl TimeHier {
     /// The new_raw() function constructs a TimeHier instance, which is an
-    /// implementation of HierGenerator for the RunningTime type.
+    /// implementation of HierGenerator for the RunningTime type.  Most users
+    /// should just invoke new_hier() or new_hier_box().
 
     pub fn new_raw(timer: TimerBox) -> TimeHier  {
         TimeHier { timer }
@@ -134,19 +135,20 @@ impl TimeHier {
     }
 }
 
-// These are the methods that the Hier code needs implemented
-// for a given statistic type that are not specific to a member
-// of that type.  It's thus the bridge between "impl RunningTime"
-// and the Hier code.
+// This impl provides the thus bridge between "impl RunningTime"
+// and the Hier code.  This cdoe is of interest mainly to developers
+// who are creating a custom type and need examples.
 
 impl HierGenerator for TimeHier {
+    // Creates a member with the given name and printer.
+
     fn make_member(&self, name: &str, printer: PrinterBox) -> MemberRc {
         let member = RunningTime::new(name, self.timer.clone(), Some(printer));
 
         Rc::from(RefCell::new(member))
     }
 
-    // Make a member from a complete list of exported statistics.
+    // Makes a member from a complete list of exported statistics.
 
     fn make_from_exporter(&self, name: &str, printer: PrinterBox, exporter: ExporterRc) -> MemberRc {
         let mut exporter_borrow = exporter.borrow_mut();
@@ -159,13 +161,16 @@ impl HierGenerator for TimeHier {
         Rc::from(RefCell::new(member))
     }
 
+    // Makes a new exporter so the Hier code can sum some RunningTime
+    // instances.
+
     fn make_exporter(&self) -> ExporterRc {
         let exporter = RunningExporter::new();
 
         Rc::from(RefCell::new(exporter))
     }
 
-    // Push another statistic onto the export list.  We will sum all of
+    // Pushes another statistic onto the export list.  We will sum all of
     // them at some point.
 
     fn push(&self, exporter: &mut dyn HierExporter, member_rc: MemberRc) {

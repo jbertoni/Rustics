@@ -4,55 +4,55 @@
 //  permitted by law.
 //
 
-/// ## Type
-///
-/// * LogHistogram
-///     * LogHistogram implements a histogram based on a pseudo-log
-///       function.
-///     * For positive numbers, the pseudo-log is define as the base 2
-///       log of the value, rounded up to an integer.
-///     * For a negative number n, the pseudo-log is defined as 
-///       -pseudo-log(-n)
-///     * The pseudo-log of zero is defined as zero.
-///
-/// ## Example
-///```
-///     use rustics::log_histogram::LogHistogram;
-///     use rustics::log_histogram::pseudo_log_index;
-///     use rustics::Printer;
-///     use rustics::stdout_printer;
-///
-///     // This is a simple sanity test of the LogHistogram code.  It
-///     // provides an example of what you should expect from its data.
-///
-///     let mut histogram = LogHistogram::new();
-///     let     printer   = &mut stdout_printer();
-///
-///     let test =
-///        [ 1, -1, 4, 25, 4109, -4108, -8, -9, -16, -17, 3, 8, 16 ];
-///
-///     for i in test.iter() {
-///         let pseudo_log_index = pseudo_log_index(*i) as usize;
-///
-///         let expected =
-///             if *i < 0 {
-///                 histogram.negative[pseudo_log_index] + 1
-///             } else {
-///                 histogram.positive[pseudo_log_index] + 1
-///             };
-///
-///         histogram.record(*i);
-///
-///         let actual =
-///             if *i < 0 {
-///                 histogram.negative[pseudo_log_index]
-///             } else {
-///                 histogram.positive[pseudo_log_index]
-///             };
-///
-///         assert!(actual == expected);
-///      }
-///```
+//! ## Type
+//!
+//! * LogHistogram
+//!     * LogHistogram implements a histogram based on a pseudo-log
+//!       function.
+//!     * For positive numbers, the pseudo-log is define as the base 2
+//!       log of the value, rounded up to an integer.
+//!     * For a negative number n, the pseudo-log is defined as 
+//!       -pseudo-log(-n)
+//!     * The pseudo-log of zero is defined as zero.
+//!
+//! ## Example
+//!```
+//!     use rustics::log_histogram::LogHistogram;
+//!     use rustics::log_histogram::pseudo_log_index;
+//!     use rustics::Printer;
+//!     use rustics::stdout_printer;
+//!
+//!     // This is a simple sanity test of the LogHistogram code.  It
+//!     // provides an example of what you should expect from its data.
+//!
+//!     let mut histogram = LogHistogram::new();
+//!     let     printer   = &mut stdout_printer();
+//!
+//!     let test =
+//!        [ 1, -1, 4, 25, 4109, -4108, -8, -9, -16, -17, 3, 8, 16 ];
+//!
+//!     for i in test.iter() {
+//!         let pseudo_log_index = pseudo_log_index(*i) as usize;
+//!
+//!         let expected =
+//!             if *i < 0 {
+//!                 histogram.negative[pseudo_log_index] + 1
+//!             } else {
+//!                 histogram.positive[pseudo_log_index] + 1
+//!             };
+//!
+//!         histogram.record(*i);
+//!
+//!         let actual =
+//!             if *i < 0 {
+//!                 histogram.negative[pseudo_log_index]
+//!             } else {
+//!                 histogram.positive[pseudo_log_index]
+//!             };
+//!
+//!         assert!(actual == expected);
+//!      }
+//!```
 
 // Implement a structure for the pseudo-log histograms.
 
@@ -125,7 +125,7 @@ impl LogHistogram {
         LogHistogram { negative, positive }
     }
 
-    /// Record a sample value.
+    /// Records a sample value.
 
     pub fn record(&mut self, sample: i64) {
         if sample < 0 {
@@ -201,7 +201,7 @@ impl LogHistogram {
         }
     }
 
-    /// Find the most common pseudo-log of the sample data.
+    /// Finds the most common pseudo-log of the sample data.
 
     pub fn log_mode(&self) -> isize {
         let mut mode = 0;
@@ -232,7 +232,7 @@ impl LogHistogram {
         self.print_positive(printer);
     }
 
-    /// Clear the histogram back to its initial state.
+    /// Clears the histogram back to its initial state.
 
     pub fn clear(&mut self) {
         self.negative = [0; 64];

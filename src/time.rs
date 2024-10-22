@@ -4,69 +4,69 @@
 //  permitted by law.
 //
 
-///
-/// ## Types
-///
-/// * Timer
-///   * Timer is the trait for time operations needed by the
-///     statistics functions.
-/// * DurationTimer
-///   * DurationTimer provides a Timer interface to the standard
-///     rust Duration type, which measures wall-clock time.
-/// * SimpleClock
-///   * SimpleClock is an abstraction that can be used to implement
-///     platform-specific Timer instances.  Something like a simple
-///     cycle counter would be an example.
-/// * ClockTimer
-///   * Clock timer is an implementation of Timer for a SimpleClock.
-///   * ClockTimer uses a Rc<RefCell<dyn SimpleClock>> provided
-///     to ClockTimer::new to read time.
-///
-///```
-///     use rustics::time::SimpleClock;
-///
-///     // This is a example implementation of the SimpleClock
-///     // trait.  It simple returns a series of time values
-///     // incrementing by one in size per invocation.
-///
-///     struct ExampleClock {
-///         current_time: u128,
-///         hz:           u128,
-///     }
-///
-///     impl ExampleClock {
-///         fn new(start_time: u128, hz: u128) -> ExampleClock {
-///             let current_time = start_time;
-///
-///             ExampleClock { current_time, hz }
-///         }
-///     }
-///
-///     impl SimpleClock for ExampleClock {
-///         fn get_time(&mut self) -> u128 {
-///             self.current_time += 1;
-///             self.current_time
-///         }
-///
-///         fn hz(&self) -> u128 {
-///             self.hz
-///         }
-///     }
-///
-///     let     start_time  = 1;
-///     let     hz          = 1_000_000_000;
-///     let mut clock       = ExampleClock::new(start_time, hz);
-///
-///     // Get a few time values.
-///
-///     for i in 1..100 {
-///         let time = clock.get_time();
-///
-///         assert!(time == start_time + i);
-///     }
-///
-///     assert!(clock.hz() == hz);
-///```
+//!
+//! ## Types
+//!
+//! * Timer
+//!   * Timer is the trait for time operations needed by the
+//!     statistics functions.
+//! * DurationTimer
+//!   * DurationTimer provides a Timer interface to the standard
+//!     rust Duration type, which measures wall-clock time.
+//! * SimpleClock
+//!   * SimpleClock is an abstraction that can be used to implement
+//!     platform-specific Timer instances.  Something like a simple
+//!     cycle counter would be an example.
+//! * ClockTimer
+//!   * Clock timer is an implementation of Timer for a SimpleClock.
+//!   * ClockTimer uses a Rc<RefCell<dyn SimpleClock>> provided
+//!     to ClockTimer::new to read time.
+//!
+//!```
+//!     use rustics::time::SimpleClock;
+//!
+//!     // This is a example implementation of the SimpleClock
+//!     // trait.  It simple returns a series of time values
+//!     // incrementing by one in size per invocation.
+//!
+//!     struct ExampleClock {
+//!         current_time: u128,
+//!         hz:           u128,
+//!     }
+//!
+//!     impl ExampleClock {
+//!         fn new(start_time: u128, hz: u128) -> ExampleClock {
+//!             let current_time = start_time;
+//!
+//!             ExampleClock { current_time, hz }
+//!         }
+//!     }
+//!
+//!     impl SimpleClock for ExampleClock {
+//!         fn get_time(&mut self) -> u128 {
+//!             self.current_time += 1;
+//!             self.current_time
+//!         }
+//!
+//!         fn hz(&self) -> u128 {
+//!             self.hz
+//!         }
+//!     }
+//!
+//!     let     start_time  = 1;
+//!     let     hz          = 1_000_000_000;
+//!     let mut clock       = ExampleClock::new(start_time, hz);
+//!
+//!     // Get a few time values.
+//!
+//!     for i in 1..100 {
+//!         let time = clock.get_time();
+//!
+//!         assert!(time == start_time + i);
+//!     }
+//!
+//!     assert!(clock.hz() == hz);
+//!```
 
 use std::time::Instant;
 use std::rc::Rc;
@@ -78,23 +78,25 @@ use std::cell::RefCell;
 ///  interval value.  For example, a DurationTimer uses the standard
 ///  Rust Duration type, which returns wall-clock time.  It operates
 ///  in nanoseconds.
-///
-///  The start method starts a timing interval.  It may be called
-///  multiple times on a single instance.  The last invocation of
-///  the start method overrides any previous calls.
-///
-///  The finish() function is used at the end of a sample interval.  It
-///  returns the interval time in nanoseconds and also starts a new
-///  interval, since the restart cost is nearly zero.  Thus, finish()
-///  can be called multiple times after a start() invocation to return
-///  the times for a sequence of events.  If a more precise timing is
-///  required, start() will start an interval.
-///
-///  hz returns the hertz of the underlying clock.
 
 pub trait Timer {
+    ///  The start method starts a timing interval.  It may be called
+    ///  multiple times on a single instance.  The last invocation of
+    ///  the start method overrides any previous calls.
+
     fn start(&mut self);            // start or restart a timer
+
+    ///  The finish() function is used at the end of a sample interval.  It
+    ///  returns the interval time in ticks and also starts a new
+    ///  interval, since the restart cost is nearly zero.  Thus, finish()
+    ///  can be called multiple times after a start() invocation to return
+    ///  the times for a sequence of events.  If a more precise timing is
+    ///  required, the user must invoke start().
+
     fn finish(&mut self) -> i64;    // get the elapsed time and set a new start time
+
+    ///  hz returns the hertz of the underlying clock.
+
     fn hz(&self) -> u128;           // get the clock hz
 }
 
@@ -165,12 +167,20 @@ impl Default for DurationTimer {
 ///  The instances can then be wrapped in a ClockTimer instance.
 
 pub trait SimpleClock {
+    /// Returns the current "time" in ticks, for whatever the
+    /// time means for the clock being used.  A cycle counter
+    /// will just return the current cycle count, for example.
+
     fn get_time(&mut self) -> u128;
+
+    /// Returns the hertz of the clock.
+
     fn hz(&self) -> u128;
 }
 
-///  The ClockTimer type is a wrapper class for platform-specific
-/// clocks.
+/// The ClockTimer type is a wrapper class for platform-specific
+/// clocks.  It can be used for cycle counters and execution
+/// time clocks, for example.
 
 #[derive(Clone)]
 pub struct ClockTimer {

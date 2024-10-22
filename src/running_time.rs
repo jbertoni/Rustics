@@ -4,85 +4,85 @@
 //  permitted by law.
 //
 
-/// ## Type
-///
-/// * RunningTime
-///     * RunningTime accumulates statistics on a stream of event times.
-///
-/// ## Example
-///```
-///    use std::rc::Rc;
-///    use std::cell::RefCell;
-///    use std::time::Instant;
-///    use rustics::Rustics;
-///    use rustics::time::Timer;
-///    use rustics::time::DurationTimer;
-///    use rustics::running_time::RunningTime;
-///
-///    // Create a statistic to record query latencies.  It's a time
-///    // statistic, so we need a timer.  Use an adapter for the
-///    // rust standard Duration timer.  The default for printing
-///    // output is stdout, which we'll assume is fine, so None will
-///    // work for the printer option.  See the Printer trait in lib.rs
-///    // for information on writing a custom Printer.
-///
-///    let timer = DurationTimer::new_box();
-///
-///    let mut query_latency = RunningTime::new("Query Latency", timer, None);
-///
-///    // By way of example, we assume that the queries are single-
-///    // threaded, so we can use the record_time() method to query
-///    // the timer and restart it.
-///    //
-///    // So record one time sample for the single-threaded case.  The
-///    // timer started running when we created the Duration timer.
-///
-///    query_latency.record_event();
-///
-///    // For the multithreaded case, you can use DurationTimer manually.
-///
-///    let mut local_timer = DurationTimer::new();
-///
-///    // Do our query.
-///    // ...
-///
-///    // You can use the finish() method if this RunningTime instance
-///    // is shared.
-///
-///    query_latency.record_time(local_timer.finish() as i64);
-///
-///    // If you want to use your own timer, you'll need to implement
-///    // the Timer trait to initialize the RunningTime instance, but you
-///    // can use it directly to get data. Let's use Duration timer
-///    // directly as an example.  Make a new instance for this example.
-///
-///    let timer = DurationTimer::new_box();
-///
-///    let mut query_latency =
-///        RunningTime::new("Custom Timer Query Latency", timer.clone(), None);
-///
-///    // Start the Duration timer.
-///
-///    let start = Instant::now();
-///
-///    // Do our query.
-///
-///    // Now get the elapsed timer.  DurationTimer works in nanoseconds,
-///    // so use that interface.
-///
-///    let time_spent = start.elapsed().as_nanos();
-///    assert!(timer.borrow().hz() == 1_000_000_000);
-///
-///    query_latency.record_time(time_spent as i64);
-///
-///    // Print our statistics.  This example has only one event recorded.
-///
-///    query_latency.print();
-///
-///    assert!(query_latency.count() == 1);
-///    assert!(query_latency.mean() == time_spent as f64);
-///    assert!(query_latency.standard_deviation() == 0.0);
-///```
+//! ## Type
+//!
+//! * RunningTime
+//!     * RunningTime accumulates statistics on a stream of event times.
+//!
+//! ## Example
+//!```
+//!    use std::rc::Rc;
+//!    use std::cell::RefCell;
+//!    use std::time::Instant;
+//!    use rustics::Rustics;
+//!    use rustics::time::Timer;
+//!    use rustics::time::DurationTimer;
+//!    use rustics::running_time::RunningTime;
+//!
+//!    // Create a statistic to record query latencies.  It's a time
+//!    // statistic, so we need a timer.  Use an adapter for the
+//!    // rust standard Duration timer.  The default for printing
+//!    // output is stdout, which we'll assume is fine, so None will
+//!    // work for the printer option.  See the Printer trait in lib.rs
+//!    // for information on writing a custom Printer.
+//!
+//!    let timer = DurationTimer::new_box();
+//!
+//!    let mut query_latency = RunningTime::new("Query Latency", timer, None);
+//!
+//!    // By way of example, we assume that the queries are single-
+//!    // threaded, so we can use the record_time() method to query
+//!    // the timer and restart it.
+//!    //
+//!    // So record one time sample for the single-threaded case.  The
+//!    // timer started running when we created the Duration timer.
+//!
+//!    query_latency.record_event();
+//!
+//!    // For the multithreaded case, you can use DurationTimer manually.
+//!
+//!    let mut local_timer = DurationTimer::new();
+//!
+//!    // Do our query.
+//!    // ...
+//!
+//!    // You can use the finish() method if this RunningTime instance
+//!    // is shared.
+//!
+//!    query_latency.record_time(local_timer.finish() as i64);
+//!
+//!    // If you want to use your own timer, you'll need to implement
+//!    // the Timer trait to initialize the RunningTime instance, but you
+//!    // can use it directly to get data. Let's use Duration timer
+//!    // directly as an example.  Make a new instance for this example.
+//!
+//!    let timer = DurationTimer::new_box();
+//!
+//!    let mut query_latency =
+//!        RunningTime::new("Custom Timer Query Latency", timer.clone(), None);
+//!
+//!    // Start the Duration timer.
+//!
+//!    let start = Instant::now();
+//!
+//!    // Do our query.
+//!
+//!    // Now get the elapsed timer.  DurationTimer works in nanoseconds,
+//!    // so use that interface.
+//!
+//!    let time_spent = start.elapsed().as_nanos();
+//!    assert!(timer.borrow().hz() == 1_000_000_000);
+//!
+//!    query_latency.record_time(time_spent as i64);
+//!
+//!    // Print our statistics.  This example has only one event recorded.
+//!
+//!    query_latency.print();
+//!
+//!    assert!(query_latency.count() == 1);
+//!    assert!(query_latency.mean() == time_spent as f64);
+//!    assert!(query_latency.standard_deviation() == 0.0);
+//!```
 
 use std::any::Any;
 
@@ -114,7 +114,7 @@ pub struct RunningTime {
 }
 
 impl RunningTime {
-    /// RunningTime Constructor
+    /// Creates a new RunningTime instance
 
     pub fn new(name_in: &str, timer: TimerBox, printer: PrinterOption) -> RunningTime {
         let hz = timer_box_hz(&timer);
@@ -136,7 +136,7 @@ impl RunningTime {
         RunningTime { printer, running_integer, timer, hz }
     }
 
-    /// Create a RunningTime instance from a RunningInteger.  This procedure
+    /// Creates a RunningTime instance from a RunningInteger.  This procedure
     /// is used internally to support the Hier code.
 
     pub fn from_integer(timer: TimerBox, printer: PrinterBox, running: RunningInteger)
@@ -151,9 +151,10 @@ impl RunningTime {
         self.hz
     }
 
-    /// Export the statistics for this instance.  Internally, the
-    /// RunningTime code uses a RunningInteger instance to store
-    /// all the data.
+    // This function is used by RunningTime as it is simply
+    // a wrapper for a RunningInteger.
+
+    /// Exports the statistics for this instance.
 
     pub fn export(&self) -> RunningExport {
         self.running_integer.export()

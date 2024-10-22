@@ -4,100 +4,100 @@
 //  permitted by law.
 //
 
-///
-/// ## Type
-///
-/// * RcSet
-///     * RcSet implements a set that can contain statistics instances
-///       and other RcSet instances.
-///     * Members of an RcSet are kept as Rc instances to allow for
-///       single-threaded sharing.
-///
-/// ## Example
-///```
-///    // RcSet and ArcSet provide a nearly identical interface.  This
-///    // code is mostly lifted from the ArcSet comments.
-///
-///    use std::rc::Rc;
-///    use std::cell::RefCell;
-///    use std::time::Instant;
-///    use rustics::time::Timer;
-///    use rustics::time::DurationTimer;
-///    use rustics::rc_sets::RcSet;
-///
-///    // Create a set.  We're expecting 8 statistics instances but
-///    // no subsets, so we set those hints appropriately.  The
+//!
+//! ## Type
+//!
+//! * RcSet
+//!     * RcSet implements a set that can contain statistics instances
+//!       and other RcSet instances.
+//!     * Members of an RcSet are kept as Rc instances to allow for
+//!       single-threaded sharing.
+//!
+//! ## Example
+//!```
+//!    // RcSet and ArcSet provide a nearly identical interface.  This
+//!    // code is mostly lifted from the ArcSet comments.
+//!
+//!    use std::rc::Rc;
+//!    use std::cell::RefCell;
+//!    use std::time::Instant;
+//!    use rustics::time::Timer;
+//!    use rustics::time::DurationTimer;
+//!    use rustics::rc_sets::RcSet;
+//!
+//!    // Create a set.  We're expecting 8 statistics instances but
+//!    // no subsets, so we set those hints appropriately.  The
 //     // default print output goes to stdout, and that's fine for
-///    // an example, so just give "None" to accept the default.
-///
-///    let mut set = RcSet::new("Main Statistics", 8, 0, None);
-///
-///    // Add a statistic to record query latencies.  It's a time
-///    // statistic, so we need a timer.  Use an adapter for the
-///    // rust standard Duration timer.
-///
-///    let timer = DurationTimer::new_box();
-///
-///    // The add_running_timer method is a helper function for
-///    // creating RunningTime instances.
-///
-///    let mut query_latency = set.add_running_time("Query Latency", timer);
-///
-///    // By way of example, we assume that the queries are single-
-///    // threaded, so we can use the record_event() method to query
-///    // the timer and restart it.
-///    //
-///    // So record one event time for the single-threaded case.  The
-///    // record_event code uses the timer we passed at construction.
-///
-///    query_latency.borrow_mut().record_event();
-///
-///    // For the multithreaded case, you can use DurationTimer manually.
-///    // Usually, ArcSet instances are more convenient for multi-threaded
-///    // applications.
-///
-///    let mut local_timer = DurationTimer::new();
-///
-///    // Do our query.
-///    // ...
-///    // Apply a lock to get to query_latency...
-///
-///    query_latency.borrow_mut().record_time(local_timer.finish() as i64);
-///
-///    // If you want to use your own timer, you'll need to implement
-///    // the Timer trait to initialize the RunningTime instance, but you
-///    // can use it directly to get data. Let's use DurationTimer directly
-///    // as an example.  Make a new instance for this example.
-///
-///    let timer = DurationTimer::new_box();
-///
-///    let mut query_latency = set.add_running_time("Custom Timer Query Latency", timer.clone());
-///
-///    // Start the Duration timer.
-///
-///    let start = Instant::now();
-///
-///    // Do our query.
-///
-///    // Now get the elapsed timer.  DurationTimer works in nanoseconds,
-///    // so use that interface.
-///
-///    assert!(timer.borrow().hz() == 1_000_000_000);
-///    let time_spent = start.elapsed().as_nanos();
-///
-///    query_latency.borrow_mut().record_time(time_spent as i64);
-///
-///    // Print our statistics.  This example has only one event recorded.
-///
-///    let query_borrow = query_latency.borrow();
-///
-///    query_borrow.print();
-///
-///    assert!(query_borrow.count() == 1);
-///    assert!(query_borrow.mean() == time_spent as f64);
-///    assert!(query_borrow.standard_deviation() == 0.0);
-/// 
-///```
+//!    // an example, so just give "None" to accept the default.
+//!
+//!    let mut set = RcSet::new("Main Statistics", 8, 0, None);
+//!
+//!    // Add a statistic to record query latencies.  It's a time
+//!    // statistic, so we need a timer.  Use an adapter for the
+//!    // rust standard Duration timer.
+//!
+//!    let timer = DurationTimer::new_box();
+//!
+//!    // The add_running_timer method is a helper function for
+//!    // creating RunningTime instances.
+//!
+//!    let mut query_latency = set.add_running_time("Query Latency", timer);
+//!
+//!    // By way of example, we assume that the queries are single-
+//!    // threaded, so we can use the record_event() method to query
+//!    // the timer and restart it.
+//!    //
+//!    // So record one event time for the single-threaded case.  The
+//!    // record_event code uses the timer we passed at construction.
+//!
+//!    query_latency.borrow_mut().record_event();
+//!
+//!    // For the multithreaded case, you can use DurationTimer manually.
+//!    // Usually, ArcSet instances are more convenient for multi-threaded
+//!    // applications.
+//!
+//!    let mut local_timer = DurationTimer::new();
+//!
+//!    // Do our query.
+//!    // ...
+//!    // Apply a lock to get to query_latency...
+//!
+//!    query_latency.borrow_mut().record_time(local_timer.finish() as i64);
+//!
+//!    // If you want to use your own timer, you'll need to implement
+//!    // the Timer trait to initialize the RunningTime instance, but you
+//!    // can use it directly to get data. Let's use DurationTimer directly
+//!    // as an example.  Make a new instance for this example.
+//!
+//!    let timer = DurationTimer::new_box();
+//!
+//!    let mut query_latency = set.add_running_time("Custom Timer Query Latency", timer.clone());
+//!
+//!    // Start the Duration timer.
+//!
+//!    let start = Instant::now();
+//!
+//!    // Do our query.
+//!
+//!    // Now get the elapsed timer.  DurationTimer works in nanoseconds,
+//!    // so use that interface.
+//!
+//!    assert!(timer.borrow().hz() == 1_000_000_000);
+//!    let time_spent = start.elapsed().as_nanos();
+//!
+//!    query_latency.borrow_mut().record_time(time_spent as i64);
+//!
+//!    // Print our statistics.  This example has only one event recorded.
+//!
+//!    let query_borrow = query_latency.borrow();
+//!
+//!    query_borrow.print();
+//!
+//!    assert!(query_borrow.count() == 1);
+//!    assert!(query_borrow.mean() == time_spent as f64);
+//!    assert!(query_borrow.standard_deviation() == 0.0);
+//! 
+//!```
 
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -121,7 +121,14 @@ pub type RcSetBox  = Rc<RefCell<RcSet>>;
 /// to traverse the elements in an Rc set hierarchy.
 
 pub trait RcTraverser {
+    /// This method is invoked on each set in the set, including
+    /// the top-level set.
+
     fn visit_set(&mut self, set: &mut RcSet);
+
+    /// This method is invoked on each statistics instance in the
+    /// set.
+
     fn visit_member(&mut self, member: &mut dyn Rustics);
 }
 
@@ -164,14 +171,14 @@ impl RcSet {
         RcSet { name, title, id, next_id, members, subsets, printer }
     }
 
-    /// Return the name of the set.
+    /// Returns the name of the set.
 
     pub fn name(&self) -> String {
         self.name.clone()
     }
 
-    /// Traverse the statistics and subsets.  Invoke a user-defined
-    /// function for each element.
+    /// Traverses the statistics and subsets, invoking a user-defined
+    /// function for each member of the set.
 
     pub fn traverse(&mut self, traverser: &mut dyn RcTraverser) {
         traverser.visit_set(self);
@@ -189,7 +196,7 @@ impl RcSet {
         }
     }
 
-    /// Print the set and all its constituents (subsets and statistics).
+    /// Prints the set and all its constituents (subsets and statistics).
 
     pub fn print(&self) {
         self.print_opts(None, None);
@@ -215,7 +222,7 @@ impl RcSet {
         self.title = String::from(title);
     }
 
-    /// Do a recursive clear of all statistics in the set and its
+    /// Does a recursive clear of all statistics in the set and its
     /// entire subset hierarachy.
 
     pub fn clear(&mut self) {
@@ -230,7 +237,7 @@ impl RcSet {
         }
     }
 
-    /// Add a member given a Rustics instance.
+    /// Adds a the Rustics instance to the set.
 
     pub fn add_member(&mut self, member: RusticsRc) {
         let mut stat   = member.borrow_mut();
@@ -244,7 +251,7 @@ impl RcSet {
         self.members.push(member);
     }
 
-    /// Create a RunningInteger instance and add it to the set.
+    /// Creates a RunningInteger instance and adds it to the set.
 
     pub fn add_running_integer(&mut self, name: &str) -> RusticsRc {
         let printer = Some(self.printer.clone());
@@ -255,7 +262,7 @@ impl RcSet {
         member
     }
 
-    /// Create a IntegerWindow statistics instance and add it to the set.
+    /// Creates a IntegerWindow statistics instance and adds it to the set.
 
     pub fn add_integer_window(&mut self, window_size: usize, name: &str) -> RusticsRc {
         let printer = Some(self.printer.clone());
@@ -266,7 +273,7 @@ impl RcSet {
         member
     }
 
-    /// Create a RunningTime instance and add it to the set.
+    /// Creates a RunningTime instance and adds it to the set.
 
     pub fn add_running_time(&mut self, name: &str, timer: TimerBox) -> RusticsRc {
         let printer = Some(self.printer.clone());
@@ -277,7 +284,7 @@ impl RcSet {
         member
     }
 
-    /// Create a TimeWindow instance and add it to the set.
+    /// Creates a TimeWindow instance and adds it to the set.
 
     pub fn add_time_window(&mut self, name: &str, window_size: usize, timer: TimerBox) -> RusticsRc {
         let printer = Some(self.printer.clone());
@@ -288,7 +295,7 @@ impl RcSet {
         member
     }
 
-    /// Create a Counter instance and add it to the set.
+    /// Creates a Counter instance and adds it to the set.
 
     pub fn add_counter(&mut self, name: &str) -> RusticsRc {
         let printer = Some(self.printer.clone());
@@ -299,7 +306,7 @@ impl RcSet {
         member
     }
 
-    /// Remove a Rustics element from the set.
+    /// Removes a Rustics element from the set.
 
     pub fn remove_stat(&mut self, target: RusticsRc) -> bool {
         let mut found     = false;
@@ -328,7 +335,7 @@ impl RcSet {
         found
     }
 
-    /// Create a new subset and add it to the set.
+    /// Creates a new subset and adds it to the set.
 
     pub fn add_subset(&mut self, name: &str, members: usize, subsets: usize) -> RcSetBox {
         let     printer = Some(self.printer.clone());
@@ -345,9 +352,7 @@ impl RcSet {
         subset
     }
 
-    /// Remove a subset from the set.  We find the element by id.
-    /// There might be some way to do pointer comparison, but it
-    /// doesn't seem to be trivial.
+    /// Removes a subset from the set.
 
     pub fn remove_subset(&mut self, target: &RcSetBox) -> bool {
         let mut found     = false;

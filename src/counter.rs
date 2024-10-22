@@ -4,48 +4,48 @@
 //  permitted by law.
 //
 
-///
-/// ## Type
-///
-/// * Counter
-///     * Counter implements a simple i64 counter that can be
-///       printed with other statistics.
-///
-///     * It is intended to be used for counting events or
-///       summing values for which statistics are not wanted.
-///
-/// ## Example
-///```
-///     use rustics::Rustics;
-///     use rustics::counter::Counter;
-///
-///     let test_limit  = 20;
-///     let mut counter = Counter::new("test counter", None);
-///
-///     // Add some counts to the counter.  record_event() adds one,
-///     // to implement an event counter.  record_i64() adds any i64
-///     // value to the counter, for keeping a sum when statistics
-///     // like the mean aren't useful.
-///
-///     for i in 1..test_limit + 1 {
-///         counter.record_event();
-///         counter.record_i64(i);
-///     }
-///
-///     // Now compute what we expect as the total count, and check
-///     // that against the counter's value.  The sum of the sequence
-///     //     1 + 2 + 3 ... + n 
-///     // is
-///     //     (n * (n + 1)) / 2
-///
-///     let events   = test_limit;
-///     let sequence = ((test_limit + 1) * test_limit) / 2;
-///     let expected = events + sequence;
-///
-///     assert!(counter.count() == expected as u64);
-///
-///     counter.print();
-///```
+//!
+//! ## Type
+//!
+//! * Counter
+//!     * Counter implements a simple i64 counter that can be
+//!       printed with other statistics.
+//!
+//!     * It is intended to be used for counting events or
+//!       summing values for which statistics are not wanted.
+//!
+//! ## Example
+//!```
+//!     use rustics::Rustics;
+//!     use rustics::counter::Counter;
+//!
+//!     let test_limit  = 20;
+//!     let mut counter = Counter::new("test counter", None);
+//!
+//!     // Add some counts to the counter.  record_event() adds one,
+//!     // to implement an event counter.  record_i64() adds any i64
+//!     // value to the counter, for keeping a sum when statistics
+//!     // like the mean aren't useful.
+//!
+//!     for i in 1..test_limit + 1 {
+//!         counter.record_event();
+//!         counter.record_i64(i);
+//!     }
+//!
+//!     // Now compute what we expect as the total count, and check
+//!     // that against the counter's value.  The sum of the sequence
+//!     //     1 + 2 + 3 ... + n 
+//!     // is
+//!     //     (n * (n + 1)) / 2
+//!
+//!     let events   = test_limit;
+//!     let sequence = ((test_limit + 1) * test_limit) / 2;
+//!     let expected = events + sequence;
+//!
+//!     assert!(counter.count() == expected as u64);
+//!
+//!     counter.print();
+//!```
 
 use std::any::Any;
 use super::Rustics;
@@ -69,7 +69,8 @@ pub struct Counter {
 }
 
 impl Counter {
-    /// Counter Constructor
+    /// Constructs an instance with a given name and optional Printer
+    /// instance
 
     pub fn new(name: &str, printer: PrinterOption) -> Counter {
         let name    = String::from(name);
@@ -89,7 +90,7 @@ impl Counter {
 }
 
 impl Rustics for Counter {
-    /// Add a value to the counter.
+    /// Adds a value to the counter.
 
     fn record_i64(&mut self, sample: i64) {
         if sample < 0 {
@@ -103,7 +104,7 @@ impl Rustics for Counter {
         panic!("Counter::record_f64:  not supported");
     }
 
-    /// Increment the counter by one.
+    /// Increments the counter by one.
 
     fn record_event(&mut self) {
         self.count += 1;

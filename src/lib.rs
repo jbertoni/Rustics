@@ -42,8 +42,12 @@
 //!           RunningTime type, values are printed in units of time.
 //!
 //! * Hierarchial Statistics
-//!     * Hierarchical statistics contain sums of integer statistics instances, and can be
-//!       multi-level.  Values are recorded into an integer statistic of some kind.  When
+//!     * Hier implements a matrix of statistics objects, currently of type RunningInteger or
+//!       RunningTime.  Level 0 contains statistics that have record data samples, and the
+//!       upper levels are sums of lower levels.  See the Hier documentation for more details.
+//!     * Values are recorded into the newest statistics instance at level 0.  When requested
+//!       by the user
+//!
 //!       a hierarchical instance receives a request to advance to a new statistics instance,
 //!       the current statistic that is collecting data is pushed into a window, and a new
 //!       statistics instance will be created to hold any new values to be recorded.
@@ -109,12 +113,17 @@
 //!
 //!     *  SimpleClock
 //!         * This trait defines the interface used by ClockTimer to query a clock.
-//!
+//!  
+//! * Printing
 //!     *  Printer
 //!         * This trait provides a method to use custom printers.  By default, output from the
 //!           print function goes to stdout.
 //!         * See StdioPrinter for a very simple sample implementation.  This trait is used
 //!           as the default printer by the Rustics code.
+//!     *  Printable
+//!         * Printable provides standard formatting for printing data and some support routines
+//!           for nicer output, like time values scaled to human-understanble forms and integers
+//!           with commas.
 //!
 
 use std::sync::Mutex;
@@ -173,7 +182,7 @@ pub fn stdout_printer() -> PrinterBox {
     Arc::new(Mutex::new(printer))
 }
 
-/// Compute a variance estimator.
+/// Computes a variance estimator.
 
 pub fn compute_variance(count: u64, moment_2: f64) -> f64 {
     if count < 2 {
@@ -185,7 +194,7 @@ pub fn compute_variance(count: u64, moment_2: f64) -> f64 {
     moment_2 / (n - 1.0)
 }
 
-/// Compute the sample skewness.
+/// Computes the sample skewness.
 ///
 /// This formula is from brownmath.com.
 
@@ -205,7 +214,7 @@ pub fn compute_skewness(count: u64, moment_2: f64, moment_3: f64) -> f64 {
     skewness * correction
 }
 
-/// Compute the sample kurtosis estimator.
+/// Computes the sample kurtosis estimator.
 ///
 /// This formula is from brownmath.com.
 
@@ -224,10 +233,10 @@ pub fn compute_kurtosis(count: u64, moment_2: f64, moment_4: f64) -> f64 {
     correction * kurtosis_factor
 }
 
-/// The make_title() function concatenates two strings, insering the
+/// The make_title() function concatenates two strings, inserting the
 /// "=>" marker for set hierarchy specification.  It is probably of
 /// interest only to implementors of new statistics types.  It does
-/// omit the "=?" if the title prefix is empty.
+/// omit the "=>" if the title prefix is empty.
 
 pub fn make_title(title_prefix: &str, title: &str) -> String {
     if title_prefix.is_empty() {
@@ -247,6 +256,9 @@ pub fn make_title(title_prefix: &str, title: &str) -> String {
 /// The print() member is responsible for adding the newline.
 
 pub trait Printer {
+    /// Prints a line of output.  The print method itself must append
+    /// the newline.
+
     fn print(&self, output: &str);
 }
 
@@ -286,32 +298,119 @@ impl Printer for StdioPrinter {
 /// and querying statistics.
 
 pub trait Rustics {
-    fn record_i64  (&mut self, sample: i64);  // add an i64 sample
+    /// Records an i64 sample, if allowed by the implementation.
+    /// Time-based statistics do not support this method.
+
+    fn record_i64  (&mut self, sample: i64);  // an i64 sample
+
+    /// Records an f64 value.  Currently, no type supports this
+    /// operation.
+
     fn record_f64  (&mut self, sample: f64);  // add an f64 sample -- not implemented
+
+    /// Records an event.  This method is implementation-specific
+    /// in meaning.  For the Counter type, it is is equivalent to
+    /// record_i64(1).
+    ///
+    /// For time statistics, it reads the timer for the instance to
+    /// determine the time interval in ticks.  The time interval is
+    /// reset for the next record_event call.
+    ///
+    /// The other integer types do not support this call.
+
     fn record_event(&mut self             );  // implementation-specific record
+
+    /// Records a time in ticks.  This method will panic if the
+    /// underlying type is not a time statistic.
+
     fn record_time (&mut self, sample: i64);  // add a time sample
+
+    /// Records a time interval by reading the given TimerBox instance.
+    /// This method will panic if the underlying type is not a
+    /// time statistic.
 
     fn record_interval(&mut self, timer: &mut TimerBox);
                                              // Add a time sample ending now
 
+    /// Returns the name passed on instance creation.
+
     fn name(&self)               -> String;  // a text (UTF-8) name
+
+    /// Returns the default title used for printing.  The Rc and ArcSet
+    /// implementation create hierarchical titles for members of the set.
+    /// This function can be used to retrieve them.
+
     fn title(&self)              -> String;  // a text (UTF-8) title to print
+
+    /// Returns the "class" of the statistic.  Currently, "integer" and
+    /// "time" classes exist.
+
     fn class(&self)              -> &str;    // the type of a sample:  "integer", etc
+
+    /// Returns the count of samples seen.
+
     fn count(&self)              -> u64;     // the current sample count
+
+    /// Returns the most common pseudo-log seen in the data samples.
+
     fn log_mode(&self)           -> isize;   // the most common pseudo-log
+
+    /// Returns the mean of the samples in the instance.
+
     fn mean(&self)               -> f64;
+
+    /// Returns the standard deviation of the samples in the instance.
+
     fn standard_deviation(&self) -> f64;
+
+    /// Returns the variance of the samples in the instance.
+
     fn variance(&self)           -> f64;
+
+    /// Returns the skewness of the samples in the instance.
+
     fn skewness(&self)           -> f64;
+
+    /// Returns the kurtosis of the samples in the instance.
+
     fn kurtosis(&self)           -> f64;
 
+    /// Returns a boolean indicating whether the underlying type supports
+    /// the min_i64() and max_i64() methods.
+
     fn int_extremes(&self)       -> bool;    // does this statistic implement integer extremes?
+
+    /// Returns the minimum of the sample space for an integer
+    /// or time type.  Time statistics return a value in ticks.
+
     fn min_i64(&self)            -> i64;     // return the minimum sample value seen
+
+    /// Returns the minimum of the sample space for an f64 type,
+    /// although no implementations currently exist.
+
     fn min_f64(&self)            -> f64;
+
+    /// Returns the maximum of the sample space for an integer
+    /// or time type.  Time statistics return a value in ticks.
+
     fn max_i64(&self)            -> i64;     // return the maximum sample value seen
+
+    /// Returns the maximum of the sample space for an f64 type,
+    /// although no implementations currently exist.
+
     fn max_f64(&self)            -> f64;
 
+    /// Precomputes the summary data of the samples.  This is
+    /// useful when implementing custom print routines or querying
+    /// multiple summary statistics like the mean or skewness.
+    /// The window statistics will cache the result of data
+    /// analysis so it need not be redone each time a summary
+    /// statistic is retrieved.
+
     fn precompute(&mut self);                // precompute the various statistics for printing
+
+    /// Clears the data in the statistic.
+
     fn clear(&mut self);                     // clear all the statistics
 
     // Functions for printing
@@ -333,7 +432,12 @@ pub trait Rustics {
 /// Histogram defines the trait for using a LogHistogram instance.
 
 pub trait Histogram {
+    /// Returns the LogHistogram for access to its data
+
     fn log_histogram(&self) -> LogHistogram;
+
+    /// Prints the histogram on the given Printer instance.
+
     fn print_histogram(&self, printer: &mut dyn Printer);
 }
 

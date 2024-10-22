@@ -4,63 +4,63 @@
 //  permitted by law.
 //
 
-/// ## Type
-///
-/// * RunningInteger
-///     * RunningInteger maintains running statistics on a set of samples
-///       recorded into it.
-///
-/// ## Example
-///```
-///    use std::rc::Rc;
-///    use std::cell::RefCell;
-///    use rustics::Rustics;
-///    use rustics::running_integer::RunningInteger;
-///
-///    // Create  a statistic to record packet sizes.  The default
-///    // for printing output is stdout, which we'll assume is fine
-///    // for this example, so None works for the printer.
-///
-///    let mut packet_sizes = RunningInteger::new("Packet Sizes", None);
-///
-///    // Record some hypothetical packet sizes.
-///
-///    let sample_count = 1000;
-///
-///    for i in 1..sample_count + 1 {
-///       packet_sizes.record_i64(i as i64);
-///       assert!(packet_sizes.count() == i as u64);
-///    }
-///
-///    // Print our statistics.
-///
-///    packet_sizes.print();
-///
-///    // We should have seen "sample_count" events.
-///
-///    assert!(packet_sizes.count() == sample_count as u64);
-///
-///    // Compute the expected mean.  We need the sum of
-///    //     1 + 2 + ... + n
-///    // which is
-///    //     n * (n + 1) / 2.
-///
-///    let float_count = sample_count as f64;
-///    let float_sum   = float_count * (float_count + 1.0) / 2.0;
-///    let mean        = float_sum / float_count;
-///
-///    assert!(packet_sizes.mean() == mean);
-///
-///    // Let's record more samples, and verify the sample count
-///    // as we go.
-///
-///    let next_sample_count = 100;
-///
-///    for i in 1..next_sample_count + 1 {
-///       packet_sizes.record_i64(i + sample_count as i64);
-///       assert!(packet_sizes.count() == (sample_count + i) as u64);
-///    }
-///```
+//! ## Type
+//!
+//! * RunningInteger
+//!     * RunningInteger maintains running statistics on a set of samples
+//!       recorded into it.
+//!
+//! ## Example
+//!```
+//!    use std::rc::Rc;
+//!    use std::cell::RefCell;
+//!    use rustics::Rustics;
+//!    use rustics::running_integer::RunningInteger;
+//!
+//!    // Create  a statistic to record packet sizes.  The default
+//!    // for printing output is stdout, which we'll assume is fine
+//!    // for this example, so None works for the printer.
+//!
+//!    let mut packet_sizes = RunningInteger::new("Packet Sizes", None);
+//!
+//!    // Record some hypothetical packet sizes.
+//!
+//!    let sample_count = 1000;
+//!
+//!    for i in 1..sample_count + 1 {
+//!       packet_sizes.record_i64(i as i64);
+//!       assert!(packet_sizes.count() == i as u64);
+//!    }
+//!
+//!    // Print our statistics.
+//!
+//!    packet_sizes.print();
+//!
+//!    // We should have seen "sample_count" events.
+//!
+//!    assert!(packet_sizes.count() == sample_count as u64);
+//!
+//!    // Compute the expected mean.  We need the sum of
+//!    //     1 + 2 + ... + n
+//!    // which is
+//!    //     n * (n + 1) / 2.
+//!
+//!    let float_count = sample_count as f64;
+//!    let float_sum   = float_count * (float_count + 1.0) / 2.0;
+//!    let mean        = float_sum / float_count;
+//!
+//!    assert!(packet_sizes.mean() == mean);
+//!
+//!    // Let's record more samples, and verify the sample count
+//!    // as we go.
+//!
+//!    let next_sample_count = 100;
+//!
+//!    for i in 1..next_sample_count + 1 {
+//!       packet_sizes.record_i64(i + sample_count as i64);
+//!       assert!(packet_sizes.count() == (sample_count + i) as u64);
+//!    }
+//!```
 
 use std::any::Any;
 use std::cmp::min;
@@ -125,7 +125,7 @@ pub struct RunningExporter {
 /// It is used to sum a list of RunningInteger statistics instances.
 
 impl RunningExporter {
-    /// RunningExporter Constructor
+    /// Creates a new RunningExporter instance
 
     pub fn new() -> RunningExporter {
         let addends = Vec::new();
@@ -133,14 +133,14 @@ impl RunningExporter {
         RunningExporter { addends }
     }
 
-    /// Push a statistics instance onto the list of instances to
+    /// Pushes a statistics instance onto the list of instances to
     /// be summed.
 
     pub fn push(&mut self, addend: RunningExport) {
         self.addends.push(addend);
     }
 
-    /// Make a member based on the summed exports.
+    /// Makes a member statistics instance based on the summed exports.
 
     pub fn make_member(&mut self, name: &str, printer: PrinterBox) -> RunningInteger {
         let title   = name;
@@ -184,7 +184,7 @@ pub struct RunningExport {
 }
 
 /// sum_log_histogram() is used internally to create sums of
-///  RunningInteger instances.
+/// RunningInteger instances.
 
 pub fn sum_log_histogram(sum:  &mut LogHistogram, addend: &LogHistogram) {
     for i in 0..sum.negative.len() {
@@ -231,7 +231,8 @@ pub fn sum_running(exports: &Vec::<RunningExport>) -> RunningExport {
 }
 
 impl RunningInteger {
-    /// RunningInteger Constructor
+    /// Creates a new RunningInteger instance with the given name and
+    /// an optional print function.
 
     pub fn new(name_in: &str, printer: PrinterOption) -> RunningInteger {
         let name            = String::from(name_in);
@@ -261,7 +262,7 @@ impl RunningInteger {
         }
     }
 
-    /// Create a RunningInteger instance from data from a list of
+    /// Creates a RunningInteger instance from data from a list of
     /// instances.
 
     pub fn new_from_exporter(name: &str, title: &str, printer: PrinterOption, import: RunningExport)
@@ -293,7 +294,7 @@ impl RunningInteger {
         }
     }
 
-    /// Export all the statistics kept for a given instance to
+    /// Exports all the statistics kept for a given instance to
     /// be used to create a sum of many instances.
 
     pub fn export(&self) -> RunningExport {

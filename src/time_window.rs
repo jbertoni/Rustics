@@ -83,9 +83,11 @@ use super::compute_skewness;
 use super::compute_kurtosis;
 use super::stdout_printer;
 
-/// TimeWindow implements a statistics instance that retains
-/// a window of the last n samples of astream of data samples
+/// TimeWindow implements a statistics type that retains a
+//  window of the last n samples of astream of data samples
 /// and a histogram of all data samples recorded.
+///
+/// See the module comments for a sample program.
 
 #[derive(Clone)]
 pub struct TimeWindow {

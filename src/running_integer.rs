@@ -83,6 +83,8 @@ use crate::LogHistogram;
 
 /// RunningInteger provides very simple statistics on a
 /// stream of integer data samples.
+///
+/// See the module comments for a sample program.
 
 #[derive(Clone)]
 pub struct RunningInteger {

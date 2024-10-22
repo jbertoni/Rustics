@@ -78,6 +78,8 @@ impl HierMember for RunningTime {
 
 /// TimeHier provides an interface from the Hier code to
 /// the RunningTime code.
+///
+/// See the hier module comments for a sample program.
 
 #[derive(Clone)]
 pub struct TimeHier {

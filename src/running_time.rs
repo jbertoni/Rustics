@@ -104,6 +104,8 @@ use super::running_integer::RunningExport;
 /// of integer data samples representing time intervals.
 /// Underneath, it uses a RunningTime instance, but most
 /// output is printed as time periods.
+///
+/// See the module comments for a sample program.
 
 #[derive(Clone)]
 pub struct RunningTime {

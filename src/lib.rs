@@ -121,7 +121,7 @@
 //!         * See StdioPrinter for a very simple sample implementation.  This trait is used
 //!           as the default printer by the Rustics code.
 //!     *  Printable
-//!         * Printable provides standard formatting for printing data and some support routines
+//!         * Printable provides standard formatting for printing data and some support functions
 //!           for nicer output, like time values scaled to human-understanble forms and integers
 //!           with commas.
 //!
@@ -306,17 +306,18 @@ pub trait Rustics {
     /// Records an f64 value.  Currently, no type supports this
     /// operation.
 
-    fn record_f64  (&mut self, sample: f64);  // add an f64 sample -- not implemented
+    fn record_f64  (&mut self, sample: f64);  // add an f64 sample
 
     /// Records an event.  This method is implementation-specific
     /// in meaning.  For the Counter type, it is is equivalent to
     /// record_i64(1).
     ///
+    /// The other integer types, e.g., RunningInteger do not support this call.
+    ///
     /// For time statistics, it reads the timer for the instance to
     /// determine the time interval in ticks.  The time interval is
     /// reset for the next record_event call.
     ///
-    /// The other integer types do not support this call.
 
     fn record_event(&mut self             );  // implementation-specific record
 
@@ -401,7 +402,7 @@ pub trait Rustics {
     fn max_f64(&self)            -> f64;
 
     /// Precomputes the summary data of the samples.  This is
-    /// useful when implementing custom print routines or querying
+    /// useful when implementing custom print functions or querying
     /// multiple summary statistics like the mean or skewness.
     /// The window statistics will cache the result of data
     /// analysis so it need not be redone each time a summary

@@ -25,23 +25,24 @@
 //!    use rustics::time::DurationTimer;
 //!    use rustics::rc_sets::RcSet;
 //!
-//!    // Create a set.  We're expecting 8 statistics instances but
-//!    // no subsets, so we set those hints appropriately.  The
-//     // default print output goes to stdout, and that's fine for
-//!    // an example, so just give "None" to accept the default.
+//!    // Create a set.  We're expecting 8 statistics instances but no
+//!    // subsets, so we set those hints appropriately.  The  default
+//!    // print output goes to stdout, and that's fine for an example, so
+//!    // just give "None" to accept the default.
 //!
 //!    let mut set = RcSet::new("Main Statistics", 8, 0, None);
 //!
 //!    // Add a statistic to record query latencies.  It's a time
-//!    // statistic, so we need a timer.  Use an adapter for the
-//!    // rust standard Duration timer.
+//!    // statistic, so we need a timer.  Use an adapter for the Rust
+//!    // standard Duration timer.
 //!
 //!    let timer = DurationTimer::new_box();
 //!
-//!    // The add_running_timer method is a helper function for
-//!    // creating RunningTime instances.
+//!    // The add_running_timer method is a helper function for creating
+//!    // RunningTime instances.
 //!
-//!    let mut query_latency = set.add_running_time("Query Latency", timer);
+//!    let mut query_latency =
+//!         set.add_running_time("Query Latency", timer);
 //!
 //!    // By way of example, we assume that the queries are single-
 //!    // threaded, so we can use the record_event() method to query
@@ -62,16 +63,21 @@
 //!    // ...
 //!    // Apply a lock to get to query_latency...
 //!
-//!    query_latency.borrow_mut().record_time(local_timer.finish() as i64);
+//!    let mut lock = query_latency.borrow_mut();
 //!
-//!    // If you want to use your own timer, you'll need to implement
-//!    // the Timer trait to initialize the RunningTime instance, but you
-//!    // can use it directly to get data. Let's use DurationTimer directly
+//!    lock.record_time(local_timer.finish() as i64);
+//!
+//!    drop(lock);
+//!
+//!    // If you want to use your own timer, you'll need to implement the
+//!    // Timer trait to initialize the RunningTime instance, but you can
+//!    // use it directly to get data. Let's use DurationTimer directly
 //!    // as an example.  Make a new instance for this example.
 //!
 //!    let timer = DurationTimer::new_box();
 //!
-//!    let mut query_latency = set.add_running_time("Custom Timer Query Latency", timer.clone());
+//!    let mut query_latency =
+//!        set.add_running_time("Custom Query Latency", timer.clone());
 //!
 //!    // Start the Duration timer.
 //!

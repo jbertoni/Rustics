@@ -29,7 +29,8 @@
 //!     let     live_limit  = 32;
 //!     let mut window      = Window::<usize>::new(size_limit, live_limit);
 //!
-//!     // Fill the window while checking that the results match expectations.
+//!     // Fill the window while checking that the results match
+//!     // expectations.
 //!
 //!     for _i in window.iter_all() {
 //!         panic!("iterator_test:  The window should be empty.");

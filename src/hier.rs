@@ -28,15 +28,17 @@
 //!     use rustics::integer_hier::IntegerHier;
 //!     use rustics::integer_hier::IntegerHierConfig;
 //!
-//!     // Make a descriptor of the first level.  We have chosen to sum 1000
-//!     // level 0 RunningInteger instances into one level 1 RunningInteger
-//!     // instance.  We will keep only 1000 level 0 instances in the window as
-//!     // that seems large enough for a window back in time.
+//!     // Make a descriptor of the first level.  We have chosen to sum
+//!     // 1000 level 0 RunningInteger instances into one level 1
+//!     // RunningInteger instance.  We will keep only 1000 level 0
+//!     // instances in the window as that seems large enough for a
+//!     // window back in time.
 //!
 //!     let dimension_0 = HierDimension::new(1000, 1000);
 //!
-//!     // At level 1, we want to sum 100 level 1 statistics into one level 2
-//!     // statistics.  Let's retain 200 RunningInteger instances at level 1.
+//!     // At level 1, we want to sum 100 level 1 statistics into one
+//!     // level 2 statistics.  Let's retain 200 RunningInteger instances
+//!     // at level 1.
 //!
 //!     let dimension_1 = HierDimension::new(100, 200);
 //!
@@ -46,20 +48,23 @@
 //!
 //!     let dimension_2 = HierDimension::new(1, 100);
 //!
-//!     //  Now create the Vec.  Save the dimension instances for future use.
+//!     // Now create the Vec.  Save the dimension instances for future
+//!     // use.
 //!
 //!     let dimensions =
 //!         vec![ dimension_0, dimension_1, dimension_2 ];
 //!
-//!     // Now create the entire descriptor for the hier constructor.  Let's
-//!     // record 2000 events into each level 0 RunningInteger instance.
+//!     // Now create the entire descriptor for the hier constructor.
+//!     // Let's record 2000 events into each level 0 RunningInteger
+//!     // instance.
 //!
 //!     let auto_advance = Some(2000);
 //!     let descriptor   = HierDescriptor::new(dimensions, auto_advance);
 //!
-//!     // Now create some items used by Hier to do printing.  The defaults
-//!     // for the title and printer are fine, so just pass None.  By
-//!     // default, the title is the name and output is to stdout.
+//!     // Now create some items used by Hier to do printing.  The
+//!     // defaults for the title and printer are fine for an exapmle, so
+//!     // just pass None.  By default, the title is the name and output
+//!     // is to stdout.
 //!
 //!     let name    = "test hierarchical integer".to_string();
 //!     let title   = None;     // default to the name
@@ -86,10 +91,10 @@
 //!         integer_hier.record_i64(i + 10);
 //!     }
 //!
-//!     // The first level 0 instance is ready to be retired, but
-//!     // the implementation creates the next instance only when
-//!     // it has data to record, so there should be only one level
-//!     // zero instance, and nothing at level 1 or level 2.
+//!     // The first level 0 instance is ready to be retired, but the
+//!     // implementation creates the next instance only when it has data
+//!     // to record, so there should be only one level zero instance,
+//!     // and nothing at level 1 or level 2.
 //!     //
 //!     // event_count() returns all events seen by the integer_hier
 //!     // instance from creation onward.
@@ -100,15 +105,15 @@
 //!     assert!(integer_hier.live_len(1)   == 0     );
 //!     assert!(integer_hier.live_len(2)   == 0     );
 //!
-//!     // Now record some data to force the creation of the second
-//!     // level 1 instance.
+//!     // Now record some data to force the creation of the second level
+//!     // 1 instance.
 //!
 //!     events += 1;
 //!     integer_hier.record_i64(10);
 //!
-//!     // The new level 0 instance should have only one event
-//!     // recorded.  The Rustics implementatio for Hier returns
-//!     // the data in the current level 0 instance, so check it.
+//!     // The new level 0 instance should have only one event recorded.
+//!     // The Rustics implementation for Hier returns the data in the
+//!     // current level 0 instance, so check it.
 //!
 //!     let events_per_level_1 =
 //!         auto_advance * dimension_0.period() as i64;
@@ -118,9 +123,8 @@
 //!         events += 1;
 //!     }
 //!
-//!     // Check the state again.  We need to record one more
-//!     // events to cause the summation at level 0 into level
-//!     // 1.
+//!     // Check the state again.  We need to record one more event to
+//!     // cause the summation at level 0 into level 1.
 //!
 //!     let expected_live  = dimension_0.period();
 //!     let expected_count = auto_advance as u64;
@@ -155,8 +159,10 @@
 //!
 //!     let sum =
 //!         match sum {
-//!             (Some(member), count)  => { member }
-//!             (None,         count)  => { panic!("The sum wasn't created"); }
+//!             (Some(member), count)  =>
+//!                 { member }
+//!             (None,         count)  =>
+//!                 { panic!("The sum wasn't created"); }
 //!         };
 //!
 //!     let borrow  = sum.borrow();

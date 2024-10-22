@@ -36,14 +36,15 @@
 //!
 //!    let timer = DurationTimer::new_box();
 //!
-//!    // The add_running_timer() method is a helper method for
-//!    // creating RunningTime instances.
+//!    // The add_running_timer() method is a helper method for creating
+//!    // RunningTime instances.
 //!
-//!    let mut query_latency = set.add_running_time("Query Latency", timer);
+//!    let mut query_latency =
+//!        set.add_running_time("Query Latency", timer);
 //!
 //!    // By way of example, we assume that the queries are single-
-//!    // threaded, so we can use the record_event() method to query
-//!    // the timer and restart it.
+//!    // threaded, so we can use the record_event() method to query the
+//!    // timer and restart it.
 //!    //
 //!    // The clock started running when we created the DurationTimer.
 //!    // You can reset it with the start() method as needed.
@@ -53,6 +54,9 @@
 //!    // Do more work, then record another time sample.
 //!
 //!    // do_work();
+//!
+//!    // The record_event() code restarted the timer, so we can just
+//!    // invoke that routine again.
 //!
 //!    query_latency.lock().unwrap().record_event();
 //!
@@ -64,19 +68,23 @@
 //!
 //!    // do_work();
 //!
-//!    query_latency.lock().unwrap().record_time(local_timer.finish() as i64);
+//!    let mut lock = query_latency.lock().unwrap();
 //!
-//!    // If you want to use your own timer, you'll need to implement
-//!    // the Timer trait or SimpleClock and ClockTimer to initialize
-//!    // the RunningTime instance, but you can use that timer directly
-//!    // to get data. Let's use Duration timer directly as an example.
+//!    lock.record_time(local_timer.finish() as i64);
+//!
+//!    drop(lock);
+//!
+//!    // If you want to use your own timer, you'll need to implement the
+//!    // Timer trait or SimpleClock and ClockTimer to initialize the
+//!    // RunningTime instance, but you can use that timer directly to
+//!    // get data. Let's use Duration timer directly as an example.
 //!    // Make a new Timer instance for this example.  This is used only
 //!    // to pass the clock hertz to the RunningTimer code.
 //!
 //!    let timer = DurationTimer::new_box();
 //!
 //!    let mut query_latency =
-//!        set.add_running_time("Custom Timer Query Latency", timer.clone());
+//!        set.add_running_time("Custom Query Latency", timer.clone());
 //!
 //!    // Start the Duration timer.
 //!

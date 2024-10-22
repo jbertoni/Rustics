@@ -61,9 +61,11 @@
 //!     for example in examples {
 //!         let (ticks, time, units) = example;
 //!
-//!         let (result_time, result_units) = Printable::scale_time(ticks, hz);
+//!         let (result_time, result_units) =
+//!             Printable::scale_time(ticks, hz);
 //!
-//!         println!("documentation:  expect ({} {}) from {}, got ({} {})",
+//!         println!(
+//!             "documentation:  expect ({} {}) from {}, got ({} {})",
 //!             time, units,
 //!             ticks,
 //!             result_time, result_units

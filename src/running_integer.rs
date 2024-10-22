@@ -17,9 +17,9 @@
 //!    use rustics::Rustics;
 //!    use rustics::running_integer::RunningInteger;
 //!
-//!    // Create  a statistic to record packet sizes.  The default
-//!    // for printing output is stdout, which we'll assume is fine
-//!    // for this example, so None works for the printer.
+//!    // Create  a statistic to record packet sizes.  The default for
+//!    // printing output is stdout, which we'll assume is fine for this
+//!    // example, so None works for the printer.
 //!
 //!    let mut packet_sizes = RunningInteger::new("Packet Sizes", None);
 //!
@@ -51,8 +51,7 @@
 //!
 //!    assert!(packet_sizes.mean() == mean);
 //!
-//!    // Let's record more samples, and verify the sample count
-//!    // as we go.
+//!    // Let's record more samples, and verify the sample count as we go.
 //!
 //!    let next_sample_count = 100;
 //!

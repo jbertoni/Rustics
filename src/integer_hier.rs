@@ -18,8 +18,8 @@
 //!       parameter.  After n samples are gathered, a new statistics
 //!       instance is pushed into the window.
 //!     * When k level 0 instances have been collected into the window,
-//!       they are summed into one level 1 RunningInteger instance.
-//!       The value k is a configuration parameter.
+//!       they are summed into one level 1 RunningInteger instance.  The
+//!       value k is a configuration parameter.
 //!     * A Rustics intance at level j is a sum of of i instance from
 //!       level j - 1, where i is configured per level.
 //!     * Each window retains RunningInteger instances that have
@@ -29,9 +29,8 @@
 //!
 //! ## Example
 //!```
-//!    // This example also is used in the Hier documentation, but
-//!    // some of the assertions have been removed from that
-//!    // code.
+//!    // This example also is used in the Hier documentation, but some
+//!    // of the assertions have been removed from that code.
 //!
 //!     use rustics::Rustics;
 //!     use rustics::stdout_printer;
@@ -50,16 +49,16 @@
 //!
 //!     let dimension_0 = HierDimension::new(1000, 1000);
 //!
-//!     // At level 1, we want to sum 100 level 1 statistics into one level
-//!     // 2 statistics instance.  This level is smaller, so let's retain 200
-//!     // RunningInteger instances here.
+//!     // At level 1, we want to sum 100 level 1 statistics into one
+//!     // level 2 statistics instance.  This level is smaller, so let's
+//!     // retain 200 RunningInteger instances here.
 //!
 //!     let dimension_1 = HierDimension::new(100, 200);
 //!
 //!     // Level two isn't summed, so the period isn't used.  Set the
 //!     // value to one one event to keep the contructor happy.  Let's
-//!     // pretend this level isn't used much, so retain only 100 instances
-//!     // in it.
+//!     // pretend this level isn't used much, so retain only 100
+//!     // instances in it.
 //!
 //!     let dimension_2 = HierDimension::new(1, 100);
 //!
@@ -103,10 +102,10 @@
 //!         integer_hier.record_i64(i + 10);
 //!     }
 //!
-//!     // We have just completed the first level 0 instance, but
-//!     // the implementation creates the next instance only when
-//!     // it has data to record, so there should be only one level
-//!     // zero instance, and nothing at level 1 or level 2.
+//!     // We have just completed the first level 0 instance, but the
+//!     // implementation creates the next instance only when it has data
+//!     // to record, so there should be only one level zero instance,
+//!     // and nothing at level 1 or level 2.
 //!
 //!     assert!(integer_hier.event_count() == events);
 //!     assert!(integer_hier.count()       == events as u64);
@@ -114,15 +113,15 @@
 //!     assert!(integer_hier.live_len(1)   == 0     );
 //!     assert!(integer_hier.live_len(2)   == 0     );
 //!
-//!     // Now record some data to force the creation of the second
-//!     // level 1 instance.
+//!     // Now record some data to force the creation of the second level
+//!     // 1 instance.
 //!
 //!     events += 1;
 //!     integer_hier.record_i64(10);
 //!
-//!     // The new level 0 instance should have only one event
-//!     // recorded.  The Rustics implementatio for Hier returns
-//!     // the data in the current level 0 instance, so check it.
+//!     // The new level 0 instance should have only one event recorded.
+//!     // The Rustics implementatio for Hier returns the data in the
+//!     // current level 0 instance, so check it.
 //!
 //!     assert!(integer_hier.event_count() == events);
 //!     assert!(integer_hier.count()       == 1     );
@@ -138,9 +137,8 @@
 //!         events += 1;
 //!     }
 //!
-//!     // Check the state again.  We need to record one more
-//!     // events to cause the summation at level 0 into level
-//!     // 1.
+//!     // Check the state again.  We need to record one more event to
+//!     // cause the summation at level 0 into level 1.
 //!
 //!     let expected_live  = dimension_0.period();
 //!     let expected_count = auto_advance as u64;
@@ -157,11 +155,10 @@
 //!     assert!(integer_hier.live_len(1)   == 1     );
 //!     assert!(integer_hier.event_count() == events);
 //!
-//!     // Now print an element from the hierarchy.  In this
-//!     // case, we will index into level 2, and print the
-//!     // third element of the vector (index 2).  We use the
-//!     // set All to look at all the elements in the window,
-//!     // not just the live elements.
+//!     // Now print an element from the hierarchy.  In this case, we
+//!     // will index into level 2, and print the third element of the
+//!     // vector (index 2).  We use the set All to look at all the
+//!     // elements in the window, not just the live elements.
 //!
 //!     let index = HierIndex::new(HierSet::All, 1, 2);
 //!

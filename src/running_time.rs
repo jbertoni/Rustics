@@ -20,19 +20,20 @@
 //!    use rustics::running_time::RunningTime;
 //!
 //!    // Create a statistic to record query latencies.  It's a time
-//!    // statistic, so we need a timer.  Use an adapter for the
-//!    // rust standard Duration timer.  The default for printing
-//!    // output is stdout, which we'll assume is fine, so None will
-//!    // work for the printer option.  See the Printer trait in lib.rs
-//!    // for information on writing a custom Printer.
+//!    // statistic, so we need a timer.  Use an adapter for the Rust
+//!    // standard Duration timer.  The default for printing output is
+//!    // stdout, which we'll assume is fine, so None will work for the
+//!    // printer option.  See the Printer trait in lib.rs for
+//!    // information on writing a custom Printer.
 //!
 //!    let timer = DurationTimer::new_box();
 //!
-//!    let mut query_latency = RunningTime::new("Query Latency", timer, None);
+//!    let mut query_latency =
+//!        RunningTime::new("Query Latency", timer, None);
 //!
 //!    // By way of example, we assume that the queries are single-
-//!    // threaded, so we can use the record_time() method to query
-//!    // the timer and restart it.
+//!    // threaded, so we can use the record_time() method to query the
+//!    // timer and restart it.
 //!    //
 //!    // So record one time sample for the single-threaded case.  The
 //!    // timer started running when we created the Duration timer.
@@ -46,20 +47,20 @@
 //!    // Do our query.
 //!    // ...
 //!
-//!    // You can use the finish() method if this RunningTime instance
-//!    // is shared.
+//!    // You can use the finish() method if this RunningTime instance is
+//!    // shared.
 //!
 //!    query_latency.record_time(local_timer.finish() as i64);
 //!
-//!    // If you want to use your own timer, you'll need to implement
-//!    // the Timer trait to initialize the RunningTime instance, but you
-//!    // can use it directly to get data. Let's use Duration timer
-//!    // directly as an example.  Make a new instance for this example.
+//!    // If you want to use your own timer, you'll need to implement the
+//!    // Timer trait to initialize the RunningTime instance, but you can
+//!    // use it directly to get data. Let's use Duration timer directly
+//!    // as an example.  Make a new instance for this example.
 //!
 //!    let timer = DurationTimer::new_box();
 //!
 //!    let mut query_latency =
-//!        RunningTime::new("Custom Timer Query Latency", timer.clone(), None);
+//!        RunningTime::new("Custom Query Latency", timer.clone(), None);
 //!
 //!    // Start the Duration timer.
 //!

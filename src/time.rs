@@ -25,9 +25,9 @@
 //!```
 //!     use rustics::time::SimpleClock;
 //!
-//!     // This is a example implementation of the SimpleClock
-//!     // trait.  It simple returns a series of time values
-//!     // incrementing by one in size per invocation.
+//!     // This is a example implementation of the SimpleClock trait.  It
+//!     // simple returns a series of time values incrementing by one in
+//!     // size per invocation.
 //!
 //!     struct ExampleClock {
 //!         current_time: u128,

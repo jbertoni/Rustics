@@ -19,16 +19,18 @@
 //!    use rustics::Rustics;
 //!    use rustics::integer_window::IntegerWindow;
 //!
-//!    // Create  a statistic to record packet sizes.  The default
-//!    // for printing output is stdout, which we'll assume is fine
-//!    // for this example, so None works for the printer.  See
-//!    // lib.rs for information on the Printer trait.  Assume that
-//!    // retaining 1000 samples is fine for our hypothetical
+//!    // Create a statistic to record packet sizes.  The default for
+//!    // printing output is stdout, which we'll assume is fine for this
+//!    // example, so None works for the printer.
+//!    //
+//!    // Assume that retaining 1000 samples is fine for our hypothetical
+//!    // 
 //!    // application.
 //!
 //!    let window_size = 1000;
 //!
-//!    let mut packet_sizes = IntegerWindow::new("Packet Sizes", window_size, None);
+//!    let mut packet_sizes =
+//!        IntegerWindow::new("Packet Sizes", window_size, None);
 //!
 //!    // Record some hypothetical packet sizes.  Let's fill the window.
 //!
@@ -45,8 +47,8 @@
 //!
 //!    assert!(packet_sizes.count() == window_size as u64);
 //!
-//!    // Compute the expected mean.  We need the sum of all the
-//!    // pacet sizes:
+//!    // Compute the expected mean.  We need the sum of all the packet
+//!    // sizes:
 //!    //     1 + 2 + ... + n
 //!    // The formula is:
 //!    //     n * (n + 1) / 2
@@ -57,9 +59,8 @@
 //!
 //!    assert!(packet_sizes.mean() == mean);
 //!
-//!    // Let's record more samples.  The count only includes the
-//!    // last "window_size" samples, so it should be constant
-//!    // now.
+//!    // Let's record more samples.  The count only includes the last
+//!    // "window_size" samples, so it should be constant now.
 //!
 //!    for i in 1..window_size / 2 + 1 {
 //!       packet_sizes.record_i64(i as i64);
@@ -84,7 +85,7 @@ use super::compute_kurtosis;
 use super::stdout_printer;
 
 /// An IntegerWindow instance collects integer data samples into
-/// a fixed-size window. It also maintinas a histogram based on
+/// a fixed-size window. It also maintains a histogram based on
 /// all the samples seen.
 
 #[derive(Clone)]

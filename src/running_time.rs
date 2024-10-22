@@ -19,12 +19,14 @@
 //!    use rustics::time::DurationTimer;
 //!    use rustics::running_time::RunningTime;
 //!
-//!    // Create a statistic to record query latencies.  It's a time
-//!    // statistic, so we need a timer.  Use an adapter for the Rust
-//!    // standard Duration timer.  The default for printing output is
-//!    // stdout, which we'll assume is fine, so None will work for the
-//!    // printer option.  See the Printer trait in lib.rs for
-//!    // information on writing a custom Printer.
+//!    // Create an instance to record query latencies.  This is for a
+//!    // time statistic, so we need a timer.  Use an adapter for the
+//!    // Rust // standard Duration timer.
+//!
+//!    // The default for printing output is stdout, which we'll assume
+//!    // is fine, so None will work for the // printer option.  See the
+//!    // Printer trait in lib.rs for information on writing a custom
+//!    // Printer.
 //!
 //!    let timer = DurationTimer::new_box();
 //!
@@ -60,7 +62,7 @@
 //!    let timer = DurationTimer::new_box();
 //!
 //!    let mut query_latency =
-//!        RunningTime::new("Custom Query Latency", timer.clone(), None);
+//!        RunningTime::new("Custom Timer", timer.clone(), None);
 //!
 //!    // Start the Duration timer.
 //!

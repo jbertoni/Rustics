@@ -17,7 +17,7 @@
 //!    use rustics::Rustics;
 //!    use rustics::running_integer::RunningInteger;
 //!
-//!    // Create  a statistic to record packet sizes.  The default for
+//!    // Create an instance to record packet sizes.  The default for
 //!    // printing output is stdout, which we'll assume is fine for this
 //!    // example, so None works for the printer.
 //!

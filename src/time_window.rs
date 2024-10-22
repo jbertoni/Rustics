@@ -20,16 +20,15 @@
 //!    use rustics::time::DurationTimer;
 //!    use rustics::running_time::RunningTime;
 //!
-//!    // Create  a statistic to record packet latencies.  The default
+//!    // Create  an instance to record packet latencies.  The default
 //!    // for printing output is stdout, which we'll assume is fine for
-//!    // this example, so None works for the printer.  See lib.rs for
-//!    // information on the Printer trait.
+//!    // this example, so None works for the printer.
 //!    //
 //!    // Assume that retaining 1000 samples is fine, and use the
 //!    // DurationTimer to measure time.  DurationTimer is a wrapper for
-//!    // the standard rust Duration.  This example is for a single-
+//!    // the standard Rust Duration type.  This example is for a single-
 //!    // threaded statistic.  See ArcSet for an example of multi-
-//!    // threading a time statistic.
+//!    // threading for a time statistic.
 //!
 //!    // Retain 1000 samples.
 //!

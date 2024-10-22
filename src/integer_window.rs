@@ -19,12 +19,11 @@
 //!    use rustics::Rustics;
 //!    use rustics::integer_window::IntegerWindow;
 //!
-//!    // Create a statistic to record packet sizes.  The default for
+//!    // Create an instance to record packet sizes.  The default for
 //!    // printing output is stdout, which we'll assume is fine for this
 //!    // example, so None works for the printer.
 //!    //
 //!    // Assume that retaining 1000 samples is fine for our hypothetical
-//!    // 
 //!    // application.
 //!
 //!    let window_size = 1000;

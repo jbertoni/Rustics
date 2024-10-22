@@ -77,7 +77,7 @@
 //!    let timer = DurationTimer::new_box();
 //!
 //!    let mut query_latency =
-//!        set.add_running_time("Custom Query Latency", timer.clone());
+//!        set.add_running_time("Custom Timer", timer.clone());
 //!
 //!    // Start the Duration timer.
 //!

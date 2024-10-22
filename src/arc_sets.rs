@@ -84,7 +84,7 @@
 //!    let timer = DurationTimer::new_box();
 //!
 //!    let mut query_latency =
-//!        set.add_running_time("Custom Query Latency", timer.clone());
+//!        set.add_running_time("Custom Timer", timer.clone());
 //!
 //!    // Start the Duration timer.
 //!
@@ -94,8 +94,8 @@
 //!
 //!    // do_query();
 //!
-//!    // Now get the elapsed timer.  DurationTimer can works in
-//!    // nanoseconds, so use that method.
+//!    // Now get the elapsed timer.  DurationTimer works in nanosecondsm
+//!    // so use the as_nanos() method.
 //!
 //!    assert!(timer.borrow().hz() == 1_000_000_000);
 //!    let time_spent = start.elapsed().as_nanos();
@@ -109,7 +109,7 @@
 //!
 //!    query_lock.print();
 //!
-//!    // Check the statistics gather.
+//!    // Check the statistics.
 //!
 //!    assert!(query_lock.count() == 1);
 //!    assert!(query_lock.mean() == time_spent as f64);

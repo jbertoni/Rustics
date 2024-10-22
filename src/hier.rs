@@ -8,14 +8,13 @@
 //! ## Type
 //!
 //! * Hier
-//!     * Hier is a framework class that should be created using a
-//!       concrete type via IntegerHier::new_hier or TimeHier::new_hier.
-//!       This example uses IntegerHier.
-//!     * Hier implements a hierarchy of Rustics instances.  The lowest
-//!       level receives data and records it into the newest instance at
-//!       that level.
-//!     * Upper levels of the hierarchy contains sums of a programmable
-//!       number of lower-level instances.
+//!     * Hier is a framework class that should be instantiated using a concrete type via
+//!       functions like IntegerHier::new_hier or TimeHier::new_hier.  This example uses
+//!       IntegerHier.
+//!     * Hier implements a hierarchy of Rustics instances.  The lowestlevel receives data
+//!       and records it into the newest instance at that level.
+//!     * Upper levels of the hierarchy contains sums of a programmable number of lower-level
+//!       instances.
 //!
 //! ## Example
 //!```
@@ -28,8 +27,8 @@
 //!     use rustics::integer_hier::IntegerHier;
 //!     use rustics::integer_hier::IntegerHierConfig;
 //!
-//!     // Make a descriptor of the first level.  We have chosen to sum
-//!     // 1000 level 0 RunningInteger instances into one level 1
+//!     // Make a descriptor of level zero.  We choose to sum // 1000
+//!     // level 0 RunningInteger instances into one level 1
 //!     // RunningInteger instance.  We will keep only 1000 level 0
 //!     // instances in the window as that seems large enough for a
 //!     // window back in time.

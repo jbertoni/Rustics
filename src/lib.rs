@@ -11,22 +11,21 @@
 //! * Statistics for Integer Values
 //!     * Integer statistics provide basic parameters, like the mean, and a pseudo-log histogram.
 //!     * For the pseudo-log histogram, the pseudo-log of a negative number n is defines as 
-//!       -log(-n).  The pseudo-log of 0 is defined as 0, and for convenience, the pseudo-log of
-//!       -(2^64) is defined as 63.  Logs of positive values are computed by rounding up any
-//!       fractional part, so the pseudo-log of 5 is 3.  From the definition, the pseudo-log of
-//!       -5 is -3.
-//!     * The values can be interpreted as time periods with a given hertz.
+//!       -log(-n).  The pseudo-log of 0 is defined as 0.  Logs of positive values are computed by
+//!       rounding up any fractional part, so the pseudo-log of 5 is 3.  From the definition, the
+//!       pseudo-log of -5 is -3.
+//!     * The time-based statistics work on time samples measured in integer ticks.
 //!
 //! * Integer statistics types
 //!     * RunningInteger
-//!         * This type implements a few running statistics for a series of i64 sample values.
+//!         * RunningInteger implements a few running statistics for a series of i64 sample values.
 //!         * It also provides a pseudo-log histogram.
 //!
 //!     * RunningWindow
-//!         * This type implements a fixed-size window of the last n samples recorded.  Summary
+//!         * IntegerWindow implements a fixed-size window of the last n samples recorded.  Summary
 //!           statistics of the window samples are computed on demand.
-//!         * It also provides a pseudo-log historgram.  The histogram counts all samples seen,
-//!           not just the current window.
+//!         * It also provides a pseudo-log historgram.  The histogram counts all samples seen, not
+//!           just the current window.
 //!
 //!     * Counter
 //!         * This type implements a simple counter that generates no further statistics.  It
@@ -34,7 +33,7 @@
 //!
 //! * Time statistics types
 //!     * RunningTime
-//!         * This type uses the RunningInteger code to handle time intervals.  Values will be
+//!         * This type uses the RunningInteger code to handle time intervals.  Values are
 //!           printed using units of time.
 //!
 //!     * TimeWindow
@@ -43,28 +42,25 @@
 //!
 //! * Hierarchial Statistics
 //!     * Hier implements a matrix of statistics objects, currently of type RunningInteger or
-//!       RunningTime.  Level 0 contains statistics that have record data samples, and the
-//!       upper levels are sums of lower levels.  See the Hier documentation for more details.
-//!     * Values are recorded into the newest statistics instance at level 0.  When requested
-//!       by the user
-//!
-//!       a hierarchical instance receives a request to advance to a new statistics instance,
-//!       the current statistic that is collecting data is pushed into a window, and a new
-//!       statistics instance will be created to hold any new values to be recorded.
-//!
+//!       RunningTime.
+//!     * Each level (row in the matrix) is representing using a Window instance, which holds
+//!       a limited-size set of a user-configured size.  As new instances are added to a level,
+//!       older ones are deleted as necessary to maintain the size limit.
+//!     * Level 0 contains statistics that have record data samples, and the upper levels are
+//!       sums of lower levels.  See the Hier documentation for more details.
+//!     * Values are recorded into the newest statistics instance at level 0.
 //!     * When a programmable number of statistics instances have been pushed into a window,
 //!       these statistics are summed and the sum placed in a high level window.  The
 //!       summation is done recursively up to a programmed number of levels.  Each level
 //!       has a parameter specifying the number of instances to be summed.
-//!
-//!     * The lowest level, the one to which statistical data is recorded, can be configured
-//!       to push the current instance and start a new one after a certain number of samples
-//!       have been recorded, or the advance() method can be invoked to move to a new
-//!       statistics instance.
-//!
+//!     * Level 0, the level to which statistical data is recorded, can be configured to push
+//!       the current statistics instance and start a new one after a certain number of samples
+//!       have been recorded.
+//!     * The user can invoke the advance() method to push a new statistics instance into the
+//!       level 0 window.
 //!     * Each level of statistics has a programmable "live" count that gives the number of
 //!       instances that are summed and pushed to the higher level, and a retention window, so
-//!       that statistics are kept for some time period after being summed.
+//!       that statistics can be kept for some time period after being summed.
 //!
 //! * Hierarchical statistics types
 //!     * Hier
@@ -75,7 +71,6 @@
 //!         * This struct wraps the RunningInteger type to support the Hier code.  See
 //!           "Integer::new_hier" for a simple interface to get going.  The hier.rs test
 //!            module also contains sample_usage() and make_hier() functions as examples.
-//!
 //!     * TimeHier
 //!         * TimeHier implements Hier for the RunningTime type. As with IntegerHier,
 //!           see "TimeHier::new_hier" for an easy way to make a Hier instance that uses
@@ -100,19 +95,23 @@
 //!           "start" and "finish" methods to measure clock intervals.
 //!
 //!     *  DurationTimer
-//!         * This implementation of a timer uses the Rust "Duration" implementation, which measures
+//!         * This implementation of Timer uses the Rust "Duration" implementation, which measures
 //!           wall clock time.
 //!
 //!     *  ClockTimer
-//!         * This implementation is a wrapper for a simple time counter (trait SimpleClock) that
-//!           returns an integer corresponding to the current "time" value.  For example, a cycle
-//!           counter could be wrapped to implement a ClockTimer.  This wrapper can be used with a
-//!           platform-specific counter such as one of the Linux clock_* functions.  The wrapper
-//!           implementation provides the "start" and "finish" methods, along with initialization,
-//!           so the wrapped counter can be very simple.
+//!         * This Timer implementation is a wrapper for a simple time counter (trait SimpleClock)
+//!           that returns an integer corresponding to the current "time" value.  For example, a
+//!           cycle counter could be wrapped to implement a ClockTimer.  This wrapper can be used
+//!           with a platform-specific counter such as one of the Linux clock_* functions.  The
+//!           wrapper implementation provides the "start" and "finish" methods, along with
+//!           initialization, so the wrapped counter can be very simple, like using a rdtsc value
+//!           on an Intel platform.
 //!
 //!     *  SimpleClock
 //!         * This trait defines the interface used by ClockTimer to query a clock.
+//!         * Clock values are returned as an integer tick count.
+//!         * SimpleClock implementation provide a hz() member to return the hertz
+//!           to the ClockTimer layer.
 //!  
 //! * Printing
 //!     *  Printer
@@ -120,6 +119,7 @@
 //!           print function goes to stdout.
 //!         * See StdioPrinter for a very simple sample implementation.  This trait is used
 //!           as the default printer by the Rustics code.
+//@
 //!     *  Printable
 //!         * Printable provides standard formatting for printing data and some support functions
 //!           for nicer output, like time values scaled to human-understanble forms and integers

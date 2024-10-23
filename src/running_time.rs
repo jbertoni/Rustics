@@ -21,10 +21,10 @@
 //!
 //!    // Create an instance to record query latencies.  This is for a
 //!    // time statistic, so we need a timer.  Use an adapter for the
-//!    // Rust // standard Duration timer.
+//!    // Rust standard Duration timer.
 //!
 //!    // The default for printing output is stdout, which we'll assume
-//!    // is fine, so None will work for the // printer option.  See the
+//!    // is fine, so None will work for the printer option.  See the
 //!    // Printer trait in lib.rs for information on writing a custom
 //!    // Printer.
 //!
@@ -141,7 +141,7 @@ impl RunningTime {
         RunningTime { printer, running_integer, timer, hz }
     }
 
-    /// Creates a RunningTime instance from a RunningInteger.  This procedure
+    /// Creates a RunningTime instance from a RunningInteger.  This function
     /// is used internally to support the Hier code.
 
     pub fn from_integer(timer: TimerBox, printer: PrinterBox, running: RunningInteger)

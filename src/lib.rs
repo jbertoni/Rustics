@@ -43,7 +43,7 @@
 //!           RunningTime type, values are printed in units of time.
 //!
 //! * Hierarchial Statistics
-//!     * Hier implements a matrix of statistics objects, currently of type RunningInteger or
+//!     * Hier implements a matrix of statistics instances, currently of type RunningInteger or
 //!       RunningTime.
 //!
 //!     * Each level (row in the matrix) is representing using a Window instance, which holds
@@ -56,7 +56,7 @@
 //!     * Values are recorded into the newest statistics instance at level 0.
 //!
 //!     * When a programmable number of statistics instances have been pushed into a window,
-//!       these statistics are summed and the sum placed in a high level window.  The
+//!       these instances are summed and the sum placed in a high level window.  The
 //!       summation is done recursively up to a programmed number of levels.  Each level
 //!       has a parameter specifying the number of instances to be summed.
 //!
@@ -88,7 +88,7 @@
 //!
 //! * Creating Sets
 //!     * The "arc_sets" and "rc_sets" modules implement a simple feature allowing the creation
-//!       of sets that accept statistics and other sets as members.  Sets can be printed and
+//!       of sets that accept Rustics instances and other sets as members.  Sets can be printed and
 //!       cleared recursiely by invoking a method on the topmost set.
 //!
 //!     * ArcSet
@@ -698,7 +698,7 @@ mod tests {
 
         time_stat.print();
 
-        // Get a sample with easily calculated summary statistics
+        // Get a sample with easily calculated summary statistics.
 
         let     printer   = Some(stdout_printer());
         let mut time_stat = RunningTime::new("Test Time => 1..100", stat_timer.clone(), printer);
@@ -827,7 +827,7 @@ mod tests {
 
         time_stat.print();
 
-        // Get a sample with easily calculated summary statistics
+        // Get a sample with easily calculated summary statistics.
 
         let     printer   = Some(stdout_printer());
         let mut time_stat = RunningTime::new("Time Window => 1..100", stat_timer.clone(), printer);

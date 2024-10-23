@@ -27,8 +27,8 @@
 //!    // Assume that retaining 1000 samples is fine, and use the
 //!    // DurationTimer to measure time.  DurationTimer is a wrapper for
 //!    // the standard Rust Duration type.  This example is for a single-
-//!    // threaded statistic.  See ArcSet for an example of multi-
-//!    // threading for a time statistic.
+//!    // threaded statistics instances.  See ArcSet for an example of
+//!    // multi-threading for time statistics.
 //!
 //!    // Retain 1000 samples.
 //!

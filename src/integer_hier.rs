@@ -9,23 +9,27 @@
 //! * IntegerHier
 //!     * This type implements hierarchical statistics using the
 //!       RunningInteger type, q.v.
-//!     * Each level uses a Window instance containing i RunningInteger
-//!       instances, where i is configured per level.  See the window
-//!       module documentation for more information on how the
-//!       windows work.
+//!
+//!     * Each level uses a Window instance containing a configurable
+//!       number of RunningInteger instances.  See the window module
+//!       documentation for more information on how the windows work.
+//!
 //!     * Level 0 RunningInteger instances are used to collect data.
-//!       Each instance collects n samples, where n is a configuration
-//!       parameter.  After n samples are gathered, a new statistics
-//!       instance is pushed into the window.
-//!     * When k level 0 instances have been collected into the window,
-//!       they are summed into one level 1 RunningInteger instance.  The
-//!       value k is a configuration parameter.
-//!     * A Rustics intance at level j is a sum of of i instance from
-//!       level j - 1, where i is configured per level.
+//!       Each instance collects a configurable number of samples.
+//!       After the samples are gathered, a new statistics instance
+//!       is pushed into the window.
+//!
+//!     * When a configurable number of level 0 instances have been
+//!       collected into the window, they are summed into one level 1
+//!       RunningInteger instance.
+//!
+//!     * In general, a Rustics intance at level j is a sum of of i
+//!       instance from level j - 1, where i is configured per level.
+//!
 //!     * Each window retains RunningInteger instances that have
 //!       already been summed, in case they are wanted for queries.
 //!       The total window size is configured per level, and limits
-//!       the number of retained members.
+//!       the number of retained RunningInteger instances.
 //!
 //! ## Example
 //!```
@@ -49,9 +53,9 @@
 //!
 //!     let dimension_0 = HierDimension::new(1000, 1000);
 //!
-//!     // At level 1, we want to sum 100 level 1 statistics into one
-//!     // level 2 statistics instance.  This level is smaller, so let's
-//!     // retain 200 RunningInteger instances here.
+//!     // At level 1, we want to sum 100 level 1 instances into one level
+//!     // 2 instance.  This level is smaller, so let's retain 200
+//!     // RunningInteger instances here.
 //!
 //!     let dimension_1 = HierDimension::new(100, 200);
 //!
@@ -233,7 +237,8 @@ pub struct IntegerHier {
 }
 
 /// IntegerHierConfig is used to pass the constructor parameters
-/// for a Hier instance that uses RunningInteger statistics.
+/// for a Hier instance that uses the RunningInteger type for
+/// recording and combining data.
 
 #[derive(Clone)]
 pub struct IntegerHierConfig {
@@ -279,7 +284,7 @@ impl IntegerHier {
 }
 
 // These are the methods that the Hier instance needs implemented
-// for a given statistic type that are not specific to a member
+// for a given statistics type that are not specific to an instance
 // of that type.  It's thus the bridge between "impl RunningInteger"
 // and the Hier code.
 
@@ -307,7 +312,7 @@ impl HierGenerator for IntegerHier {
         Rc::from(RefCell::new(exporter))
     }
 
-    // Push another statistic onto the export list.  We will sum all of
+    // Push another instance onto the export list.  We will sum all of
     // them at some point.
 
     fn push(&self, exporter: &mut dyn HierExporter, member_rc: MemberRc) {

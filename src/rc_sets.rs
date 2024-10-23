@@ -8,7 +8,7 @@
 //! ## Type
 //!
 //! * RcSet
-//!     * RcSet implements a set that can contain statistics instances
+//!     * RcSet implements a set that can contain Rustics instances
 //!       and other RcSet instances.
 //!     * Members of an RcSet are kept as Rc instances to allow for
 //!       single-threaded sharing.
@@ -32,7 +32,7 @@
 //!
 //!    let mut set = RcSet::new("Main Statistics", 8, 0, None);
 //!
-//!    // Add a statistic to record query latencies.  It's a time
+//!    // Add an instance to record query latencies.  It's a time
 //!    // statistic, so we need a timer.  Use an adapter for the Rust
 //!    // standard Duration timer.
 //!
@@ -183,7 +183,7 @@ impl RcSet {
         self.name.clone()
     }
 
-    /// Traverses the statistics and subsets, invoking a user-defined
+    /// Traverses the Rustics instances and subsets, invoking a user-defined
     /// function for each member of the set.
 
     pub fn traverse(&mut self, traverser: &mut dyn RcTraverser) {
@@ -202,7 +202,7 @@ impl RcSet {
         }
     }
 
-    /// Prints the set and all its constituents (subsets and statistics).
+    /// Prints the set and all its constituents (subsets and Rustics instances).
 
     pub fn print(&self) {
         self.print_opts(None, None);
@@ -228,7 +228,7 @@ impl RcSet {
         self.title = String::from(title);
     }
 
-    /// Does a recursive clear of all statistics in the set and its
+    /// Does a recursive clear of all Rustics instances in the set and its
     /// entire subset hierarachy.
 
     pub fn clear(&mut self) {
@@ -461,11 +461,11 @@ mod tests {
         let lower    = -32;
         let upper    = 32;
 
-        // Create the parent set for all the statistics.
+        // Create the parent set for all the Rustics instances.
 
         let mut set = RcSet::new("parent set", 4, 4, None);
 
-        // Add integer statistics, both a running total and a window.
+        // Add integer statistics instances, both a running total and a window.
 
         let window  = set.add_integer_window(32, "window");
         let running = set.add_running_integer("running");
@@ -586,7 +586,7 @@ mod tests {
         let     subset  = set.add_subset("subset", 0, 0);
         let mut subset  = (*subset).borrow_mut();
 
-        // Create a running integer statistic.
+        // Create a running integer instance.
 
         let     running = subset.add_running_integer("generated subset running");
         let mut running = (*running).borrow_mut();

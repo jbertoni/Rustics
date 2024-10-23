@@ -150,7 +150,7 @@ impl HierGenerator for TimeHier {
         Rc::from(RefCell::new(member))
     }
 
-    // Makes a member from a complete list of exported statistics.
+    // Makes a member from a complete list of exported instances.
 
     fn make_from_exporter(&self, name: &str, printer: PrinterBox, exporter: ExporterRc) -> MemberRc {
         let mut exporter_borrow = exporter.borrow_mut();
@@ -172,7 +172,7 @@ impl HierGenerator for TimeHier {
         Rc::from(RefCell::new(exporter))
     }
 
-    // Pushes another statistic onto the export list.  We will sum all of
+    // Pushes another instance onto the export list.  We will sum all of
     // them at some point.
 
     fn push(&self, exporter: &mut dyn HierExporter, member_rc: MemberRc) {

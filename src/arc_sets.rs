@@ -30,7 +30,7 @@
 //!
 //!    let mut set = ArcSet::new("Main Statistics", 8, 0, None);
 //!
-//!    // Add a statistic to record query latencies.  It's a time
+//!    // Add an instance to record query latencies.  It's a time
 //!    // statistic, so we need a timer.  Here we use an adapter for the
 //!    // rust standard Duration timer.
 //!
@@ -170,7 +170,7 @@ impl ArcSet {
     ///
     /// The "members_hint" and "subsets_hint" parameters are hints as to the number
     /// of elements to be expected.  "members_hint" refers to the number of Rustics
-    /// statistics in the set.  These hints can improve performance a bit.  They
+    /// instances in the set.  These hints can improve performance a bit.  They
     /// might be especially useful in embedded environments.
 
     pub fn new(name_in: &str, members_hint: usize, subsets_hint: usize, printer: PrinterOption)
@@ -207,7 +207,7 @@ impl ArcSet {
         self.name.clone()
     }
 
-    /// Traverses the statistics and subsets in the set invoking a
+    /// Traverses the Rustics instances and subsets in the set invoking a
     /// user-supplied callback for each element.
 
     pub fn traverse(&mut self, traverser: &mut dyn ArcTraverser) {
@@ -226,7 +226,8 @@ impl ArcSet {
         }
     }
 
-    /// Prints the set and all its constituents (subsets and statistics).
+    /// Prints the set and all its constituents (subsets and Rustics
+    /// instances).
 
     pub fn print(&self) {
         self.print_opts(None, None);
@@ -257,7 +258,7 @@ impl ArcSet {
         self.title = String::from(title);
     }
 
-    /// Does a recursive clear of all statistics in the set and its
+    /// Does a recursive clear of all instances in the set and its
     /// entire subset hierarachy.
 
     pub fn clear(&mut self) {
@@ -274,7 +275,7 @@ impl ArcSet {
         }
     }
 
-    /// Adds a member statistic.  The user creates the statistics instance
+    /// Adds a Rustics member.  The user creates the statistics instance
     /// and passes it in an Arc.  This is a bit more manual than
     /// add_running_integer() and similar methods.
 
@@ -290,7 +291,7 @@ impl ArcSet {
         self.members.push(member);
     }
 
-    /// Creates a RunningInteger statistics instance and adds it to the set.
+    /// Creates a RunningInteger instance and adds it to the set.
 
     pub fn add_running_integer(&mut self, name: &str) -> RusticsArc {
         let printer = Some(self.printer.clone());
@@ -349,7 +350,7 @@ impl ArcSet {
         member
     }
 
-    /// Removes a statistic from the set.
+    /// Removes a Rustics element from the set.
 
     pub fn remove_stat(&mut self, target_box: RusticsArc) -> bool {
         let mut found       = false;
@@ -471,7 +472,7 @@ pub mod tests {
         }
     }
 
-    //  Add statistics to a set.
+    //  Add statistics instances to a set.
 
     fn add_stats(parent: &Mutex<ArcSet>) {
         for i in 0..4 {
@@ -528,7 +529,7 @@ pub mod tests {
         let test_hz     = 1_000_000_000;
         let parent_name = "parent set";
 
-        //  Create the parent set for our test statistics.
+        //  Create the parent set for our test Rustics instances.
 
         let mut set = ArcSet::new(&parent_name, 4, 4, None);
 
@@ -537,14 +538,14 @@ pub mod tests {
         let window_timer  = continuing_box();
         let running_timer = continuing_box();
 
-        //  Now create the statistics in our set.
+        //  Now create the instances in our set.
 
         let window_mutex        = set.add_integer_window(32, "window");
         let running_mutex       = set.add_running_integer("running");
         let time_window_mutex   = set.add_time_window("time window", 32, window_timer);
         let running_time_mutex  = set.add_running_time("running time", running_timer);
 
-        //  Lock the statistics for manipulation.
+        //  Lock the instances for manipulation.
 
         let mut window          = window_mutex.lock().unwrap();
         let mut running         = running_mutex.lock().unwrap();
@@ -561,7 +562,7 @@ pub mod tests {
         let     window_test   = ConverterTrait::as_test_timer(window_both.clone());
         let mut window_stat   = ConverterTrait::as_timer(window_both.clone());
 
-        //  Now record some data in all the statistics.
+        //  Now record some data in all the instances.
 
         for i in lower..upper {
             window.record_i64(i);
@@ -635,7 +636,7 @@ pub mod tests {
         assert!(traverser.members == 5);
         assert!(traverser.sets    == 2);
 
-        //  Now test removing statistics.
+        //  Now test removing Rustics instances.
 
         let subset_1_name  = "subset 1";
         let subset_2_name  = "subset 2";
@@ -763,7 +764,7 @@ pub mod tests {
 
         set.print_opts(Some(printer.clone()), None);
 
-        // Try adding a hierarchical statistic.
+        // Try adding a hierarchical statistics instance.
 
         let hier_integer = new_hier();
         let member       = Arc::from(Mutex::new(hier_integer));
@@ -786,8 +787,8 @@ pub mod tests {
    
        let mut set = ArcSet::new("Main Statistics", 8, 0, None);
    
-       // Add a statistic to record query latencies.  It's a time
-       // statistics, so we need a timer.  Use an adapter for the
+       // Add an instance to record query latencies.  It's a time
+       // statistic, so we need a timer.  Use an adapter for the
        // rust standard Duration timer.  The add_running_timer
        // function is a help for creating RunningTime instances.
    

@@ -10,6 +10,7 @@
 //! * ArcSet
 //!     * ArcSet implements a collection that can contain statistics
 //!       instances and other ArcSet instances.
+//!
 //!     * Members of an ArcSet are kept as Arc instances to allow for
 //!       multithreaded usage.
 //!
@@ -76,10 +77,10 @@
 //!
 //!    // If you want to use your own timer, you'll need to implement the
 //!    // Timer trait or SimpleClock and ClockTimer to initialize the
-//!    // RunningTime instance, but you can use that timer directly to
-//!    // get data. Let's use Duration timer directly as an example.
-//!    // Make a new Timer instance for this example.  This is used only
-//!    // to pass the clock hertz to the RunningTimer code.
+//!    // RunningTime instance, but you can use that timer directly to get
+//!    // data. Let's use Duration timer directly as an example.  Make a
+//!    // new Timer instance for this example.  This timer is used only to
+//!    // pass the clock hertz to the RunningTimer code.
 //!
 //!    let timer = DurationTimer::new_box();
 //!

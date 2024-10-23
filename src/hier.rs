@@ -10,11 +10,15 @@
 //! * Hier
 //!     * Hier implements a hierarchy of Rustics instances.  The lowest level receives data
 //!       and records it into the newest instance at that level.
+//!
 //!     * Upper levels of the hierarchy contains sums of a programmable number of lower-level
 //!       instances.
+//!
 //!     * Hier is a framework class that should be instantiated for a concrete statistics type
 //!       via functions like IntegerHier::new_hier or TimeHier::new_hier.  This example uses
 //!       IntegerHier, which uses RunningInteger as the statistics struct.
+//!
+//!     * See the inter_hier module for more details and an example.
 //!
 //! ## Example
 //!```

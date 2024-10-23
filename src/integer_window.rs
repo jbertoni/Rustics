@@ -9,6 +9,7 @@
 //! * IntegerWindow
 //!     * IntegerWindow maintains a set consisting of the last n samples
 //!       recorded into it.
+//!
 //!     * This type also maintains a log histogram that contains counts
 //!       of all events seen, not just the window of n samples.
 //!

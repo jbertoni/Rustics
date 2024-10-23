@@ -12,10 +12,12 @@
 //!
 //! * Statistics for Integer Samples
 //!     * Integer statistics provide basic parameters, like the mean, and a pseudo-log histogram.
+//!
 //!     * For the pseudo-log histogram, the pseudo-log of a negative number n is defines as 
 //!       -log(-n).  The pseudo-log of 0 is defined as 0.  Logs of positive values are computed by
 //!       rounding up any fractional part, so the pseudo-log of 5 is 3.  From the definition, the
 //!       pseudo-log of -5 is -3.
+//!
 //!     * The time-based statistics work on time samples measured in integer ticks.
 //!
 //! * Integer statistics types
@@ -30,41 +32,38 @@
 //!           not just the current window.
 //!
 //!     * Counter
-//!         * This type implements a simple counter that generates no further statistics.  It
-//!           can be used for counting events, for example.
+//!         * This type implements a simple counter that generates no further statistics.  It can be
+//!           used for counting events, for example.
 //!
 //! * Time statistics types
 //!     * RunningTime
-//!         * This type uses the RunningInteger code to handle time intervals.  Values are
-//!           printed using units of time.
+//!         * This type uses the RunningInteger code to handle time intervals.  Values are printed
+//!           using units of time.
 //!
 //!     * TimeWindow
 //!         * This type uses the IntegerWindow code to handle time intervals.  As with the
 //!           RunningTime type, values are printed in units of time.
 //!
 //! * Hierarchial Statistics
-//!     * Hier implements a matrix of statistics instances, currently of type RunningInteger or
-//!       RunningTime.
+//!     * The Hier struct implements an ordered set of vectors of Rustics instances.
 //!
-//!     * Each level (row in the matrix) is representing using a Window instance, which holds
-//!       a limited-size set of instances.  As new instances are added to a level, older ones
-//!       are deleted as necessary to obey the size limit.
+//!     * Each element of the set is implemented using a Window instance, which holds an ordered
+//!       set of Rustics instances.  As new instances are added to a level, older ones are
+//!       deleted as necessary to obey a configurable size limit.  Each window repesents a level
+//!       of the hierarchical statistics.
 //!
-//!     * Level 0 contains statistics instances that have recorded data samples, and the upper
-//!       levels are sums of lower levels.  See the Hier documentation for more details.
+//!     * Level 0 contains Rustics instances that have been used to recorded data samples, and the
+//!       upper levels are sums of lower levels.
 //!
-//!     * Values are recorded into the newest statistics instance at level 0.
+//!     * Values are recorded into the newest Rustics instance at level 0.
 //!
-//!     * When a programmable number of statistics instances have been pushed into a window,
-//!       these instances are summed and the sum placed in a high level window.  The
-//!       summation is done recursively up to a programmed number of levels.  Each level
-//!       has a parameter specifying the number of instances to be summed.
+//!     * When a given number of Rustics instances have been pushed into a window, these instances
+//!       are summed and the sum placed in a high level window.  The summation is done recursively
+//!       up to a given number of levels.
 //!
-//!     * Level 0 can be configured to push the current statistics instance and start a new one
-//!       after some number of samples have been recorded.
-//!
-//!     * The user can invoke the advance() method to push a new statistics instance into the
-//!       level 0 window.
+//!     * Level 0 can be configured to push the current Rustics instance and start a new one
+//!       after a given number of samples have been recorded, or the user can invoke the advance()
+//!       method to push a new Rustics instance into the level 0 window.
 //!
 //!     * Each level also has retention limt and will retained a set of the last n instances
 //!       pushed onto this level, even if those instances have been summed into a higher-level
@@ -72,19 +71,19 @@
 //!
 //! * Hierarchical statistics types
 //!     * Hier
-//!         * The Hier struct implements hierarchical statistics.
+//!         * The Hier struct provies framework code for hierarchical statistics.
 //!
-//!         * The HierGenerator trait provides the interface for a Rustics implementation
-//!           to be usable in a Hier instance.
+//!         * The HierGenerator trait is implemented to allow the Hier implementation to use a
+//!           specific Rustics implementation, like RunningInteger or RunningTime.
 //!
 //!     * IntegerHier
 //!         * This struct wraps the RunningInteger type to support the Hier code.  See
-//!           "Integer::new_hier" for a simple interface to get going.  The hier.rs test
-//!            module also contains sample_usage() and make_hier() functions as examples.
+//!           "Integer::new_hier" for a simple interface to get going.  The hier.rs test module
+//!           also contains sample_usage() and make_hier() functions as examples.
 //!
 //!     * TimeHier
-//!         * TimeHier implements Hier for the RunningTime type. As with IntegerHier,
-//!           see "TimeHier::new_hier" for an easy way to make a Hier instance.
+//!         * TimeHier implements Hier for the RunningTime type. As with IntegerHier, see
+//!           "TimeHier::new_hier" for an easy way to make a TimeHier instance.
 //!
 //! * Creating Sets
 //!     * The "arc_sets" and "rc_sets" modules implement a simple feature allowing the creation

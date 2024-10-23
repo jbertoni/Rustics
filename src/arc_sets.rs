@@ -8,11 +8,11 @@
 //! ## Type
 //!
 //! * ArcSet
-//!     * ArcSet implements a collection that can contain statistics
+//!     * ArcSet implements a collection that can contain Rustics
 //!       instances and other ArcSet instances.
 //!
-//!     * Members of an ArcSet are kept as Arc instances to allow for
-//!       multithreaded usage.
+//!     * Members of an ArcSet are kept as instances to support
+//!       multithreaded applications.
 //!
 //! ## Example
 //!```

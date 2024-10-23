@@ -357,6 +357,8 @@ pub trait HierMember {
 
 /// Hier instances are the concrete type for a statistics
 /// hierarchy.
+///
+/// See the module comments for sample code.
 
 #[derive(Clone)]
 pub struct Hier {

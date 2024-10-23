@@ -9,15 +9,18 @@
 //!
 //! * Window<T>
 //!   * The Window type implements a set of instances of type T.
+//!
 //!   * The set has a configurable size limit.
+//!
 //!   * When a new element of type T is pushed into the window,
 //!     the oldest element is deleted once the size limit has been
 //!     reached.
+//!
 //!   * The windows code provides the concept of "live" entries,
 //!     which are the newest k items, for a configurable limit k.
+//!
 //!   * The interface proves iterators to examine the contents
-//!     of the window, as well as  various indexing functions
-//!     to look into the window at arbitrary points.
+//!     of the window, as well as  various indexing functions.
 //!
 //! ## Example
 //!```

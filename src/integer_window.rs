@@ -87,6 +87,8 @@ use super::stdout_printer;
 /// An IntegerWindow instance collects integer data samples into
 /// a fixed-size window. It also maintains a histogram based on
 /// all the samples seen.
+///
+/// See the module documentation for sample code.
 
 #[derive(Clone)]
 pub struct IntegerWindow {

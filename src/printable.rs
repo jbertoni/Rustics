@@ -10,7 +10,8 @@
 //! * Printable
 //!     * Printable implement the output formatting used by all the
 //!       statistics types, like RunningInteger.
-//      * This module provides helper functions for formatting integers
+//!
+//!     * This module provides helper functions for formatting integers
 //!       and time values.
 //!
 //!```

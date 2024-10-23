@@ -36,9 +36,9 @@
 //!     use rustics::time::DurationTimer;
 //!
 //!     // Make a descriptor of the first level.  We have chosen to sum
-//!     // 1000 level 0 RunningTime instances into one level 1
-//!     // RunningTime instance.  This level is large, so we will keep
-//!     // only 1000 level 0 instances in the window.
+//!     // 1000 level 0 RunningTime instances into one level 1 RunningTime
+//!     // instance.  This level is large, so we will keep only 1000
+//!     // level 0 instances in the window.
 //!
 //!     let dimension_0 = HierDimension::new(1000, 1000);
 //!
@@ -61,7 +61,7 @@
 //!         vec![ dimension_0, dimension_1, dimension_2 ];
 //!
 //!     // Now create the entire descriptor for the hier instance.  Let's
-//!     // record 2000 events into each level 0 RunningTime instance.
+//!     // record 2000 time samples into each level 0 RunningTime instance.
 //!
 //!     let auto_advance = Some(2000);
 //!     let descriptor   = HierDescriptor::new(dimensions, auto_advance);
@@ -74,7 +74,7 @@
 //!     // defaults for the title and printer are fine, so just pass None.
 //!     // The title defaults to the name and output will go to stdout.
 //!
-//!     let name    = "test hierarchical integer".to_string();
+//!     let name    = "Hierarchical Time".to_string();
 //!     let title   = None;
 //!     let printer = None;
 //!
@@ -110,7 +110,7 @@
 //!     assert!(time_hier.live_len(1)   == 0     );
 //!     assert!(time_hier.live_len(2)   == 0     );
 //!
-//!     // Now record some data to force the creation of the second level
+//!     // Now record a sample to force the creation of the second level
 //!     // 1 instance.
 //!
 //!     events += 1;
@@ -130,7 +130,8 @@
 //!         auto_advance * dimension_0.period() as i64;
 //!
 //!     // Use the finish() method this time.  It uses the clock
-//!     // directly.
+//!     // directly.  This approach works if multiple threads
+//!     // are using the Hier instance.
 //!
 //!     let timer = DurationTimer::new_box();
 //!
@@ -227,7 +228,7 @@ impl HierMember for RunningTime {
 /// TimeHier provides an interface from the Hier code to
 /// the RunningTime code.
 ///
-/// See the hier module comments for a sample program.
+/// See the module comments for sample code.
 
 #[derive(Clone)]
 pub struct TimeHier {

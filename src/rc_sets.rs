@@ -10,6 +10,7 @@
 //! * RcSet
 //!     * RcSet implements a set that can contain Rustics instances
 //!       and other RcSet instances.
+//!
 //!     * Members of an RcSet are kept as Rc instances to allow for
 //!       single-threaded sharing.
 //!
@@ -54,7 +55,7 @@
 //!    query_latency.borrow_mut().record_event();
 //!
 //!    // For the multithreaded case, you can use DurationTimer manually.
-//!    // Usually, ArcSet instances are more convenient for multi-threaded
+//!    // Usually, ArcSet instances are more convenient for multithreaded
 //!    // applications.
 //!
 //!    let mut local_timer = DurationTimer::new();

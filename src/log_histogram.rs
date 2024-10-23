@@ -9,10 +9,13 @@
 //! * LogHistogram
 //!     * LogHistogram implements a histogram based on a pseudo-log
 //!       function.
+//!
 //!     * For positive numbers, the pseudo-log is define as the base 2
 //!       log of the value, rounded up to an integer.
+//!
 //!     * For a negative number n, the pseudo-log is defined as 
 //!       -pseudo-log(-n)
+//!
 //!     * The pseudo-log of zero is defined as zero.
 //!
 //! ## Example

@@ -8,11 +8,11 @@
 //! ## Type
 //!
 //! * Counter
-//!     * Counter implements a simple i64 counter that can be
-//!       printed with other Rustics instances.
+//!     * Counter implements a simple i64 counter that can be printed
+//!       with other Rustics instances.
 //!
-//!     * It is intended to be used for counting events or
-//!       summing values for which statistics are not wanted.
+//!     * It is intended to be used for counting events or summing values
+//!       for which summary statistics are not wanted.
 //!
 //! ## Example
 //!```

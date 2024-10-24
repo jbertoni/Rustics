@@ -16,7 +16,7 @@
 //!
 //!     * Hier is a framework class that should be instantiated for a concrete statistics type
 //!       via functions like IntegerHier::new_hier or TimeHier::new_hier.  This example uses
-//!       IntegerHier, which uses RunningInteger as the statistics struct.
+//!       IntegerHier, which uses RunningInteger as the underlying Rustics type.
 //!
 //!     * See the inter_hier module for more details and an example.
 //!
@@ -51,8 +51,7 @@
 //!
 //!     let dimension_2 = HierDimension::new(1, 100);
 //!
-//!     // Now create the Vec.  Save the dimension instances for future
-//!     // use.
+//!     // Now create the Vec.
 //!
 //!     let dimensions =
 //!         vec![ dimension_0, dimension_1, dimension_2 ];
@@ -84,7 +83,7 @@
 //!     let     integer_hier = IntegerHier::new_hier_box(configuration);
 //!     let mut integer_hier = integer_hier.lock().unwrap();
 //!
-//!     // Now record some events with boring data.
+//!     // Now record some events with test data samples.
 //!
 //!     let mut events   = 0;
 //!     let auto_advance = auto_advance.unwrap();

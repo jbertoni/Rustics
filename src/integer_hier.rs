@@ -16,8 +16,8 @@
 //!
 //!     * Level 0 RunningInteger instances are used to collect data.
 //!       Each instance collects a configurable number of samples.
-//!       After the samples are gathered, a new statistics instance
-//!       is pushed into the window.
+//!       After that number of samples are gathered, a new
+//!       RunningInteger instance is pushed into the window.
 //!
 //!     * When a configurable number of level 0 instances have been
 //!       collected into the window, they are summed into one level 1
@@ -33,8 +33,7 @@
 //!
 //! ## Example
 //!```
-//!    // This example also is used in the Hier documentation, but some
-//!    // of the assertions have been removed from that code.
+//!    // This example also is used in the Hier documentation.
 //!
 //!     use rustics::Rustics;
 //!     use rustics::stdout_printer;

@@ -8,10 +8,10 @@
 //! ## Type
 //!
 //! * ArcSet
-//!     * ArcSet implements a collection that can contain Rustics
-//!       instances and other ArcSet instances.
+//!     * ArcSet implements a collection that can contain Rustics instances and
+//!       other ArcSet instances.
 //!
-//!     * Members of an ArcSet are kept as instances to support
+//!     * Members of an ArcSet are kept as Arc<Mutex<...>> instances to support
 //!       multithreaded applications.
 //!
 //! ## Example
@@ -33,7 +33,8 @@
 //!
 //!    // Add an instance to record query latencies.  It's a time
 //!    // statistic, so we need a timer.  Here we use an adapter for the
-//!    // rust standard Duration timer.
+//!    // rust standard Duration timer.  Clone a copy so that we can
+//!    // use the timer here.
 //!
 //!    let timer = DurationTimer::new_box();
 //!
@@ -41,14 +42,16 @@
 //!    // RunningTime instances.
 //!
 //!    let mut query_latency =
-//!        set.add_running_time("Query Latency", timer);
+//!        set.add_running_time("Query Latency", timer.clone());
 //!
-//!    // By way of example, we assume that the queries are single-
-//!    // threaded, so we can use the record_event() method to query the
-//!    // timer and restart it.
+//!    // Assume for this example that the queries recorded to this
+//!    // RunningTime instance are single-threaded, so we can use the
+//!    // record_event() method to query the timer and restart it.
 //!    //
 //!    // The clock started running when we created the DurationTimer.
-//!    // You can reset it with the start() method as needed.
+//!    // Applications can reset the start() method as needed.
+//!
+//!    timer.borrow_mut().start();  // Show how to restart a timer.
 //!
 //!    query_latency.lock().unwrap().record_event();
 //!
@@ -95,7 +98,7 @@
 //!
 //!    // do_query();
 //!
-//!    // Now get the elapsed timer.  DurationTimer works in nanosecondsm
+//!    // Now get the elapsed time.  DurationTimer works in nanoseconds,
 //!    // so use the as_nanos() method.
 //!
 //!    assert!(timer.borrow().hz() == 1_000_000_000);
@@ -831,8 +834,8 @@ pub mod tests {
    
        // Do our query.
    
-       // Now get the elapsed timer.  DurationTimer works in nanoseconds,
-       // so use that interface.
+       // Now get the elapsed time.  DurationTimer works in nanoseconds,
+       // so use as_nanos().
    
        let time_spent = start.elapsed().as_nanos();
    

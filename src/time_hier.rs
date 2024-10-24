@@ -19,7 +19,6 @@
 //!   * See the integer_hier module for more details on hierarchical
 //!     statistics.
 //!
-//!
 //!```
 //!     // This example is based on the code in IntegerHier.
 //!

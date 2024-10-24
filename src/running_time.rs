@@ -70,8 +70,8 @@
 //!
 //!    // Do our query.
 //!
-//!    // Now get the elapsed timer.  DurationTimer works in nanoseconds,
-//!    // so use that interface.
+//!    // Now get the elapsed time.  DurationTimer works in nanoseconds,
+//!    // so use as_nanos() to get the tick count.
 //!
 //!    let time_spent = start.elapsed().as_nanos();
 //!    assert!(timer.borrow().hz() == 1_000_000_000);

@@ -35,7 +35,12 @@
 //!        [ 1, -1, 4, 25, 4109, -4108, -8, -9, -16, -17, 3, 8, 16 ];
 //!
 //!     for i in test.iter() {
+//!         // Compute a pseudo-log index for the test value.
+//!
 //!         let pseudo_log_index = pseudo_log_index(*i) as usize;
+//!
+//!         // Get the current value in the histogram from the correct
+//!         // array.
 //!
 //!         let expected =
 //!             if *i < 0 {
@@ -44,7 +49,12 @@
 //!                 histogram.positive[pseudo_log_index] + 1
 //!             };
 //!
+//!         // Record the data sample.
+//!
 //!         histogram.record(*i);
+//!
+//!         // Now check to see whether record() incremented the
+//!         // correct bucket.
 //!
 //!         let actual =
 //!             if *i < 0 {

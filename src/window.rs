@@ -20,7 +20,7 @@
 //!     which are the newest k items, for a configurable limit k.
 //!
 //!   * The interface proves iterators to examine the contents
-//!     of the window, as well as  various indexing functions.
+//!     of the window, as well as indexing functions.
 //!
 //! ## Example
 //!```
@@ -54,6 +54,14 @@
 //!         assert!(window.live_len() == min(i, live_limit));
 //!         assert!(window.all_len()  == i);
 //!     }
+//!
+//!     // Demo the indexing functions.
+//!
+//!     let first = window.index_all(0).unwrap();
+//!     assert!(*first == 1);
+//!
+//!     let first_live = window.index_live(0).unwrap();
+//!     assert!(*first_live == size_limit - live_limit + 1);
 //!
 //!     // Check the contents a bit...
 //!

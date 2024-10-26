@@ -95,12 +95,13 @@
 // generic functions for RunningInteger and IntegerWindow instances.
 
 use super::Printer;
+use super::Units;
 
 /// The Printable struct is used to pass data to the standard print
 /// functions shared by all the code.  Developers who are implementing
 /// the Rustics trait for a new type might use this module.
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 pub struct Printable {
     pub n:          u64,
     pub min:        i64,
@@ -110,6 +111,7 @@ pub struct Printable {
     pub variance:   f64,
     pub skewness:   f64,
     pub kurtosis:   f64,
+    pub units:      Units,
 }
 
 impl Printable {
@@ -250,7 +252,20 @@ impl Printable {
     /// Prints an integer statistic and its name in the standard format.
 
     pub fn print_integer(name: &str, value: i64, printer: &mut dyn Printer) {
-        let output = format!("    {:<12} {:>12}", name, Self::commas_i64(value));
+        Printable::print_integer_units(name, value, printer, &Units::empty());
+    }
+
+    /// Prints an integer statistics with its name and units.
+
+    pub fn print_integer_units(name: &str, value: i64, printer: &mut dyn Printer, units: &Units) {
+        let unit_string =
+            if value == 1 {
+                &units.singular
+            } else {
+                &units.plural
+            };
+
+        let output = format!("    {:<12} {:>12} {}", name, Self::commas_i64(value), unit_string);
         printer.print(&output);
     }
 
@@ -258,6 +273,19 @@ impl Printable {
 
     pub fn print_float(name: &str, value: f64, printer: &mut dyn Printer) {
         Self::print_float_unit(name, value, "", printer)
+    }
+
+    /// Print a floating point value using a Units descriptor and a given printer.
+
+    pub fn print_float_units(name: &str, value: f64, printer: &mut dyn Printer, units: &Units) {
+        let unit =
+            if value == 1.0 {
+                &units.singular
+            } else {
+                &units.plural
+            };
+
+        Printable::print_float_unit(name, value, unit, printer);
     }
 
     /// Prints a float value and its name along with a string specifying
@@ -322,12 +350,12 @@ impl Printable {
     /// Prints the common integer statistics as passed in a Printable instance.
 
     pub fn print_common_integer(&self, printer: &mut dyn Printer) {
-        Self::print_integer("Count", self.n as i64, printer);
+        Self::print_integer_units("Count", self.n as i64, printer, &self.units);
 
         if self.n > 0 {
-            Self::print_integer("Minumum",  self.min,      printer);
-            Self::print_integer("Maximum",  self.max,      printer);
-            Self::print_integer("Log Mode", self.log_mode, printer);
+            Self::print_integer_units("Minumum",  self.min,      printer, &self.units);
+            Self::print_integer_units("Maximum",  self.max,      printer, &self.units);
+            Self::print_integer      ("Log Mode", self.log_mode, printer             );
         }
     }
 
@@ -337,11 +365,11 @@ impl Printable {
 
     pub fn print_common_float(&self, printer: &mut dyn Printer) {
         if self.n > 0 {
-            Self::print_float("Mean",     self.mean,            printer);
-            Self::print_float("Std Dev",  self.variance.sqrt(), printer);
-            Self::print_float("Variance", self.variance,        printer);
-            Self::print_float("Skewness", self.skewness,        printer);
-            Self::print_float("Kurtosis", self.kurtosis,        printer);
+            Self::print_float_units("Mean",     self.mean,            printer, &self.units);
+            Self::print_float_units("Std Dev",  self.variance.sqrt(), printer, &self.units);
+            Self::print_float      ("Variance", self.variance,        printer             );
+            Self::print_float      ("Skewness", self.skewness,        printer             );
+            Self::print_float      ("Kurtosis", self.kurtosis,        printer             );
         }
     }
 
@@ -435,9 +463,10 @@ mod tests {
 
         let base     = 2 as u64;
         let expected = base.pow(log_mode as u32) as f64;
+        let units    = Units::default();
 
         let mut printable =
-            Printable { n, min, max, log_mode, mean, variance, skewness, kurtosis };
+            Printable { n, min, max, log_mode, mean, variance, skewness, kurtosis, units };
 
         assert!(printable.log_mode_to_time() == expected);
 

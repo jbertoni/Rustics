@@ -8,8 +8,8 @@
 //! ## Type
 //!
 //! * Hier
-//!     * Hier implements a hierarchy of Rustics instances.  The lowest level receives data
-//!       and records it into the newest instance at that level.
+//!     * Hier implements a hierarchy of Rustics instances.  The lowest level of the hierarchy
+//!       receives data and records it into the newest instance at that level.
 //!
 //!     * Upper levels of the hierarchy contains sums of a programmable number of lower-level
 //!       instances.
@@ -18,7 +18,10 @@
 //!       via functions like IntegerHier::new_hier or TimeHier::new_hier.  This example uses
 //!       IntegerHier, which uses RunningInteger as the underlying Rustics type.
 //!
-//!     * See the inter_hier module for more details and an example.
+//!     * Hier implements the Rustics interface, and through that provides statistics from the
+//!       current level 0 Rustics instance, i.e., statistics on the newest samples.
+//!
+//!     * See the inter_hier module comments for more details.
 //!
 //! ## Example
 //!```
@@ -64,19 +67,17 @@
 //!     let descriptor   = HierDescriptor::new(dimensions, auto_advance);
 //!
 //!     // Now create some items used by Hier to do printing.  The
-//!     // defaults for the title and printer are fine for an exapmle, so
-//!     // just pass None.  By default, the title is the name and output
-//!     // is to stdout.
+//!     // defaults for printing are fine for an example, so just pass
+//      // None.  By default, the title is the name and output is to stdout.
 //!
-//!     let name    = "test hierarchical integer".to_string();
-//!     let title   = None;     // default to the name
-//!     let printer = None;     // default to stdout
+//!     let name       = "test hierarchical integer".to_string();
+//!     let print_opts = None;     // default to stdout
 //!
 //!     // Finally, create the configuration description for the
 //!     // constructor.
 //!
 //!     let configuration =
-//!         IntegerHierConfig { descriptor, name, title, printer };
+//!         IntegerHierConfig { descriptor, name, print_opts };
 //!
 //!     // Now make the Hier instance and lock it.
 //!
@@ -157,7 +158,7 @@
 //!
 //!     // Now compute the sum and print it.
 //!
-//!     let sum = integer_hier.sum(addends, "Level 0 Summary", None);
+//!     let sum = integer_hier.sum(addends, "Level 0 Summary");
 //!
 //!     let sum =
 //!         match sum {
@@ -179,7 +180,8 @@ use super::LogHistogram;
 use super::Printer;
 use super::PrinterBox;
 use super::PrinterOption;
-use super::stdout_printer;
+use super::PrintOption;
+use super::parse_print_opts;
 use super::TimerBox;
 use super::window::Window;
 use std::cell::RefCell;
@@ -193,7 +195,6 @@ pub type ExporterRc  = Rc<RefCell<dyn HierExporter >>;
 /// HierDescriptor is used to describe the configuration of
 /// a hierarchy to a constructor like new().
 
-#[derive(Clone)]
 pub struct HierDescriptor {
     dimensions:     Vec<HierDimension>,
     auto_next:      i64,
@@ -201,7 +202,7 @@ pub struct HierDescriptor {
 
 impl HierDescriptor {
     pub fn new(dimensions: Vec<HierDimension>, auto_next: Option<i64>) -> HierDescriptor {
-        let auto_next = auto_next.unwrap_or(0);
+        let auto_next  = auto_next.unwrap_or(0);
 
         if auto_next < 0 {
             panic!("HierDescriptor::new:  The auto_next value can't be negative.");
@@ -320,13 +321,14 @@ pub trait HierTraverser {
 /// implement a custom type implementing Rustics.
 
 pub trait HierGenerator {
-    fn make_from_exporter(&self, name: &str, printer: PrinterBox, exports: ExporterRc) -> MemberRc;
+    fn make_from_exporter(&self, name: &str, print_opts: &PrintOption, exports: ExporterRc)
+            -> MemberRc;
 
-    fn make_member       (&self, name: &str, printer: PrinterBox)  -> MemberRc;
-    fn make_exporter     (&self)                                   -> ExporterRc;
-
+    fn make_member       (&self, name: &str, print_opts: &PrintOption) -> MemberRc;
+    fn make_exporter     (&self) -> ExporterRc;
     fn push              (&self, exports: &mut dyn HierExporter, member: MemberRc);
 }
+
 
 //
 //  The HierMember trait is used to extend a specific type
@@ -359,7 +361,6 @@ pub trait HierMember {
 ///
 /// See the module comments for sample code.
 
-#[derive(Clone)]
 pub struct Hier {
     dimensions:     Vec<HierDimension>,
     generator:      GeneratorRc,
@@ -372,20 +373,19 @@ pub struct Hier {
     advance_count:  i64,
     event_count:    i64,
     printer:        PrinterBox,
+    print_opts:     PrintOption,
 }
 
 /// HierConfig defines the configuration parameters for a Hier
 /// instance.  Most users should use the prepackaged Hier constructors
 /// like IntegerHier::new_hier and TimeHier::new_heir.
 
-#[derive(Clone)]
 pub struct HierConfig {
     pub descriptor:  HierDescriptor,
     pub generator:   GeneratorRc,
     pub class:       String,
     pub name:        String,
-    pub title:       Option<String>,
-    pub printer:     PrinterOption,
+    pub print_opts:  PrintOption,
 }
 
 impl Hier {
@@ -399,6 +399,7 @@ impl Hier {
         let     generator     = configuration.generator;
         let     name          = configuration.name;
         let     class         = configuration.class;
+        let     print_opts    = configuration.print_opts;
 
         let     auto_next     = descriptor.auto_next;
         let     dimensions    = descriptor.dimensions;
@@ -407,19 +408,8 @@ impl Hier {
         let     event_count   = 0;
         let mut stats         = Vec::with_capacity(dimensions.len());
 
-        let title =
-            if let Some(title) = configuration.title {
-                title
-            } else {
-                name.clone()
-            };
 
-        let printer =
-            if let Some(printer) = configuration.printer {
-                printer
-            } else {
-                stdout_printer()
-            };
+        let (printer, title, _units) = parse_print_opts(&print_opts, &name);
 
         //
         // Create the set of windows that we use to hold all
@@ -434,7 +424,7 @@ impl Hier {
         // Make the first statistics instance so that we are ready to record data.
         //
 
-        let member = generator.borrow_mut().make_member(&name, printer.clone());
+        let member = generator.borrow_mut().make_member(&name, &print_opts);
 
         stats[0].push(member);
 
@@ -442,7 +432,7 @@ impl Hier {
             dimensions,   generator,  stats,
             name,         title,      id,
             class,        auto_next,  advance_count,
-            event_count,  printer
+            event_count,  printer,    print_opts
         }
     }
 
@@ -544,19 +534,11 @@ impl Hier {
     /// members of the hierarchy into a new statistic instance. The
     /// result is not maintained in the hierarchy.
 
-    pub fn sum(&self, addends: Vec<HierIndex>, name: &str, printer: PrinterOption)
-            -> (Option<MemberRc>, usize) {
+    pub fn sum(&self, addends: Vec<HierIndex>, name: &str) -> (Option<MemberRc>, usize) {
         let     generator    = self.generator.borrow();
         let     exporter_rc  = generator.make_exporter();
         let     mut exporter = exporter_rc.borrow_mut();
         let mut misses       = 0;
-
-        let printer =
-            if let Some(printer) = printer {
-                printer
-            } else {
-                self.printer.clone()
-            };
 
         // Gather a list of the members to sum.
 
@@ -577,7 +559,7 @@ impl Hier {
         
         // Now make the sum statistics instance.
 
-        let sum = generator.make_from_exporter(name, printer, exporter_rc);
+        let sum = generator.make_from_exporter(name, &self.print_opts, exporter_rc);
 
         (Some(sum), valid)
     }
@@ -606,9 +588,8 @@ impl Hier {
 
             if self.advance_count % advance_point == 0 {
                 let exporter = self.make_exporter(i);
-                let printer  = self.printer.clone();
                 let name     = &self.name;
-                let new_stat = generator.make_from_exporter(name, printer, exporter);
+                let new_stat = generator.make_from_exporter(name, &self.print_opts, exporter);
 
                 self.stats[i + 1].push(new_stat);
             } else {
@@ -619,7 +600,7 @@ impl Hier {
         // Create the new statistic instance to collect data and push it into
         // the level zero window.
 
-        let member = generator.make_member(&self.name, self.printer.clone());
+        let member = generator.make_member(&self.name, &self.print_opts);
 
         self.stats[0].push(member);
     }
@@ -1003,7 +984,6 @@ impl Histogram for Hier {
 pub mod tests {
     use super::*;
     use crate::tests::run_histogram_tests;
-    use crate::stdout_printer;
     use crate::integer_hier::IntegerHier;
     use crate::integer_hier::IntegerHierConfig;
     use crate::running_integer::RunningInteger;
@@ -1052,15 +1032,14 @@ pub mod tests {
         // IntegerHier, which does some of the work for
         // us.
 
-        let name    = "hier".to_string();
-        let title   = None;
-        let printer = None;
+        let name       = "hier".to_string();
+        let print_opts = None;
 
         // Finally, create the configuration description for the
         // constructor.
 
         let configuration =
-            IntegerHierConfig { descriptor, name, title, printer };
+            IntegerHierConfig { descriptor, name, print_opts };
 
         // Make the actual Hier instance.  new_hier() handles the
         // parameters specific for using RunningInteger instances.
@@ -1473,11 +1452,10 @@ pub mod tests {
     }
 
     fn test_time_hier_sanity() {
-        let     name     = "time_hier sanity test".to_string();
-        let     title    = None;
-        let     timer    = crate::tests::ContinuingTimer::new(1_000_0000);
-        let     timer    = Rc::from(RefCell::new(timer));
-        let     printer  = None;
+        let     name       = "time_hier sanity test".to_string();
+        let     timer      = crate::tests::ContinuingTimer::new(1_000_0000);
+        let     timer      = Rc::from(RefCell::new(timer));
+        let     print_opts = None;
 
         // Create the dimensions.
 
@@ -1493,7 +1471,7 @@ pub mod tests {
         // Now make an actual time_hier instance from a configuration.
 
         let configuration =
-            TimeHierConfig { descriptor, timer, name, title, printer };
+            TimeHierConfig { descriptor, timer, name, print_opts };
 
         let mut hier = TimeHier::new_hier(configuration);
 
@@ -1567,15 +1545,14 @@ pub mod tests {
 
         // Now create some items used by Hier to do printing.
 
-        let name    = "test hierarchical integer".to_string();
-        let title   = None;
-        let printer = Some(stdout_printer());
+        let name       = "test hierarchical integer".to_string();
+        let print_opts = None;
 
         // Finally, create the configuration description for the
         // constructor.
 
         let configuration =
-            IntegerHierConfig { descriptor, name, title, printer };
+            IntegerHierConfig { descriptor, name, print_opts };
 
         // Now make the Hier instance.
 

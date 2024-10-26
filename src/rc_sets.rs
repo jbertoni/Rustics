@@ -111,6 +111,8 @@ use std::cell::RefCell;
 use super::Rustics;
 use super::PrinterBox;
 use super::PrinterOption;
+use super::PrintOpts;
+use super::Units;
 use super::TimerBox;
 use super::stdout_printer;
 use super::counter::Counter;
@@ -304,10 +306,13 @@ impl RcSet {
 
     /// Creates a Counter instance and adds it to the set.
 
-    pub fn add_counter(&mut self, name: &str) -> RusticsRc {
-        let printer = Some(self.printer.clone());
-        let member  = Counter::new(name, printer);
-        let member  = Rc::from(RefCell::new(member));
+    pub fn add_counter(&mut self, name: &str, units: Option<Units>) -> RusticsRc {
+        let printer    = Some(self.printer.clone());
+        let title      = None;
+
+        let print_opts = Some(PrintOpts { printer, title, units });
+        let member     = Counter::new(name, print_opts);
+        let member     = Rc::from(RefCell::new(member));
 
         self.add_member(member.clone());
         member
@@ -450,7 +455,7 @@ mod tests {
             }
         }
 
-        let     counter = parent_set.add_counter("generated counter");
+        let     counter = parent_set.add_counter("generated counter", None);
         let mut counter = (*counter).borrow_mut();
 
         for i in 0..upper {

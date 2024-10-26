@@ -90,11 +90,14 @@
 use std::any::Any;
 
 use super::Rustics;
+use super::Units;
 use super::Histogram;
 use super::LogHistogram;
 use super::Printer;
 use super::PrinterBox;
 use super::PrinterOption;
+use super::PrintOption;
+use super::parse_print_opts;
 use super::stdout_printer;
 use super::TimerBox;
 use super::timer_box_hz;
@@ -111,11 +114,11 @@ use super::running_integer::RunningExport;
 
 #[derive(Clone)]
 pub struct RunningTime {
-    printer:            PrinterBox,
-
     running_integer:    Box<RunningInteger>,
     timer:              TimerBox,
     hz:                 i64,
+
+    printer:            PrinterBox,
 }
 
 impl RunningTime {
@@ -141,15 +144,35 @@ impl RunningTime {
         RunningTime { printer, running_integer, timer, hz }
     }
 
+    pub fn new_opts(name: &str, timer: TimerBox, print_opts: &PrintOption) -> RunningTime {
+        let hz = timer_box_hz(&timer);
+
+        let (printer, _title, _units) = parse_print_opts(print_opts, name);
+
+        if hz > i64::MAX as u128 {
+            panic!("Rustics::RunningTime:  The timer hz value is too large.");
+        }
+
+        let hz              = hz as i64;
+        let running_integer = Box::new(RunningInteger::new_opts(name, print_opts));
+
+        RunningTime { printer, running_integer, timer, hz }
+    }
+
     /// Creates a RunningTime instance from a RunningInteger.  This function
     /// is used internally to support the Hier code.
 
-    pub fn from_integer(timer: TimerBox, printer: PrinterBox, running: RunningInteger)
+    pub fn from_integer(timer: TimerBox, print_opts: &PrintOption, mut running: RunningInteger)
             -> RunningTime {
+        let (printer, title, _units) = parse_print_opts(print_opts, &running.name());
+
+        running.set_title(&title);
+        running.set_units(Units::empty());
+
         let hz              = timer_box_hz(&timer) as i64;
         let running_integer = Box::new(running);
 
-        RunningTime { printer, running_integer, timer, hz }
+        RunningTime { running_integer, timer, hz, printer }
     }
 
     pub fn hz(&self) -> i64 {
@@ -291,8 +314,11 @@ impl Rustics for RunningTime {
         let variance = self.variance();
         let skewness = self.skewness();
         let kurtosis = self.kurtosis();
+        let units    = Units::empty();
 
-        let printable = Printable { n, min, max, log_mode, mean, variance, skewness, kurtosis };
+        let printable =
+            Printable { n, min, max, log_mode, mean, variance, skewness, kurtosis, units };
+
         let printer  = &mut *printer_box.lock().unwrap();
 
         printer.print(title);

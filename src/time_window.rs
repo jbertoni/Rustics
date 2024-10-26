@@ -71,6 +71,7 @@ use std::any::Any;
 use super::Rustics;
 use super::PrinterBox;
 use super::PrinterOption;
+use super::Units;
 use super::TimerBox;
 use super::Histogram;
 use super::LogHistogram;
@@ -90,11 +91,11 @@ use super::stdout_printer;
 
 #[derive(Clone)]
 pub struct TimeWindow {
-    printer:            PrinterBox,
-
     integer_window:     Box<IntegerWindow>,
     timer:              TimerBox,
     hz:                 i64,
+    printer:            PrinterBox,
+    units:              Units,
 }
 
 impl TimeWindow {
@@ -111,6 +112,7 @@ impl TimeWindow {
         let hz             = hz as i64;
         let integer_window = IntegerWindow::new(name, window_size, printer.clone());
         let integer_window = Box::new(integer_window);
+        let units          = Units::default();
 
         let printer =
             if let Some(printer) = printer {
@@ -119,7 +121,7 @@ impl TimeWindow {
                 stdout_printer()
             };
 
-        TimeWindow { printer, integer_window, timer, hz }
+        TimeWindow { printer, integer_window, timer, hz, units }
     }
 
     /// Returns the hertz rating of the Timer instance being used
@@ -268,8 +270,10 @@ impl Rustics for TimeWindow {
         let variance  = compute_variance(n, crunched.moment_2);
         let skewness  = compute_skewness(n, crunched.moment_2, crunched.moment_3);
         let kurtosis  = compute_kurtosis(n, crunched.moment_2, crunched.moment_4);
+        let units     = self.units.clone();
 
-        let printable = Printable { n, min, max, log_mode, mean, variance, skewness, kurtosis };
+        let printable =
+            Printable { n, min, max, log_mode, mean, variance, skewness, kurtosis, units };
 
         let printer   = &mut *printer_box.lock().unwrap();
 

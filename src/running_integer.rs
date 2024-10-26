@@ -71,15 +71,19 @@ use super::TimerBox;
 use super::Printer;
 use super::PrinterBox;
 use super::PrinterOption;
+use super::PrintOption;
+use super::PrintOpts;
+use super::Units;
 use super::printable::Printable;
 use super::compute_variance;
 use super::compute_skewness;
 use super::compute_kurtosis;
-use super::stdout_printer;
 use super::sum::kbk_sum;
 
 use crate::hier::HierExporter;
 use crate::LogHistogram;
+
+use super::parse_print_opts;
 
 /// RunningInteger provides very simple statistics on a
 /// stream of integer data samples.
@@ -104,6 +108,7 @@ pub struct RunningInteger {
     pub log_histogram:    LogHistogram,
 
     printer:    PrinterBox,
+    units:      Units,
 }
 
 // RunningExporter instances are used to export statistics from a
@@ -143,12 +148,11 @@ impl RunningExporter {
 
     /// Makes a member statistics instance based on the summed exports.
 
-    pub fn make_member(&mut self, name: &str, printer: PrinterBox) -> RunningInteger {
+    pub fn make_member(&mut self, name: &str, print_opts: &PrintOption) -> RunningInteger {
         let title   = name;
         let sum     = sum_running(&self.addends);
-        let printer = Some(printer);
 
-        RunningInteger::new_from_exporter(name, title, printer, sum)
+        RunningInteger::new_from_exporter(name, title, print_opts, sum)
     }
 }
 
@@ -235,9 +239,24 @@ impl RunningInteger {
     /// Creates a new RunningInteger instance with the given name and
     /// an optional print function.
 
-    pub fn new(name_in: &str, printer: PrinterOption) -> RunningInteger {
-        let name            = String::from(name_in);
-        let title           = String::from(name_in);
+    pub fn new(name: &str, printer: PrinterOption) -> RunningInteger {
+        let units = None;
+        let title = None;
+
+        let print_opts = PrintOpts { printer, units, title };
+        let print_opts = Some(print_opts);
+
+        RunningInteger::new_opts(name, &print_opts)
+    }
+
+    pub fn new_opts(name: &str, print_opts: &PrintOption) -> RunningInteger {
+        let (printer, title, units) = parse_print_opts(print_opts, name);
+
+        RunningInteger::new_parsed(name, printer, title, units)
+    }
+
+    fn new_parsed(name: &str, printer: PrinterBox, title: String, units: Units) -> RunningInteger {
+        let name            = name.to_string();
         let id              = usize::MAX;
         let count           = 0;
         let mean            = 0.0;
@@ -248,28 +267,24 @@ impl RunningInteger {
         let max             = i64::MIN;
         let log_histogram   = LogHistogram::new();
 
-        let printer =
-            if let Some(printer) = printer {
-                printer
-            } else {
-                stdout_printer()
-            };
-
         RunningInteger {
             name,       title,      id,
             count,      mean,       moment_2,
             moment_3,   moment_4,   log_histogram,
-            min,        max,        printer
+            min,        max,        printer,
+            units
         }
     }
 
     /// Creates a RunningInteger instance from data from a list of
     /// instances.
 
-    pub fn new_from_exporter(name: &str, title: &str, printer: PrinterOption, import: RunningExport)
+    pub fn new_from_exporter(name: &str, title: &str, print_opts: &PrintOption, import: RunningExport)
             -> RunningInteger {
+        let (printer, _title, units) = parse_print_opts(print_opts, name);
+
         let name            = String::from(name);
-        let title           = String::from(title);
+        let title           = title.to_string();
         let id              = usize::MAX;
         let count           = import.count;
         let mean            = import.mean;
@@ -280,18 +295,12 @@ impl RunningInteger {
         let max             = import.max;
         let log_histogram   = import.log_histogram;
 
-        let printer =
-            if let Some(printer) = printer {
-                printer
-            } else {
-                stdout_printer()
-            };
-
         RunningInteger {
             name,       title,      id,
             count,      mean,       moment_2,
             moment_3,   moment_4,   log_histogram,
-            min,        max,        printer
+            min,        max,        printer,
+            units
         }
     }
 
@@ -313,6 +322,10 @@ impl RunningInteger {
             moment_3,   moment_4,   log_histogram,
             min,        max
         }
+    }
+
+    pub fn set_units(&mut self, units: Units) {
+        self.units = units;
     }
 }
 
@@ -487,7 +500,10 @@ impl Rustics for RunningInteger {
         let variance  = self.variance();
         let skewness  = self.skewness();
         let kurtosis  = self.kurtosis();
-        let printable = Printable { n, min, max, log_mode, mean, variance, skewness, kurtosis };
+        let units     = self.units.clone();
+
+        let printable =
+            Printable { n, min, max, log_mode, mean, variance, skewness, kurtosis, units };
 
         let printer   = &mut *printer_box.lock().unwrap();
 
@@ -529,13 +545,22 @@ mod tests {
     use crate::log_histogram::pseudo_log_index;
 
     pub fn test_simple_running_integer() {
-        let     name   = "Test Statistics";
-        let     title  = "Test Title";
-        let     id     = 42;
-        let mut stats  = RunningInteger::new(&name, None);
-        let mut events =    0;
-        let     min    = -256;
-        let     max    =  511;
+        let     printer    = None;
+        let     title      = None;
+
+        let     singular   = "byte" .to_string();
+        let     plural     = "bytes".to_string();
+        let     units      = Some(Units { singular, plural });
+        let     print_opts = Some(PrintOpts { printer, title, units });
+
+        let     name       = "Test Statistics";
+        let     title      = "Test Title";
+        let     id         = 42;
+        let mut stats      = RunningInteger::new_opts(&name, &print_opts);
+        let mut events     =    0;
+        let     min        = -256;
+        let     max        =  511;
+
 
         assert!(stats.name()  == name);
         assert!(stats.title() == name);

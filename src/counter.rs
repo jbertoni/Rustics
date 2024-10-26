@@ -18,9 +18,21 @@
 //!```
 //!     use rustics::Rustics;
 //!     use rustics::counter::Counter;
+//!     use rustics::PrintOpts;
+//!     use rustics::Units;
+//!
+//!     // Create a count and pretend that it's counting bytes.  The title
+//!     // defaults to the name, and the output is to stdout, and those
+//!     // are fine for this example.
 //!
 //!     let test_limit  = 20;
-//!     let mut counter = Counter::new("test counter", None);
+//!     let singular    = "byte".to_string();
+//!     let plural      = "bytes".to_string();
+//!     let units       = Some(Units { singular, plural });
+//!     let printer     = None;
+//!     let title       = None;
+//!     let print_opts  = Some(PrintOpts { printer, title, units });
+//!     let mut counter = Counter::new("test counter", print_opts);
 //!
 //!     // Add some counts to the counter.  record_event() adds one, to
 //!     // implement an event counter.  record_i64() adds any i64 value
@@ -52,9 +64,11 @@ use super::Rustics;
 use super::LogHistogram;
 use super::PrinterBox;
 use super::PrinterOption;
+use super::PrintOption;
+use super::Units;
 use super::TimerBox;
-use super::stdout_printer;
 use super::printable::Printable;
+use super::parse_print_opts;
 
 /// The Counter type provides a simple counter that implements
 /// the Rustics trait.
@@ -66,26 +80,22 @@ pub struct Counter {
     count:      i64,
     id:         usize,
     printer:    PrinterBox,
+    units:      Units,
 }
 
 impl Counter {
     /// Constructs an instance with a given name and optional Printer
     /// instance
 
-    pub fn new(name: &str, printer: PrinterOption) -> Counter {
+    pub fn new(name: &str, print_opts: PrintOption) -> Counter {
+        let (printer, title, units) = parse_print_opts(&print_opts, name);
+
         let name    = String::from(name);
-        let title   = name.clone();
         let count   = 0;
         let id      = usize::MAX;
 
-        let printer =
-            if let Some(printer) = printer {
-                printer
-            } else {
-                stdout_printer()
-            };
 
-        Counter { name, title, count, id, printer }
+        Counter { name, count, id, printer, title, units }
     }
 }
 
@@ -209,7 +219,7 @@ impl Rustics for Counter {
         let printer = &mut *printer_box.lock().unwrap();
 
         printer.print(title);
-        Printable::print_integer("Count", self.count, printer);
+        Printable::print_integer_units("Count", self.count, printer, &self.units);
     }
 
     // For internal use only.

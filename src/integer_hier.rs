@@ -80,15 +80,14 @@
 //!     // defaults for the title and printer are fine, so just pass None.
 //!     // The title defaults to the name and output will go to stdout.
 //!
-//!     let name    = "test hierarchical integer".to_string();
-//!     let title   = None;
-//!     let printer = None;
+//!     let name       = "test hierarchical integer".to_string();
+//!     let print_opts = None;
 //!
 //!     // Finally, create the configuration description for the
 //!     // constructor.
 //!
 //!     let configuration =
-//!         IntegerHierConfig { descriptor, name, title, printer };
+//!         IntegerHierConfig { descriptor, name, print_opts };
 //!
 //!     // Now make the Hier instance and lock it.
 //!
@@ -184,8 +183,8 @@ use std::sync::Mutex;
 
 use super::Rustics;
 use super::Histogram;
-use super::PrinterBox;
-use super::PrinterOption;
+use super::PrintOption;
+// use super::Units;
 use super::running_integer::RunningInteger;
 use crate::running_integer::RunningExporter;
 
@@ -239,12 +238,10 @@ pub struct IntegerHier {
 /// for a Hier instance that uses the RunningInteger type for
 /// recording and combining data.
 
-#[derive(Clone)]
 pub struct IntegerHierConfig {
     pub descriptor:  HierDescriptor,
     pub name:        String,
-    pub title:       Option<String>,
-    pub printer:     PrinterOption,
+    pub print_opts:  PrintOption,
 }
 
 impl IntegerHier {
@@ -263,10 +260,9 @@ impl IntegerHier {
 
         let descriptor = configuration.descriptor;
         let name       = configuration.name;
-        let title      = configuration.title;
-        let printer    = configuration.printer;
+        let print_opts = configuration.print_opts;
 
-        let config = HierConfig { descriptor, generator, name, title, class, printer };
+        let config = HierConfig { descriptor, generator, name, class, print_opts };
 
         Hier::new(config)
     }
@@ -288,19 +284,20 @@ impl IntegerHier {
 // and the Hier code.
 
 impl HierGenerator for IntegerHier {
-    fn make_member(&self, name: &str, printer: PrinterBox) -> MemberRc {
-        let member = RunningInteger::new(name, Some(printer));
+    fn make_member(&self, name: &str, print_opts: &PrintOption) -> MemberRc {
+        let member = RunningInteger::new_opts(name, print_opts);
 
         Rc::from(RefCell::new(member))
     }
 
     // Make a member from a complete list of exported statistics.
 
-    fn make_from_exporter(&self, name: &str, printer: PrinterBox, exporter: ExporterRc) -> MemberRc {
+    fn make_from_exporter(&self, name: &str, print_opts: &PrintOption, exporter: ExporterRc)
+            -> MemberRc {
         let mut exporter_borrow = exporter.borrow_mut();
         let     exporter_any    = exporter_borrow.as_any_mut();
         let     exporter_impl   = exporter_any.downcast_mut::<RunningExporter>().unwrap();
-        let     member          = exporter_impl.make_member(name, printer);
+        let     member          = exporter_impl.make_member(name, print_opts);
 
         Rc::from(RefCell::new(member))
     }
@@ -329,7 +326,6 @@ impl HierGenerator for IntegerHier {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::stdout_printer;
     use crate::hier::HierDescriptor;
     use crate::hier::HierDimension;
 
@@ -360,10 +356,9 @@ mod tests {
         let generator     = Rc::from(RefCell::new(generator));
         let class         = "integer".to_string();
         let name          = "test hier".to_string();
-        let title         = None;
-        let printer       = Some(stdout_printer());
+        let print_opts    = None;
 
-        let configuration = HierConfig { descriptor, generator, class, name, title, printer };
+        let configuration = HierConfig { descriptor, generator, class, name, print_opts };
 
         Hier::new(configuration)
     }
@@ -374,8 +369,7 @@ mod tests {
         //  First, just make a generator and a member, then record one event.
 
         let     generator    = IntegerHier::new_raw();
-        let     printer      = stdout_printer();
-        let     member_rc    = generator.make_member("test member", printer);
+        let     member_rc    = generator.make_member("test member", &None);
         let     member_clone = member_rc.clone();
         let mut member       = member_clone.borrow_mut();
         let     value        = 42;
@@ -399,9 +393,8 @@ mod tests {
         generator.push(&mut *exporter_clone.borrow_mut(), member_rc);
 
         let name    = "member export";
-        let printer = stdout_printer();
 
-        let new_member_rc = generator.make_from_exporter(name, printer, exporter_rc);
+        let new_member_rc = generator.make_from_exporter(name, &None, exporter_rc);
 
         // See that the new member matches expectations.
 

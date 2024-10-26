@@ -53,13 +53,12 @@
 //!       of the hierarchical statistics.
 //!
 //!     * Level 0 contains Rustics instances that have been used to recorded data samples, and the
-//!       upper levels are sums of lower levels.
+//!       upper levels are sums of Rustics instances from lower levels.
 //!
-//!     * Values are recorded into the newest Rustics instance at level 0.
+//!     * New samples are recorded into the newest Rustics instance at level 0.
 //!
 //!     * When a given number of Rustics instances have been pushed into a window, these instances
-//!       are summed and the sum placed in a high level window.  The summation is done recursively
-//!       up to a given number of levels.
+//!       are summed and the sum placed in the next higher level window.
 //!
 //!     * Level 0 can be configured to push the current Rustics instance and start a new one
 //!       after a given number of samples have been recorded, or the user can invoke the advance()
@@ -71,19 +70,25 @@
 //!
 //! * Hierarchical statistics types
 //!     * Hier
-//!         * The Hier struct provies framework code for hierarchical statistics.
+//!         * The Hier struct provies framework code for hierarchical statistics.  After creating
+//!           a Hier instance, most users will use this interface or the Rustics interface to
+//!           interact with this type.  For example, data is recorded into a Hier instance
+//!           by invoking Rustics methods directly on the Hier instance itself.
 //!
 //!         * The HierGenerator trait is implemented to allow the Hier implementation to use a
-//!           specific Rustics implementation, like RunningInteger or RunningTime.
+//!           specific Rustics implementation, like RunningInteger or RunningTime.  Most users
+//!           will not use this type directly.
 //!
 //!     * IntegerHier
 //!         * This struct wraps the RunningInteger type to support the Hier code.  See
-//!           "Integer::new_hier" for a simple interface to get going.  The hier.rs test module
+//!           "Integer::new_hier" for a simple interface to create a Hier instance using
+//!           RunningInteger for statistics collection.  The integer_hier and hier.rs test module
 //!           also contains sample_usage() and make_hier() functions as examples.
 //!
 //!     * TimeHier
 //!         * TimeHier implements Hier for the RunningTime type. As with IntegerHier, see
-//!           "TimeHier::new_hier" for an easy way to make a TimeHier instance.
+//!           "TimeHier::new_hier" for an easy way to make a Hier instance that uses RunningTime
+//!           as the statistics type.
 //!
 //! * Creating Sets
 //!     * The "arc_sets" and "rc_sets" modules implement a simple feature allowing the creation
@@ -140,6 +145,7 @@ use std::sync::Arc;
 use std::any::Any;
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::default::Default;
 
 use time::Timer;
 
@@ -173,7 +179,10 @@ use log_histogram::LogHistogram;
 pub type HierBox       = Arc<Mutex<Hier>>;
 pub type PrinterBox    = Arc<Mutex<dyn Printer>>;
 pub type PrinterOption = Option<Arc<Mutex<dyn Printer>>>;
+pub type TitleOption   = Option<String>;
+pub type UnitsOption   = Option<Units>;
 pub type TimerBox      = Rc<RefCell<dyn Timer>>;
+pub type PrintOption   = Option<PrintOpts>;
 
 /// timer_box_hz() is a helper function just returns the hertz
 /// of a timer in a box.  It just saves a bit of typing.
@@ -258,6 +267,36 @@ pub fn make_title(title_prefix: &str, title: &str) -> String {
     }
 }
 
+#[derive(Clone)]
+pub struct Units {
+    pub singular:   String,
+    pub plural:     String,
+}
+
+impl Default for Units {
+    fn default() -> Self {
+        let singular = "".to_string();
+        let plural   = "".to_string();
+
+        Self { singular, plural }
+    }
+}
+
+impl Units {
+    pub fn empty() -> Units {
+        let singular = "".to_string();
+        let plural   = "".to_string();
+
+        Units { singular, plural }
+    }
+}
+
+pub struct PrintOpts {
+    pub printer:  PrinterOption,
+    pub title:    TitleOption,
+    pub units:    UnitsOption,
+}
+
 /// The Printer trait allows users to create custom output types to
 /// match their I/O needs.
 ///
@@ -269,6 +308,45 @@ pub trait Printer {
     /// the newline.
 
     fn print(&self, output: &str);
+}
+
+pub fn parse_print_opts(print_opts: &PrintOption, name: &str) -> (PrinterBox, String, Units) {
+    let printer;
+    let title;
+    let units;
+
+    match print_opts {
+        Some(print_opts) => {
+            printer =
+                match &print_opts.printer {
+                    Some(printer) => { printer.clone()  }
+                    None          => { stdout_printer() }
+                };
+
+            title =
+                match &print_opts.title {
+                    Some(title) => { title.clone() }
+                    None        => { name.to_string()   }
+                };
+
+            units =
+                match &print_opts.units {
+                    Some(units) => { units.clone() }
+
+                    None => { Units::default() }
+                };
+        }
+
+        None /* print_opts */ => {
+            printer = stdout_printer();
+            title   = name.to_string();
+            units   = Units::default();
+        }
+    }
+
+    let title = title.to_string();
+
+    (printer, title, units)
 }
 
 // Define a printer that will send output to Stdout or Stderr, as

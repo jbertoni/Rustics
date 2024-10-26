@@ -75,6 +75,9 @@ use super::Rustics;
 use super::Printer;
 use super::PrinterBox;
 use super::PrinterOption;
+use super::PrintOption;
+use super::PrintOpts;
+use super::Units;
 use super::TimerBox;
 use super::Histogram;
 use crate::printable::Printable;
@@ -82,7 +85,7 @@ use crate::log_histogram::LogHistogram;
 use super::compute_variance;
 use super::compute_skewness;
 use super::compute_kurtosis;
-use super::stdout_printer;
+use super::parse_print_opts;
 
 /// An IntegerWindow instance collects integer data samples into
 /// a fixed-size window. It also maintains a histogram based on
@@ -114,6 +117,7 @@ pub struct IntegerWindow {
     pub log_histogram:  LogHistogram,
 
     printer:        PrinterBox,
+    units:          Units,
 }
 
 // The Crunched structure contains all the data needed to
@@ -146,13 +150,21 @@ impl Crunched {
 }
 
 impl IntegerWindow {
-    pub fn new(name_in: &str, window_size: usize, printer: PrinterOption) -> IntegerWindow {
+    pub fn new(name: &str, window_size: usize, printer: PrinterOption) -> IntegerWindow {
+        let title = None;
+        let units = None;
+
+        let print_opts = Some(PrintOpts { printer, title, units });
+
+        IntegerWindow::new_opts(name, window_size, &print_opts)
+    }
+
+    pub fn new_opts(name: &str, window_size: usize, print_opts: &PrintOption) -> IntegerWindow {
         if window_size == 0 {
             panic!("The window size is zero.");
         }
 
-        let name          = String::from(name_in);
-        let title         = String::from(name_in);
+        let name          = String::from(name);
         let id            = usize::MAX;
         let vector        = Vec::with_capacity(window_size);
         let index         = 0;
@@ -164,12 +176,7 @@ impl IntegerWindow {
         let moment_4      = 0.0;
         let log_histogram = LogHistogram::new();
 
-        let printer =
-            if let Some(printer) = printer {
-                printer
-            } else {
-                stdout_printer()
-            };
+        let (printer, title, units) = parse_print_opts(print_opts, &name);
 
         IntegerWindow {
             name,
@@ -185,7 +192,8 @@ impl IntegerWindow {
             moment_3,
             moment_4,
             log_histogram,
-            printer
+            printer,
+            units
         }
     }
 
@@ -405,6 +413,7 @@ impl Rustics for IntegerWindow {
         let min      = self.compute_min();
         let max      = self.compute_max();
         let log_mode = self.log_histogram.log_mode() as i64;
+        let units    = self.units.clone();
 
         let mean;
         let variance;
@@ -425,7 +434,9 @@ impl Rustics for IntegerWindow {
             kurtosis = compute_kurtosis(n, crunched.moment_2, crunched.moment_4);
         }
 
-        let printable = Printable { n, min, max, log_mode, mean, variance, skewness, kurtosis };
+        let printable =
+            Printable { n, min, max, log_mode, mean, variance, skewness, kurtosis, units };
+
         let printer   = &mut *printer_box.lock().unwrap();
 
         printer.print(title);

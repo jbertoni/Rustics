@@ -29,7 +29,8 @@
 //!    // that's fine for an example, so just give "None" to accept the
 //!    // default.
 //!
-//!    let mut set = ArcSet::new("Main Statistics", 8, 0, None);
+//!    let     set = ArcSet::new_box("Main Statistics", 8, 0, &None);
+//!    let mut set = set.lock().unwrap();
 //!
 //!    // Add an instance to record query latencies.  It's a time
 //!    // statistic, so we need a timer.  Here we use an adapter for the
@@ -128,11 +129,14 @@ use super::running_integer::RunningInteger;
 use super::running_time::RunningTime;
 use super::integer_window::IntegerWindow;
 use super::time_window::TimeWindow;
-use super::stdout_printer;
 use super::counter::Counter;
 use super::TimerBox;
 use super::PrinterBox;
 use super::PrinterOption;
+use super::PrintOpts;
+use super::PrintOption;
+use super::Units;
+use super::parse_print_opts;
 use super::make_title;
 
 pub type RusticsArc = Arc<Mutex<dyn Rustics>>;
@@ -168,41 +172,56 @@ pub struct ArcSet {
     printer:    PrinterBox,
 }
 
+/// This struct is passed to new_from_config to create an ArcSetBox.
+
+pub struct ArcSetConfig {
+    name:          String,
+    members_hint:  usize,
+    subsets_hint:  usize,
+    printer:       PrinterBox,
+    title:         String,
+    id:            usize,
+}
+
 impl ArcSet {
 
-    /// ArcSet Constructor
+    /// ArcSet Constructors
     ///
     /// The "members_hint" and "subsets_hint" parameters are hints as to the number
     /// of elements to be expected.  "members_hint" refers to the number of Rustics
     /// instances in the set.  These hints can improve performance a bit.  They
     /// might be especially useful in embedded environments.
 
-    pub fn new(name_in: &str, members_hint: usize, subsets_hint: usize, printer: PrinterOption)
-            -> ArcSet {
-        let name    = String::from(name_in);
-        let title   = String::from(name_in);
-        let id      = usize::MAX;
-        let next_id = 1;
-        let members = Vec::with_capacity(members_hint);
-        let subsets = Vec::with_capacity(subsets_hint);
+    /// Creates a new ArcSetBox.
 
-        let printer =
-            if let Some(printer) = printer {
-                printer
-            } else {
-                stdout_printer()
-            };
+    pub fn new_box(name: &str, members_hint: usize, subsets_hint: usize, print_opts: &PrintOption)
+            -> ArcSetBox {
+        let (printer, title, _units) = parse_print_opts(print_opts, name);
 
-        ArcSet { name, title, id, next_id, members, subsets, printer }
+        let name  = name.to_string();
+        let id    = usize::MAX;
+
+        let configuration = 
+            ArcSetConfig { name, members_hint, subsets_hint, title, printer, id };
+
+        ArcSet::new_from_config(configuration)
     }
 
-    /// Creates a new ArcSet and wrap it as an Arc<Mutex<ArcSet>>.
+    /// Creates a new ArcSetBox given a configuration.
 
-    pub fn new_box(name: &str, members_hint: usize, subsets_hint: usize, printer: PrinterOption)
-            -> ArcSetBox {
-        let set = ArcSet::new(name, members_hint, subsets_hint, printer);
+    pub fn new_from_config(configuration: ArcSetConfig) -> ArcSetBox {
+        let name     = configuration.name;
+        let printer  = configuration.printer;
+        let title    = configuration.title;
+        let id       = configuration.id;
+        let next_id  = 1;
+        let members  = Vec::with_capacity(configuration.members_hint);
+        let subsets  = Vec::with_capacity(configuration.subsets_hint);
 
-        Arc::from(Mutex::new(set))
+        let subset =
+            ArcSet { name, title, id, next_id, members, subsets, printer };
+
+        Arc::from(Mutex::new(subset))
     }
 
     /// Returns the name of the set.
@@ -260,6 +279,7 @@ impl ArcSet {
 
     pub fn set_title(&mut self, title: &str) {
         self.title = String::from(title);
+        // TODO:  recursive set title?
     }
 
     /// Does a recursive clear of all instances in the set and its
@@ -345,9 +365,13 @@ impl ArcSet {
 
     /// Creates a Counter and adds it to the set.
 
-    pub fn add_counter(&mut self, name: &str) -> RusticsArc {
+    pub fn add_counter(&mut self, name: &str, units: Option<Units>) -> RusticsArc {
         let printer = Some(self.printer.clone());
-        let member  = Counter::new(name, printer);
+        let title   = None;
+
+        let print_opts = Some(PrintOpts { printer, title, units });
+
+        let member  = Counter::new(name, print_opts);
         let member  = Arc::from(Mutex::new(member));
 
         self.add_member(member.clone());
@@ -385,22 +409,21 @@ impl ArcSet {
 
     /// Creates a new subset and adds it to the set.
 
-    pub fn add_subset(&mut self, name: &str, members: usize, subsets: usize) -> ArcSetBox {
-        let printer = Some(self.printer.clone());
-        let subset  = ArcSet::new(name, members, subsets, printer);
-        let subset  = Arc::from(Mutex::new(subset));
+    pub fn add_subset(&mut self, name: &str, members_hint: usize, subsets_hint: usize)
+            -> ArcSetBox {
+        let name    = name.to_string();
+        let printer = self.printer.clone();
+        let title   = make_title(&self.title, &name);
+        let id      = self.next_id;
 
-        self.subsets.push(subset);
+        let configuration =
+            ArcSetConfig { name, members_hint, subsets_hint, printer, title, id };
 
-        let     last   = self.subsets.last().unwrap();
-        let mut subset = last.lock().unwrap();
-        let     title  = make_title(&self.title, name);
+        let subset = ArcSet::new_from_config(configuration);
 
-        subset.set_title(&title);
-        subset.set_id(self.next_id);
         self.next_id += 1;
-
-        last.clone()
+        self.subsets.push(subset.clone());
+        subset
     }
 
     /// Removes a subset from the set.
@@ -432,11 +455,7 @@ impl ArcSet {
         found
     }
 
-    /// The following methods are for internal use only.
-
-    fn set_id(&mut self, id: usize) {
-        self.id = id;
-    }
+    /// The following method is for internal use only.
 
     fn id(&self) -> usize {
         self.id
@@ -535,7 +554,8 @@ pub mod tests {
 
         //  Create the parent set for our test Rustics instances.
 
-        let mut set = ArcSet::new(&parent_name, 4, 4, None);
+        let     set = ArcSet::new_box(&parent_name, 4, 4, &None);
+        let mut set = set.lock().unwrap();
 
         //  Create timers for time statistics.
 
@@ -719,7 +739,8 @@ pub mod tests {
         // The last two parameters to new() are size hints, and need not be correct.
         // The same is true for add_subset.
 
-        let mut  set     = ArcSet::new("parent set", 0, 1, None);
+        let      set     = ArcSet::new_box("parent set", 0, 1, &None);
+        let mut  set     = set.lock().unwrap();
         let      subset  = set.add_subset("subset", 1, 0);
         let mut  subset  = subset.lock().unwrap();
         let      running = subset.add_running_integer("running");
@@ -742,7 +763,7 @@ pub mod tests {
 
         // Add a counter.
 
-        let     counter_arc = set.add_counter("test counter");
+        let     counter_arc = set.add_counter("test counter", None);
         let mut counter     = counter_arc.lock().unwrap();
         let     limit       = 20;
 
@@ -789,7 +810,8 @@ pub mod tests {
        // an example, so just give "None" to accept the default.
        // See the Printer trait to implement a custom printer.
    
-       let mut set = ArcSet::new("Main Statistics", 8, 0, None);
+       let     set = ArcSet::new_box("Main Statistics", 8, 0, &None);
+       let mut set = set.lock().unwrap();
    
        // Add an instance to record query latencies.  It's a time
        // statistic, so we need a timer.  Use an adapter for the

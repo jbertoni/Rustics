@@ -23,7 +23,6 @@
 //!     // This example is based on the code in IntegerHier.
 //!
 //!     use rustics::Rustics;
-//!     use rustics::stdout_printer;
 //!     use rustics::hier::Hier;
 //!     use rustics::hier::HierDescriptor;
 //!     use rustics::hier::HierDimension;
@@ -70,18 +69,19 @@
 //!     let timer = DurationTimer::new_box();
 //!
 //!     // Now specify some parameters used by Hier to do printing.  The
-//!     // defaults for the title and printer are fine, so just pass None.
+//!     // defaults for the title and printer are fine, so just pass None
+//!     // for print_opts.
+//!     //
 //!     // The title defaults to the name and output will go to stdout.
 //!
-//!     let name    = "Hierarchical Time".to_string();
-//!     let title   = None;
-//!     let printer = None;
+//!     let name       = "Hierarchical Time".to_string();
+//!     let print_opts = None;
 //!
 //!     // Finally, create the configuration description for the
 //!     // constructor.
 //!
 //!     let configuration =
-//!         TimeHierConfig { descriptor, name, timer, title, printer };
+//!         TimeHierConfig { descriptor, name, timer, print_opts };
 //!
 //!     // Now make the Hier instance and lock it.
 //!
@@ -185,8 +185,7 @@ use super::Rustics;
 use super::Histogram;
 use super::HierBox;
 use super::TimerBox;
-use super::PrinterBox;
-use super::PrinterOption;
+use super::PrintOption;
 use super::running_time::RunningTime;
 use crate::running_integer::RunningExporter;
 
@@ -237,13 +236,11 @@ pub struct TimeHier {
 /// TimeHierConfig is used to pass the configuration parameters
 /// for a TimeHier instance.
 
-#[derive(Clone)]
 pub struct TimeHierConfig {
     pub name:        String,
     pub descriptor:  HierDescriptor,
     pub timer:       TimerBox,
-    pub title:       Option<String>,
-    pub printer:     PrinterOption,
+    pub print_opts:  PrintOption,
 }
 
 impl TimeHier {
@@ -266,11 +263,10 @@ impl TimeHier {
 
         let descriptor = configuration.descriptor;
         let name       = configuration.name;
-        let title      = configuration.title;
-        let printer    = configuration.printer;
+        let print_opts = configuration.print_opts;
 
         let config =
-            HierConfig { descriptor, generator, name, title, class, printer };
+            HierConfig { descriptor, generator, name, class, print_opts };
 
         Hier::new(config)
     }
@@ -292,21 +288,21 @@ impl TimeHier {
 impl HierGenerator for TimeHier {
     // Creates a member with the given name and printer.
 
-    fn make_member(&self, name: &str, printer: PrinterBox) -> MemberRc {
-        let member = RunningTime::new(name, self.timer.clone(), Some(printer));
+    fn make_member(&self, name: &str, print_opts: &PrintOption) -> MemberRc {
+        let member = RunningTime::new_opts(name, self.timer.clone(), print_opts);
 
         Rc::from(RefCell::new(member))
     }
 
     // Makes a member from a complete list of exported instances.
 
-    fn make_from_exporter(&self, name: &str, printer: PrinterBox, exporter: ExporterRc) -> MemberRc {
+    fn make_from_exporter(&self, name: &str, print_opts: &PrintOption, exporter: ExporterRc) -> MemberRc {
         let mut exporter_borrow = exporter.borrow_mut();
         let     exporter_any    = exporter_borrow.as_any_mut();
         let     exporter_impl   = exporter_any.downcast_mut::<RunningExporter>().unwrap();
-        let     member          = exporter_impl.make_member(name, printer.clone());
+        let     member          = exporter_impl.make_member(name, print_opts);
         let     timer           = self.timer.clone();
-        let     member          = RunningTime::from_integer(timer, printer, member);
+        let     member          = RunningTime::from_integer(timer, print_opts, member);
 
         Rc::from(RefCell::new(member))
     }
@@ -337,7 +333,6 @@ impl HierGenerator for TimeHier {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::stdout_printer;
     use crate::hier::HierDescriptor;
     use crate::hier::HierDimension;
     use crate::hier::GeneratorRc;
@@ -373,10 +368,9 @@ mod tests {
         let descriptor    = make_descriptor(4);
         let class         = "integer".to_string();
         let name          = "test hier".to_string();
-        let title         = None;
-        let printer       = None;
+        let print_opts    = None;
 
-        let configuration = HierConfig { descriptor, generator, class, name, title, printer };
+        let configuration = HierConfig { descriptor, generator, class, name, print_opts };
 
         Hier::new(configuration)
     }
@@ -385,10 +379,9 @@ mod tests {
         let     auto_next     = 200;
         let     descriptor    = make_descriptor(auto_next);
         let     name          = "test hier".to_string();
-        let     title         = None;
-        let     printer       = Some(stdout_printer());
+        let     print_opts    = None;
         let     timer         = continuing_box();
-        let     configuration = TimeHierConfig { descriptor, name, timer, title, printer };
+        let     configuration = TimeHierConfig { descriptor, name, timer, print_opts };
 
         let     hier          = TimeHier::new_hier_box(configuration);
         let mut hier_impl     = hier.lock().unwrap();
@@ -433,8 +426,7 @@ mod tests {
 
         let     timer        = continuing_box();
         let     generator    = TimeHier::new_raw(timer);
-        let     printer      = stdout_printer();
-        let     member_rc    = generator.make_member("test member", printer);
+        let     member_rc    = generator.make_member("test member", &None);
         let     member_clone = member_rc.clone();
         let mut member       = member_clone.borrow_mut();
         let     value        = 42;
@@ -456,7 +448,7 @@ mod tests {
 
         generator.push(&mut *exporter_rc.borrow_mut(), member_rc);
 
-        let new_member_rc = generator.make_from_exporter("member export", stdout_printer(), exporter_rc);
+        let new_member_rc = generator.make_from_exporter("member export", &None, exporter_rc);
 
 
         // See that the new member matches expectations.

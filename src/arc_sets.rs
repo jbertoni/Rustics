@@ -260,28 +260,30 @@ impl ArcSet {
 
     pub fn print_opts(&self, printer: PrinterOption, title: Option<&str>) {
         for mutex in self.members.iter() {
-            let member = mutex.lock().unwrap();
+            let member  = mutex.lock().unwrap();
+            let printer = printer.clone();
 
             if let Some(title) = title {
                 let title = make_title(title, &member.name());
                 let title = Some(title.as_str());
 
-                member.print_opts(printer.clone(), title);
+                member.print_opts(printer, title);
             } else {
-                member.print_opts(printer.clone(), None);
+                member.print_opts(printer, None);
             }
         }
 
         for mutex in self.subsets.iter() {
-            let subset = mutex.lock().unwrap();
+            let subset  = mutex.lock().unwrap();
+            let printer = printer.clone();
 
             if let Some(title) = title {
                 let title = make_title(title, &subset.name());
                 let title = Some(title.as_str());
 
-                subset.print_opts(printer.clone(), title);
+                subset.print_opts(printer, title);
             } else {
-                subset.print_opts(printer.clone(), None);
+                subset.print_opts(printer, None);
             }
         }
     }

@@ -33,6 +33,7 @@
 //!     use rustics::hier::HierSet;
 //!     use rustics::integer_hier::IntegerHier;
 //!     use rustics::integer_hier::IntegerHierConfig;
+//!     use rustics::arc_sets::ArcSet;
 //!
 //!     // Make a descriptor of level zero.  We choose to sum 1000
 //!     // level 0 RunningInteger instances into one level 1
@@ -81,8 +82,8 @@
 //!
 //!     // Now make the Hier instance and lock it.
 //!
-//!     let     integer_hier = IntegerHier::new_hier_box(configuration);
-//!     let mut integer_hier = integer_hier.lock().unwrap();
+//!     let     integer_hier_box = IntegerHier::new_hier_box(configuration);
+//!     let mut integer_hier     = integer_hier_box.lock().unwrap();
 //!
 //!     // Now record some events with test data samples.
 //!
@@ -170,8 +171,23 @@
 //!
 //!     let borrow  = sum.borrow();
 //!     let rustics = borrow.to_rustics();
+//!    
+//!     rustics.print();
 //!
-//!     rustics.print()
+//!     // Use a Hier instance in a set.  Don't bother with size hints
+//!     // or custom printing.
+//!
+//!     // Create and lock the set.
+//!
+//!     let     set_box = ArcSet::new_box("Test Set", 0, 0, &None);
+//!     let mut set     = set_box.lock().unwrap();
+//!
+//!     // Add the Hier instance and call print().  We need to drop the
+//!     // drop the lock on the Hier instance.
+//!
+//!     drop(integer_hier);
+//!     set.add_member(integer_hier_box.clone());
+//!     set.print();
 //!```
 
 use super::Rustics;

@@ -184,7 +184,6 @@ pub struct ArcSetConfig {
 }
 
 impl ArcSet {
-
     /// ArcSet Constructors
     ///
     /// The "members_hint" and "subsets_hint" parameters are hints as to the number
@@ -317,10 +316,15 @@ impl ArcSet {
 
     /// Creates a RunningInteger instance and adds it to the set.
 
-    pub fn add_running_integer(&mut self, name: &str) -> RusticsArc {
-        let printer = Some(self.printer.clone());
-        let member  = RunningInteger::new(name, printer);
-        let member  = Arc::from(Mutex::new(member));
+    pub fn add_running_integer(&mut self, name: &str, units: Option<Units>) -> RusticsArc {
+        let     printer = Some(self.printer.clone());
+        let mut member  = RunningInteger::new(name, printer);
+
+        if let Some(units) = units {
+            member.set_units(units);
+        }
+
+        let member = Arc::from(Mutex::new(member));
 
         self.add_member(member.clone());
         member
@@ -328,9 +332,15 @@ impl ArcSet {
 
     /// Creates a IntegerWindow instance and adds it to the set.
 
-    pub fn add_integer_window(&mut self, window_size: usize, name: &str) -> RusticsArc {
-        let printer = Some(self.printer.clone());
-        let member  = IntegerWindow::new(name, window_size, printer);
+    pub fn add_integer_window(&mut self, name: &str, window_size: usize, units: Option<Units>)
+            -> RusticsArc {
+        let     printer = Some(self.printer.clone());
+        let mut member  = IntegerWindow::new(name, window_size, printer);
+
+        if let Some(units) = units {
+            member.set_units(units);
+        }
+
         let member  = Arc::from(Mutex::new(member));
 
         self.add_member(member.clone());
@@ -510,8 +520,8 @@ pub mod tests {
 
             let     window_name   = format!("generated window {}", i);
             let     running_name  = format!("generated running {}", i);
-            let     window_mutex  = subset.add_integer_window(events_limit, &window_name);
-            let     running_mutex = subset.add_running_integer(&running_name);
+            let     window_mutex  = subset.add_integer_window(&window_name, events_limit, None);
+            let     running_mutex = subset.add_running_integer(&running_name, None);
 
             let mut window        = window_mutex.lock().unwrap();
             let mut running       = running_mutex.lock().unwrap();
@@ -564,8 +574,8 @@ pub mod tests {
 
         //  Now create the instances in our set.
 
-        let window_mutex        = set.add_integer_window(32, "window");
-        let running_mutex       = set.add_running_integer("running");
+        let window_mutex        = set.add_integer_window("window", 32, None);
+        let running_mutex       = set.add_running_integer("running", None);
         let time_window_mutex   = set.add_time_window("time window", 32, window_timer);
         let running_time_mutex  = set.add_running_time("running time", running_timer);
 
@@ -631,7 +641,7 @@ pub mod tests {
 
         let     subset      = set.add_subset("subset", 0, 0);
         let mut subset      = subset.lock().unwrap();
-        let     subset_stat = subset.add_running_integer("subset stat");
+        let     subset_stat = subset.add_running_integer("subset stat", None);
         let     subset_stat = subset_stat.lock().unwrap();
 
         assert!(subset.title()      == make_title(&set_title, "subset"));
@@ -743,7 +753,7 @@ pub mod tests {
         let mut  set     = set.lock().unwrap();
         let      subset  = set.add_subset("subset", 1, 0);
         let mut  subset  = subset.lock().unwrap();
-        let      running = subset.add_running_integer("running");
+        let      running = subset.add_running_integer("running", None);
         let mut  running = running.lock().unwrap();
 
         for i in 0..64 {

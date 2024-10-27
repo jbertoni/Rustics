@@ -240,10 +240,9 @@ impl RunningInteger {
     /// an optional print function.
 
     pub fn new(name: &str, printer: PrinterOption) -> RunningInteger {
-        let units = None;
-        let title = None;
-
-        let print_opts = PrintOpts { printer, units, title };
+        let units      = None;
+        let title      = None;
+        let print_opts = PrintOpts { printer, title, units };
         let print_opts = Some(print_opts);
 
         RunningInteger::new_opts(name, &print_opts)
@@ -543,6 +542,7 @@ mod tests {
     use std::sync::Mutex;
     use std::sync::Arc;
     use crate::log_histogram::pseudo_log_index;
+    use super::PrintOpts;
 
     pub fn test_simple_running_integer() {
         let     printer    = None;

@@ -267,6 +267,8 @@ pub fn make_title(title_prefix: &str, title: &str) -> String {
     }
 }
 
+/// Defines printable strings for a value's units.
+
 #[derive(Clone)]
 pub struct Units {
     pub singular:   String,

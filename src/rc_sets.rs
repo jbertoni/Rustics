@@ -262,10 +262,15 @@ impl RcSet {
 
     /// Creates a RunningInteger instance and adds it to the set.
 
-    pub fn add_running_integer(&mut self, name: &str) -> RusticsRc {
-        let printer = Some(self.printer.clone());
-        let member  = RunningInteger::new(name, printer);
-        let member  = Rc::from(RefCell::new(member));
+    pub fn add_running_integer(&mut self, name: &str, units: Option<Units>) -> RusticsRc {
+        let     printer = Some(self.printer.clone());
+        let mut member  = RunningInteger::new(name, printer);
+
+        if let Some(units) = units {
+            member.set_units(units);
+        }
+
+        let member = Rc::from(RefCell::new(member));
 
         self.add_member(member.clone());
         member
@@ -273,9 +278,15 @@ impl RcSet {
 
     /// Creates a IntegerWindow statistics instance and adds it to the set.
 
-    pub fn add_integer_window(&mut self, window_size: usize, name: &str) -> RusticsRc {
-        let printer = Some(self.printer.clone());
-        let member  = IntegerWindow::new(name, window_size, printer);
+    pub fn add_integer_window(&mut self, name: &str, window_size: usize, units: Option<Units>)
+            -> RusticsRc {
+        let     printer = Some(self.printer.clone());
+        let mut member  = IntegerWindow::new(name, window_size, printer);
+
+        if let Some(units) = units {
+            member.set_units(units);
+        }
+
         let member  = Rc::from(RefCell::new(member));
 
         self.add_member(member.clone());
@@ -443,8 +454,8 @@ mod tests {
             let     subset  = parent_set.add_subset("generated subset", 4, 4);
             let mut subset  = (*subset).borrow_mut();
 
-            let window      = subset.add_integer_window(32, "generated subset window");
-            let running     = subset.add_running_integer("generated subset running");
+            let window      = subset.add_integer_window("generated subset window", 32, None);
+            let running     = subset.add_running_integer("generated subset running", None);
 
             let mut window  = (*window).borrow_mut();
             let mut running = (*running).borrow_mut();
@@ -473,8 +484,8 @@ mod tests {
 
         // Add integer statistics instances, both a running total and a window.
 
-        let window  = set.add_integer_window(32, "window");
-        let running = set.add_running_integer("running");
+        let window  = set.add_integer_window("window", 32, None);
+        let running = set.add_running_integer("running", None);
 
         let window_timer:  TimerBox = continuing_box();
         let running_timer: TimerBox = continuing_box();
@@ -514,7 +525,7 @@ mod tests {
         let mut subset       = (*subset).borrow_mut();
         let     subset_title = subset.title();
 
-        let     subset_stat  = subset.add_running_integer("subset stat");
+        let     subset_stat  = subset.add_running_integer("subset stat", None);
         let     subset_stat  = (*subset_stat).borrow_mut();
 
         assert!(subset_title        == make_title(&set_title, "subset"         ));
@@ -594,7 +605,7 @@ mod tests {
 
         // Create a running integer instance.
 
-        let     running = subset.add_running_integer("generated subset running");
+        let     running = subset.add_running_integer("generated subset running", None);
         let mut running = (*running).borrow_mut();
 
         // Now try a timer window.

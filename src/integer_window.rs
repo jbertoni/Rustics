@@ -197,6 +197,10 @@ impl IntegerWindow {
         }
     }
 
+    pub fn set_units(&mut self, units: Units) {
+        self.units = units;
+    }
+
     fn sum(&self) -> f64 {
         let mut sum = 0.0;
 

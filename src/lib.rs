@@ -275,21 +275,28 @@ pub struct Units {
     pub plural:     String,
 }
 
-impl Default for Units {
-    fn default() -> Self {
-        let singular = "".to_string();
-        let plural   = "".to_string();
-
-        Self { singular, plural }
-    }
-}
-
 impl Units {
+    /// Return an Units struct with empty strings.  This is used
+    /// internally when printing without units.
+
     pub fn empty() -> Units {
         let singular = "".to_string();
         let plural   = "".to_string();
 
         Units { singular, plural }
+    }
+
+    pub fn new(singular: &str, plural: &str) -> Units {
+        let singular = singular.to_string();
+        let plural   = plural  .to_string();
+
+        Units { singular, plural }
+    }
+}
+
+impl Default for Units {
+    fn default() -> Self {
+        Units::empty()
     }
 }
 

@@ -262,13 +262,27 @@ impl ArcSet {
         for mutex in self.members.iter() {
             let member = mutex.lock().unwrap();
 
-            member.print_opts(printer.clone(), title);
+            if let Some(title) = title {
+                let title = make_title(title, &member.name());
+                let title = Some(title.as_str());
+
+                member.print_opts(printer.clone(), title);
+            } else {
+                member.print_opts(printer.clone(), None);
+            }
         }
 
         for mutex in self.subsets.iter() {
             let subset = mutex.lock().unwrap();
 
-            subset.print_opts(printer.clone(), title);
+            if let Some(title) = title {
+                let title = make_title(title, &subset.name());
+                let title = Some(title.as_str());
+
+                subset.print_opts(printer.clone(), title);
+            } else {
+                subset.print_opts(printer.clone(), None);
+            }
         }
     }
 

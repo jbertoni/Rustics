@@ -214,12 +214,28 @@ impl RcSet {
     pub fn print_opts(&self, printer: PrinterOption, title: Option<&str>) {
         for member in self.members.iter() {
             let member = (**member).borrow();
-            member.print_opts(printer.clone(), title);
+
+            if let Some(title) = title {
+                let title = make_title(title, &member.name());
+                let title = Some(title.as_str());
+
+                member.print_opts(printer.clone(), title);
+            } else {
+                member.print_opts(printer.clone(), None);
+            }
         }
 
         for subset in self.subsets.iter() {
             let subset = (**subset).borrow();
-            subset.print_opts(printer.clone(), title);
+
+            if let Some(title) = title {
+                let title = make_title(title, &subset.name());
+                let title = Some(title.as_str());
+
+                subset.print_opts(printer.clone(), title);
+            } else {
+                subset.print_opts(printer.clone(), None);
+            }
         }
     }
 

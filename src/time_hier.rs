@@ -264,7 +264,7 @@ impl TimeHier {
     pub fn new_hier(configuration: TimeHierConfig) -> Hier {
         let generator   = TimeHier::new_raw(configuration.timer);
         let generator   = Rc::from(RefCell::new(generator));
-        let class       = "integer".to_string();
+        let class       = "time".to_string();
 
         let descriptor  = configuration.descriptor;
         let name        = configuration.name;
@@ -391,7 +391,7 @@ mod tests {
 
     fn make_time_hier(generator:  GeneratorRc, auto_next: i64, window_size: Option<usize>) -> Hier {
         let descriptor    = make_descriptor(auto_next);
-        let class         = "integer".to_string();
+        let class         = "time".to_string();
         let name          = "test hier".to_string();
         let print_opts    = None;
 
@@ -550,6 +550,32 @@ mod tests {
         hier.record_time(window_size + 1);
 
         assert!(hier.count() == window_size as u64);
+
+        // Start again and test record_event().
+
+        let     timer           = continuing_box();
+        let     generator       = TimeHier::new_raw(timer);
+        let     generator       = Rc::from(RefCell::new(generator));
+        let mut hier            = make_time_hier(generator, auto_next, Some(window_size as usize));
+        let     timer_increment = continuing_timer_increment();
+        let mut timer_interval  = timer_increment;
+        let mut total_time      = 0;
+        let mut events          = 0;
+
+        for i in 1..window_size + 1 {
+            hier.record_event();
+            assert!(hier.max_i64() == timer_interval );
+            assert!(hier.min_i64() == timer_increment);
+            assert!(hier.count()   == i as u64       );
+
+            total_time     += timer_interval;
+            timer_interval += timer_increment;
+            events         += 1;
+        }
+
+        let mean = total_time as f64 / events as f64;
+
+        assert!(hier.mean() == mean);
     }
 
     #[test]

@@ -467,6 +467,8 @@ impl Hier {
 
         let member = generator.borrow_mut().make_member(&name, &print_opts);
 
+        assert!(member.borrow().to_rustics().class() == class);
+
         stats[0].push(member);
 
         Hier {
@@ -816,7 +818,11 @@ impl Rustics for Hier {
         let sample = rustics.record_event_report();
 
         if let Some(window) = &mut self.window {
-            window.record_i64(sample);
+            if self.class == "integer" {
+                window.record_i64(sample);
+            } else {
+                window.record_time(sample);
+            }
         }
 
         sample

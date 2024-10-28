@@ -459,9 +459,13 @@ mod tests {
         let mut events      = 0 as i64;
 
         for i in 0..window_size {
-            hier.record_i64(i + 1);
+            let sample = i + 1;
+
+            hier.record_i64(sample);
             events += 1;
-            assert!(hier.count() == events as u64);
+            assert!(hier.count()   == events as u64);
+            assert!(hier.min_i64() == 1            );
+            assert!(hier.max_i64() == sample       );
 
             let level_0_pushes = (events + auto_next - 1) / auto_next;
             let level_0_all    = std::cmp::min(level_0_pushes, level_0_retain() as i64);

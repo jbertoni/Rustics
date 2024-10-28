@@ -74,14 +74,15 @@
 //!     //
 //!     // The title defaults to the name and output will go to stdout.
 //!
-//!     let name       = "Hierarchical Time".to_string();
-//!     let print_opts = None;
+//!     let name        = "Hierarchical Time".to_string();
+//!     let print_opts  = None;
+//!     let window_size = None;
 //!
 //!     // Finally, create the configuration description for the
 //!     // constructor.
 //!
 //!     let configuration =
-//!         TimeHierConfig { descriptor, name, timer, print_opts };
+//!         TimeHierConfig { descriptor, name, window_size, timer, print_opts };
 //!
 //!     // Now make the Hier instance and lock it.
 //!
@@ -187,6 +188,7 @@ use super::HierBox;
 use super::TimerBox;
 use super::PrintOption;
 use super::running_time::RunningTime;
+use super::time_window::TimeWindow;
 use crate::running_integer::RunningExporter;
 
 use crate::Hier;
@@ -234,11 +236,14 @@ pub struct TimeHier {
 }
 
 /// TimeHierConfig is used to pass the configuration parameters
-/// for a TimeHier instance.
+/// for a TimeHier instance.  The window_size parameter can be
+/// set to cause the Hier instance to maintain a window of the
+/// last n events to be used for its Rustics reporting.
 
 pub struct TimeHierConfig {
     pub name:        String,
     pub descriptor:  HierDescriptor,
+    pub window_size: Option<usize>,
     pub timer:       TimerBox,
     pub print_opts:  PrintOption,
 }
@@ -257,16 +262,17 @@ impl TimeHier {
     /// RunningTime type.
 
     pub fn new_hier(configuration: TimeHierConfig) -> Hier {
-        let generator  = TimeHier::new_raw(configuration.timer);
-        let generator  = Rc::from(RefCell::new(generator));
-        let class      = "integer".to_string();
+        let generator   = TimeHier::new_raw(configuration.timer);
+        let generator   = Rc::from(RefCell::new(generator));
+        let class       = "integer".to_string();
 
-        let descriptor = configuration.descriptor;
-        let name       = configuration.name;
-        let print_opts = configuration.print_opts;
+        let descriptor  = configuration.descriptor;
+        let name        = configuration.name;
+        let print_opts  = configuration.print_opts;
+        let window_size = configuration.window_size;
 
         let config =
-            HierConfig { descriptor, generator, name, class, print_opts };
+            HierConfig { descriptor, generator, name, window_size, class, print_opts };
 
         Hier::new(config)
     }
@@ -292,6 +298,13 @@ impl HierGenerator for TimeHier {
         let member = RunningTime::new_opts(name, self.timer.clone(), print_opts);
 
         Rc::from(RefCell::new(member))
+    }
+
+    fn make_window(&self, name: &str, window_size: usize, print_opts: &PrintOption)
+            -> Box<dyn Rustics> {
+        let window = TimeWindow::new_opts(name, window_size, self.timer.clone(), print_opts);
+
+        Box::new(window)
     }
 
     // Makes a member from a complete list of exported instances.
@@ -328,6 +341,10 @@ impl HierGenerator for TimeHier {
 
         exporter_impl.push(member_impl.export());
     }
+
+    fn hz(&self) -> u128 {
+        self.timer.borrow().hz()
+    }
 }
 
 #[cfg(test)]
@@ -339,10 +356,18 @@ mod tests {
     use crate::tests::continuing_box;
     use crate::tests::continuing_timer_increment;
 
+    fn level_0_period() -> usize {
+        8
+    }
+
+    fn level_0_retain() -> usize {
+        3 * level_0_period()
+    }
+
     fn make_descriptor(auto_next: i64) -> HierDescriptor {
         let     levels         = 4;
-        let     level_0_period = 8;
-        let     dimension      = HierDimension::new(level_0_period, 3 * level_0_period);
+        let     level_0_period = level_0_period();
+        let     dimension      = HierDimension::new(level_0_period, level_0_retain());
         let mut dimensions     = Vec::<HierDimension>::with_capacity(levels);
 
         // Push the level 0 descriptor.
@@ -364,13 +389,14 @@ mod tests {
         HierDescriptor::new(dimensions, Some(auto_next))
     }
 
-    fn make_hier_gen(generator:  GeneratorRc) -> Hier {
-        let descriptor    = make_descriptor(4);
+    fn make_time_hier(generator:  GeneratorRc, auto_next: i64, window_size: Option<usize>) -> Hier {
+        let descriptor    = make_descriptor(auto_next);
         let class         = "integer".to_string();
         let name          = "test hier".to_string();
         let print_opts    = None;
 
-        let configuration = HierConfig { descriptor, generator, class, name, print_opts };
+        let configuration =
+            HierConfig { descriptor, generator, class, name, window_size, print_opts };
 
         Hier::new(configuration)
     }
@@ -381,7 +407,8 @@ mod tests {
         let     name          = "test hier".to_string();
         let     print_opts    = None;
         let     timer         = continuing_box();
-        let     configuration = TimeHierConfig { descriptor, name, timer, print_opts };
+        let     window_size   = None;
+        let     configuration = TimeHierConfig { descriptor, name, window_size, timer, print_opts };
 
         let     hier          = TimeHier::new_hier_box(configuration);
         let mut hier_impl     = hier.lock().unwrap();
@@ -461,7 +488,7 @@ mod tests {
         // Now make an actual hier instance.
 
         let     generator = Rc::from(RefCell::new(generator));
-        let mut hier      = make_hier_gen(generator);
+        let mut hier      = make_time_hier(generator, 4, None);
 
         let mut events = 0;
 
@@ -475,9 +502,60 @@ mod tests {
         hier.print();
     }
 
+    fn test_window() {
+        let     auto_next   = 100;
+        let     window_size = Some(1000);
+        let     timer       = continuing_box();
+        let     generator   = TimeHier::new_raw(timer);
+        let     generator   = Rc::from(RefCell::new(generator));
+        let mut hier        = make_time_hier(generator, auto_next, window_size);
+        let     period      = level_0_period();
+        let     window_size = window_size.unwrap() as i64;
+        let mut events      = 0 as i64;
+
+        for i in 0..window_size {
+            hier.record_time(i + 1);
+            events += 1;
+            assert!(hier.count() == events as u64);
+
+            let level_0_pushes = (events + auto_next - 1) / auto_next;
+            let level_0_all    = std::cmp::min(level_0_pushes, level_0_retain() as i64);
+            let level_0_live   = std::cmp::min(level_0_pushes, level_0_period() as i64);
+
+            assert!(hier.all_len (0) == level_0_all  as usize);
+            assert!(hier.live_len(0) == level_0_live as usize);
+
+            if hier.all_len(0) > period {
+                assert!(hier.all_len(1) > 0);
+            }
+
+            assert!(hier.count()       == events as u64);
+        }
+
+        // Compute the expected mean of the window.
+
+        let sum   = (window_size * (window_size + 1)) / 2;
+        let sum   = sum as f64;
+        let count = events as f64;
+        let mean  = sum / count;
+
+        // Check the mean and event count from the Rustics interface.
+
+        assert!(hier.count()       == events as u64);
+        assert!(hier.mean()        == mean         );
+        assert!(hier.event_count() == events       );
+
+        // Make sure that count() matches the window_size.
+
+        hier.record_time(window_size + 1);
+
+        assert!(hier.count() == window_size as u64);
+    }
+
     #[test]
     fn run_tests() {
         test_simple_running_generator();
         test_new_hier_box();
+        test_window();
     }
 }

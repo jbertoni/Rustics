@@ -1,8 +1,8 @@
-//      
+//
 //  This code is available under the Berkeley 2-Clause, Berkely 2-clause,
 //  and MIT licenses.  It is also available as public domain source where
 //  permitted by law.
-//      
+//
 
 //! ## Type
 //!
@@ -63,7 +63,7 @@
 //!       packet_latency.record_event();
 //!       assert!(packet_latency.count() == window_size as u64);
 //!    }
-//! 
+//!
 //!```
 
 use std::any::Any;
@@ -71,16 +71,14 @@ use std::any::Any;
 use super::Rustics;
 use super::PrinterBox;
 use super::PrinterOption;
-use super::Units;
+use super::PrintOption;
 use super::TimerBox;
 use super::Histogram;
-use super::LogHistogram;
+use super::HistogramBox;
 use super::timer_box_hz;
+use super::parse_print_opts;
 use super::integer_window::IntegerWindow;
 use crate::printable::Printable;
-use super::compute_variance;
-use super::compute_skewness;
-use super::compute_kurtosis;
 use super::stdout_printer;
 
 /// TimeWindow implements a statistics type that retains a
@@ -95,7 +93,7 @@ pub struct TimeWindow {
     timer:              TimerBox,
     hz:                 i64,
     printer:            PrinterBox,
-    units:              Units,
+    //units:              Units,
 }
 
 impl TimeWindow {
@@ -112,7 +110,6 @@ impl TimeWindow {
         let hz             = hz as i64;
         let integer_window = IntegerWindow::new(name, window_size, printer.clone());
         let integer_window = Box::new(integer_window);
-        let units          = Units::default();
 
         let printer =
             if let Some(printer) = printer {
@@ -121,8 +118,24 @@ impl TimeWindow {
                 stdout_printer()
             };
 
-        TimeWindow { printer, integer_window, timer, hz, units }
+        TimeWindow { printer, integer_window, timer, hz }
     }
+
+    pub fn new_opts(name: &str, window_size: usize, timer: TimerBox, print_opts: &PrintOption) -> TimeWindow {
+        let (printer, _title, _units) = parse_print_opts(print_opts, name);
+
+        let hz = timer_box_hz(&timer);
+
+        if hz > i64::MAX as u128 {
+            panic!("Rustics::TimeWindow:  The timer hz value is too large.");
+        }
+
+        let hz             = hz as i64;
+        let integer_window = IntegerWindow::new_opts(name, window_size, print_opts);
+        let integer_window = Box::new(integer_window);
+
+        TimeWindow { printer, integer_window, timer, hz }
+   }
 
     /// Returns the hertz rating of the Timer instance being used
     /// by this instance.
@@ -147,9 +160,14 @@ impl Rustics for TimeWindow {
     /// only works for single-threaded statistics gathering.
 
     fn record_event(&mut self) {
+        let _ = self.record_event_report();
+    }
+
+    fn record_event_report(&mut self) -> i64 {
         let interval = (*self.timer).borrow_mut().finish();
 
         self.integer_window.record_i64(interval);
+        interval
     }
 
     /// Records a time sample measured in ticks.
@@ -259,22 +277,7 @@ impl Rustics for TimeWindow {
                 &self.integer_window.title()
             };
 
-        let crunched  = self.integer_window.crunch();
-
-        let n         = self.integer_window.count();
-        let min       = self.integer_window.min_i64();
-        let max       = self.integer_window.max_i64();
-        let log_mode  = self.integer_window.log_mode() as i64;
-
-        let mean      = crunched.mean;
-        let variance  = compute_variance(n, crunched.moment_2);
-        let skewness  = compute_skewness(n, crunched.moment_2, crunched.moment_3);
-        let kurtosis  = compute_kurtosis(n, crunched.moment_2, crunched.moment_4);
-        let units     = self.units.clone();
-
-        let printable =
-            Printable { n, min, max, log_mode, mean, variance, skewness, kurtosis, units };
-
+        let printable = self.integer_window.get_printable();
         let printer   = &mut *printer_box.lock().unwrap();
 
         printer.print(title);
@@ -305,7 +308,11 @@ impl Rustics for TimeWindow {
         self as &dyn Any
     }
 
-    fn histogram(&self) -> LogHistogram {
+    fn histogram(&self) -> HistogramBox {
         self.integer_window.histogram()
+    }
+
+    fn export_stats(&self) -> (Printable, HistogramBox) {
+        self.integer_window.export_stats()
     }
 }

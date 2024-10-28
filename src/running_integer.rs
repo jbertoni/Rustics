@@ -62,6 +62,8 @@
 //!```
 
 use std::any::Any;
+use std::rc::Rc;
+use std::cell::RefCell;
 use std::cmp::min;
 use std::cmp::max;
 
@@ -73,6 +75,7 @@ use super::PrinterBox;
 use super::PrinterOption;
 use super::PrintOption;
 use super::PrintOpts;
+use super::HistogramBox;
 use super::Units;
 use super::printable::Printable;
 use super::compute_variance;
@@ -105,7 +108,7 @@ pub struct RunningInteger {
     min:        i64,
     max:        i64,
 
-    pub log_histogram:    LogHistogram,
+    pub log_histogram:    HistogramBox,
 
     printer:    PrinterBox,
     units:      Units,
@@ -185,7 +188,7 @@ pub struct RunningExport {
     pub min:        i64,
     pub max:        i64,
 
-    pub log_histogram:    LogHistogram,
+    pub log_histogram:    HistogramBox,
 }
 
 /// sum_log_histogram() is used internally to create sums of
@@ -219,7 +222,7 @@ pub fn sum_running(exports: &Vec::<RunningExport>) -> RunningExport {
         min       = std::cmp::min(min, export.min);
         max       = std::cmp::max(max, export.max);
 
-        sum_log_histogram(&mut log_histogram, &export.log_histogram);
+        sum_log_histogram(&mut log_histogram, &export.log_histogram.borrow());
 
         mean_vec.push(export.mean * export.count as f64);
         moment_2_vec.push(export.moment_2);
@@ -227,10 +230,11 @@ pub fn sum_running(exports: &Vec::<RunningExport>) -> RunningExport {
         moment_4_vec.push(export.moment_4);
     }
 
-    let mean     = kbk_sum(&mut mean_vec[..]) / count as f64;
-    let moment_2 = kbk_sum(&mut moment_2_vec[..]);
-    let moment_3 = kbk_sum(&mut moment_3_vec[..]);
-    let moment_4 = kbk_sum(&mut moment_4_vec[..]);
+    let mean          = kbk_sum(&mut mean_vec[..]) / count as f64;
+    let moment_2      = kbk_sum(&mut moment_2_vec[..]);
+    let moment_3      = kbk_sum(&mut moment_3_vec[..]);
+    let moment_4      = kbk_sum(&mut moment_4_vec[..]);
+    let log_histogram = Rc::from(RefCell::new(log_histogram));
 
     RunningExport { count, mean, moment_2, moment_3, moment_4, min, max, log_histogram }
 }
@@ -265,6 +269,7 @@ impl RunningInteger {
         let min             = i64::MAX;
         let max             = i64::MIN;
         let log_histogram   = LogHistogram::new();
+        let log_histogram   = Rc::from(RefCell::new(log_histogram));
 
         RunningInteger {
             name,       title,      id,
@@ -306,7 +311,7 @@ impl RunningInteger {
     /// Exports all the statistics kept for a given instance to
     /// be used to create a sum of many instances.
 
-    pub fn export(&self) -> RunningExport {
+    pub fn export_all(&self) -> RunningExport {
         let count           = self.count;
         let mean            = self.mean;
         let moment_2        = self.moment_2;
@@ -326,6 +331,20 @@ impl RunningInteger {
     pub fn set_units(&mut self, units: Units) {
         self.units = units;
     }
+
+    fn get_printable(&self) -> Printable {
+        let n         = self.count;
+        let min       = self.min;
+        let max       = self.max;
+        let log_mode  = self.log_histogram.borrow().log_mode() as i64;
+        let mean      = self.mean;
+        let variance  = self.variance();
+        let skewness  = self.skewness();
+        let kurtosis  = self.kurtosis();
+        let units     = self.units.clone();
+
+        Printable { n, min, max, log_mode, mean, variance, skewness, kurtosis, units }
+    }
 }
 
 // The formula for computing the second moment for the variance (moment_2)
@@ -335,7 +354,7 @@ impl Rustics for RunningInteger {
     fn record_i64(&mut self, sample: i64) {
         self.count += 1;
 
-        self.log_histogram.record(sample);
+        self.log_histogram.borrow_mut().record(sample);
 
         let sample_f64 = sample as f64;
 
@@ -373,6 +392,10 @@ impl Rustics for RunningInteger {
         panic!("Rustics::RunningInteger:  event samples are not permitted.");
     }
 
+    fn record_event_report(&mut self) -> i64 {
+        panic!("Rustics::RunningInteger:  event samples are not permitted.");
+    }
+
     fn record_time(&mut self, _sample: i64) {
         panic!("Rustics::RunningInteger:  time samples are not permitted.");
     }
@@ -398,7 +421,7 @@ impl Rustics for RunningInteger {
     }
 
     fn log_mode(&self) -> isize {
-        self.log_histogram.log_mode()
+        self.log_histogram.borrow().log_mode()
     }
 
     fn mean(&self) -> f64 {
@@ -453,7 +476,7 @@ impl Rustics for RunningInteger {
         self.min      = i64::MIN;
         self.max      = i64::MAX;
 
-        self.log_histogram.clear();
+        self.log_histogram.borrow_mut().clear();
     }
 
     fn equals(&self, other: &dyn Rustics) -> bool {
@@ -468,7 +491,7 @@ impl Rustics for RunningInteger {
         self as &dyn Any
     }
 
-    fn histogram(&self) -> LogHistogram {
+    fn histogram(&self) -> HistogramBox {
         self.log_histogram.clone()
     }
 
@@ -491,25 +514,13 @@ impl Rustics for RunningInteger {
                 &self.title
             };
 
-        let n         = self.count;
-        let min       = self.min;
-        let max       = self.max;
-        let log_mode  = self.log_histogram.log_mode() as i64;
-        let mean      = self.mean;
-        let variance  = self.variance();
-        let skewness  = self.skewness();
-        let kurtosis  = self.kurtosis();
-        let units     = self.units.clone();
-
-        let printable =
-            Printable { n, min, max, log_mode, mean, variance, skewness, kurtosis, units };
-
+        let printable = self.get_printable();
         let printer   = &mut *printer_box.lock().unwrap();
 
         printer.print(title);
         printable.print_common_integer(printer);
         printable.print_common_float(printer);
-        self.log_histogram.print(printer);
+        self.log_histogram.borrow().print(printer);
     }
 
     fn set_title(&mut self, title: &str) {
@@ -523,15 +534,18 @@ impl Rustics for RunningInteger {
     fn id(&self) -> usize {
         self.id
     }
+
+    fn export_stats(&self) -> (Printable, HistogramBox) {
+        let printable = self.get_printable();
+        let histogram = self.log_histogram.clone();
+
+        (printable, histogram)
+    }
 }
 
 impl Histogram for RunningInteger {
-    fn log_histogram(&self) -> LogHistogram {
-        self.log_histogram.clone()
-    }
-
     fn print_histogram(&self, printer: &mut dyn Printer) {
-        self.log_histogram.print(printer);
+        self.log_histogram.borrow().print(printer);
     }
 }
 

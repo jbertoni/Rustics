@@ -66,10 +66,11 @@
 //!       packet_sizes.record_i64(i as i64);
 //!       assert!(packet_sizes.count() == window_size as u64);
 //!    }
-//! 
 //!```
 
 use std::any::Any;
+use std::rc::Rc;
+use std::cell::RefCell;
 
 use super::Rustics;
 use super::Printer;
@@ -80,6 +81,7 @@ use super::PrintOpts;
 use super::Units;
 use super::TimerBox;
 use super::Histogram;
+use super::HistogramBox;
 use crate::printable::Printable;
 use crate::log_histogram::LogHistogram;
 use super::compute_variance;
@@ -114,7 +116,7 @@ pub struct IntegerWindow {
     moment_3:       f64,
     moment_4:       f64,
 
-    pub log_histogram:  LogHistogram,
+    pub log_histogram:  HistogramBox,
 
     printer:        PrinterBox,
     units:          Units,
@@ -175,6 +177,7 @@ impl IntegerWindow {
         let moment_3      = 0.0;
         let moment_4      = 0.0;
         let log_histogram = LogHistogram::new();
+        let log_histogram = Rc::from(RefCell::new(log_histogram));
 
         let (printer, title, units) = parse_print_opts(print_opts, &name);
 
@@ -255,6 +258,35 @@ impl IntegerWindow {
             None => 0,
         }
     }
+
+    pub fn get_printable(&self) -> Printable {
+        let n        = self.vector.len() as u64;
+        let min      = self.compute_min();
+        let max      = self.compute_max();
+        let log_mode = self.log_histogram.borrow().log_mode() as i64;
+        let units    = self.units.clone();
+
+        let mean;
+        let variance;
+        let skewness;
+        let kurtosis;
+
+        if self.stats_valid {
+            mean     = self.mean();
+            variance = self.variance();
+            skewness = self.skewness();
+            kurtosis = self.kurtosis();
+        } else {
+            let crunched = self.crunch();
+
+            mean     = crunched.mean;
+            variance = compute_variance(n, crunched.moment_2);
+            skewness = compute_skewness(n, crunched.moment_2, crunched.moment_3);
+            kurtosis = compute_kurtosis(n, crunched.moment_2, crunched.moment_4);
+        }
+
+        Printable { n, min, max, log_mode, mean, variance, skewness, kurtosis, units }
+    }
 }
 
 impl Rustics for IntegerWindow {
@@ -270,7 +302,7 @@ impl Rustics for IntegerWindow {
             self.vector.push(sample);
         }
 
-        self.log_histogram.record(sample);
+        self.log_histogram.borrow_mut().record(sample);
         self.stats_valid = false;
     }
 
@@ -279,6 +311,10 @@ impl Rustics for IntegerWindow {
     }
 
     fn record_event(&mut self) {
+        panic!("Rustics::IntegerWindow:  event samples are not permitted.");
+    }
+
+    fn record_event_report(&mut self) -> i64 {
         panic!("Rustics::IntegerWindow:  event samples are not permitted.");
     }
 
@@ -307,7 +343,7 @@ impl Rustics for IntegerWindow {
     }
 
     fn log_mode(&self) -> isize {
-        self.log_histogram.log_mode()
+        self.log_histogram.borrow().log_mode()
     }
 
     fn mean(&self) -> f64 {
@@ -389,7 +425,7 @@ impl Rustics for IntegerWindow {
     fn clear(&mut self) {
         self.vector.clear();
         self.index = 0;
-        self.log_histogram.clear();
+        self.log_histogram.borrow_mut().clear();
 
         self.stats_valid = false;
     }
@@ -413,40 +449,13 @@ impl Rustics for IntegerWindow {
                 &self.title
             };
 
-        let n        = self.vector.len() as u64;
-        let min      = self.compute_min();
-        let max      = self.compute_max();
-        let log_mode = self.log_histogram.log_mode() as i64;
-        let units    = self.units.clone();
-
-        let mean;
-        let variance;
-        let skewness;
-        let kurtosis;
-
-        if self.stats_valid {
-            mean     = self.mean();
-            variance = self.variance();
-            skewness = self.skewness();
-            kurtosis = self.kurtosis();
-        } else {
-            let crunched = self.crunch();
-
-            mean     = crunched.mean;
-            variance = compute_variance(n, crunched.moment_2);
-            skewness = compute_skewness(n, crunched.moment_2, crunched.moment_3);
-            kurtosis = compute_kurtosis(n, crunched.moment_2, crunched.moment_4);
-        }
-
-        let printable =
-            Printable { n, min, max, log_mode, mean, variance, skewness, kurtosis, units };
-
+        let printable = self.get_printable();
         let printer   = &mut *printer_box.lock().unwrap();
 
         printer.print(title);
         printable.print_common_integer(printer);
         printable.print_common_float(printer);
-        self.log_histogram.print(printer);
+        self.log_histogram.borrow().print(printer);
     }
 
     fn equals(&self, other: &dyn Rustics) -> bool {
@@ -461,7 +470,7 @@ impl Rustics for IntegerWindow {
         self as &dyn Any
     }
 
-    fn histogram(&self) -> LogHistogram {
+    fn histogram(&self) -> HistogramBox {
         self.log_histogram.clone()
     }
 
@@ -476,15 +485,17 @@ impl Rustics for IntegerWindow {
     fn id(&self) -> usize {
         self.id
     }
+
+    fn export_stats(&self) -> (Printable, HistogramBox) {
+        let printable = self.get_printable();
+
+        (printable, self.log_histogram.clone())
+    }
 }
 
 impl Histogram for IntegerWindow {
-    fn log_histogram(&self) -> LogHistogram {
-        self.log_histogram.clone()
-    }
-
     fn print_histogram(&self, printer: &mut dyn Printer) {
-        self.log_histogram.print(printer);
+        self.log_histogram.borrow().print(printer);
     }
 }
 

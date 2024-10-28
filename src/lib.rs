@@ -175,6 +175,7 @@ use hier::HierExporter;
 use hier::ExporterRc;
 use hier::MemberRc;
 use log_histogram::LogHistogram;
+use printable::Printable;
 
 pub type HierBox       = Arc<Mutex<Hier>>;
 pub type PrinterBox    = Arc<Mutex<dyn Printer>>;
@@ -183,6 +184,7 @@ pub type TitleOption   = Option<String>;
 pub type UnitsOption   = Option<Units>;
 pub type TimerBox      = Rc<RefCell<dyn Timer>>;
 pub type PrintOption   = Option<PrintOpts>;
+pub type HistogramBox  = Rc<RefCell<LogHistogram>>;
 
 /// timer_box_hz() is a helper function just returns the hertz
 /// of a timer in a box.  It just saves a bit of typing.
@@ -346,7 +348,7 @@ pub fn parse_print_opts(print_opts: &PrintOption, name: &str) -> (PrinterBox, St
                 };
         }
 
-        None /* print_opts */ => {
+        None => {
             printer = stdout_printer();
             title   = name.to_string();
             units   = Units::default();
@@ -414,8 +416,13 @@ pub trait Rustics {
     /// determine the time interval in ticks.  The time interval is
     /// reset for the next record_event call.
     ///
+    /// The record_event_report is the same as record_event, but it
+    /// returns the value that is recorded.  This is used by the Hier
+    /// code to implement its window function.
+    ///
 
-    fn record_event(&mut self             );  // implementation-specific record
+    fn record_event       (&mut self);         // implementation-specific record
+    fn record_event_report(&mut self) -> i64;  // implementation-specific record
 
     /// Records a time in ticks.  This method will panic if the
     /// underlying type is not a time statistic.
@@ -523,16 +530,14 @@ pub trait Rustics {
     fn id       (&self                     ) -> usize;
     fn equals   (&self, other: &dyn Rustics) -> bool;
     fn generic  (&self                     ) -> &dyn Any;
-    fn histogram(&self                     ) -> LogHistogram;
+    fn histogram(&self                     ) -> HistogramBox;
+
+    fn export_stats(&self) -> (Printable, HistogramBox);
 }
 
 /// Histogram defines the trait for using a LogHistogram instance.
 
 pub trait Histogram {
-    /// Returns the LogHistogram for access to its data
-
-    fn log_histogram(&self) -> LogHistogram;
-
     /// Prints the histogram on the given Printer instance.
 
     fn print_histogram(&self, printer: &mut dyn Printer);
@@ -985,23 +990,26 @@ mod tests {
 
         assert!(rustics.count() == 0);
 
-        // Check the histogram...
+        // Check the histogram...  We need to lose the borrow before
+        // calling the record_* functions.
 
-        let histogram = rustics.histogram();
+        {
+            let histogram = rustics.histogram();
+            let histogram = histogram.borrow();
 
-        for item in histogram.negative {
-            assert!(item == 0);
-        }
+            for item in histogram.negative {
+                assert!(item == 0);
+            }
 
-        for item in histogram.positive {
-            assert!(item == 0);
+            for item in histogram.positive {
+                assert!(item == 0);
+            }
         }
 
         // Time instances only get positive values...  Avoid overflow
         // when negating and adding.  Consider MAX and MIN...
 
         if rustics.class() == "time" && value <= 0 {
-            //value = std::cmp::max((value + 2).abs() + 1, 1);
             value = (value + 2).abs() + 1;
         }
 
@@ -1030,6 +1038,7 @@ mod tests {
 
         // Check that the histogram matches expectation.
         let histogram       = rustics.histogram();
+        let histogram       = histogram.borrow();
         let log_mode_index  = pseudo_log_index(value);
 
         for i in 0..histogram.negative.len() {
@@ -1050,7 +1059,7 @@ mod tests {
     }
 
     #[test]
-    pub fn run_tests_dyn() {
+    pub fn run_lib_tests() {
         test_time_window();
         test_running_time();
         run_all_histo_tests();

@@ -19,7 +19,9 @@
 //!       IntegerHier, which uses RunningInteger as the underlying Rustics type.
 //!
 //!     * Hier implements the Rustics interface, and through that provides statistics from the
-//!       current level 0 Rustics instance, i.e., statistics on the newest samples.
+//!       either the current level 0 Rustics instance, i.e., statistics on the newest samples,
+//!       or from an optionally configured window of the last n events, as specified by the
+//!       window_size parameter in HierConfig.
 //!
 //!     * See the inter_hier module comments for more details.
 //!
@@ -69,16 +71,18 @@
 //!
 //!     // Now create some items used by Hier to do printing.  The
 //!     // defaults for printing are fine for an example, so just pass
-//      // None.  By default, the title is the name and output is to stdout.
+//!     // None.  By default, the title is the name and output is to stdout.
+//!     // Don't configure a window.
 //!
-//!     let name       = "test hierarchical integer".to_string();
-//!     let print_opts = None;     // default to stdout
+//!     let name        = "test hierarchical integer".to_string();
+//!     let print_opts  = None;     // default to stdout
+//!     let window_size = None;
 //!
 //!     // Finally, create the configuration description for the
 //!     // constructor.
 //!
 //!     let configuration =
-//!         IntegerHierConfig { descriptor, name, print_opts };
+//!         IntegerHierConfig { descriptor, name, window_size, print_opts };
 //!
 //!     // Now make the Hier instance and lock it.
 //!
@@ -171,13 +175,11 @@
 //!
 //!     let borrow  = sum.borrow();
 //!     let rustics = borrow.to_rustics();
-//!    
+//!
 //!     rustics.print();
 //!
 //!     // Use a Hier instance in a set.  Don't bother with size hints
 //!     // or custom printing.
-//!
-//!     // Create and lock the set.
 //!
 //!     let     set_box = ArcSet::new_box("Test Set", 0, 0, &None);
 //!     let mut set     = set_box.lock().unwrap();
@@ -192,13 +194,14 @@
 
 use super::Rustics;
 use super::Histogram;
-use super::LogHistogram;
 use super::Printer;
 use super::PrinterBox;
 use super::PrinterOption;
 use super::PrintOption;
+use super::HistogramBox;
 use super::parse_print_opts;
 use super::TimerBox;
+use super::Printable;
 use super::window::Window;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -340,9 +343,13 @@ pub trait HierGenerator {
     fn make_from_exporter(&self, name: &str, print_opts: &PrintOption, exports: ExporterRc)
             -> MemberRc;
 
+    fn make_window(&self, name: &str, window_size: usize, print_opts: &PrintOption)
+            -> Box<dyn Rustics>;
+
     fn make_member       (&self, name: &str, print_opts: &PrintOption) -> MemberRc;
     fn make_exporter     (&self) -> ExporterRc;
     fn push              (&self, exports: &mut dyn HierExporter, member: MemberRc);
+    fn hz                (&self) -> u128;
 }
 
 
@@ -390,6 +397,7 @@ pub struct Hier {
     event_count:    i64,
     printer:        PrinterBox,
     print_opts:     PrintOption,
+    window:         Option<Box<dyn Rustics>>,
 }
 
 /// HierConfig defines the configuration parameters for a Hier
@@ -397,10 +405,11 @@ pub struct Hier {
 /// like IntegerHier::new_hier and TimeHier::new_heir.
 
 pub struct HierConfig {
+    pub name:        String,
     pub descriptor:  HierDescriptor,
     pub generator:   GeneratorRc,
+    pub window_size: Option<usize>,
     pub class:       String,
-    pub name:        String,
     pub print_opts:  PrintOption,
 }
 
@@ -424,8 +433,24 @@ impl Hier {
         let     event_count   = 0;
         let mut stats         = Vec::with_capacity(dimensions.len());
 
+        let window_size =
+            if let Some(window_size) = &configuration.window_size {
+                *window_size
+            } else {
+                0
+            };
 
         let (printer, title, _units) = parse_print_opts(&print_opts, &name);
+
+        let window =
+            if window_size > 0 {
+                let generator = generator.borrow();
+                let window    = generator.make_window(&name, window_size, &print_opts);
+
+                Some(window)
+            } else {
+                None
+            };
 
         //
         // Create the set of windows that we use to hold all
@@ -445,10 +470,11 @@ impl Hier {
         stats[0].push(member);
 
         Hier {
-            dimensions,   generator,  stats,
-            name,         title,      id,
-            class,        auto_next,  advance_count,
-            event_count,  printer,    print_opts
+            dimensions,   generator,   stats,
+            name,         title,       id,
+            class,        auto_next,   advance_count,
+            event_count,  printer,     print_opts,
+            window
         }
     }
 
@@ -572,7 +598,7 @@ impl Hier {
         }
 
         drop(exporter);
-        
+
         // Now make the sum statistics instance.
 
         let sum = generator.make_from_exporter(name, &self.print_opts, exporter_rc);
@@ -679,11 +705,6 @@ impl Hier {
 
         let target = self.index(index);
 
-        //    match index.set {
-        //        HierSet::Live => { self.stats[level].index_live(which) }
-        //        HierSet::All  => { self.stats[level].index_all (which) }
-        //    };
-
         let target =
             if let Some(target) = target {
                 target
@@ -758,7 +779,11 @@ impl Rustics for Hier {
         let mut borrow  = member.borrow_mut();
         let     rustics = borrow.to_rustics_mut();
 
-        rustics.record_i64(value)
+        rustics.record_i64(value);
+
+        if let Some(window) = &mut self.window {
+            window.record_i64(value);
+        }
     }
 
     fn record_f64(&mut self, sample: f64) {
@@ -769,16 +794,32 @@ impl Rustics for Hier {
         let     rustics = borrow.to_rustics_mut();
 
         rustics.record_f64(sample);
+
+        if let Some(window) = &mut self.window {
+            window.record_f64(sample);
+        }
     }
 
     fn record_event(&mut self) {
+        let _ = self.record_event_report();
+    }
+
+    fn record_event_report(&mut self) -> i64 {
         self.check_and_advance();
 
         let     member  = self.stats[0].newest_mut().unwrap();
         let mut borrow  = member.borrow_mut();
         let     rustics = borrow.to_rustics_mut();
 
-        rustics.record_event();
+        // Now record the event twice, as needed.
+
+        let sample = rustics.record_event_report();
+
+        if let Some(window) = &mut self.window {
+            window.record_i64(sample);
+        }
+
+        sample
     }
 
     fn record_time(&mut self, sample: i64) {
@@ -789,20 +830,30 @@ impl Rustics for Hier {
         let     rustics = borrow.to_rustics_mut();
 
         rustics.record_time(sample);
+
+        if let Some(window) = &mut self.window {
+            window.record_time(sample);
+        }
     }
 
     fn record_interval(&mut self, timer: &mut TimerBox) {
         self.check_and_advance();
 
-        let     current = self.current();
-        let mut borrow  = current.borrow_mut();
-        let     rustics = borrow.to_rustics_mut();
+        let     current      = self.current();
+        let mut borrow       = current.borrow_mut();
+        let     rustics      = borrow.to_rustics_mut();
 
-        rustics.record_interval(timer);
+        let mut timer_borrow = timer.borrow_mut();
+        let     time         = timer_borrow.finish();
+
+        rustics.record_time(time);
+
+        if let Some(window) = &mut self.window {
+            window.record_time(time);
+        }
     }
 
     // We return the name and title of the Hier instance itself.
-    // We do the same for class, as well.
 
     fn name(&self) -> String {
         self.name.clone()
@@ -817,11 +868,15 @@ impl Rustics for Hier {
     }
 
     fn count(&self) -> u64 {
-        let current = self.current();
-        let borrow  = current.borrow();
-        let rustics = borrow.to_rustics();
+        if let Some(window) = &self.window {
+            window.count()
+        } else {
+            let current = self.current();
+            let borrow  = current.borrow();
+            let rustics = borrow.to_rustics();
 
-        rustics.count()
+            rustics.count()
+        }
     }
 
     fn log_mode(&self) -> isize {
@@ -833,111 +888,167 @@ impl Rustics for Hier {
     }
 
     fn mean(&self) -> f64 {
-        let current = self.current();
-        let borrow  = current.borrow();
-        let rustics = borrow.to_rustics();
+        if let Some(window) = &self.window {
+            window.mean()
+        } else {
+            let current = self.current();
+            let borrow  = current.borrow();
+            let rustics = borrow.to_rustics();
 
-        rustics.mean()
+            rustics.mean()
+        }
     }
 
     fn standard_deviation(&self) -> f64 {
-        let current = self.current();
-        let borrow  = current.borrow();
-        let rustics = borrow.to_rustics();
+        if let Some(window) = &self.window {
+            window.standard_deviation()
+        } else {
+            let current = self.current();
+            let borrow  = current.borrow();
+            let rustics = borrow.to_rustics();
 
-        rustics.standard_deviation()
+            rustics.standard_deviation()
+        }
     }
 
     fn variance(&self) -> f64 {
-        let current = self.current();
-        let borrow  = current.borrow();
-        let rustics = borrow.to_rustics();
+        if let Some(window) = &self.window {
+            window.variance()
+        } else {
+            let current = self.current();
+            let borrow  = current.borrow();
+            let rustics = borrow.to_rustics();
 
-        rustics.variance()
+            rustics.variance()
+        }
     }
 
     fn skewness(&self) -> f64 {
-        let current = self.current();
-        let borrow  = current.borrow();
-        let rustics = borrow.to_rustics();
+        if let Some(window) = &self.window {
+            window.skewness()
+        } else {
+            let current = self.current();
+            let borrow  = current.borrow();
+            let rustics = borrow.to_rustics();
 
-        rustics.skewness()
+            rustics.skewness()
+        }
     }
 
     fn kurtosis(&self) -> f64 {
-        let current = self.current();
-        let borrow  = current.borrow();
-        let rustics = borrow.to_rustics();
+        if let Some(window) = &self.window {
+            window.kurtosis()
+        } else {
+            let current = self.current();
+            let borrow  = current.borrow();
+            let rustics = borrow.to_rustics();
 
-        rustics.kurtosis()
+            rustics.kurtosis()
+        }
     }
 
     fn int_extremes(&self) -> bool {
-        let current = self.current();
-        let borrow  = current.borrow();
-        let rustics = borrow.to_rustics();
+        if let Some(window) = &self.window {
+            window.int_extremes()
+        } else {
+            let current = self.current();
+            let borrow  = current.borrow();
+            let rustics = borrow.to_rustics();
 
-        rustics.int_extremes()
+            rustics.int_extremes()
+        }
     }
 
     fn min_i64(&self) -> i64  {
-        let current = self.current();
-        let borrow  = current.borrow();
-        let rustics = borrow.to_rustics();
+        if let Some(window) = &self.window {
+            window.min_i64()
+        } else {
+            let current = self.current();
+            let borrow  = current.borrow();
+            let rustics = borrow.to_rustics();
 
-        rustics.min_i64()
+            rustics.min_i64()
+        }
     }
 
     fn min_f64(&self) -> f64 {
-        let current = self.current();
-        let borrow  = current.borrow();
-        let rustics = borrow.to_rustics();
+        if let Some(window) = &self.window {
+            window.min_f64()
+        } else {
+            let current = self.current();
+            let borrow  = current.borrow();
+            let rustics = borrow.to_rustics();
 
-        rustics.min_f64()
+            rustics.min_f64()
+        }
     }
 
     fn max_i64(&self) -> i64 {
-        let current = self.current();
-        let borrow  = current.borrow();
-        let rustics = borrow.to_rustics();
+        if let Some(window) = &self.window {
+            window.max_i64()
+        } else {
+            let current = self.current();
+            let borrow  = current.borrow();
+            let rustics = borrow.to_rustics();
 
-        rustics.max_i64()
+            rustics.max_i64()
+        }
     }
 
     fn max_f64(&self) -> f64 {
-        let current = self.current();
-        let borrow  = current.borrow();
-        let rustics = borrow.to_rustics();
+        if let Some(window) = &self.window {
+            window.max_f64()
+        } else {
+            let current = self.current();
+            let borrow  = current.borrow();
+            let rustics = borrow.to_rustics();
 
-        rustics.max_f64()
+            rustics.max_f64()
+        }
     }
 
     fn precompute(&mut self) {
-        let     current = self.current();
-        let mut borrow  = current.borrow_mut();
-        let     rustics = borrow.to_rustics_mut();
+        if let Some(window) = &mut self.window {
+            window.precompute();
+        } else {
+            let     current = self.current();
+            let mut borrow  = current.borrow_mut();
+            let     rustics = borrow.to_rustics_mut();
 
-        rustics.precompute();
+            rustics.precompute();
+        }
     }
 
     /// Deletes all data in the Hier object.
 
     fn clear(&mut self) {
         self.clear_all();
+
+        if let Some(window) = &mut self.window {
+            window.clear();
+        }
     }
 
     // Functions for printing
 
     fn print(&self) {
-        let index = HierIndex::new(HierSet::Live, 0, self.live_len(0) - 1);
+        if let Some(window) = &self.window {
+            window.print_opts(None, Some(&self.title));
+        } else {
+            let index = HierIndex::new(HierSet::Live, 0, self.live_len(0) - 1);
 
-        self.local_print(index, None, None);
+            self.local_print(index, None, None);
+        }
     }
 
     fn print_opts(&self, printer: PrinterOption, title: Option<&str>) {
-        let index = HierIndex::new(HierSet::Live, 0, self.live_len(0) - 1);
+        if let Some(window) = &self.window {
+            window.print_opts(printer, title);
+        } else {
+            let index = HierIndex::new(HierSet::Live, 0, self.live_len(0) - 1);
 
-        self.local_print(index, printer, title);
+            self.local_print(index, printer, title);
+        }
     }
 
     // The title is kept in the Hier instance.
@@ -969,30 +1080,42 @@ impl Rustics for Hier {
         self as &dyn Any
     }
 
-    fn histogram(&self) -> LogHistogram {
-        let current = self.current();
-        let borrow  = current.borrow();
-        let rustics = borrow.to_rustics();
+    fn histogram(&self) -> HistogramBox {
+        if let Some(window) = &self.window {
+            window.histogram()
+        } else {
+            let current = self.current();
+            let borrow  = current.borrow();
+            let rustics = borrow.to_rustics();
 
-        rustics.histogram()
+            rustics.histogram()
+        }
+    }
+
+    fn export_stats(&self) -> (Printable, HistogramBox)  {
+        if let Some(window) = &self.window {
+            window.export_stats()
+        } else {
+            let current = self.current();
+            let borrow  = current.borrow();
+            let rustics = borrow.to_rustics();
+
+            rustics.export_stats()
+        }
     }
 }
 
 impl Histogram for Hier {
-    fn log_histogram(&self) -> LogHistogram {
-        let current   = self.current();
-        let borrow    = current.borrow();
-        let log_histo = borrow.to_histogram();
-
-        log_histo.log_histogram()
-    }
-
     fn print_histogram(&self, printer: &mut dyn Printer) {
-        let current   = self.current();
-        let borrow    = current.borrow();
-        let log_histo = borrow.to_histogram();
+        if let Some(window) = &self.window {
+            window.histogram().borrow().print(printer);
+        } else {
+            let current = self.current();
+            let borrow  = current.borrow();
+            let rustics = borrow.to_rustics();
 
-        log_histo.print_histogram(printer);
+            rustics.histogram().borrow().print(printer);
+        }
     }
 }
 
@@ -1048,14 +1171,15 @@ pub mod tests {
         // IntegerHier, which does some of the work for
         // us.
 
-        let name       = "hier".to_string();
-        let print_opts = None;
+        let name        = "hier".to_string();
+        let print_opts  = None;
+        let window_size = None;
 
         // Finally, create the configuration description for the
         // constructor.
 
         let configuration =
-            IntegerHierConfig { descriptor, name, print_opts };
+            IntegerHierConfig { descriptor, name, window_size, print_opts };
 
         // Make the actual Hier instance.  new_hier() handles the
         // parameters specific for using RunningInteger instances.
@@ -1270,7 +1394,6 @@ pub mod tests {
             hier_integer.record_i64(-i);
 
             events += 2;
-            // sum_of_events += i + -i;
 
             check_sizes(&hier_integer, events, false);
         }
@@ -1483,11 +1606,12 @@ pub mod tests {
         let auto_next    = 20;
         let auto_advance = Some(auto_next);
         let descriptor   = HierDescriptor::new(dimensions, auto_advance);
+        let window_size  = None;
 
         // Now make an actual time_hier instance from a configuration.
 
         let configuration =
-            TimeHierConfig { descriptor, timer, name, print_opts };
+            TimeHierConfig { descriptor, timer, name, window_size, print_opts };
 
         let mut hier = TimeHier::new_hier(configuration);
 
@@ -1561,14 +1685,15 @@ pub mod tests {
 
         // Now create some items used by Hier to do printing.
 
-        let name       = "test hierarchical integer".to_string();
-        let print_opts = None;
+        let name        = "test hierarchical integer".to_string();
+        let print_opts  = None;
+        let window_size = None;
 
         // Finally, create the configuration description for the
         // constructor.
 
         let configuration =
-            IntegerHierConfig { descriptor, name, print_opts };
+            IntegerHierConfig { descriptor, name, window_size, print_opts };
 
         // Now make the Hier instance.
 

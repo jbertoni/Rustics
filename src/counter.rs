@@ -60,6 +60,9 @@
 //!```
 
 use std::any::Any;
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use super::Rustics;
 use super::LogHistogram;
 use super::PrinterBox;
@@ -67,6 +70,7 @@ use super::PrinterOption;
 use super::PrintOption;
 use super::Units;
 use super::TimerBox;
+use super::HistogramBox;
 use super::printable::Printable;
 use super::parse_print_opts;
 
@@ -97,6 +101,10 @@ impl Counter {
 
         Counter { name, count, id, printer, title, units }
     }
+
+    fn event_increment(&self) -> i64 {
+        1
+    }
 }
 
 impl Rustics for Counter {
@@ -117,7 +125,12 @@ impl Rustics for Counter {
     /// Increments the counter by one.
 
     fn record_event(&mut self) {
-        self.count += 1;
+        self.count += self.event_increment();
+    }
+
+    fn record_event_report(&mut self) -> i64 {
+        self.count += self.event_increment();
+        self.event_increment()
     }
 
     fn record_time(&mut self, _sample: i64) {
@@ -247,8 +260,30 @@ impl Rustics for Counter {
         self as &dyn Any
     }
 
-    fn histogram(&self) -> LogHistogram {
-        panic!("Counter::histogram:  not supported");
+    fn histogram(&self) -> HistogramBox {
+        let histogram = LogHistogram::new();
+
+        Rc::from(RefCell::new(histogram))
+    }
+
+    fn export_stats(&self) -> (Printable, HistogramBox) {
+        let n        = self.count as u64;
+        let min      = i64::MIN;
+        let max      = i64::MAX;
+        let log_mode = 0;
+        let mean     = 0.0;
+        let variance = 0.0;
+        let skewness = 0.0;
+        let kurtosis = 0.0;
+        let units    = self.units.clone();
+
+        let printable =
+            Printable { n, min, max, log_mode, mean, variance, skewness, kurtosis, units };
+
+        let histogram = LogHistogram::new();
+        let histogram = Rc::from(RefCell::new(histogram));
+
+        (printable, histogram)
     }
 }
 

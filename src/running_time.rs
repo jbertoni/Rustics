@@ -92,11 +92,11 @@ use std::any::Any;
 use super::Rustics;
 use super::Units;
 use super::Histogram;
-use super::LogHistogram;
 use super::Printer;
 use super::PrinterBox;
 use super::PrinterOption;
 use super::PrintOption;
+use super::HistogramBox;
 use super::parse_print_opts;
 use super::stdout_printer;
 use super::TimerBox;
@@ -185,7 +185,7 @@ impl RunningTime {
     /// Exports the statistics for this instance.
 
     pub fn export(&self) -> RunningExport {
-        self.running_integer.export()
+        self.running_integer.export_all()
     }
 }
 
@@ -199,10 +199,15 @@ impl Rustics for RunningTime {
     }
 
     fn record_event(&mut self) {
+        let _ = self.record_event_report();
+    }
+
+    fn record_event_report(&mut self) -> i64 {
         let mut timer    = (*self.timer).borrow_mut();
         let     interval = timer.finish();  // read and restart the timer
 
         self.running_integer.record_i64(interval);
+        interval
     }
 
     fn record_time(&mut self, sample: i64) {
@@ -348,16 +353,16 @@ impl Rustics for RunningTime {
         self as &dyn Any
     }
 
-    fn histogram(&self) -> LogHistogram {
+    fn histogram(&self) -> HistogramBox {
         self.running_integer.histogram()
+    }
+
+    fn export_stats(&self) -> (Printable, HistogramBox) {
+        self.running_integer.export_stats()
     }
 }
 
 impl Histogram for RunningTime {
-    fn log_histogram(&self) -> LogHistogram {
-        self.running_integer.log_histogram()
-    }
-
     fn print_histogram(&self, printer: &mut dyn Printer) {
         self.running_integer.print_histogram(printer)
     }

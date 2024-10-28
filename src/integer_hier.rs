@@ -79,15 +79,17 @@
 //!     // Now specify some parameters used by Hier to do printing.  The
 //!     // defaults for the title and printer are fine, so just pass None.
 //!     // The title defaults to the name and output will go to stdout.
+//!     // Don't configura a window.
 //!
-//!     let name       = "test hierarchical integer".to_string();
-//!     let print_opts = None;
+//!     let name        = "test hierarchical integer".to_string();
+//!     let print_opts  = None;
+//!     let window_size = None;
 //!
 //!     // Finally, create the configuration description for the
 //!     // constructor.
 //!
 //!     let configuration =
-//!         IntegerHierConfig { descriptor, name, print_opts };
+//!         IntegerHierConfig { descriptor, name, window_size, print_opts };
 //!
 //!     // Now make the Hier instance and lock it.
 //!
@@ -187,6 +189,7 @@ use super::PrintOption;
 // use super::Units;
 use super::running_integer::RunningInteger;
 use crate::running_integer::RunningExporter;
+use super::integer_window::IntegerWindow;
 
 use crate::Hier;
 use crate::HierBox;
@@ -236,12 +239,15 @@ pub struct IntegerHier {
 
 /// IntegerHierConfig is used to pass the constructor parameters
 /// for a Hier instance that uses the RunningInteger type for
-/// recording and combining data.
+/// recording and combining data.  The window_size parameter can
+/// be set to cause the Hier instance to maintain a window of the
+/// last n events to be used for its Rustics reporting.
 
 pub struct IntegerHierConfig {
     pub descriptor:  HierDescriptor,
     pub name:        String,
     pub print_opts:  PrintOption,
+    pub window_size: Option<usize>,
 }
 
 impl IntegerHier {
@@ -254,15 +260,16 @@ impl IntegerHier {
     /// to the RunningInteger type.
 
     pub fn new_hier(configuration: IntegerHierConfig) -> Hier {
-        let generator  = IntegerHier::new_raw();
-        let generator  = Rc::from(RefCell::new(generator));
-        let class      = "integer".to_string();
+        let generator    = IntegerHier::new_raw();
+        let generator    = Rc::from(RefCell::new(generator));
+        let class        = "integer".to_string();
 
-        let descriptor = configuration.descriptor;
-        let name       = configuration.name;
-        let print_opts = configuration.print_opts;
+        let descriptor   = configuration.descriptor;
+        let name         = configuration.name;
+        let print_opts   = configuration.print_opts;
+        let window_size  = configuration.window_size;
 
-        let config = HierConfig { descriptor, generator, name, class, print_opts };
+        let config = HierConfig { descriptor, generator, name, window_size, class, print_opts };
 
         Hier::new(config)
     }
@@ -288,6 +295,13 @@ impl HierGenerator for IntegerHier {
         let member = RunningInteger::new_opts(name, print_opts);
 
         Rc::from(RefCell::new(member))
+    }
+
+    fn make_window(&self, name: &str, window_size: usize, print_opts: &PrintOption)
+            -> Box<dyn Rustics> {
+        let window = IntegerWindow::new_opts(name, window_size, print_opts);
+
+        Box::new(window)
     }
 
     // Make a member from a complete list of exported statistics.
@@ -319,7 +333,11 @@ impl HierGenerator for IntegerHier {
         let     member_any      = member_borrow.as_any();
         let     member_impl     = member_any.downcast_ref::<RunningInteger>().unwrap();
 
-        exporter_impl.push(member_impl.export());
+        exporter_impl.push(member_impl.export_all());
+    }
+
+    fn hz(&self) -> u128 {
+        panic!("IntegerHier::hz:  not supported");
     }
 }
 
@@ -329,10 +347,18 @@ mod tests {
     use crate::hier::HierDescriptor;
     use crate::hier::HierDimension;
 
-    fn make_test_hier(auto_next: i64) -> Hier {
+    fn level_0_period() -> usize {
+        8
+    }
+
+    fn level_0_retain() -> usize {
+        3 * level_0_period()
+    }
+
+    fn make_test_hier(auto_next: i64, window_size: Option<usize>) -> Hier {
         let     levels         = 4;
-        let     level_0_period = 8;
-        let     dimension      = HierDimension::new(level_0_period, 3 * level_0_period);
+        let     level_0_period = level_0_period();
+        let     dimension      = HierDimension::new(level_0_period, level_0_retain());
         let mut dimensions     = Vec::<HierDimension>::with_capacity(levels);
 
         // Push the level 0 descriptor.
@@ -358,7 +384,8 @@ mod tests {
         let name          = "test hier".to_string();
         let print_opts    = None;
 
-        let configuration = HierConfig { descriptor, generator, class, name, print_opts };
+        let configuration =
+            HierConfig { descriptor, generator, class, name, window_size, print_opts };
 
         Hier::new(configuration)
     }
@@ -406,7 +433,7 @@ mod tests {
         // Now make an actual hier instance.
 
         let     auto_next = 200;
-        let mut hier      = make_test_hier(auto_next);
+        let mut hier      = make_test_hier(auto_next, None);
         let mut events    = 0;
 
         for i in 1..auto_next / 2 {
@@ -423,8 +450,54 @@ mod tests {
         hier.print();
     }
 
+    fn test_window() {
+        let     auto_next   = 100;
+        let     window_size = Some(1000);
+        let mut hier        = make_test_hier(auto_next, window_size);
+        let     period      = level_0_period();
+        let     window_size = window_size.unwrap() as i64;
+        let mut events      = 0 as i64;
+
+        for i in 0..window_size {
+            hier.record_i64(i + 1);
+            events += 1;
+            assert!(hier.count() == events as u64);
+
+            let level_0_pushes = (events + auto_next - 1) / auto_next;
+            let level_0_all    = std::cmp::min(level_0_pushes, level_0_retain() as i64);
+            let level_0_live   = std::cmp::min(level_0_pushes, level_0_period() as i64);
+
+            assert!(hier.all_len (0) == level_0_all  as usize);
+            assert!(hier.live_len(0) == level_0_live as usize);
+
+            if hier.all_len(0) > period {
+                assert!(hier.all_len(1) > 0);
+            }
+        }
+
+        // Compute the expected mean of the window.
+
+        let sum   = (window_size * (window_size + 1)) / 2;
+        let sum   = sum as f64;
+        let count = events as f64;
+        let mean  = sum / count;
+
+        // Check the mean and event count from the Rustics interface.
+
+        assert!(hier.count()       == events as u64);
+        assert!(hier.mean()        == mean         );
+        assert!(hier.event_count() == events       );
+
+        // Make sure that count() obeys the window_size...
+
+        hier.record_i64(window_size + 1);
+        
+        assert!(hier.count() == window_size as u64);
+    }
+
     #[test]
     fn run_tests() {
         test_simple_running_generator();
+        test_window();
     }
 }

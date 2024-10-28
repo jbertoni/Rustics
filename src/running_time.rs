@@ -366,4 +366,12 @@ impl Histogram for RunningTime {
     fn print_histogram(&self, printer: &mut dyn Printer) {
         self.running_integer.print_histogram(printer)
     }
+
+    fn clear_histogram(&mut self) {
+        self.running_integer.clear_histogram();
+    }
+
+    fn to_log_histogram(&self) -> Option<HistogramBox> {
+        Some(self.histogram())
+    }
 }

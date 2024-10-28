@@ -69,6 +69,7 @@
 use std::any::Any;
 
 use super::Rustics;
+use super::Printer;
 use super::PrinterBox;
 use super::PrinterOption;
 use super::PrintOption;
@@ -314,5 +315,19 @@ impl Rustics for TimeWindow {
 
     fn export_stats(&self) -> (Printable, HistogramBox) {
         self.integer_window.export_stats()
+    }
+}
+
+impl Histogram for TimeWindow {
+    fn print_histogram(&self, printer: &mut dyn Printer) {
+        self.histogram().borrow().print(printer)
+    }
+
+    fn clear_histogram(&mut self) {
+        self.histogram().borrow_mut().clear();
+    }
+
+    fn to_log_histogram(&self) -> Option<HistogramBox> {
+        Some(self.histogram())
     }
 }

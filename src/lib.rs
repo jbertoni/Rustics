@@ -399,12 +399,12 @@ pub trait Rustics {
     /// Records an i64 sample, if allowed by the implementation.
     /// Time-based statistics do not support this method.
 
-    fn record_i64  (&mut self, sample: i64);  // an i64 sample
+    fn record_i64(&mut self, sample: i64);
 
     /// Records an f64 value.  Currently, no type supports this
     /// operation.
 
-    fn record_f64  (&mut self, sample: f64);  // add an f64 sample
+    fn record_f64(&mut self, sample: f64);
 
     /// Records an event.  This method is implementation-specific
     /// in meaning.  For the Counter type, it is is equivalent to
@@ -427,7 +427,7 @@ pub trait Rustics {
     /// Records a time in ticks.  This method will panic if the
     /// underlying type is not a time statistic.
 
-    fn record_time (&mut self, sample: i64);  // add a time sample
+    fn record_time(&mut self, sample: i64);  // add a time sample
 
     /// Records a time interval by reading the given TimerBox instance.
     /// This method will panic if the underlying type is not a
@@ -438,30 +438,30 @@ pub trait Rustics {
 
     /// Returns the name passed on instance creation.
 
-    fn name(&self)               -> String;  // a text (UTF-8) name
+    fn name(&self) -> String;
 
     /// Returns the default title used for printing.  The Rc and ArcSet
     /// implementation create hierarchical titles for members of the set.
     /// This function can be used to retrieve them.
 
-    fn title(&self)              -> String;  // a text (UTF-8) title to print
+    fn title(&self)-> String;
 
     /// Returns the "class" of the statistic.  Currently, "integer" and
     /// "time" classes exist.
 
-    fn class(&self)              -> &str;    // the type of a sample:  "integer", etc
+    fn class(&self) -> &str;
 
     /// Returns the count of samples seen.
 
-    fn count(&self)              -> u64;     // the current sample count
+    fn count(&self) -> u64;
 
     /// Returns the most common pseudo-log seen in the data samples.
 
-    fn log_mode(&self)           -> isize;   // the most common pseudo-log
+    fn log_mode(&self) -> isize;
 
     /// Returns the mean of the samples in the instance.
 
-    fn mean(&self)               -> f64;
+    fn mean(&self) -> f64;
 
     /// Returns the standard deviation of the samples in the instance.
 
@@ -469,40 +469,40 @@ pub trait Rustics {
 
     /// Returns the variance of the samples in the instance.
 
-    fn variance(&self)           -> f64;
+    fn variance(&self) -> f64;
 
     /// Returns the skewness of the samples in the instance.
 
-    fn skewness(&self)           -> f64;
+    fn skewness(&self) -> f64;
 
     /// Returns the kurtosis of the samples in the instance.
 
-    fn kurtosis(&self)           -> f64;
+    fn kurtosis(&self) -> f64;
 
     /// Returns a boolean indicating whether the underlying type supports
     /// the min_i64() and max_i64() methods.
 
-    fn int_extremes(&self)       -> bool;    // does this statistic implement integer extremes?
+    fn int_extremes(&self) -> bool;
 
     /// Returns the minimum of the sample space for an integer
     /// or time type.  Time statistics return a value in ticks.
 
-    fn min_i64(&self)            -> i64;     // return the minimum sample value seen
+    fn min_i64(&self) -> i64;
 
     /// Returns the minimum of the sample space for an f64 type,
     /// although no implementations currently exist.
 
-    fn min_f64(&self)            -> f64;
+    fn min_f64(&self) -> f64;
 
     /// Returns the maximum of the sample space for an integer
     /// or time type.  Time statistics return a value in ticks.
 
-    fn max_i64(&self)            -> i64;     // return the maximum sample value seen
+    fn max_i64(&self) -> i64;
 
     /// Returns the maximum of the sample space for an f64 type,
     /// although no implementations currently exist.
 
-    fn max_f64(&self)            -> f64;
+    fn max_f64(&self) -> f64;
 
     /// Precomputes the summary data of the samples.  This is
     /// useful when implementing custom print functions or querying
@@ -511,11 +511,11 @@ pub trait Rustics {
     /// analysis so it need not be redone each time a summary
     /// statistic is retrieved.
 
-    fn precompute(&mut self);                // precompute the various statistics for printing
+    fn precompute(&mut self);
 
     /// Clears the data in the statistic.
 
-    fn clear(&mut self);                     // clear all the statistics
+    fn clear(&mut self);
 
     // Functions for printing
 
@@ -524,13 +524,16 @@ pub trait Rustics {
 
     fn set_title (&mut self, title: &str);
 
-    // For internal use only.
+    /// Returns an Rc<...> for the histogram.
+
+    fn histogram(&self) -> HistogramBox;
+
+    // For internal use.
 
     fn set_id   (&mut self, id: usize      );
     fn id       (&self                     ) -> usize;
     fn equals   (&self, other: &dyn Rustics) -> bool;
     fn generic  (&self                     ) -> &dyn Any;
-    fn histogram(&self                     ) -> HistogramBox;
 
     fn export_stats(&self) -> (Printable, HistogramBox);
 }
@@ -538,9 +541,18 @@ pub trait Rustics {
 /// Histogram defines the trait for using a LogHistogram instance.
 
 pub trait Histogram {
+
     /// Prints the histogram on the given Printer instance.
 
     fn print_histogram(&self, printer: &mut dyn Printer);
+
+    /// Clear the histogram data.
+
+    fn clear_histogram(&mut self);
+
+    /// Convert the pointer to LogHistogram if possible.
+
+    fn to_log_histogram(&self) -> Option<HistogramBox>;
 }
 
 #[cfg(test)]

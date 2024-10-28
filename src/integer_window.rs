@@ -497,6 +497,14 @@ impl Histogram for IntegerWindow {
     fn print_histogram(&self, printer: &mut dyn Printer) {
         self.log_histogram.borrow().print(printer);
     }
+
+    fn clear_histogram(&mut self) {
+        self.histogram().borrow_mut().clear();
+    }
+
+    fn to_log_histogram(&self) -> Option<HistogramBox> {
+        Some(self.log_histogram.clone())
+    }
 }
 
 #[cfg(test)]

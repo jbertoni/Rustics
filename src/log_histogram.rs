@@ -69,6 +69,8 @@
 
 // Implement a structure for the pseudo-log histograms.
 
+use super::Histogram;
+use super::HistogramBox;
 use super::Printer;
 use super::printable::Printable;
 
@@ -256,6 +258,20 @@ impl LogHistogram {
 impl Default for LogHistogram {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl Histogram for LogHistogram {
+    fn print_histogram(&self, printer: &mut dyn Printer) {
+        self.print(printer);
+    }
+
+    fn clear_histogram(&mut self) {
+        self.clear();
+    }
+
+    fn to_log_histogram(&self) -> Option<HistogramBox> {
+        None
     }
 }
 

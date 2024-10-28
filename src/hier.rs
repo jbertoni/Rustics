@@ -21,7 +21,8 @@
 //!     * Hier implements the Rustics interface, and through that provides statistics from the
 //!       either the current level 0 Rustics instance, i.e., statistics on the newest samples,
 //!       or from an optionally configured window of the last n events, as specified by the
-//!       window_size parameter in HierConfig.
+//!       window_size parameter in HierConfig.  This window is implemented using a TimeWindow
+//!       or an IntegerWindow made using the HierGenerator instance.
 //!
 //!     * See the inter_hier module comments for more details.
 //!
@@ -886,11 +887,15 @@ impl Rustics for Hier {
     }
 
     fn log_mode(&self) -> isize {
-        let current = self.current();
-        let borrow  = current.borrow();
-        let rustics = borrow.to_rustics();
+        if let Some(window) = &self.window {
+            window.log_mode()
+        } else {
+            let current = self.current();
+            let borrow  = current.borrow();
+            let rustics = borrow.to_rustics();
 
-        rustics.log_mode()
+            rustics.log_mode()
+        }
     }
 
     fn mean(&self) -> f64 {
@@ -1060,7 +1065,7 @@ impl Rustics for Hier {
     // The title is kept in the Hier instance.
 
     /// Sets the title used when printing.  The Hier implemenation always
-    /// appends the set indices to the title.
+    /// appends the set indices to the title when printing a member.
 
     fn set_title(&mut self, title: &str) {
         self.title = title.to_string();
@@ -1113,14 +1118,22 @@ impl Rustics for Hier {
 
 impl Histogram for Hier {
     fn print_histogram(&self, printer: &mut dyn Printer) {
+        self.histogram().borrow().print(printer);
+    }
+
+    fn clear_histogram(&mut self) {
+        self.histogram().borrow_mut().clear();
+    }
+
+    fn to_log_histogram(&self) -> Option<HistogramBox> {
         if let Some(window) = &self.window {
-            window.histogram().borrow().print(printer);
+            Some(window.histogram())
         } else {
             let current = self.current();
             let borrow  = current.borrow();
             let rustics = borrow.to_rustics();
 
-            rustics.histogram().borrow().print(printer);
+            Some(rustics.histogram())
         }
     }
 }

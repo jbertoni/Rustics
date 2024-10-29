@@ -333,7 +333,7 @@ impl HierGenerator for IntegerHier {
         let     member_any      = member_borrow.as_any();
         let     member_impl     = member_any.downcast_ref::<RunningInteger>().unwrap();
 
-        exporter_impl.push(member_impl.export_all());
+        exporter_impl.push(member_impl.export_data());
     }
 
     fn hz(&self) -> u128 {

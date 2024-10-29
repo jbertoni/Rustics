@@ -69,17 +69,18 @@
 use std::any::Any;
 
 use super::Rustics;
+use super::ExportStats;
 use super::Printer;
 use super::PrinterBox;
 use super::PrinterOption;
 use super::PrintOption;
 use super::TimerBox;
 use super::Histogram;
-use super::HistogramBox;
+use super::LogHistogramBox;
+use super::FloatHistogramBox;
 use super::timer_box_hz;
 use super::parse_print_opts;
 use super::integer_window::IntegerWindow;
-use crate::printable::Printable;
 use super::stdout_printer;
 
 /// TimeWindow implements a statistics type that retains a
@@ -309,25 +310,33 @@ impl Rustics for TimeWindow {
         self as &dyn Any
     }
 
-    fn histogram(&self) -> HistogramBox {
-        self.integer_window.histogram()
+    fn log_histogram(&self) -> Option<LogHistogramBox> {
+        self.integer_window.log_histogram()
     }
 
-    fn export_stats(&self) -> (Printable, HistogramBox) {
+    fn float_histogram(&self) -> Option<FloatHistogramBox> {
+        None
+    }
+
+    fn export_stats(&self) -> ExportStats {
         self.integer_window.export_stats()
     }
 }
 
 impl Histogram for TimeWindow {
     fn print_histogram(&self, printer: &mut dyn Printer) {
-        self.histogram().borrow().print(printer)
+        self.integer_window.print_histogram(printer);
     }
 
     fn clear_histogram(&mut self) {
-        self.histogram().borrow_mut().clear();
+        self.integer_window.clear_histogram();
     }
 
-    fn to_log_histogram(&self) -> Option<HistogramBox> {
-        Some(self.histogram())
+    fn to_log_histogram(&self) -> Option<LogHistogramBox> {
+        self.integer_window.to_log_histogram()
+    }
+
+    fn to_float_histogram(&self) -> Option<FloatHistogramBox> {
+        self.integer_window.to_float_histogram()
     }
 }

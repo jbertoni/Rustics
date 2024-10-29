@@ -93,15 +93,16 @@ use super::Rustics;
 use super::Units;
 use super::Histogram;
 use super::Printer;
+use super::ExportStats;
 use super::PrinterBox;
 use super::PrinterOption;
 use super::PrintOption;
-use super::HistogramBox;
+use super::LogHistogramBox;
+use super::FloatHistogramBox;
 use super::parse_print_opts;
 use super::stdout_printer;
 use super::TimerBox;
 use super::timer_box_hz;
-use super::printable::Printable;
 use super::running_integer::RunningInteger;
 use super::running_integer::RunningExport;
 
@@ -185,7 +186,7 @@ impl RunningTime {
     /// Exports the statistics for this instance.
 
     pub fn export(&self) -> RunningExport {
-        self.running_integer.export_all()
+        self.running_integer.export_data()
     }
 }
 
@@ -311,20 +312,8 @@ impl Rustics for RunningTime {
                 &self.running_integer.title()
             };
 
-        let n        = self.count();
-        let min      = self.min_i64();
-        let max      = self.max_i64();
-        let log_mode = self.running_integer.log_mode() as i64;
-        let mean     = self.mean();
-        let variance = self.variance();
-        let skewness = self.skewness();
-        let kurtosis = self.kurtosis();
-        let units    = Units::empty();
-
-        let printable =
-            Printable { n, min, max, log_mode, mean, variance, skewness, kurtosis, units };
-
-        let printer  = &mut *printer_box.lock().unwrap();
+        let printable = self.running_integer.get_printable();
+        let printer   = &mut *printer_box.lock().unwrap();
 
         printer.print(title);
         printable.print_common_integer_times(self.hz, printer);
@@ -353,11 +342,15 @@ impl Rustics for RunningTime {
         self as &dyn Any
     }
 
-    fn histogram(&self) -> HistogramBox {
-        self.running_integer.histogram()
+    fn log_histogram(&self) -> Option<LogHistogramBox> {
+        self.running_integer.log_histogram()
     }
 
-    fn export_stats(&self) -> (Printable, HistogramBox) {
+    fn float_histogram(&self) -> Option<FloatHistogramBox> {
+        self.running_integer.float_histogram()
+    }
+
+    fn export_stats(&self) -> ExportStats {
         self.running_integer.export_stats()
     }
 }
@@ -371,7 +364,11 @@ impl Histogram for RunningTime {
         self.running_integer.clear_histogram();
     }
 
-    fn to_log_histogram(&self) -> Option<HistogramBox> {
-        Some(self.histogram())
+    fn to_log_histogram(&self) -> Option<LogHistogramBox> {
+        self.running_integer.log_histogram()
+    }
+
+    fn to_float_histogram(&self) -> Option<FloatHistogramBox> {
+        self.running_integer.float_histogram()
     }
 }

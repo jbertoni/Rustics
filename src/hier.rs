@@ -195,14 +195,15 @@
 
 use super::Rustics;
 use super::Histogram;
+use super::ExportStats;
 use super::Printer;
 use super::PrinterBox;
 use super::PrinterOption;
 use super::PrintOption;
-use super::HistogramBox;
+use super::LogHistogramBox;
+use super::FloatHistogramBox;
 use super::parse_print_opts;
 use super::TimerBox;
-use super::Printable;
 use super::window::Window;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -1091,19 +1092,31 @@ impl Rustics for Hier {
         self as &dyn Any
     }
 
-    fn histogram(&self) -> HistogramBox {
+    fn log_histogram(&self) -> Option<LogHistogramBox> {
         if let Some(window) = &self.window {
-            window.histogram()
+            window.log_histogram()
         } else {
             let current = self.current();
             let borrow  = current.borrow();
             let rustics = borrow.to_rustics();
 
-            rustics.histogram()
+            rustics.log_histogram()
         }
     }
 
-    fn export_stats(&self) -> (Printable, HistogramBox)  {
+    fn float_histogram(&self) -> Option<FloatHistogramBox> {
+        if let Some(window) = &self.window {
+            window.float_histogram()
+        } else {
+            let current = self.current();
+            let borrow  = current.borrow();
+            let rustics = borrow.to_rustics();
+
+            rustics.float_histogram()
+        }
+    }
+
+    fn export_stats(&self) -> ExportStats {
         if let Some(window) = &self.window {
             window.export_stats()
         } else {
@@ -1118,22 +1131,38 @@ impl Rustics for Hier {
 
 impl Histogram for Hier {
     fn print_histogram(&self, printer: &mut dyn Printer) {
-        self.histogram().borrow().print(printer);
+        if let Some(log_histogram) = self.log_histogram() {
+            log_histogram.borrow().print(printer);
+        }
     }
 
     fn clear_histogram(&mut self) {
-        self.histogram().borrow_mut().clear();
+        if let Some(log_histogram) = self.log_histogram() {
+            log_histogram.borrow_mut().clear();
+        }
     }
 
-    fn to_log_histogram(&self) -> Option<HistogramBox> {
+    fn to_log_histogram(&self) -> Option<LogHistogramBox> {
         if let Some(window) = &self.window {
-            Some(window.histogram())
+            window.log_histogram()
         } else {
             let current = self.current();
             let borrow  = current.borrow();
             let rustics = borrow.to_rustics();
 
-            Some(rustics.histogram())
+            rustics.log_histogram()
+        }
+    }
+
+    fn to_float_histogram(&self) -> Option<FloatHistogramBox> {
+        if let Some(window) = &self.window {
+            window.float_histogram()
+        } else {
+            let current = self.current();
+            let borrow  = current.borrow();
+            let rustics = borrow.to_rustics();
+
+            rustics.float_histogram()
         }
     }
 }

@@ -153,6 +153,7 @@ pub mod running_integer;
 pub mod running_time;
 pub mod integer_window;
 pub mod time_window;
+pub mod running_float;
 pub mod counter;
 pub mod arc_sets;
 pub mod rc_sets;
@@ -163,6 +164,7 @@ pub mod sum;
 pub mod integer_hier;
 pub mod time_hier;
 pub mod log_histogram;
+pub mod float_histogram;
 
 pub mod printable;
 
@@ -175,16 +177,75 @@ use hier::HierExporter;
 use hier::ExporterRc;
 use hier::MemberRc;
 use log_histogram::LogHistogram;
+use float_histogram::FloatHistogram;
 use printable::Printable;
 
-pub type HierBox       = Arc<Mutex<Hier>>;
-pub type PrinterBox    = Arc<Mutex<dyn Printer>>;
-pub type PrinterOption = Option<Arc<Mutex<dyn Printer>>>;
-pub type TitleOption   = Option<String>;
-pub type UnitsOption   = Option<Units>;
-pub type TimerBox      = Rc<RefCell<dyn Timer>>;
-pub type PrintOption   = Option<PrintOpts>;
-pub type HistogramBox  = Rc<RefCell<LogHistogram>>;
+pub type HierBox            = Arc<Mutex<Hier>>;
+pub type PrinterBox         = Arc<Mutex<dyn Printer>>;
+pub type PrinterOption      = Option<Arc<Mutex<dyn Printer>>>;
+pub type TitleOption        = Option<String>;
+pub type UnitsOption        = Option<Units>;
+pub type TimerBox           = Rc<RefCell<dyn Timer>>;
+pub type PrintOption        = Option<PrintOpts>;
+pub type LogHistogramBox    = Rc<RefCell<LogHistogram>>;
+pub type FloatHistogramBox  = Rc<RefCell<FloatHistogram>>;
+
+pub fn to_mantissa(input: f64) -> i64 {
+    let mantissa_size = 52;
+
+    let bits = input.to_bits();
+    let mask = (1_u64 << mantissa_size) - 1;
+
+    (bits & mask) as i64
+}
+
+pub fn max_exponent() -> isize {
+    1023
+}
+
+pub fn min_exponent() -> isize {
+    -1022
+}
+
+pub fn to_exponent(input: f64) -> isize {
+    if input.is_nan() {
+        return 0;
+    }
+    
+    if input.is_infinite() {
+        return max_exponent();
+    }
+
+    let mantissa_size = 52;
+    let exponent_size = 11;
+
+    let bits     = input.to_bits();
+    let bits     = bits >> mantissa_size;
+    let mask     = (1_u64 << exponent_size) - 1;
+    let exponent = (bits & mask) as i64;
+
+    exponent as isize + min_exponent()
+}
+
+pub fn min_f64(a: f64, b: f64) -> f64 {
+    if a.is_nan() || b.is_nan() {
+        f64::NAN
+    } else if a < b {
+        a
+    } else {
+        b
+    }
+}
+
+pub fn max_f64(a: f64, b: f64) -> f64 {
+    if a.is_nan() || b.is_nan() {
+        f64::NAN
+    } else if a > b {
+        a
+    } else {
+        b
+    }
+}
 
 /// timer_box_hz() is a helper function just returns the hertz
 /// of a timer in a box.  It just saves a bit of typing.
@@ -412,9 +473,9 @@ pub trait Rustics {
     ///
     /// The other integer types, e.g., RunningInteger do not support this call.
     ///
-    /// For time statistics, it reads the timer for the instance to
-    /// determine the time interval in ticks.  The time interval is
-    /// reset for the next record_event call.
+    /// For time statistics, it reads the internal timer (provided by the user
+    /// to the constructer) for the instance to determine the time interval in
+    /// ticks.  The timer is then restarted for the next record_event call.
     ///
     /// The record_event_report is the same as record_event, but it
     /// returns the value that is recorded.  This is used by the Hier
@@ -451,7 +512,8 @@ pub trait Rustics {
 
     fn class(&self) -> &str;
 
-    /// Returns the count of samples seen.
+    /// Returns the count of samples used to create the summary statistics
+    /// like the mean.
 
     fn count(&self) -> u64;
 
@@ -524,9 +586,10 @@ pub trait Rustics {
 
     fn set_title (&mut self, title: &str);
 
-    /// Returns an Rc<...> for the histogram.
+    /// Returns an Rc<...> for the histogram if possible.
 
-    fn histogram(&self) -> HistogramBox;
+    fn log_histogram  (&self) -> Option<LogHistogramBox  >;
+    fn float_histogram(&self) -> Option<FloatHistogramBox>;
 
     // For internal use.
 
@@ -535,7 +598,13 @@ pub trait Rustics {
     fn equals   (&self, other: &dyn Rustics) -> bool;
     fn generic  (&self                     ) -> &dyn Any;
 
-    fn export_stats(&self) -> (Printable, HistogramBox);
+    fn export_stats(&self) -> ExportStats;
+}
+
+pub struct ExportStats {
+    pub printable:          Printable,
+    pub log_histogram:      Option<LogHistogramBox>,
+    pub float_histogram:    Option<FloatHistogramBox>,
 }
 
 /// Histogram defines the trait for using a LogHistogram instance.
@@ -550,9 +619,10 @@ pub trait Histogram {
 
     fn clear_histogram(&mut self);
 
-    /// Convert the pointer to LogHistogram if possible.
+    /// Convert the pointer to histogram types if possible.
 
-    fn to_log_histogram(&self) -> Option<HistogramBox>;
+    fn to_log_histogram  (&self) -> Option<LogHistogramBox>;
+    fn to_float_histogram(&self) -> Option<FloatHistogramBox>;
 }
 
 #[cfg(test)]
@@ -823,7 +893,7 @@ mod tests {
         let mut time    = 1;
         let mut printer = TestPrinter::new("Time Scale Test");
 
-        /* To-do:  create a printer that saves the string for examination.
+        /* TODO To-do:  create a printer that saves the string for examination.
         let expected_output =
             [
                 (  1.000, "ns"     ),
@@ -1006,7 +1076,7 @@ mod tests {
         // calling the record_* functions.
 
         {
-            let histogram = rustics.histogram();
+            let histogram = rustics.log_histogram().unwrap();
             let histogram = histogram.borrow();
 
             for item in histogram.negative {
@@ -1049,7 +1119,7 @@ mod tests {
         assert!(rustics.kurtosis() == 0.0);
 
         // Check that the histogram matches expectation.
-        let histogram       = rustics.histogram();
+        let histogram       = rustics.log_histogram().unwrap();
         let histogram       = histogram.borrow();
         let log_mode_index  = pseudo_log_index(value);
 

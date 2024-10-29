@@ -75,13 +75,15 @@ use std::cell::RefCell;
 use super::Rustics;
 use super::Printer;
 use super::PrinterBox;
+use super::ExportStats;
 use super::PrinterOption;
 use super::PrintOption;
 use super::PrintOpts;
 use super::Units;
 use super::TimerBox;
 use super::Histogram;
-use super::HistogramBox;
+use super::LogHistogramBox;
+use super::FloatHistogramBox;
 use crate::printable::Printable;
 use crate::log_histogram::LogHistogram;
 use super::compute_variance;
@@ -116,7 +118,7 @@ pub struct IntegerWindow {
     moment_3:       f64,
     moment_4:       f64,
 
-    pub log_histogram:  HistogramBox,
+    log_histogram:  LogHistogramBox,
 
     printer:        PrinterBox,
     units:          Units,
@@ -228,6 +230,8 @@ impl IntegerWindow {
             sum += *sample as f64;
         }
 
+        // TODO:  kbk_sum the data
+
         let mean = sum / self.vector.len() as f64;
         let mut moment_2 = 0.0;
         let mut moment_3 = 0.0;
@@ -248,21 +252,23 @@ impl IntegerWindow {
     fn compute_min(&self) -> i64 {
         match self.vector.iter().min() {
             Some(min) => *min,
-            None => 0,
+            None      => 0,
         }
     }
 
     fn compute_max(&self) -> i64 {
         match self.vector.iter().max() {
             Some(max) => *max,
-            None => 0,
+            None      => 0,
         }
     }
 
     pub fn get_printable(&self) -> Printable {
         let n        = self.vector.len() as u64;
-        let min      = self.compute_min();
-        let max      = self.compute_max();
+        let min_i64  = self.compute_min();
+        let max_i64  = self.compute_max();
+        let min_f64  = f64::MIN;
+        let max_f64  = f64::MAX;
         let log_mode = self.log_histogram.borrow().log_mode() as i64;
         let units    = self.units.clone();
 
@@ -285,7 +291,10 @@ impl IntegerWindow {
             kurtosis = compute_kurtosis(n, crunched.moment_2, crunched.moment_4);
         }
 
-        Printable { n, min, max, log_mode, mean, variance, skewness, kurtosis, units }
+        Printable {
+            n,     min_i64,   max_i64,   min_f64,   max_f64,  log_mode,
+            mean,  variance,  skewness,  kurtosis,  units
+        }
     }
 }
 
@@ -453,7 +462,7 @@ impl Rustics for IntegerWindow {
         let printer   = &mut *printer_box.lock().unwrap();
 
         printer.print(title);
-        printable.print_common_integer(printer);
+        printable.print_common_i64(printer);
         printable.print_common_float(printer);
         self.log_histogram.borrow().print(printer);
     }
@@ -470,8 +479,12 @@ impl Rustics for IntegerWindow {
         self as &dyn Any
     }
 
-    fn histogram(&self) -> HistogramBox {
-        self.log_histogram.clone()
+    fn log_histogram(&self) -> Option<LogHistogramBox> {
+        Some(self.log_histogram.clone())
+    }
+
+    fn float_histogram(&self) -> Option<FloatHistogramBox> {
+        None
     }
 
     fn set_title(&mut self, title: &str) {
@@ -486,10 +499,12 @@ impl Rustics for IntegerWindow {
         self.id
     }
 
-    fn export_stats(&self) -> (Printable, HistogramBox) {
-        let printable = self.get_printable();
+    fn export_stats(&self) -> ExportStats {
+        let printable       = self.get_printable();
+        let log_histogram   = Some(self.log_histogram.clone());
+        let float_histogram = None; 
 
-        (printable, self.log_histogram.clone())
+        ExportStats { printable, log_histogram, float_histogram }
     }
 }
 
@@ -499,11 +514,15 @@ impl Histogram for IntegerWindow {
     }
 
     fn clear_histogram(&mut self) {
-        self.histogram().borrow_mut().clear();
+        self.log_histogram.borrow_mut().clear();
     }
 
-    fn to_log_histogram(&self) -> Option<HistogramBox> {
+    fn to_log_histogram(&self) -> Option<LogHistogramBox> {
         Some(self.log_histogram.clone())
+    }
+
+    fn to_float_histogram(&self) -> Option<FloatHistogramBox> {
+        None
     }
 }
 
@@ -533,6 +552,38 @@ mod tests {
         stats.print();
         assert!(stats.mean() == sample as f64);
         assert!(stats.log_mode() as usize == pseudo_log_index(sample));
+
+        stats.clear();
+
+        assert!(stats.min_i64() == 0);
+        assert!(stats.max_i64() == 0);
+
+        stats.record_i64(-1);
+        assert!(stats.min_i64() == -1);
+        assert!(stats.max_i64() == -1);
+
+        stats.record_i64(1);
+        assert!(stats.min_i64() == -1);
+        assert!(stats.max_i64() ==  1);
+
+        assert!(stats.count() == 2  );
+        assert!(stats.mean()  == 0.0);
+
+        stats.clear();
+        let sample = 4;
+
+        for _i in 0..10 {
+            stats.record_i64(sample);
+        }
+
+        let sample = sample as f64;
+
+        assert!(stats.standard_deviation() == 0.0);
+
+        assert!(stats.mean()     == sample);
+        assert!(stats.variance() == 0.0   );
+        assert!(stats.skewness() == 0.0   );
+        assert!(stats.kurtosis() == 0.0   );
     }
 
     #[test]

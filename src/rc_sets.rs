@@ -247,6 +247,20 @@ impl RcSet {
 
     pub fn set_title(&mut self, title: &str) {
         self.title = String::from(title);
+
+        for subset in self.subsets.iter() {
+            let mut subset = (**subset).borrow_mut();
+            let     title  = make_title(title, &subset.name);
+
+            subset.set_title(&title);
+        }
+
+        for member in self.members.iter() {
+            let mut member = (**member).borrow_mut();
+            let     title  = make_title(title, &member.name());
+
+            member.set_title(&title);
+        }
     }
 
     /// Does a recursive clear of all Rustics instances in the set and its

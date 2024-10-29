@@ -71,11 +71,13 @@ use super::Rustics;
 use super::Histogram;
 use super::TimerBox;
 use super::Printer;
+use super::ExportStats;
 use super::PrinterBox;
 use super::PrinterOption;
 use super::PrintOption;
 use super::PrintOpts;
-use super::HistogramBox;
+use super::LogHistogramBox;
+use super::FloatHistogramBox;
 use super::Units;
 use super::printable::Printable;
 use super::compute_variance;
@@ -108,7 +110,7 @@ pub struct RunningInteger {
     min:        i64,
     max:        i64,
 
-    pub log_histogram:    HistogramBox,
+    log_histogram:  LogHistogramBox,
 
     printer:    PrinterBox,
     units:      Units,
@@ -188,7 +190,7 @@ pub struct RunningExport {
     pub min:        i64,
     pub max:        i64,
 
-    pub log_histogram:    HistogramBox,
+    pub log_histogram:  LogHistogramBox,
 }
 
 /// sum_log_histogram() is used internally to create sums of
@@ -311,7 +313,7 @@ impl RunningInteger {
     /// Exports all the statistics kept for a given instance to
     /// be used to create a sum of many instances.
 
-    pub fn export_all(&self) -> RunningExport {
+    pub fn export_data(&self) -> RunningExport {
         let count           = self.count;
         let mean            = self.mean;
         let moment_2        = self.moment_2;
@@ -332,10 +334,12 @@ impl RunningInteger {
         self.units = units;
     }
 
-    fn get_printable(&self) -> Printable {
+    pub fn get_printable(&self) -> Printable {
         let n         = self.count;
-        let min       = self.min;
-        let max       = self.max;
+        let min_i64   = self.min;
+        let max_i64   = self.max;
+        let min_f64   = f64::MIN;
+        let max_f64   = f64::MAX;
         let log_mode  = self.log_histogram.borrow().log_mode() as i64;
         let mean      = self.mean;
         let variance  = self.variance();
@@ -343,7 +347,10 @@ impl RunningInteger {
         let kurtosis  = self.kurtosis();
         let units     = self.units.clone();
 
-        Printable { n, min, max, log_mode, mean, variance, skewness, kurtosis, units }
+        Printable {
+            n,    min_i64,   max_i64,   min_f64,   max_f64,  log_mode,
+            mean, variance,  skewness,  kurtosis,  units
+        }
     }
 }
 
@@ -473,8 +480,8 @@ impl Rustics for RunningInteger {
         self.moment_2 = 0.0;
         self.moment_3 = 0.0;
         self.moment_4 = 0.0;
-        self.min      = i64::MIN;
-        self.max      = i64::MAX;
+        self.min      = i64::MAX;
+        self.max      = i64::MIN;
 
         self.log_histogram.borrow_mut().clear();
     }
@@ -491,8 +498,12 @@ impl Rustics for RunningInteger {
         self as &dyn Any
     }
 
-    fn histogram(&self) -> HistogramBox {
-        self.log_histogram.clone()
+    fn log_histogram(&self) -> Option<LogHistogramBox> {
+        Some(self.log_histogram.clone())
+    }
+
+    fn float_histogram(&self) -> Option<FloatHistogramBox> {
+        None
     }
 
     fn print(&self) {
@@ -518,7 +529,7 @@ impl Rustics for RunningInteger {
         let printer   = &mut *printer_box.lock().unwrap();
 
         printer.print(title);
-        printable.print_common_integer(printer);
+        printable.print_common_i64(printer);
         printable.print_common_float(printer);
         self.log_histogram.borrow().print(printer);
     }
@@ -535,11 +546,12 @@ impl Rustics for RunningInteger {
         self.id
     }
 
-    fn export_stats(&self) -> (Printable, HistogramBox) {
-        let printable = self.get_printable();
-        let histogram = self.log_histogram.clone();
+    fn export_stats(&self) -> ExportStats {
+        let printable       = self.get_printable();
+        let log_histogram   = Some(self.log_histogram.clone());
+        let float_histogram = None;
 
-        (printable, histogram)
+        ExportStats { printable, log_histogram, float_histogram }
     }
 }
 
@@ -549,11 +561,15 @@ impl Histogram for RunningInteger {
     }
 
     fn clear_histogram(&mut self) {
-        self.histogram().borrow_mut().clear();
+        self.log_histogram.borrow_mut().clear();
     }
 
-    fn to_log_histogram(&self) -> Option<HistogramBox> {
+    fn to_log_histogram(&self) -> Option<LogHistogramBox> {
         Some(self.log_histogram.clone())
+    }
+
+    fn to_float_histogram(&self) -> Option<FloatHistogramBox> {
+        None
     }
 }
 
@@ -629,6 +645,38 @@ mod tests {
         println!("log mode {}", stats.log_mode());
         println!("log mode {}", stats.log_mode());
         assert!(stats.log_mode() == 7);
+
+        stats.clear();
+        assert!(stats.min_i64() == i64::MAX);
+        assert!(stats.max_i64() == i64::MIN);
+
+        stats.record_i64(-1);
+        assert!(stats.min_i64() == -1);
+        assert!(stats.max_i64() == -1);
+
+        stats.record_i64(1);
+        assert!(stats.min_i64() == -1);
+        assert!(stats.max_i64() ==  1);
+
+        assert!(stats.count() == 2  );
+        assert!(stats.mean()  == 0.0);
+
+        stats.clear();
+        
+        let sample = 4;
+
+        for _i in 0..10 {
+            stats.record_i64(sample);
+        }
+
+        let sample = sample as f64;
+
+        assert!(stats.standard_deviation() == 0.0);
+
+        assert!(stats.mean()     == sample);
+        assert!(stats.variance() == 0.0   );
+        assert!(stats.skewness() == 0.0   );
+        assert!(stats.kurtosis() == 0.0   );
     }
 
     #[test]

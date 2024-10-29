@@ -104,8 +104,10 @@ use super::Units;
 #[derive(Clone)]
 pub struct Printable {
     pub n:          u64,
-    pub min:        i64,
-    pub max:        i64,
+    pub min_i64:    i64,
+    pub max_i64:    i64,
+    pub min_f64:    f64,
+    pub max_f64:    f64,
     pub log_mode:   i64,
     pub mean:       f64,
     pub variance:   f64,
@@ -347,15 +349,29 @@ impl Printable {
         }
     }
 
-    /// Prints the common integer statistics as passed in a Printable instance.
+    /// Prints the common statistics for i64 (integer) samples as passed
+    /// in a Printable instance.
 
-    pub fn print_common_integer(&self, printer: &mut dyn Printer) {
+    pub fn print_common_i64(&self, printer: &mut dyn Printer) {
         Self::print_integer_units("Count", self.n as i64, printer, &self.units);
 
         if self.n > 0 {
-            Self::print_integer_units("Minumum",  self.min,      printer, &self.units);
-            Self::print_integer_units("Maximum",  self.max,      printer, &self.units);
+            Self::print_integer_units("Minumum",  self.min_i64,  printer, &self.units);
+            Self::print_integer_units("Maximum",  self.max_i64,  printer, &self.units);
             Self::print_integer      ("Log Mode", self.log_mode, printer             );
+        }
+    }
+
+    /// Prints the common statistics for f64 (float) samples as passed
+    /// in a Printable instance.
+
+    pub fn print_common_f64(&self, printer: &mut dyn Printer) {
+        Self::print_integer_units("Count", self.n as i64, printer, &self.units);
+
+        if self.n > 0 {
+            Self::print_float_units("Minumum",  self.min_f64,  printer, &self.units);
+            Self::print_float_units("Maximum",  self.max_f64,  printer, &self.units);
+            Self::print_integer    ("Log Mode", self.log_mode, printer             );
         }
     }
 
@@ -403,9 +419,9 @@ impl Printable {
         if self.n > 0 {
             let approximation = self.log_mode_to_time();
 
-            Self::print_time("Minumum",  self.min as f64, hz, printer);
-            Self::print_time("Maximum",  self.max as f64, hz, printer);
-            Self::print_time("Log Mode", approximation,   hz, printer);
+            Self::print_time("Minumum",  self.min_i64 as f64, hz, printer);
+            Self::print_time("Maximum",  self.max_i64 as f64, hz, printer);
+            Self::print_time("Log Mode", approximation,       hz, printer);
         }
     }
 
@@ -452,8 +468,10 @@ mod tests {
 
     fn test_log_mode_to_time() {
         let n        =  100;
-        let min      =    1;
-        let max      = 1000;
+        let min_i64  =    1;
+        let max_i64  = 1000;
+        let min_f64  =    1.0;
+        let max_f64  = 1000.0;
         let log_mode =   32;
 
         let mean     = 10.0;
@@ -466,7 +484,10 @@ mod tests {
         let units    = Units::default();
 
         let mut printable =
-            Printable { n, min, max, log_mode, mean, variance, skewness, kurtosis, units };
+            Printable {
+                n,     min_i64,   max_i64,   min_f64,   max_f64,  log_mode,
+                mean,  variance,  skewness,  kurtosis , units
+            };
 
         assert!(printable.log_mode_to_time() == expected);
 

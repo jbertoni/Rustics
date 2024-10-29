@@ -294,7 +294,21 @@ impl ArcSet {
 
     pub fn set_title(&mut self, title: &str) {
         self.title = String::from(title);
-        // TODO:  recursive set title?
+
+        for mutex in self.subsets.iter() {
+            let mut subset  = mutex.lock().unwrap();
+            let     title   = make_title(title, &subset.name());
+
+
+            subset.set_title(&title);
+        }
+
+        for mutex in self.members.iter() {
+            let mut member = mutex.lock().unwrap();
+            let     title  = make_title(title, &member.name());
+
+            member.set_title(&title);
+        }
     }
 
     /// Does a recursive clear of all instances in the set and its

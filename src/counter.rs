@@ -60,17 +60,16 @@
 //!```
 
 use std::any::Any;
-use std::cell::RefCell;
-use std::rc::Rc;
 
 use super::Rustics;
-use super::LogHistogram;
+use super::LogHistogramBox;
+use super::FloatHistogramBox;
+use super::ExportStats;
 use super::PrinterBox;
 use super::PrinterOption;
 use super::PrintOption;
 use super::Units;
 use super::TimerBox;
-use super::HistogramBox;
 use super::printable::Printable;
 use super::parse_print_opts;
 
@@ -260,16 +259,20 @@ impl Rustics for Counter {
         self as &dyn Any
     }
 
-    fn histogram(&self) -> HistogramBox {
-        let histogram = LogHistogram::new();
-
-        Rc::from(RefCell::new(histogram))
+    fn log_histogram(&self) -> Option<LogHistogramBox> {
+        None
     }
 
-    fn export_stats(&self) -> (Printable, HistogramBox) {
+    fn float_histogram(&self) -> Option<FloatHistogramBox> {
+        None
+    }
+
+    fn export_stats(&self) -> ExportStats {
         let n        = self.count as u64;
-        let min      = i64::MIN;
-        let max      = i64::MAX;
+        let min_i64  = i64::MIN;
+        let max_i64  = i64::MAX;
+        let min_f64  = f64::MIN;
+        let max_f64  = f64::MAX;
         let log_mode = 0;
         let mean     = 0.0;
         let variance = 0.0;
@@ -278,12 +281,15 @@ impl Rustics for Counter {
         let units    = self.units.clone();
 
         let printable =
-            Printable { n, min, max, log_mode, mean, variance, skewness, kurtosis, units };
+            Printable { 
+                n,     min_i64,   max_i64,   min_f64,   max_f64,  log_mode,
+                mean,  variance,  skewness,  kurtosis,  units
+            };
 
-        let histogram = LogHistogram::new();
-        let histogram = Rc::from(RefCell::new(histogram));
+        let log_histogram   = None;
+        let float_histogram = None;
 
-        (printable, histogram)
+        ExportStats { printable, log_histogram, float_histogram }
     }
 }
 

@@ -70,7 +70,8 @@
 // Implement a structure for the pseudo-log histograms.
 
 use super::Histogram;
-use super::HistogramBox;
+use super::LogHistogramBox;
+use super::FloatHistogramBox;
 use super::Printer;
 use super::printable::Printable;
 
@@ -270,7 +271,11 @@ impl Histogram for LogHistogram {
         self.clear();
     }
 
-    fn to_log_histogram(&self) -> Option<HistogramBox> {
+    fn to_log_histogram(&self) -> Option<LogHistogramBox> {
+        None
+    }
+
+    fn to_float_histogram(&self) -> Option<FloatHistogramBox> {
         None
     }
 }

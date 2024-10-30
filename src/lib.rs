@@ -203,11 +203,27 @@ pub fn max_exponent() -> isize {
     1023
 }
 
+pub fn max_raw_exponent() -> isize {
+    max_exponent() + exponent_bias()
+}
+
 pub fn min_exponent() -> isize {
     -1022
 }
 
-pub fn to_exponent(input: f64) -> isize {
+pub fn exponent_bias() -> isize {
+    1023
+}
+
+pub fn biased_exponent_to_real(biased: isize) -> isize {
+    biased - exponent_bias()
+}
+
+pub fn max_biased_exponent() -> isize {
+    max_exponent() + exponent_bias()
+}
+
+pub fn biased_exponent(input: f64) -> isize {
     if input.is_nan() {
         return 0;
     }
@@ -224,7 +240,7 @@ pub fn to_exponent(input: f64) -> isize {
     let mask     = (1_u64 << exponent_size) - 1;
     let exponent = (bits & mask) as i64;
 
-    exponent as isize + min_exponent()
+    exponent as isize
 }
 
 pub fn min_f64(a: f64, b: f64) -> f64 {

@@ -89,6 +89,8 @@ use crate::log_histogram::LogHistogram;
 use super::compute_variance;
 use super::compute_skewness;
 use super::compute_kurtosis;
+use super::sum::kbk_sum;
+use super::sum::kbk_sum_sorted;
 use super::parse_print_opts;
 
 /// An IntegerWindow instance collects integer data samples into
@@ -224,27 +226,38 @@ impl IntegerWindow {
             return Crunched::new();
         }
 
-        let mut sum = 0.0;
+        let mut samples = Vec::new();
 
-        for sample in self.vector.iter() {
-            sum += *sample as f64;
+        for value in self.vector.iter() {
+            samples.push(*value as f64)
         }
 
-        // TODO:  kbk_sum the data
+        let sum  = kbk_sum(&mut samples);
+        let mean =  sum / self.vector.len() as f64;
 
-        let mean = sum / self.vector.len() as f64;
-        let mut moment_2 = 0.0;
-        let mut moment_3 = 0.0;
-        let mut moment_4 = 0.0;
+        // Create the vectors of the addends for the moments about
+        // the mean.
 
-        for sample in self.vector.iter() {
+        let mut vec_2 = Vec::new();
+        let mut vec_3 = Vec::new();
+        let mut vec_4 = Vec::new();
+
+        // Now fill the vectors with addends.
+
+        for sample in samples.iter() {
             let distance = *sample as f64 - mean;
             let square   = distance * distance;
 
-            moment_2 += square;
-            moment_3 += distance * square;
-            moment_4 += square * square;
+            vec_2.push(square);
+            vec_3.push(distance * square);
+            vec_4.push(square   * square);
         }
+
+        // Use kbk_sum to try to get more precision.
+
+        let moment_2 = kbk_sum_sorted(&mut vec_2);
+        let moment_3 = kbk_sum_sorted(&mut vec_3);
+        let moment_4 = kbk_sum_sorted(&mut vec_4);
 
         Crunched { mean, sum, moment_2, moment_3, moment_4 }
     }
@@ -502,7 +515,7 @@ impl Rustics for IntegerWindow {
     fn export_stats(&self) -> ExportStats {
         let printable       = self.get_printable();
         let log_histogram   = Some(self.log_histogram.clone());
-        let float_histogram = None; 
+        let float_histogram = None;
 
         ExportStats { printable, log_histogram, float_histogram }
     }

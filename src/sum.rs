@@ -18,6 +18,10 @@ fn sort(input: &mut [f64]) {
 
 pub fn kbk_sum(input: &mut [f64]) -> f64 {
     sort(input);
+    kbk_sum_sorted(input)
+}
+
+pub fn kbk_sum_sorted(input: &mut [f64]) -> f64 {
 
     let mut sum = 0.0;
     let mut cs  = 0.0;

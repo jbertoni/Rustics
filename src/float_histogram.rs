@@ -26,7 +26,7 @@ pub struct Suppress {
 pub struct FloatHistogram {
     negative:   Vec<u64>,
     positive:   Vec<u64>,
-    count:      usize, // Actual used part of Vecs
+    count:      usize,
     nans:       usize,
     infinities: usize,
     suppress:   Suppress,
@@ -66,23 +66,18 @@ impl FloatHistogram {
             return;
         }
 
-        if sample.is_infinite() {
-            self.infinities += 1;
+        let index =
+            if sample.is_infinite() {
+                self.infinities += 1;
 
-            let index = max_biased_exponent() / bucket_divisor();
-            let index = index as usize;
+                let index = max_biased_exponent() / bucket_divisor();
 
-            if sample < 0.0 {
-                self.negative[index] += 1;
+                index as usize
             } else {
-                self.positive[index] += 1;
-            }
+                let index = biased_exponent(sample) / bucket_divisor();
 
-            return;
-        }
-
-        let index = biased_exponent(sample) / bucket_divisor();
-        let index = index as usize;
+                index as usize
+            };
 
         if sample < 0.0 {
             self.negative[index] += 1;
@@ -208,11 +203,14 @@ impl FloatHistogram {
     }
 
     pub fn clear(&mut self) {
-        let count    = buckets() as usize;
+        self.negative   = vec![0; self.count];
+        self.positive   = vec![0; self.count];
+        self.nans       = 0;
+        self.infinities = 0;
+    }
 
-        self.negative = vec![0; count];
-        self.positive = vec![0; count];
-
+    pub fn non_finites(&self) -> (usize, usize) {
+        (self.nans, self.infinities)
     }
 }
 

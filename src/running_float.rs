@@ -4,6 +4,9 @@
 //  permitted by law.
 //
 
+// TODO: crates.io comments and examples
+//!  
+
 use std::any::Any;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -285,10 +288,15 @@ impl Rustics for RunningFloat {
     }
 
     fn export_stats(&self) -> ExportStats {
-        let printable = self.get_printable();
-        let log_histogram = None;
+        let printable       = self.get_printable();
+        let log_histogram   = None;
         let float_histogram = Some(self.histogram.clone());
 
         ExportStats {printable, log_histogram, float_histogram }
     }
+}
+
+// TODO:  tests
+#[cfg(test)]
+mod tests {
 }

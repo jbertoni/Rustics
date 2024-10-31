@@ -174,7 +174,7 @@ impl FloatHistogram {
 
         let     start_row   = scan / print_roundup();
         let mut rows        = start_row + 1;
-        let mut index       = 0;
+        let mut index       = start_row * print_roundup();
 
         while rows > 0 {
             if 
@@ -201,7 +201,10 @@ impl FloatHistogram {
                 printer.print(&output);
 
                 rows  -= 1;
-                index += 4;
+
+                if index >= print_roundup() {
+                    index -= 4;
+                }
             }
         }
     }
@@ -394,6 +397,23 @@ mod tests {
 
         assert!(histogram.positive[zero_bucket    ] == 2);
         assert!(histogram.positive[zero_bucket + 1] == sample_count - 2);
+
+        histogram.record(f64::INFINITY);
+        histogram.record(f64::NEG_INFINITY);
+        histogram.record(f64::NAN);
+
+        histogram.print(printer);
+
+        let index = max_biased_exponent() / bucket_divisor();
+        let index = index as usize;
+
+        assert!(histogram.positive[index] == 1);
+        assert!(histogram.positive[index] == 1);
+
+        assert!(histogram.samples == (2 * sample_count + 2) as usize);
+
+        assert!(histogram.nans       == 1);
+        assert!(histogram.infinities == 2);
     }
 
     #[test]

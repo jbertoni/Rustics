@@ -96,6 +96,7 @@
 
 use super::Printer;
 use super::Units;
+use super::exponent_bias;
 
 /// The Printable struct is used to pass data to the standard print
 /// functions shared by all the code.  Developers who are implementing
@@ -268,6 +269,13 @@ impl Printable {
             };
 
         let output = format!("    {:<12} {:>12} {}", name, Self::commas_i64(value), unit_string);
+
+        printer.print(&output);
+    }
+
+    pub fn print_string(name: &str, string: &str, printer: &mut dyn Printer) {
+        let output = format!("    {:<12} {:>12}", name, string);
+
         printer.print(&output);
     }
 
@@ -371,7 +379,19 @@ impl Printable {
         if self.n > 0 {
             Self::print_float_units("Minumum",  self.min_f64,  printer, &self.units);
             Self::print_float_units("Maximum",  self.max_f64,  printer, &self.units);
-            Self::print_integer    ("Log Mode", self.log_mode, printer             );
+
+            let sign =
+                if self.log_mode < 0 {
+                    "-"
+                } else {
+                    " "
+                };
+
+            let mantissa = self.log_mode.abs();
+            let mantissa = mantissa - exponent_bias() as i64;
+            let log_mode = format!("{}2^{}", sign, mantissa);
+
+            Self::print_string("Log Mode", &log_mode, printer);
         }
     }
 

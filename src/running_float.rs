@@ -134,6 +134,8 @@ impl Rustics for RunningFloat {
             self.min              = min_f64(self.min, sample);
             self.max              = max_f64(self.max, sample);
         }
+
+        self.histogram.borrow_mut().record(sample);
     }
 
     fn record_event(&mut self) {
@@ -252,6 +254,7 @@ impl Rustics for RunningFloat {
         printer.print(title);
         printable.print_common_f64(printer);
         printable.print_common_float(printer);
+        printer.print("");
         self.histogram.borrow().print(printer);
     }
 
@@ -299,4 +302,31 @@ impl Rustics for RunningFloat {
 // TODO:  tests
 #[cfg(test)]
 mod tests {
+    use super::*;
+
+    fn simple_float_test() {
+        let mut float = RunningFloat::new("Test Statistic", None, None);
+        let     end   = 1000;
+
+        for i in 1..=end {
+            float.record_f64(i as f64);
+        }
+
+        // Compute the expected mean.
+
+        let float_end = end as f64;
+        let sum       = (float_end * (float_end + 1.0)) / 2.0;
+        let mean      = sum / float_end;
+
+        assert!(float.count()   == end as u64);
+        assert!(float.min_f64() == 1.0       );
+        assert!(float.max_f64() == float_end );
+
+        float.print();
+    }
+
+    #[test]
+    fn run_tests() {
+        simple_float_test();
+    }
 }

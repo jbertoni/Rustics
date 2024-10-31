@@ -23,6 +23,13 @@ pub struct Suppress {
     pub max:  isize,
 }
 
+///
+/// Float_histgram records a log-like histogram of f64 samples.
+/// The numbers are broken into buckets based on the exponent,
+/// broken in of 16.  For example, exponents 2^1 through 2^16
+/// form one bucket.
+///
+
 pub struct FloatHistogram {
     negative:   Vec<u64>,
     positive:   Vec<u64>,
@@ -49,6 +56,9 @@ fn roundup(count: usize, multiple: usize) -> usize {
 }
 
 impl FloatHistogram {
+    /// Creates a new histogram.  The suppress option currently is
+    /// unlimited.
+
     pub fn new(suppress: Suppress) -> FloatHistogram {
         let count      = buckets() as usize;
         let count      = roundup(count, print_roundup());
@@ -60,11 +70,17 @@ impl FloatHistogram {
         FloatHistogram { negative, positive, count, nans, infinities, suppress }
     }
 
+    ///  Records one f64 sample into its bucket.
+
     pub fn record(&mut self, sample: f64) {
         if sample.is_nan() {
             self.nans += 1;
             return;
         }
+
+        // Get the index into the histogram.  This code ignores the sign of
+        // the number.  We have two separate arrays for positive and negative
+        // values.
 
         let index =
             if sample.is_infinite() {
@@ -79,12 +95,18 @@ impl FloatHistogram {
                 index as usize
             };
 
+        // Now index into the appropriate array.
+
         if sample < 0.0 {
             self.negative[index] += 1;
         } else {
             self.positive[index] += 1;
         }
     }
+
+    /// Returns the start biased exponent of the bucket into
+    /// which the value goes.  The sign of the value returned 
+    /// matches the sign of the samples in the bucket.
 
     pub fn log_mode(&self) -> isize {
         let mut mode = 0;
@@ -165,10 +187,26 @@ impl FloatHistogram {
             last -= 1;
         }
 
-        let stop_index = last;
-        let mut i = 0;
+        let     stop_index = last;
+        let mut i          = 0;
 
         assert!(print_roundup() == 4);    // This code assumes len() % 4 == 0
+
+        // Skip over rows with entries that are all zero.
+
+        while i <= stop_index {
+            if
+                self.positive[i    ] == 0
+            &&  self.positive[i + 1] == 0
+            &&  self.positive[i + 2] == 0
+            &&  self.positive[i + 3] == 0 {
+                i += 4
+            } else {
+                break;
+            }
+        }
+
+        // Print the rows.  Each row has the counts for 4 buckets.
 
         while i <= stop_index {
             assert!(i <= self.positive.len() - 4);
@@ -188,9 +226,14 @@ impl FloatHistogram {
         }
     }
 
+    /// Prints the histogrm.
+
     pub fn print(&self, printer: &mut dyn Printer) {
         self.print_opts(printer, &self.suppress);
     }
+
+    /// Prints the histogram.  The suppress option is not currently
+    /// implemented.
 
     pub fn print_opts(&self, printer: &mut dyn Printer, suppress: &Suppress) {
         let header =
@@ -202,12 +245,17 @@ impl FloatHistogram {
         self.print_positive(printer, suppress);
     }
 
+    /// Deletes all data from the histogrm.
+
     pub fn clear(&mut self) {
         self.negative   = vec![0; self.count];
         self.positive   = vec![0; self.count];
         self.nans       = 0;
         self.infinities = 0;
     }
+
+    /// Returns the number of samples that were NaN and the number that
+    /// were non-finite.
 
     pub fn non_finites(&self) -> (usize, usize) {
         (self.nans, self.infinities)

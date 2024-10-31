@@ -105,6 +105,8 @@ use super::exponent_bias;
 #[derive(Clone)]
 pub struct Printable {
     pub n:          u64,
+    pub nans:       u64,
+    pub infinities: u64,
     pub min_i64:    i64,
     pub max_i64:    i64,
     pub min_f64:    f64,
@@ -374,7 +376,9 @@ impl Printable {
     /// in a Printable instance.
 
     pub fn print_common_f64(&self, printer: &mut dyn Printer) {
-        Self::print_integer_units("Count", self.n as i64, printer, &self.units);
+        Self::print_integer_units("Count",      self.n          as i64, printer, &self.units);
+        Self::print_integer_units("NaNs",       self.nans       as i64, printer, &self.units);
+        Self::print_integer_units("Infinities", self.infinities as i64, printer, &self.units);
 
         if self.n > 0 {
             Self::print_float_units("Minumum",  self.min_f64,  printer, &self.units);
@@ -487,26 +491,29 @@ mod tests {
     }
 
     fn test_log_mode_to_time() {
-        let n        =  100;
-        let min_i64  =    1;
-        let max_i64  = 1000;
-        let min_f64  =    1.0;
-        let max_f64  = 1000.0;
-        let log_mode =   32;
+        let n          =  100;
+        let nans       =    0;
+        let infinities =    0;
+        let min_i64    =    1;
+        let max_i64    = 1000;
+        let min_f64    =    1.0;
+        let max_f64    = 1000.0;
+        let log_mode   =   32;
 
-        let mean     = 10.0;
-        let variance = 10.0;
-        let skewness = -4.0;
-        let kurtosis = 10.0;
+        let mean       = 10.0;
+        let variance   = 10.0;
+        let skewness   = -4.0;
+        let kurtosis   = 10.0;
 
-        let base     = 2 as u64;
-        let expected = base.pow(log_mode as u32) as f64;
-        let units    = Units::default();
+        let base       = 2 as u64;
+        let expected   = base.pow(log_mode as u32) as f64;
+        let units      = Units::default();
 
         let mut printable =
             Printable {
-                n,     min_i64,   max_i64,   min_f64,   max_f64,  log_mode,
-                mean,  variance,  skewness,  kurtosis , units
+                n,        nans,      infinities,  min_i64,   max_i64,   min_f64,
+                max_f64,  log_mode,  mean,        variance,  skewness,  kurtosis,
+                units
             };
 
         assert!(printable.log_mode_to_time() == expected);

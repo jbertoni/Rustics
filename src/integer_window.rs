@@ -277,13 +277,15 @@ impl IntegerWindow {
     }
 
     pub fn get_printable(&self) -> Printable {
-        let n        = self.vector.len() as u64;
-        let min_i64  = self.compute_min();
-        let max_i64  = self.compute_max();
-        let min_f64  = f64::MIN;
-        let max_f64  = f64::MAX;
-        let log_mode = self.log_histogram.borrow().log_mode() as i64;
-        let units    = self.units.clone();
+        let n          = self.vector.len() as u64;
+        let nans       = 0;
+        let infinities = 0;
+        let min_i64    = self.compute_min();
+        let max_i64    = self.compute_max();
+        let min_f64    = f64::MIN;
+        let max_f64    = f64::MAX;
+        let log_mode   = self.log_histogram.borrow().log_mode() as i64;
+        let units      = self.units.clone();
 
         let mean;
         let variance;
@@ -305,8 +307,8 @@ impl IntegerWindow {
         }
 
         Printable {
-            n,     min_i64,   max_i64,   min_f64,   max_f64,  log_mode,
-            mean,  variance,  skewness,  kurtosis,  units
+            n,         nans,  infinities,  min_i64,   max_i64,   min_f64,   max_f64,
+            log_mode,  mean,  variance,    skewness,  kurtosis,  units
         }
     }
 }

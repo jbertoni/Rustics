@@ -268,22 +268,25 @@ impl Rustics for Counter {
     }
 
     fn export_stats(&self) -> ExportStats {
-        let n        = self.count as u64;
-        let min_i64  = i64::MIN;
-        let max_i64  = i64::MAX;
-        let min_f64  = f64::MIN;
-        let max_f64  = f64::MAX;
-        let log_mode = 0;
-        let mean     = 0.0;
-        let variance = 0.0;
-        let skewness = 0.0;
-        let kurtosis = 0.0;
-        let units    = self.units.clone();
+        let n          = self.count as u64;
+        let nans       = 0;
+        let infinities = 0;
+        let min_i64    = i64::MIN;
+        let max_i64    = i64::MAX;
+        let min_f64    = f64::MIN;
+        let max_f64    = f64::MAX;
+        let log_mode   = 0;
+        let mean       = 0.0;
+        let variance   = 0.0;
+        let skewness   = 0.0;
+        let kurtosis   = 0.0;
+        let units      = self.units.clone();
 
         let printable =
             Printable { 
-                n,     min_i64,   max_i64,   min_f64,   max_f64,  log_mode,
-                mean,  variance,  skewness,  kurtosis,  units
+                n,        nans,      infinities,  min_i64,   max_i64,   min_f64,
+                max_f64,  log_mode,  mean,        variance,  skewness,  kurtosis,
+                units
             };
 
         let log_histogram   = None;

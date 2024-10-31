@@ -41,19 +41,21 @@ use super::float_histogram::HistoOpts;
 use super::float_histogram::HistoOption;
 
 pub struct RunningFloat {
-    name:      String,
-    id:        usize,
-    count:     u64,
-    mean:      f64,
-    moment_2:  f64,
-    moment_3:  f64,
-    moment_4:  f64,
-    min:       f64,
-    max:       f64,
-    title:     String,
-    units:     Units,
-    histogram: FloatHistogramBox,
-    printer:   PrinterBox,
+    name:       String,
+    id:         usize,
+    count:      u64,
+    nans:       u64,
+    infinities: u64,
+    mean:       f64,
+    moment_2:   f64,
+    moment_3:   f64,
+    moment_4:   f64,
+    min:        f64,
+    max:        f64,
+    title:      String,
+    units:      Units,
+    histogram:  FloatHistogramBox,
+    printer:    PrinterBox,
 }
 
 impl RunningFloat {
@@ -71,40 +73,45 @@ impl RunningFloat {
                 HistoOpts { merge_min, merge_max, no_zero_rows }
             };
 
-        let name      = name.to_string();
-        let id        = usize::MAX;
-        let count     = 0;
-        let min       = f64::MAX;
-        let max       = f64::MIN;
-        let mean      = 0.0;
-        let moment_2  = 0.0;
-        let moment_3  = 0.0;
-        let moment_4  = 0.0;
-        let histogram = FloatHistogram::new(histo_opts);
-        let histogram = Rc::from(RefCell::new(histogram));
+        let name        = name.to_string();
+        let id          = usize::MAX;
+        let count       = 0;
+        let nans        = 0;
+        let infinities  = 0;
+        let min         = f64::MAX;
+        let max         = f64::MIN;
+        let mean        = 0.0;
+        let moment_2    = 0.0;
+        let moment_3    = 0.0;
+        let moment_4    = 0.0;
+        let histogram   = FloatHistogram::new(histo_opts);
+        let histogram   = Rc::from(RefCell::new(histogram));
 
         RunningFloat {
-            name, id, count, mean, moment_2, moment_3, moment_4, max, min, title, units, printer,
+            name,      id,        count,    nans,   infinities,  mean,   moment_2,
+            moment_3,  moment_4,  max,      min,    title,       units,  printer,
             histogram
         }
     }
 
     fn get_printable(&self) -> Printable {
-        let n         = self.count;
-        let min_i64   = i64::MIN;
-        let max_i64   = i64::MAX;
-        let min_f64   = self.min;
-        let max_f64   = self.max;
-        let log_mode  = self.histogram.borrow().log_mode() as i64;
-        let mean      = self.mean;
-        let variance  = self.variance();
-        let skewness  = self.skewness();
-        let kurtosis  = self.kurtosis();
-        let units     = self.units.clone();
+        let n           = self.count;
+        let nans        = self.nans;
+        let infinities  = self.infinities;
+        let min_i64     = i64::MIN;
+        let max_i64     = i64::MAX;
+        let min_f64     = self.min;
+        let max_f64     = self.max;
+        let log_mode    = self.histogram.borrow().log_mode() as i64;
+        let mean        = self.mean;
+        let variance    = self.variance();
+        let skewness    = self.skewness();
+        let kurtosis    = self.kurtosis();
+        let units       = self.units.clone();
 
         Printable {
-            n,    min_i64,   max_i64,   min_f64,   max_f64,  log_mode,
-            mean, variance,  skewness,  kurtosis,  units
+            n,         nans,  infinities,  min_i64,   max_i64,   min_f64,   max_f64,
+            log_mode,  mean,  variance,    skewness,  kurtosis,  units
         }
     }
 }
@@ -115,6 +122,20 @@ impl Rustics for RunningFloat {
     }
 
     fn record_f64(&mut self, sample: f64) {
+        // Ignore NaNs for now.
+
+        if sample.is_nan() {
+            self.nans += 1;
+            return;
+        }
+
+        // Ignore non-finite values, too.
+
+        if sample.is_infinite() {
+            self.infinities += 1;
+            return;
+        }
+
         self.count += 1;
 
         if self.count == 1 {
@@ -329,6 +350,17 @@ mod tests {
         assert!(float.mean()    == mean      );
         assert!(float.min_f64() == 1.0       );
         assert!(float.max_f64() == float_end );
+
+        float.print();
+
+        float.record_f64(f64::INFINITY);
+        float.record_f64(f64::NEG_INFINITY);
+        float.record_f64(f64::NAN);
+
+        // NaNs should be counted but then ignored.
+        // Same for non-finite values.
+
+        assert!(float.count() == end as u64);
 
         float.print();
     }

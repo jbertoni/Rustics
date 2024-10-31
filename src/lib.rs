@@ -314,6 +314,12 @@ pub fn compute_skewness(count: u64, moment_2: f64, moment_3: f64) -> f64 {
 
     assert!(moment_2 > 0.0);
 
+    // Deal with floating point non-finite values.
+
+    if moment_2 <= 0.0 {
+        return 0.0;
+    }
+
     let n               = count as f64;
     let m3              = moment_3 / n;
     let m2              = moment_2 / n;
@@ -332,7 +338,13 @@ pub fn compute_kurtosis(count: u64, moment_2: f64, moment_4: f64) -> f64 {
         return 0.0;
     }
 
+    // Deal with floating point non-finite values.
+
     assert!(moment_2 > 0.0 && moment_4 >= 0.0);
+
+    if moment_2 <= 0.0 || moment_4 <= 0.0 {
+        return 0.0;
+    }
 
     let n               = count as f64;
     let kurtosis        = moment_4 / (moment_2.powf(2.0) / n) - 3.0;

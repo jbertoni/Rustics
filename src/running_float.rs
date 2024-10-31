@@ -12,6 +12,59 @@
 //!     f64 values.
 //!   * This includes a very coarse log histogram very similar to the one
 //!     that supports i64 data.
+//!
+//! ## Example
+//!     use rustics::Rustics;
+//!     use rustics::ExportStats;
+//!     use rustics::printable::Printable;
+//!     use rustics::running_float::RunningFloat;
+//!
+//!     let mut float = RunningFloat::new("Test Statistic", None, None);
+//!     let     end   = 1000;
+//!
+//!     // Record the integers from 1 to "end".
+//!
+//!     for i in 1..=end {
+//!         float.record_f64(i as f64);
+//!     }
+//!
+//!    // Compute the expected mean.  We need the sum of
+//!    //     1 + 2 + ... + n
+//!    // which is
+//!    //     n * (n + 1) / 2.
+//!
+//!     let float_end = end as f64;
+//!     let sum       = (float_end * (float_end + 1.0)) / 2.0;
+//!     let mean      = sum / float_end;
+//!
+//!     assert!(float.count()   == end as u64);
+//!     assert!(float.mean()    == mean      );
+//!     assert!(float.min_f64() == 1.0       );
+//!     assert!(float.max_f64() == float_end );
+//!
+//!     // The code should keep count of NaNs and non-finite
+//!     // values, but not record them for the mean, etc.
+//!
+//!     float.record_f64(f64::INFINITY);
+//!     float.record_f64(f64::NEG_INFINITY);
+//!     float.record_f64(f64::NAN);
+//!
+//!     float.print();
+//!
+//!     assert!(float.mean()    == mean      );
+//!     assert!(float.count()   == end as u64);
+//!
+//!     // Check that the non-finite values were counted.  Test
+//!     // export_stats and the more direct methods.
+//!
+//!     let stats = float.export_stats();
+//!
+//!     assert!(stats.printable.nans       == 1);
+//!     assert!(stats.printable.infinities == 2);
+//!
+//!     assert!(float.nans()               == 1);
+//!     assert!(float.infinities()         == 2);
+//!```
 
 use std::any::Any;
 use std::cell::RefCell;
@@ -40,6 +93,9 @@ use super::max_exponent;
 use super::float_histogram::HistoOpts;
 use super::float_histogram::HistoOption;
 
+/// This type implements a simple set of statistics for a
+/// sequence of f64 values.
+
 pub struct RunningFloat {
     name:       String,
     id:         usize,
@@ -59,6 +115,10 @@ pub struct RunningFloat {
 }
 
 impl RunningFloat {
+    /// Constructs a new statistics type.  print_opts and histo_opts affect how
+    /// the output of print functions looks.  "None" will accept the defaults,
+    /// which sends the output to stdout.
+
     pub fn new(name: &str, print_opts: PrintOption, histo_opts: HistoOption) -> RunningFloat {
         let (printer, title, units) = parse_print_opts(&print_opts, name);
 
@@ -113,6 +173,14 @@ impl RunningFloat {
             n,         nans,  infinities,  min_i64,   max_i64,   min_f64,   max_f64,
             log_mode,  mean,  variance,    skewness,  kurtosis,  units
         }
+    }
+
+    pub fn nans(&self) -> u64 {
+        self.nans
+    }
+
+    pub fn infinities(&self) -> u64 {
+        self.infinities
     }
 }
 

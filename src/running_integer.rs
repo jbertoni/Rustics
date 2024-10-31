@@ -27,7 +27,7 @@
 //!
 //!    let sample_count = 1000;
 //!
-//!    for i in 1..sample_count + 1 {
+//!    for i in 1..=sample_count {
 //!       packet_sizes.record_i64(i as i64);
 //!       assert!(packet_sizes.count() == i as u64);
 //!    }
@@ -55,7 +55,7 @@
 //!
 //!    let next_sample_count = 100;
 //!
-//!    for i in 1..next_sample_count + 1 {
+//!    for i in 1..=next_sample_count {
 //!       packet_sizes.record_i64(i + sample_count as i64);
 //!       assert!(packet_sizes.count() == (sample_count + i) as u64);
 //!    }
@@ -614,7 +614,7 @@ mod tests {
         assert!(stats.title() == title);
         assert!(stats.id()    == id   );
 
-        for sample in min..max + 1 {
+        for sample in min..=max {
             stats.record_i64(sample);
             events += 1;
         }

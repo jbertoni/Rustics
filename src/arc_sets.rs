@@ -568,7 +568,7 @@ pub mod tests {
 
             let mut events = 0;
 
-            for i in lower..upper + 1 {
+            for i in lower..=upper {
                 window .record_i64(i);
                 running.record_i64(i);
 
@@ -807,7 +807,7 @@ pub mod tests {
         let mut counter     = counter_arc.lock().unwrap();
         let     limit       = 20;
 
-        for _i in 1..limit + 1 {
+        for _i in 1..=limit {
             counter.record_event();    // increment by 1
             counter.record_i64(1);     // increment by 1
         }

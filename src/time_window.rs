@@ -44,7 +44,7 @@
 //!
 //!    timer.borrow_mut().start();
 //!
-//!    for i in 1..window_size + 1 {
+//!    for i in 1..=window_size {
 //!       // Do work...
 //!
 //!       packet_latency.record_event();
@@ -59,7 +59,7 @@
 //!
 //!    assert!(packet_latency.count() == window_size as u64);
 //!
-//!    for i in 1..window_size / 2 + 1 {
+//!    for i in 1..=window_size / 2 {
 //!       packet_latency.record_event();
 //!       assert!(packet_latency.count() == window_size as u64);
 //!    }

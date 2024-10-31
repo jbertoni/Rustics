@@ -39,7 +39,7 @@
 //!     // to the counter, for keeping a sum when statistics like the
 //!     // mean aren't useful.
 //!
-//!     for i in 1..test_limit + 1 {
+//!     for i in 1..=test_limit {
 //!         counter.record_event();
 //!         counter.record_i64(i);
 //!     }
@@ -301,7 +301,7 @@ mod tests {
         let test_limit  = 20;
         let mut counter = Counter::new("test counter", None);
 
-        for i in 1..test_limit + 1 {
+        for i in 1..=test_limit {
             counter.record_event();
             counter.record_i64(i);
         }

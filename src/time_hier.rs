@@ -565,7 +565,7 @@ mod tests {
         let mut total_time      = 0;
         let mut events          = 0;
 
-        for i in 1..window_size + 1 {
+        for i in 1..=window_size {
             hier.record_event();
             assert!(hier.max_i64() == timer_interval );
             assert!(hier.min_i64() == timer_increment);

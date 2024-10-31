@@ -64,7 +64,7 @@ mod tests {
         let     limit  = 16;
         let mut inputs = Vec::<f64>::new();
 
-        for i in 0..limit + 1 {
+        for i in 0..=limit {
             inputs.push(i as f64);
         }
 
@@ -81,7 +81,7 @@ mod tests {
 
         //  Now add some negative values to the vector.
 
-        for i in 0..limit + 1 {
+        for i in 0..=limit {
             inputs.push(-i as f64);
         }
 

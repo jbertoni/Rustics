@@ -6,6 +6,12 @@
 
 // TODO: crates.io comments and examples
 //!  
+//! ## Type
+//! * RunningFloat
+//!   * RunningFloat provides statistical summaries of data sample given as
+//!     f64 values.
+//!   * This includes a very coarse log histogram very similar to the one
+//!     that supports i64 data.
 
 use std::any::Any;
 use std::cell::RefCell;
@@ -58,10 +64,11 @@ impl RunningFloat {
             if let Some(suppress) = suppress {
                 suppress
             } else {
-                let min = min_exponent();
-                let max = max_exponent();
+                let min_exp      = min_exponent();
+                let max_exp      = max_exponent();
+                let no_zero_rows = true;
 
-                Suppress { min, max }
+                Suppress { min_exp, max_exp, no_zero_rows }
             };
 
         let name      = name.to_string();
@@ -319,6 +326,7 @@ mod tests {
         let mean      = sum / float_end;
 
         assert!(float.count()   == end as u64);
+        assert!(float.mean()    == mean      );
         assert!(float.min_f64() == 1.0       );
         assert!(float.max_f64() == float_end );
 

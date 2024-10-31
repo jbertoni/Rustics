@@ -869,7 +869,7 @@ mod tests {
 
         let limit = 99;
 
-        for i in 0..limit + 1 {
+        for i in 0..=limit {
             let interval = i * i * i;
             test_timer.borrow_mut().setup(interval);
 
@@ -1004,7 +1004,7 @@ mod tests {
 
         let limit = 99;
 
-        for i in 0..limit + 1 {
+        for i in 0..=limit {
             let interval = i * i * i;
 
             test_timer.borrow_mut().setup(interval);

@@ -34,7 +34,7 @@
 //!
 //!    // Record some hypothetical packet sizes.  Let's fill the window.
 //!
-//!    for i in 1..window_size + 1 {
+//!    for i in 1..=window_size {
 //!       packet_sizes.record_i64(i as i64);
 //!       assert!(packet_sizes.count() == i as u64);
 //!    }
@@ -62,7 +62,7 @@
 //!    // Let's record more samples.  The count only includes the last
 //!    // "window_size" samples, so it should be constant now.
 //!
-//!    for i in 1..window_size / 2 + 1 {
+//!    for i in 1..=window_size / 2 {
 //!       packet_sizes.record_i64(i as i64);
 //!       assert!(packet_sizes.count() == window_size as u64);
 //!    }
@@ -245,7 +245,7 @@ impl IntegerWindow {
         // Now fill the vectors with addends.
 
         for sample in samples.iter() {
-            let distance = *sample as f64 - mean;
+            let distance = *sample - mean;
             let square   = distance * distance;
 
             vec_2.push(square);

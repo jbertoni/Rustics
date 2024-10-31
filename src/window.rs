@@ -44,7 +44,7 @@
 //!
 //!     // First, just fill the array.
 //!
-//!     for i in 1..size_limit + 1 {
+//!     for i in 1..=size_limit {
 //!         println!("iterator_test:  at {} filling the window.", i);
 //!
 //!         window.push(i);

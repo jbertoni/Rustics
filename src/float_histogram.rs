@@ -4,23 +4,24 @@
 //  permitted by law.
 //
 
-use std::cmp::min;
 use super::Histogram;
 use super::Printable;
 use super::FloatHistogramBox;
 use super::LogHistogramBox;
 use super::Printer;
 use super::biased_exponent;
-use super::min_exponent;
-use super::max_exponent;
 use super::max_biased_exponent;
 use super::exponent_bias;
 
 pub type SuppressOption  = Option<Suppress>;
 
+/// The Suppress struct is used to specify options on how to print
+/// a histogram.
+
 pub struct Suppress {
-    pub min:  isize,
-    pub max:  isize,
+    pub min_exp:       isize,   // not yet implemented
+    pub max_exp:       isize,   // not yet implemented
+    pub no_zero_rows:  bool,    // suppress any rows that are all zeros
 }
 
 ///
@@ -39,17 +40,27 @@ pub struct FloatHistogram {
     suppress:   Suppress,
 }
 
+// Define how many exponent values are merged into one bucket.
+
 fn bucket_divisor() -> isize {
     16
 }
+
+// Define the number of elements printed per row.  This actually
+// is hard-coded in the actual format statement.
 
 fn print_roundup() -> usize {
     4
 }
 
+// Compute the number of buckets for the negative and positive
+// arrays.
+
 fn buckets() -> isize {
     max_biased_exponent() / bucket_divisor()
 }
+
+// Do covered division.
 
 fn roundup(count: usize, multiple: usize) -> usize {
     ((count + multiple - 1) / multiple) * multiple
@@ -131,7 +142,9 @@ impl FloatHistogram {
 
     // This helper method prints the negative buckets.
 
-    fn print_negative(&self, printer: &mut dyn Printer, _suppress: &Suppress) {
+    // TODO:  To-do:  suppress all rows that are all zeros?  Integer, too?
+
+    fn print_negative(&self, printer: &mut dyn Printer, suppress: &Suppress) {
         // Skip printing buckets that would appear before the first non-zero bucket.
         // So find the non-zero bucket with the highest index in the array.
 
@@ -157,30 +170,41 @@ impl FloatHistogram {
         while rows > 0 {
             assert!(index <= self.count - print_roundup());
 
-            let exponent = (index as isize) * bucket_divisor();
-            let exponent = exponent - exponent_bias();
+            if 
+                suppress.no_zero_rows
+            ||  self.negative[index    ] != 0
+            ||  self.negative[index + 1] != 0
+            ||  self.negative[index + 2] != 0
+            ||  self.negative[index + 3] != 0 {
 
-            assert!(print_roundup() == 4);    // This format assumes a
+                let exponent = (index as isize) * bucket_divisor();
+                let exponent = exponent - exponent_bias();
 
-            printer.print(&format!("  -2^{:>5}:    {:>14}    {:>14}    {:>14}    {:>14}",
-                exponent,
-                Printable::commas_u64(self.negative[index + 0]),
-                Printable::commas_u64(self.negative[index + 1]),
-                Printable::commas_u64(self.negative[index + 2]),
-                Printable::commas_u64(self.negative[index + 3])
-            ));
+                assert!(print_roundup() == 4);    // This format assumes a
 
-            rows -= 1;
+                let output =
+                    format!("  -2^{:>5}:    {:>14}    {:>14}    {:>14}    {:>14}",
+                        exponent,
+                        Printable::commas_u64(self.negative[index    ]),
+                        Printable::commas_u64(self.negative[index + 1]),
+                        Printable::commas_u64(self.negative[index + 2]),
+                        Printable::commas_u64(self.negative[index + 3])
+                    );
 
-            if index >= print_roundup() {
-                index -= 4;
+                printer.print(&output);
+
+                rows -= 1;
+
+                if index >= print_roundup() {
+                    index -= 4;
+                }
             }
         }
     }
 
     // This helper method prints the positive buckets.
 
-    fn print_positive(&self, printer: &mut dyn Printer, _suppress: &Suppress) {
+    fn print_positive(&self, printer: &mut dyn Printer, suppress: &Suppress) {
         let mut last = self.count - 1;
 
         while last > 0 && self.positive[last] == 0 {
@@ -192,35 +216,33 @@ impl FloatHistogram {
 
         assert!(print_roundup() == 4);    // This code assumes len() % 4 == 0
 
-        // Skip over rows with entries that are all zero.
-
-        while i <= stop_index {
-            if
-                self.positive[i    ] == 0
-            &&  self.positive[i + 1] == 0
-            &&  self.positive[i + 2] == 0
-            &&  self.positive[i + 3] == 0 {
-                i += 4
-            } else {
-                break;
-            }
-        }
-
-        // Print the rows.  Each row has the counts for 4 buckets.
+        // Print the rows that have non-zero entries.  Each row has
+        // the counts for 4 buckets.
 
         while i <= stop_index {
             assert!(i <= self.positive.len() - 4);
 
-            let exponent = i as isize * bucket_divisor();
-            let exponent = exponent - exponent_bias();
+            if
+                suppress.no_zero_rows
+            ||  self.positive[i    ] != 0
+            ||  self.positive[i + 1] != 0
+            ||  self.positive[i + 2] != 0
+            ||  self.positive[i + 3] != 0 {
 
-            printer.print(&format!("   2^{:>5}:    {:>14}    {:>14}    {:>14}    {:>14}",
-                exponent,
-                Printable::commas_u64(self.positive[i]),
+                let exponent = i as isize * bucket_divisor();
+                let exponent = exponent - exponent_bias();
 
-                Printable::commas_u64(self.positive[i + 1]),
-                Printable::commas_u64(self.positive[i + 2]),
-                Printable::commas_u64(self.positive[i + 3])));
+                let output =
+                    format!("   2^{:>5}:    {:>14}    {:>14}    {:>14}    {:>14}",
+                        exponent,
+                        Printable::commas_u64(self.positive[i]    ),
+                        Printable::commas_u64(self.positive[i + 1]),
+                        Printable::commas_u64(self.positive[i + 2]),
+                        Printable::commas_u64(self.positive[i + 3])
+                    );
+
+                printer.print(&output);
+            }
 
             i += 4;
         }
@@ -245,7 +267,7 @@ impl FloatHistogram {
         self.print_positive(printer, suppress);
     }
 
-    /// Deletes all data from the histogrm.
+    /// Deletes all data from the histogram.
 
     pub fn clear(&mut self) {
         self.negative   = vec![0; self.count];
@@ -267,13 +289,14 @@ impl Histogram for FloatHistogram {
         self.print_opts(printer, &self.suppress);
     }
 
-    /// Clear the histogram data.
+    /// Clears the histogram data.
 
     fn clear_histogram(&mut self) {
         self.clear()
     }
 
-    /// Convert the pointer to histogram types if possible.
+    /// Converts the self pointer to specific histogram types if
+    /// possible.
 
     fn to_log_histogram  (&self) -> Option<LogHistogramBox> {
         None
@@ -287,14 +310,17 @@ impl Histogram for FloatHistogram {
 #[cfg(test)]
 mod tests {
     use crate::stdout_printer;
+    use crate::min_exponent;
+    use crate::max_exponent;
     use super::*;
 
     fn simple_print_test() {
-        let     min       = min_exponent();
-        let     max       = max_exponent();
-        let     suppress  = Suppress { min, max };
-        let mut histogram = FloatHistogram::new(suppress);
-        let     max_index = max_biased_exponent() / bucket_divisor();
+        let     min_exp      = min_exponent();
+        let     max_exp      = max_exponent();
+        let     no_zero_rows = true;
+        let     suppress     = Suppress { min_exp, max_exp, no_zero_rows };
+        let mut histogram    = FloatHistogram::new(suppress);
+        let     max_index    = max_biased_exponent() / bucket_divisor();
 
         for i in 0..= max_index {
             histogram.negative[i as usize] = i as u64;

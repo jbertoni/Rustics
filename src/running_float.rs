@@ -37,8 +37,8 @@ use super::max_f64;
 use super::min_exponent;
 use super::max_exponent;
 
-use super::float_histogram::Suppress;
-use super::float_histogram::SuppressOption;
+use super::float_histogram::HistoOpts;
+use super::float_histogram::HistoOption;
 
 pub struct RunningFloat {
     name:      String,
@@ -57,18 +57,18 @@ pub struct RunningFloat {
 }
 
 impl RunningFloat {
-    pub fn new(name: &str, print_opts: PrintOption, suppress: SuppressOption) -> RunningFloat {
+    pub fn new(name: &str, print_opts: PrintOption, histo_opts: HistoOption) -> RunningFloat {
         let (printer, title, units) = parse_print_opts(&print_opts, name);
 
-        let suppress =
-            if let Some(suppress) = suppress {
-                suppress
+        let histo_opts =
+            if let Some(histo_opts) = histo_opts {
+                histo_opts
             } else {
                 let min_exp      = min_exponent();
                 let max_exp      = max_exponent();
                 let no_zero_rows = true;
 
-                Suppress { min_exp, max_exp, no_zero_rows }
+                HistoOpts { min_exp, max_exp, no_zero_rows }
             };
 
         let name      = name.to_string();
@@ -80,7 +80,7 @@ impl RunningFloat {
         let moment_2  = 0.0;
         let moment_3  = 0.0;
         let moment_4  = 0.0;
-        let histogram = FloatHistogram::new(suppress);
+        let histogram = FloatHistogram::new(histo_opts);
         let histogram = Rc::from(RefCell::new(histogram));
 
         RunningFloat {

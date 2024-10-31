@@ -13,12 +13,12 @@ use super::biased_exponent;
 use super::max_biased_exponent;
 use super::exponent_bias;
 
-pub type SuppressOption  = Option<Suppress>;
+pub type HistoOption  = Option<HistoOpts>;
 
-/// The Suppress struct is used to specify options on how to print
+/// The HistoOpts struct is used to specify options on how to print
 /// a histogram.
 
-pub struct Suppress {
+pub struct HistoOpts {
     pub min_exp:       isize,   // not yet implemented
     pub max_exp:       isize,   // not yet implemented
     pub no_zero_rows:  bool,    // suppress any rows that are all zeros
@@ -37,7 +37,7 @@ pub struct FloatHistogram {
     count:      usize,
     nans:       usize,
     infinities: usize,
-    suppress:   Suppress,
+    histo_opts: HistoOpts,
 }
 
 // Define how many exponent values are merged into one bucket.
@@ -67,10 +67,10 @@ fn roundup(count: usize, multiple: usize) -> usize {
 }
 
 impl FloatHistogram {
-    /// Creates a new histogram.  The suppress option currently is
-    /// unlimited.
+    /// Creates a new histogram.  The histo_opts option currently is
+    /// only partially implemented.
 
-    pub fn new(suppress: Suppress) -> FloatHistogram {
+    pub fn new(histo_opts: HistoOpts) -> FloatHistogram {
         let count      = buckets() as usize;
         let count      = roundup(count, print_roundup());
         let negative   = vec![0; count];
@@ -78,7 +78,7 @@ impl FloatHistogram {
         let nans       = 0;
         let infinities = 0;
 
-        FloatHistogram { negative, positive, count, nans, infinities, suppress }
+        FloatHistogram { negative, positive, count, nans, infinities, histo_opts }
     }
 
     ///  Records one f64 sample into its bucket.
@@ -142,9 +142,7 @@ impl FloatHistogram {
 
     // This helper method prints the negative buckets.
 
-    // TODO:  To-do:  suppress all rows that are all zeros?  Integer, too?
-
-    fn print_negative(&self, printer: &mut dyn Printer, suppress: &Suppress) {
+    fn print_negative(&self, printer: &mut dyn Printer, histo_opts: &HistoOpts) {
         // Skip printing buckets that would appear before the first non-zero bucket.
         // So find the non-zero bucket with the highest index in the array.
 
@@ -171,7 +169,7 @@ impl FloatHistogram {
             assert!(index <= self.count - print_roundup());
 
             if 
-                suppress.no_zero_rows
+                histo_opts.no_zero_rows
             ||  self.negative[index    ] != 0
             ||  self.negative[index + 1] != 0
             ||  self.negative[index + 2] != 0
@@ -204,7 +202,7 @@ impl FloatHistogram {
 
     // This helper method prints the positive buckets.
 
-    fn print_positive(&self, printer: &mut dyn Printer, suppress: &Suppress) {
+    fn print_positive(&self, printer: &mut dyn Printer, histo_opts: &HistoOpts) {
         let mut last = self.count - 1;
 
         while last > 0 && self.positive[last] == 0 {
@@ -223,7 +221,7 @@ impl FloatHistogram {
             assert!(i <= self.positive.len() - 4);
 
             if
-                suppress.no_zero_rows
+                histo_opts.no_zero_rows
             ||  self.positive[i    ] != 0
             ||  self.positive[i + 1] != 0
             ||  self.positive[i + 2] != 0
@@ -251,20 +249,20 @@ impl FloatHistogram {
     /// Prints the histogrm.
 
     pub fn print(&self, printer: &mut dyn Printer) {
-        self.print_opts(printer, &self.suppress);
+        self.histo_opts(printer, &self.histo_opts);
     }
 
-    /// Prints the histogram.  The suppress option is not currently
+    /// Prints the histogram.  The histo_opts option is not fully
     /// implemented.
 
-    pub fn print_opts(&self, printer: &mut dyn Printer, suppress: &Suppress) {
+    pub fn histo_opts(&self, printer: &mut dyn Printer, histo_opts: &HistoOpts) {
         let header =
             format!("  Log Histogram:  ({} NaN, {} infinite)", self.nans, self.infinities);
 
         printer.print(&header);
-        self.print_negative(printer, suppress);
+        self.print_negative(printer, histo_opts);
         printer.print("  -----------------------");
-        self.print_positive(printer, suppress);
+        self.print_positive(printer, histo_opts);
     }
 
     /// Deletes all data from the histogram.
@@ -286,7 +284,7 @@ impl FloatHistogram {
 
 impl Histogram for FloatHistogram {
     fn print_histogram(&self, printer: &mut dyn Printer) {
-        self.print_opts(printer, &self.suppress);
+        self.histo_opts(printer, &self.histo_opts);
     }
 
     /// Clears the histogram data.
@@ -318,8 +316,8 @@ mod tests {
         let     min_exp      = min_exponent();
         let     max_exp      = max_exponent();
         let     no_zero_rows = true;
-        let     suppress     = Suppress { min_exp, max_exp, no_zero_rows };
-        let mut histogram    = FloatHistogram::new(suppress);
+        let     histo_opts   = HistoOpts { min_exp, max_exp, no_zero_rows };
+        let mut histogram    = FloatHistogram::new(histo_opts);
         let     max_index    = max_biased_exponent() / bucket_divisor();
 
         for i in 0..= max_index {

@@ -12,6 +12,7 @@ use super::Printer;
 use super::biased_exponent;
 use super::max_biased_exponent;
 use super::exponent_bias;
+use super::sign;
 
 pub type HistoOption  = Option<HistoOpts>;
 
@@ -19,8 +20,8 @@ pub type HistoOption  = Option<HistoOpts>;
 /// a histogram.
 
 pub struct HistoOpts {
-    pub min_exp:       isize,   // not yet implemented
-    pub max_exp:       isize,   // not yet implemented
+    pub merge_min:     isize,   // not yet implemented
+    pub merge_max:     isize,   // not yet implemented
     pub no_zero_rows:  bool,    // suppress any rows that are all zeros
 }
 
@@ -34,9 +35,10 @@ pub struct HistoOpts {
 pub struct FloatHistogram {
     negative:   Vec<u64>,
     positive:   Vec<u64>,
-    count:      usize,
+    buckets:    usize,
     nans:       usize,
     infinities: usize,
+    samples:    usize,
     histo_opts: HistoOpts,
 }
 
@@ -62,8 +64,8 @@ fn buckets() -> isize {
 
 // Do covered division.
 
-fn roundup(count: usize, multiple: usize) -> usize {
-    ((count + multiple - 1) / multiple) * multiple
+fn roundup(value: usize, multiple: usize) -> usize {
+    ((value + multiple - 1) / multiple) * multiple
 }
 
 impl FloatHistogram {
@@ -71,14 +73,15 @@ impl FloatHistogram {
     /// only partially implemented.
 
     pub fn new(histo_opts: HistoOpts) -> FloatHistogram {
-        let count      = buckets() as usize;
-        let count      = roundup(count, print_roundup());
-        let negative   = vec![0; count];
-        let positive   = vec![0; count];
+        let buckets    = buckets() as usize;
+        let buckets    = roundup(buckets, print_roundup());
+        let negative   = vec![0; buckets];
+        let positive   = vec![0; buckets];
+        let samples    = 0;
         let nans       = 0;
         let infinities = 0;
 
-        FloatHistogram { negative, positive, count, nans, infinities, histo_opts }
+        FloatHistogram { negative, positive, buckets, samples, nans, infinities, histo_opts }
     }
 
     ///  Records one f64 sample into its bucket.
@@ -89,8 +92,9 @@ impl FloatHistogram {
             return;
         }
 
-        // Get the index into the histogram.  This code ignores the sign of
-        // the number.  We have two separate arrays for positive and negative
+        // Get the index into the histogram.
+        //
+        // We have two separate arrays for positive and negative
         // values.
 
         let index =
@@ -100,19 +104,27 @@ impl FloatHistogram {
                 let index = max_biased_exponent() / bucket_divisor();
 
                 index as usize
+            } else if sample == 0.0 {
+                let index = exponent_bias() / bucket_divisor();
+
+                index as usize
             } else {
                 let index = biased_exponent(sample) / bucket_divisor();
 
                 index as usize
             };
 
+        let sign = sign(sample);
+
         // Now index into the appropriate array.
 
-        if sample < 0.0 {
+        if sign < 0 {
             self.negative[index] += 1;
         } else {
             self.positive[index] += 1;
         }
+
+        self.samples += 1;
     }
 
     /// Returns the start biased exponent of the bucket into
@@ -158,16 +170,13 @@ impl FloatHistogram {
             return;
         }
 
-        // Start printing from the highest-index non-zero row.
+        // Start printing from the lowest-index row.
 
         let     start_row   = scan / print_roundup();
-        let     start_index = start_row * print_roundup();
         let mut rows        = start_row + 1;
-        let mut index       = start_index;
+        let mut index       = 0;
 
         while rows > 0 {
-            assert!(index <= self.count - print_roundup());
-
             if 
                 histo_opts.no_zero_rows
             ||  self.negative[index    ] != 0
@@ -181,7 +190,7 @@ impl FloatHistogram {
                 assert!(print_roundup() == 4);    // This format assumes a
 
                 let output =
-                    format!("  -2^{:>5}:    {:>14}    {:>14}    {:>14}    {:>14}",
+                    format!("    -2^{:>5}:    {:>14}    {:>14}    {:>14}    {:>14}",
                         exponent,
                         Printable::commas_u64(self.negative[index    ]),
                         Printable::commas_u64(self.negative[index + 1]),
@@ -191,11 +200,8 @@ impl FloatHistogram {
 
                 printer.print(&output);
 
-                rows -= 1;
-
-                if index >= print_roundup() {
-                    index -= 4;
-                }
+                rows  -= 1;
+                index += 4;
             }
         }
     }
@@ -203,7 +209,11 @@ impl FloatHistogram {
     // This helper method prints the positive buckets.
 
     fn print_positive(&self, printer: &mut dyn Printer, histo_opts: &HistoOpts) {
-        let mut last = self.count - 1;
+        if self.samples == 0 {
+            return;
+        }
+
+        let mut last = self.buckets - 1;
 
         while last > 0 && self.positive[last] == 0 {
             last -= 1;
@@ -215,7 +225,7 @@ impl FloatHistogram {
         assert!(print_roundup() == 4);    // This code assumes len() % 4 == 0
 
         // Print the rows that have non-zero entries.  Each row has
-        // the counts for 4 buckets.
+        // the sample counts for 4 buckets.
 
         while i <= stop_index {
             assert!(i <= self.positive.len() - 4);
@@ -231,7 +241,7 @@ impl FloatHistogram {
                 let exponent = exponent - exponent_bias();
 
                 let output =
-                    format!("   2^{:>5}:    {:>14}    {:>14}    {:>14}    {:>14}",
+                    format!("    2^{:>5}:    {:>14}    {:>14}    {:>14}    {:>14}",
                         exponent,
                         Printable::commas_u64(self.positive[i]    ),
                         Printable::commas_u64(self.positive[i + 1]),
@@ -257,7 +267,8 @@ impl FloatHistogram {
 
     pub fn histo_opts(&self, printer: &mut dyn Printer, histo_opts: &HistoOpts) {
         let header =
-            format!("  Log Histogram:  ({} NaN, {} infinite)", self.nans, self.infinities);
+            format!("  Log Histogram:  ({} NaN, {} infinite, {} samples)",
+                self.nans, self.infinities, self.samples);
 
         printer.print(&header);
         self.print_negative(printer, histo_opts);
@@ -268,8 +279,9 @@ impl FloatHistogram {
     /// Deletes all data from the histogram.
 
     pub fn clear(&mut self) {
-        self.negative   = vec![0; self.count];
-        self.positive   = vec![0; self.count];
+        self.negative   = vec![0; self.buckets];
+        self.positive   = vec![0; self.buckets];
+        self.samples    = 0;
         self.nans       = 0;
         self.infinities = 0;
     }
@@ -309,14 +321,13 @@ impl Histogram for FloatHistogram {
 mod tests {
     use crate::stdout_printer;
     use crate::min_exponent;
-    use crate::max_exponent;
     use super::*;
 
     fn simple_print_test() {
-        let     min_exp      = min_exponent();
-        let     max_exp      = max_exponent();
+        let     merge_min    = min_exponent();
+        let     merge_max    = min_exponent();
         let     no_zero_rows = true;
-        let     histo_opts   = HistoOpts { min_exp, max_exp, no_zero_rows };
+        let     histo_opts   = HistoOpts { merge_min, merge_max, no_zero_rows };
         let mut histogram    = FloatHistogram::new(histo_opts);
         let     max_index    = max_biased_exponent() / bucket_divisor();
 
@@ -332,6 +343,57 @@ mod tests {
         let     printer     = &mut *printer_box.lock().unwrap();
 
         histogram.print(printer);
+
+        histogram.clear();
+
+        for data in &histogram.negative {
+            assert!(*data == 0);
+        }
+
+        for data in &histogram.positive {
+            assert!(*data == 0);
+        }
+
+        assert!(histogram.samples    == 0);
+        assert!(histogram.nans       == 0);
+        assert!(histogram.infinities == 0);
+
+        histogram.print(printer);
+
+        println!("simple_print_test:  start sampling");
+
+        let sample_count = 1000;
+
+        for i in 0..sample_count {
+            histogram.record(-(i as f64));
+        }
+
+        histogram.print(printer);
+
+        assert!(histogram.samples     == sample_count as usize);
+        assert!(histogram.nans        == 0);
+        assert!(histogram.infinities  == 0);
+
+        // Values -0.0 and -1.0 should be in the same bucket.
+
+        let zero_bucket = exponent_bias() / bucket_divisor();
+        let zero_bucket = zero_bucket as usize;
+
+        assert!(histogram.negative[zero_bucket    ] == 2);
+        assert!(histogram.negative[zero_bucket + 1] == sample_count - 2);
+
+        for i in 0..sample_count {
+            histogram.record(i as f64);
+        }
+
+        histogram.print(printer);
+
+        assert!(histogram.samples     == 2 * sample_count as usize);
+        assert!(histogram.nans        == 0);
+        assert!(histogram.infinities  == 0);
+
+        assert!(histogram.positive[zero_bucket    ] == 2);
+        assert!(histogram.positive[zero_bucket + 1] == sample_count - 2);
     }
 
     #[test]

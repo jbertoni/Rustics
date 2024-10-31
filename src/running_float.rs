@@ -64,11 +64,11 @@ impl RunningFloat {
             if let Some(histo_opts) = histo_opts {
                 histo_opts
             } else {
-                let min_exp      = min_exponent();
-                let max_exp      = max_exponent();
+                let merge_min    = min_exponent();
+                let merge_max    = max_exponent();
                 let no_zero_rows = true;
 
-                HistoOpts { min_exp, max_exp, no_zero_rows }
+                HistoOpts { merge_min, merge_max, no_zero_rows }
             };
 
         let name      = name.to_string();

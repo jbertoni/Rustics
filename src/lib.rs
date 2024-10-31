@@ -223,6 +223,18 @@ pub fn max_biased_exponent() -> isize {
     max_exponent() + exponent_bias()
 }
 
+pub fn sign(input: f64) -> isize {
+    if input.to_bits() & (1_u64 << 63) != 0 {
+        -1
+    } else {
+        1
+    }
+}
+
+pub fn is_zero(input: f64) -> bool {
+    input == 0.0    // -0.0 == 0 per IEEE definition
+}
+
 pub fn biased_exponent(input: f64) -> isize {
     if input.is_nan() {
         return 0;

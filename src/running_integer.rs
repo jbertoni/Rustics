@@ -461,6 +461,10 @@ impl Rustics for RunningInteger {
         true
     }
 
+    fn float_extremes(&self) -> bool {
+        false
+    }
+
     fn min_i64(&self) -> i64 {
         self.min
     }
@@ -602,11 +606,13 @@ mod tests {
         let     min        = -256;
         let     max        =  511;
 
-
         assert!(stats.name()  == name);
         assert!(stats.title() == name);
         assert!(stats.class() == "integer");
         assert!(stats.id()    == usize::MAX);
+
+        assert!( stats.int_extremes  ());
+        assert!(!stats.float_extremes());
 
         assert!(stats.equals(&stats));
         assert!(stats.int_extremes());

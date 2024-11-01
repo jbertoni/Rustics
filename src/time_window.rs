@@ -234,6 +234,10 @@ impl Rustics for TimeWindow {
         self.integer_window.int_extremes()
     }
 
+    fn float_extremes(&self) -> bool {
+        self.integer_window.float_extremes()
+    }
+
     fn min_i64(&self) -> i64 {
         self.integer_window.min_i64()
     }

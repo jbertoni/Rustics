@@ -416,6 +416,10 @@ impl Rustics for IntegerWindow {
         true
     }
 
+    fn float_extremes(&self) -> bool {
+        false
+    }
+
     fn min_f64(&self) -> f64 {
         self.compute_min() as f64
     }
@@ -552,6 +556,8 @@ mod tests {
         let mut stats       = IntegerWindow::new(&"Test Statistics", window_size, None);
 
         assert!(stats.class() == "integer");
+        assert!( stats.int_extremes  ());
+        assert!(!stats.float_extremes());
 
         for sample in -256..512 {
             stats.record_i64(sample);

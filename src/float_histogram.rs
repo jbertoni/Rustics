@@ -227,13 +227,14 @@ impl FloatHistogram {
             }
         }
 
-        (sign, sign * mode)
+        let biased_exponent = mode * bucket_divisor();
+
+        (sign, biased_exponent - exponent_bias())
     }
 
     pub fn mode_value(&self) -> f64 {
-        let (sign, log_mode) = self.log_mode();
+        let (sign, exponent) = self.log_mode();
 
-        let exponent = (log_mode.abs() * bucket_divisor()) - exponent_bias();
         let result   = 2.0_f64;
         let result   = result.powi(exponent as i32);
 
@@ -552,9 +553,42 @@ mod tests {
         assert!(histogram.samples    == sample_count as usize + 2);
     }
 
+    fn test_log_mode() {
+        // Create a HistOp for new().
+   
+        let merge_min    = 0;  // not implemented yet
+        let merge_max    = 0;  // not implemented yet
+        let no_zero_rows = false;
+   
+        let histo_opts = HistoOpts { merge_min, merge_max, no_zero_rows };
+   
+        // Create a histogram and accept the default output format.
+   
+        let mut histogram = FloatHistogram::new(histo_opts);
+   
+        let sample_count = 1000;
+   
+        for i in 0..sample_count {
+             histogram.record(-(i as f64));
+        }
+
+        let (sign, exponent) = histogram.log_mode();
+
+        println!("sign = {}, exponent = {}", sign, exponent);
+
+        let sign     = sign as f64;
+        let expected = sign * 2_f64.powi(exponent as i32);
+
+        let log_mode = histogram.mode_value();
+
+        println!("test_log_mode:  got {}, expected {}", log_mode, expected);
+        assert!(log_mode == expected);
+    }
+
     #[test]
     fn run_tests() {
         simple_test();
-        test_documentation()
+        test_documentation();
+        test_log_mode();
     }
 }

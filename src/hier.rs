@@ -971,6 +971,18 @@ impl Rustics for Hier {
         }
     }
 
+    fn float_extremes(&self) -> bool {
+        if let Some(window) = &self.window {
+            window.float_extremes()
+        } else {
+            let current = self.current();
+            let borrow  = current.borrow();
+            let rustics = borrow.to_rustics();
+
+            rustics.float_extremes()
+        }
+    }
+
     fn min_i64(&self) -> i64  {
         if let Some(window) = &self.window {
             window.min_i64()

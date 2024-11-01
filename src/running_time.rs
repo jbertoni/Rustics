@@ -267,6 +267,10 @@ impl Rustics for RunningTime {
         self.running_integer.int_extremes()
     }
 
+    fn float_extremes(&self) -> bool {
+        self.running_integer.float_extremes()
+    }
+
     fn min_i64(&self) -> i64 {
         self.running_integer.min_i64()
     }

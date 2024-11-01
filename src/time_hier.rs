@@ -513,6 +513,11 @@ mod tests {
         let     window_size = window_size.unwrap() as i64;
         let mut events      = 0 as i64;
 
+        // Check time_window *_extremes.
+
+        assert!( hier.int_extremes  ());
+        assert!(!hier.float_extremes());
+
         for i in 0..window_size {
             let sample = i + 1;
 

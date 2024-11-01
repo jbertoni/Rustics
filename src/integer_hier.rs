@@ -442,8 +442,8 @@ mod tests {
             events += 1;
         }
 
-        let float    = events as f64;
-        let mean     = (float * (float + 1.0) / 2.0) / float;
+        let float = events as f64;
+        let mean  = (float * (float + 1.0) / 2.0) / float;
 
         assert!(hier.mean() == mean);
         assert!(hier.event_count() == events);
@@ -457,6 +457,9 @@ mod tests {
         let     period      = level_0_period();
         let     window_size = window_size.unwrap() as i64;
         let mut events      = 0 as i64;
+
+        assert!( hier.int_extremes  ());
+        assert!(!hier.float_extremes());
 
         for i in 0..window_size {
             let sample = i + 1;

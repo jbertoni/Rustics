@@ -4,7 +4,6 @@
 //  permitted by law.
 //
 
-// TODO: crates.io comments and examples
 //!  
 //! ## Type
 //! * RunningFloat
@@ -65,6 +64,10 @@
 //!
 //!     assert!(float.nans()               == 1);
 //!     assert!(float.infinities()         == 2);
+//!
+//!     // Print all the summary information.
+//!
+//!     float.print();
 //!```
 
 use std::any::Any;
@@ -297,6 +300,10 @@ impl Rustics for RunningFloat {
         false
     }
 
+    fn float_extremes(&self) -> bool {
+        true
+    }
+
     fn min_i64(&self) -> i64 {
         panic!("RunningFloat::min_i64: not supported");
     }
@@ -407,6 +414,9 @@ mod tests {
         let mut float = RunningFloat::new("Test Statistic", None, None);
         let     end   = 1000;
 
+        assert!( float.float_extremes());
+        assert!(!float.int_extremes  ());
+
         for i in 1..=end {
             float.record_f64(i as f64);
         }
@@ -421,6 +431,9 @@ mod tests {
         assert!(float.mean()    == mean      );
         assert!(float.min_f64() == 1.0       );
         assert!(float.max_f64() == float_end );
+
+        assert!( float.float_extremes());
+        assert!(!float.int_extremes  ());
 
         float.print();
 

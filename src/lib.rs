@@ -502,8 +502,7 @@ pub trait Rustics {
 
     fn record_i64(&mut self, sample: i64);
 
-    /// Records an f64 value.  Currently, no type supports this
-    /// operation.
+    /// Records an f64 value.
 
     fn record_f64(&mut self, sample: f64);
 
@@ -586,6 +585,11 @@ pub trait Rustics {
     /// the min_i64() and max_i64() methods.
 
     fn int_extremes(&self) -> bool;
+
+    /// Returns a boolean indicating whether the underlying type supports
+    /// the min_f64() and max_f64() methods.
+
+    fn float_extremes(&self) -> bool;
 
     /// Returns the minimum of the sample space for an integer
     /// or time type.  Time statistics return a value in ticks.

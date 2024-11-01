@@ -184,6 +184,10 @@ impl Rustics for Counter {
         false
     }
 
+    fn float_extremes(&self) -> bool {
+        false
+    }
+
     fn min_i64(&self) -> i64 {
         panic!("Counter::min_i64:  not supported");
     }
@@ -319,6 +323,10 @@ mod tests {
         let expected = events + sequence;
 
         assert!(counter.count() == expected as u64);
+
+        assert!(!counter.float_extremes());
+        assert!(!counter.int_extremes  ());
+
 
         counter.print();
     }

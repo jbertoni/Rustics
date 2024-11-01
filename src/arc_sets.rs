@@ -255,10 +255,12 @@ impl ArcSet {
         self.print_opts(None, None);
     }
 
-    /// Prin the set and overrides the standard printer and title
-    /// as desired.
+    /// Prints the set and overrides the default printer and title as
+    /// desired.
 
     pub fn print_opts(&self, printer: PrinterOption, title: Option<&str>) {
+        // Iterate through the Rustics instances.
+
         for mutex in self.members.iter() {
             let member  = mutex.lock().unwrap();
             let printer = printer.clone();
@@ -272,6 +274,8 @@ impl ArcSet {
                 member.print_opts(printer, None);
             }
         }
+
+        // Iterate through the subsets.
 
         for mutex in self.subsets.iter() {
             let subset  = mutex.lock().unwrap();

@@ -148,7 +148,7 @@ impl RunningFloat {
         let moment_2    = 0.0;
         let moment_3    = 0.0;
         let moment_4    = 0.0;
-        let histogram   = FloatHistogram::new(histo_opts);
+        let histogram   = FloatHistogram::new(&histo_opts);
         let histogram   = Rc::from(RefCell::new(histogram));
 
         RunningFloat {

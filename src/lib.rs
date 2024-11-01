@@ -43,6 +43,15 @@
 //!     * TimeWindow
 //!         * This type uses the IntegerWindow code to handle time intervals.  As with the
 //!           RunningTime type, values are printed in units of time.
+//! * Floating point statistics type
+//!     * RunningFloat
+//!         * This type uses samples of type f64.  It is otherwise similar to
+//!           RunningInteger.  It uses a coarser pseudo-log function than the
+//!           integer statistics.  See FloatHistogram for details.
+//!
+//!     * FloatWindow
+//!         * This type uses samples of type f64.  It is otherwise similar to
+//!           IntegerWindow.  It creates a histogram using FloatHistogram.
 //!
 //! * Hierarchial Statistics
 //!     * The Hier struct implements an ordered set of vectors of Rustics instances.
@@ -150,10 +159,14 @@ use std::default::Default;
 use time::Timer;
 
 pub mod running_integer;
-pub mod running_time;
 pub mod integer_window;
+
+pub mod running_time;
 pub mod time_window;
+
 pub mod running_float;
+pub mod float_window;
+
 pub mod counter;
 pub mod arc_sets;
 pub mod rc_sets;

@@ -2,8 +2,8 @@
 A minimal statistics library for performance monitoring
 
 
-Rustics implements a simple set of statistics structs intended primarily for
-measuring performance parameters.  The struct implementations compute
+Rustics implements a simple set of statistics structs intended primarily
+for measuring performance parameters.  The struct implementations compute
 various statistical characterizations of the data, such as the mean and
 variance.  The trait Rustics defines the common interface for all
 statistical types.
@@ -11,12 +11,11 @@ statistical types.
 Many testing modules contain very example functions called "sample_usage",
 and most modules have sample code in their documentation.
 
-At this time, statistics can be gathered for i64 values and for time
-samples, also of type i64.  Statistics can gathered collected as a running
-total of all samples recorded, or as a window covering the last N events,
-for a programmable N.
+At this time, statistics can be gathered for i64 values, time periods (also
+of type i64), and f64 samples.  Statistics can gathered collected as a running
+total of all samples recorded, or as a window covering the last N events.
 
-The struct for time samples require a timer implementation.  See the time
+The structs for time samples require a timer implementation.  See the time
 module for information on timers and to see some sample implementations.
 
 In addition to the more detailed statistics types, the library supports a

@@ -34,7 +34,7 @@
 //!     // Create a histogram and accept the default output format.
 //!
 //!     println!("at create");
-//!     let mut histogram = FloatHistogram::new(histo_opts);
+//!     let mut histogram = FloatHistogram::new(&histo_opts);
 //!
 //!     let sample_count = 1000;
 //!
@@ -92,10 +92,21 @@ pub type HistoOption  = Option<HistoOpts>;
 /// The HistoOpts struct is used to specify options on how to print
 /// a histogram.
 
+#[derive(Clone, Copy)]
 pub struct HistoOpts {
     pub merge_min:     isize,   // not yet implemented
     pub merge_max:     isize,   // not yet implemented
     pub no_zero_rows:  bool,    // suppress any rows that are all zeros
+}
+
+impl Default for HistoOpts {
+    fn default() -> HistoOpts {
+        let merge_min    = 0;
+        let merge_max    = 0;
+        let no_zero_rows = false;
+
+        HistoOpts { merge_min, merge_max, no_zero_rows }
+    }
 }
 
 ///
@@ -145,7 +156,7 @@ impl FloatHistogram {
     /// Creates a new histogram.  The histo_opts option currently is
     /// only partially implemented.
 
-    pub fn new(histo_opts: HistoOpts) -> FloatHistogram {
+    pub fn new(histo_opts: &HistoOpts) -> FloatHistogram {
         let buckets    = buckets() as usize;
         let buckets    = roundup(buckets, print_roundup());
         let negative   = vec![0; buckets];
@@ -153,6 +164,7 @@ impl FloatHistogram {
         let samples    = 0;
         let nans       = 0;
         let infinities = 0;
+        let histo_opts = (*histo_opts).clone();
 
         FloatHistogram { negative, positive, buckets, samples, nans, infinities, histo_opts }
     }
@@ -420,7 +432,7 @@ mod tests {
         let     merge_max    = min_exponent();
         let     no_zero_rows = true;
         let     histo_opts   = HistoOpts { merge_min, merge_max, no_zero_rows };
-        let mut histogram    = FloatHistogram::new(histo_opts);
+        let mut histogram    = FloatHistogram::new(&histo_opts);
         let     max_index    = max_biased_exponent() / bucket_divisor();
 
         for i in 0..= max_index {
@@ -514,7 +526,7 @@ mod tests {
    
         // Create a histogram and accept the default output format.
    
-        let mut histogram = FloatHistogram::new(histo_opts);
+        let mut histogram = FloatHistogram::new(&histo_opts);
    
         let sample_count = 1000;
    
@@ -564,7 +576,7 @@ mod tests {
    
         // Create a histogram and accept the default output format.
    
-        let mut histogram = FloatHistogram::new(histo_opts);
+        let mut histogram = FloatHistogram::new(&histo_opts);
    
         let sample_count = 1000;
    

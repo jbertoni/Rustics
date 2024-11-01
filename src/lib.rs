@@ -160,12 +160,15 @@ use time::Timer;
 
 pub mod running_integer;
 pub mod integer_window;
+pub mod integer_hier;
 
 pub mod running_time;
 pub mod time_window;
+pub mod time_hier;
 
 pub mod running_float;
 pub mod float_window;
+pub mod float_hier;
 
 pub mod counter;
 pub mod arc_sets;
@@ -174,8 +177,6 @@ pub mod hier;
 pub mod window;
 pub mod time;
 pub mod sum;
-pub mod integer_hier;
-pub mod time_hier;
 pub mod log_histogram;
 pub mod float_histogram;
 

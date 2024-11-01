@@ -240,7 +240,7 @@ impl FloatWindow {
     }
 
     fn compute_min(&self) -> f64 {
-        if self.vector.len() == 0 {
+        if self.vector.is_empty() {
             return 0.0;
         }
 
@@ -256,7 +256,7 @@ impl FloatWindow {
     }
 
     fn compute_max(&self) -> f64 {
-        if self.vector.len() == 0 {
+        if self.vector.is_empty() {
             return 0.0;
         }
 

@@ -164,7 +164,7 @@ impl FloatHistogram {
         let samples    = 0;
         let nans       = 0;
         let infinities = 0;
-        let histo_opts = (*histo_opts).clone();
+        let histo_opts = *histo_opts;
 
         FloatHistogram { negative, positive, buckets, samples, nans, infinities, histo_opts }
     }

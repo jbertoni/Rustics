@@ -163,16 +163,18 @@ impl RunningFloat {
         let max_i64     = i64::MAX;
         let min_f64     = self.min;
         let max_f64     = self.max;
-        let log_mode    = self.histogram.borrow().log_mode() as i64;
+        let mode_value  = self.histogram.borrow().mode_value();
+        let log_mode    = 0;
         let mean        = self.mean;
         let variance    = self.variance();
         let skewness    = self.skewness();
         let kurtosis    = self.kurtosis();
         let units       = self.units.clone();
 
+
         Printable {
-            n,         nans,  infinities,  min_i64,   max_i64,   min_f64,   max_f64,
-            log_mode,  mean,  variance,    skewness,  kurtosis,  units
+            n,         nans,  infinities,  min_i64,   max_i64,   min_f64,  max_f64,
+            log_mode,  mean,  variance,    skewness,  kurtosis,  units,    mode_value
         }
     }
 
@@ -268,7 +270,7 @@ impl Rustics for RunningFloat {
     }
 
     fn log_mode(&self) -> isize {
-        self.histogram.borrow().log_mode()
+        panic!("RunningFloat:: log_mode not supported");
     }
 
     fn mean(&self) -> f64 {

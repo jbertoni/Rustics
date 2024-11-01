@@ -77,7 +77,6 @@
 //!     histogram.print(printer);
 //!```
 
-
 use super::Histogram;
 use super::Printable;
 use super::FloatHistogramBox;
@@ -100,8 +99,8 @@ pub struct HistoOpts {
 }
 
 ///
-/// Float_histgram records a log-like histogram of f64 samples.
-/// The numbers are broken into buckets based on the exponent,
+/// FloatHistogram records a log-like histogram of f64 samples.
+/// The numbers are recorded into buckets based on the exponent,
 /// broken in of 16.  For example, exponents 2^1 through 2^16
 /// form one bucket.
 ///
@@ -203,18 +202,20 @@ impl FloatHistogram {
         self.samples += 1;
     }
 
-    /// Returns the start biased exponent of the bucket into
-    /// which the value goes.  The sign of the value returned 
-    /// matches the sign of the samples in the bucket.
+    /// This function returns the biased IEEE binary64
+    /// exponent, with the sign of the sample value
+    /// used as a sign for the result.
+    ///
 
-    pub fn log_mode(&self) -> isize {
+    pub fn log_mode(&self) -> (isize, isize) {
         let mut mode = 0;
+        let mut sign = -1;
         let mut max  = self.negative[0];
 
         for i in 1..self.negative.len() {
             if self.negative[i] > max {
                 max  = self.negative[i];
-                mode = -(i as isize);
+                mode = i as isize;
             }
         }
 
@@ -222,10 +223,22 @@ impl FloatHistogram {
             if self.positive[i] > max {
                 max  = self.positive[i];
                 mode = i as isize;
+                sign = 1;
             }
         }
 
-        mode * bucket_divisor()
+        (sign, sign * mode)
+    }
+
+    pub fn mode_value(&self) -> f64 {
+        let (sign, log_mode) = self.log_mode();
+
+        let exponent = (log_mode.abs() * bucket_divisor()) - exponent_bias();
+        let result   = 2.0_f64;
+        let result   = result.powi(exponent as i32);
+
+        println!("mode_value({}) = {}", log_mode, sign as f64 * result);
+        sign as f64 * result
     }
 
     // This helper method prints the negative buckets.

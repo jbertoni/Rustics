@@ -276,6 +276,7 @@ impl Rustics for Counter {
         let min_f64    = f64::MIN;
         let max_f64    = f64::MAX;
         let log_mode   = 0;
+        let mode_value = 0.0;
         let mean       = 0.0;
         let variance   = 0.0;
         let skewness   = 0.0;
@@ -284,9 +285,9 @@ impl Rustics for Counter {
 
         let printable =
             Printable { 
-                n,        nans,      infinities,  min_i64,   max_i64,   min_f64,
-                max_f64,  log_mode,  mean,        variance,  skewness,  kurtosis,
-                units
+                n,           nans,      infinities,  min_i64,   max_i64,   min_f64,
+                max_f64,     log_mode,  mean,        variance,  skewness,  kurtosis,
+                mode_value,  units
             };
 
         let log_histogram   = None;

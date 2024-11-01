@@ -343,6 +343,7 @@ impl RunningInteger {
         let min_f64     = f64::MIN;
         let max_f64     = f64::MAX;
         let log_mode    = self.log_histogram.borrow().log_mode() as i64;
+        let mode_value  = 0.0;
         let mean        = self.mean;
         let variance    = self.variance();
         let skewness    = self.skewness();
@@ -350,8 +351,8 @@ impl RunningInteger {
         let units       = self.units.clone();
 
         Printable {
-            n,         nans,  infinities,  min_i64,   max_i64,   min_f64,   max_f64,
-            log_mode,  mean,  variance,    skewness,  kurtosis,  units
+            n,         nans,  infinities,  min_i64,   max_i64,   min_f64,     max_f64,
+            log_mode,  mean,  variance,    skewness,  kurtosis,  mode_value,  units
         }
     }
 }

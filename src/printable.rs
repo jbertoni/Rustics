@@ -96,7 +96,6 @@
 
 use super::Printer;
 use super::Units;
-use super::exponent_bias;
 
 /// The Printable struct is used to pass data to the standard print
 /// functions shared by all the code.  Developers who are implementing
@@ -111,6 +110,7 @@ pub struct Printable {
     pub max_i64:    i64,
     pub min_f64:    f64,
     pub max_f64:    f64,
+    pub mode_value: f64,
     pub log_mode:   i64,
     pub mean:       f64,
     pub variance:   f64,
@@ -306,6 +306,14 @@ impl Printable {
     pub fn print_float_unit(name: &str, value: f64, unit: &str, printer: &mut dyn Printer) {
         assert!(!value.is_nan());
 
+        let (mantissa, exponent) = Printable::format_float(value);
+
+        let output = format!("    {:<13}    {} {} {}", name, mantissa, exponent, unit);
+
+        printer.print(&output);
+    }
+
+    pub fn format_float(value: f64) -> (String, String) {
         // Print the value in scientific notation, then
         // force a sign onto the exponent to make things
         // line up.
@@ -319,11 +327,16 @@ impl Printable {
         // should align.
 
         let     mantissa_digits = 8;
-        let mut mantissa        = Vec::with_capacity(mantissa_digits);
+        let mut mantissa        = Vec::with_capacity(2 * mantissa_digits);
+        let mut got_decimal     = false;
 
         for char in value.chars() {
             if char == ' ' {
                 break;
+            }
+
+            if char == '.' {
+                got_decimal = true;
             }
 
             mantissa.push(char);
@@ -333,17 +346,27 @@ impl Printable {
             }
         }
 
-        // Add trailing zeroes as needed.
+        // The format macro doesn't always provide a decimal point,
+        // so add one as needed.
+
+        if !got_decimal {
+            mantissa.push('.');
+            mantissa.push('0');
+        }
+
+        // Add trailing zeroes as needed to get to the desired number
+        // of digits.
 
         while mantissa.len() < mantissa_digits {
             mantissa.push('0');
         }
 
+        // Concatenate the new mantissa and the original exponent.
+
         let mantissa: String = mantissa.into_iter().collect();
         let exponent         = value.split(' ').last().unwrap();
-        let output           = format!("    {:<13}    {} {} {}", name, mantissa, exponent, unit);
 
-        printer.print(&output);
+        (mantissa, exponent.to_string())
     }
 
     /// Prints a time value in human-usable form.
@@ -381,21 +404,9 @@ impl Printable {
         Self::print_integer_units("Infinities", self.infinities as i64, printer, &self.units);
 
         if self.n > 0 {
-            Self::print_float_units("Minumum",  self.min_f64,  printer, &self.units);
-            Self::print_float_units("Maximum",  self.max_f64,  printer, &self.units);
-
-            let sign =
-                if self.log_mode < 0 {
-                    "-"
-                } else {
-                    " "
-                };
-
-            let mantissa = self.log_mode.abs();
-            let mantissa = mantissa - exponent_bias() as i64;
-            let log_mode = format!("{}2^{}", sign, mantissa);
-
-            Self::print_string("Log Mode", &log_mode, printer);
+            Self::print_float_units("Minumum",     self.min_f64,    printer, &self.units);
+            Self::print_float_units("Maximum",     self.max_f64,    printer, &self.units);
+            Self::print_float_units("Mode Bucket", self.mode_value, printer, &self.units);
         }
     }
 
@@ -498,6 +509,7 @@ mod tests {
         let max_i64    = 1000;
         let min_f64    =    1.0;
         let max_f64    = 1000.0;
+        let mode_value =  2.0;
         let log_mode   =   32;
 
         let mean       = 10.0;
@@ -511,9 +523,9 @@ mod tests {
 
         let mut printable =
             Printable {
-                n,        nans,      infinities,  min_i64,   max_i64,   min_f64,
-                max_f64,  log_mode,  mean,        variance,  skewness,  kurtosis,
-                units
+                n,           nans,      infinities,  min_i64,   max_i64,   min_f64,
+                max_f64,     log_mode,  mean,        variance,  skewness,  kurtosis,
+                mode_value,  units
             };
 
         assert!(printable.log_mode_to_time() == expected);
@@ -594,10 +606,75 @@ mod tests {
         }
     }
 
+    fn test_format_float() {
+        let billion = 1000.0 as f64 * 1000.0 * 1000.0;
+
+        let test_values =
+            [
+                   0.0,
+                   1.0,
+                   2.0,
+                   3.00005,
+                   3.000005,
+                1000.0,
+                 999.0,
+                   1.0 * billion,
+                  10.0 * billion,
+
+                  -0.0,
+                  -1.0,
+                  -2.0,
+                  -3.00005,
+                  -3.000005,
+               -1000.0,
+                -999.0,
+                  -1.0 * billion,
+                 -10.0 * billion
+            ];
+
+        let expected =
+            [
+                "+0.00000 e+0",
+                "+1.00000 e+0",
+                "+2.00000 e+0",
+                "+3.00005 e+0",
+                "+3.00000 e+0",
+                "+1.00000 e+3",
+                "+9.99000 e+2",
+                "+1.00000 e+9",
+                "+1.00000 e+10",
+
+                "-0.00000 e+0",
+                "-1.00000 e+0",
+                "-2.00000 e+0",
+                "-3.00005 e+0",
+                "-3.00000 e+0",
+                "-1.00000 e+3",
+                "-9.99000 e+2",
+                "-1.00000 e+9",
+                "-1.00000 e+10"
+            ];
+
+        for i in 0..test_values.len() {
+            let (mantissa, exponent) = Printable::format_float(test_values[i]);
+
+            let mut result = mantissa.clone();
+
+            result.push_str(" ");
+            result.push_str(&exponent);
+
+            println!("test_format_float:  got (\"{}\", \"{}\") -> \"{}\", expected \"{}\" for {}",
+                mantissa, exponent, result, expected[i], test_values[i]);
+
+            assert!(result == expected[i]);
+        }
+    }
+
     #[test]
     fn run_tests() {
         test_commas();
         test_log_mode_to_time();
+        test_format_float();
         documentation();
     }
 }

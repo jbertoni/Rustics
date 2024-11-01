@@ -14,6 +14,7 @@
 //!     that supports i64 data.
 //!
 //! ## Example
+//!```
 //!     use rustics::Rustics;
 //!     use rustics::ExportStats;
 //!     use rustics::printable::Printable;

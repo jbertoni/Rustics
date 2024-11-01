@@ -4,6 +4,80 @@
 //  permitted by law.
 //
 
+//!
+//! ## Type
+//! * FloatHistogram
+//!   * FloatHistogram provides a very coarse log histogram that is similar to
+//!     the LogHistogram type.
+//!   * NaNs are counted separately, but otherwise are ignored.
+//!   * f64::INFINITY samples go into the largest bucket, and into a count of
+//!     infinite values.
+//!   * f64::NEG_INFINITY samples go into the smallest bucket, and into a count
+//!     of infinite values.
+//!
+//! ## Example
+//!     use rustics::float_histogram::FloatHistogram;
+//!     use rustics::float_histogram::bucket_divisor;
+//!     use rustics::exponent_bias;
+//!     use rustics::float_histogram::HistoOpts;
+//!     use rustics::stdout_printer;
+//!
+//!     println!("started");
+//!     // Create a HistOp for new().
+//!
+//!     let merge_min    = 0;  // not implemented yet
+//!     let merge_max    = 0;  // not implemented yet
+//!     let no_zero_rows = false;
+//!
+//!     let histo_opts = HistoOpts { merge_min, merge_max, no_zero_rows };
+//!
+//!     // Create a histogram and accept the default output format.
+//!
+//!     println!("at create");
+//!     let mut histogram = FloatHistogram::new(histo_opts);
+//!
+//!     let sample_count = 1000;
+//!
+//!     for i in 0..sample_count {
+//!          histogram.record(-(i as f64));
+//!     }
+//!
+//!     // Create a Printer instance for output.
+//!
+//!     println!("before first print");
+//!     let printer = stdout_printer();
+//!     let printer = &mut *printer.lock().unwrap();
+//!     println!("at first print");
+//!
+//!     histogram.print(printer);
+//!
+//!     assert!(histogram.samples     == sample_count as usize);
+//!     assert!(histogram.nans        == 0);
+//!     assert!(histogram.infinities  == 0);
+//!
+//!     // Values -0.0 and -1.0 should be in the same bucket.
+//!
+//!     let zero_bucket = exponent_bias() / bucket_divisor();
+//!     let zero_bucket = zero_bucket as usize;
+//!
+//!     assert!(histogram.negative[zero_bucket    ] == 2);
+//!     assert!(histogram.negative[zero_bucket + 1] == sample_count - 2);
+//!
+//!     // Now test some non-finite values.  NaN values do not
+//!     // go into the sample count.
+//!
+//!     histogram.record(f64::INFINITY);
+//!     histogram.record(f64::NEG_INFINITY);
+//!     histogram.record(f64::NAN);
+//!
+//!     assert!(histogram.nans       == 1);
+//!     assert!(histogram.infinities == 2);
+//!     assert!(histogram.samples    == sample_count as usize + 2);
+//!
+//!     histogram.print(printer);
+//!```
+
+
 use super::Histogram;
 use super::Printable;
 use super::FloatHistogramBox;
@@ -33,18 +107,18 @@ pub struct HistoOpts {
 ///
 
 pub struct FloatHistogram {
-    negative:   Vec<u64>,
-    positive:   Vec<u64>,
-    buckets:    usize,
-    nans:       usize,
-    infinities: usize,
-    samples:    usize,
-    histo_opts: HistoOpts,
+    pub negative:   Vec<u64>,
+    pub positive:   Vec<u64>,
+    pub buckets:    usize,
+    pub nans:       usize,
+    pub infinities: usize,
+    pub samples:    usize,
+        histo_opts: HistoOpts,
 }
 
-// Define how many exponent values are merged into one bucket.
+/// Defines how many exponent values are merged into one bucket.
 
-fn bucket_divisor() -> isize {
+pub fn bucket_divisor() -> isize {
     16
 }
 
@@ -87,6 +161,8 @@ impl FloatHistogram {
     ///  Records one f64 sample into its bucket.
 
     pub fn record(&mut self, sample: f64) {
+        //  NaN values are counted but otherwise ignored.
+
         if sample.is_nan() {
             self.nans += 1;
             return;
@@ -95,7 +171,7 @@ impl FloatHistogram {
         // Get the index into the histogram.
         //
         // We have two separate arrays for positive and negative
-        // values.
+        // values, so keep track of the sign.
 
         let index =
             if sample.is_infinite() {
@@ -199,12 +275,12 @@ impl FloatHistogram {
                     );
 
                 printer.print(&output);
+            }
 
-                rows  -= 1;
+            rows -= 1;
 
-                if index >= print_roundup() {
-                    index -= 4;
-                }
+            if index >= print_roundup() {
+                index -= 4;
             }
         }
     }
@@ -259,16 +335,16 @@ impl FloatHistogram {
         }
     }
 
-    /// Prints the histogrm.
+    /// Prints the histogram.
 
     pub fn print(&self, printer: &mut dyn Printer) {
-        self.histo_opts(printer, &self.histo_opts);
+        self.print_opts(printer, &self.histo_opts);
     }
 
     /// Prints the histogram.  The histo_opts option is not fully
     /// implemented.
 
-    pub fn histo_opts(&self, printer: &mut dyn Printer, histo_opts: &HistoOpts) {
+    pub fn print_opts(&self, printer: &mut dyn Printer, histo_opts: &HistoOpts) {
         let header =
             format!("  Log Histogram:  ({} NaN, {} infinite, {} samples)",
                 self.nans, self.infinities, self.samples);
@@ -299,7 +375,7 @@ impl FloatHistogram {
 
 impl Histogram for FloatHistogram {
     fn print_histogram(&self, printer: &mut dyn Printer) {
-        self.histo_opts(printer, &self.histo_opts);
+        self.print_opts(printer, &self.histo_opts);
     }
 
     /// Clears the histogram data.
@@ -326,7 +402,7 @@ mod tests {
     use crate::min_exponent;
     use super::*;
 
-    fn simple_print_test() {
+    fn simple_test() {
         let     merge_min    = min_exponent();
         let     merge_max    = min_exponent();
         let     no_zero_rows = true;
@@ -342,8 +418,8 @@ mod tests {
             histogram.positive[i as usize] = i as u64;
         }
 
-        let     printer_box = stdout_printer();
-        let     printer     = &mut *printer_box.lock().unwrap();
+        let printer_box = stdout_printer();
+        let printer     = &mut *printer_box.lock().unwrap();
 
         histogram.print(printer);
 
@@ -362,8 +438,6 @@ mod tests {
         assert!(histogram.infinities == 0);
 
         histogram.print(printer);
-
-        println!("simple_print_test:  start sampling");
 
         let sample_count = 1000;
 
@@ -416,8 +490,59 @@ mod tests {
         assert!(histogram.infinities == 2);
     }
 
+    fn test_documentation() {
+        // Create a HistOp for new().
+   
+        let merge_min    = 0;  // not implemented yet
+        let merge_max    = 0;  // not implemented yet
+        let no_zero_rows = false;
+   
+        let histo_opts = HistoOpts { merge_min, merge_max, no_zero_rows };
+   
+        // Create a histogram and accept the default output format.
+   
+        let mut histogram = FloatHistogram::new(histo_opts);
+   
+        let sample_count = 1000;
+   
+        for i in 0..sample_count {
+             histogram.record(-(i as f64));
+        }
+   
+        // Create a Printer instance for output.
+   
+        let printer_box = stdout_printer();
+        let printer     = &mut *printer_box.lock().unwrap();
+   
+        histogram.print(printer);
+   
+        assert!(histogram.samples     == sample_count as usize);
+        assert!(histogram.nans        == 0);
+        assert!(histogram.infinities  == 0);
+   
+        // Values -0.0 and -1.0 should be in the same bucket.
+   
+        let zero_bucket = exponent_bias() / bucket_divisor();
+        let zero_bucket = zero_bucket as usize;
+   
+        assert!(histogram.negative[zero_bucket    ] == 2);
+        assert!(histogram.negative[zero_bucket + 1] == sample_count - 2);
+   
+        // Now test some non-finite values.  NaN values do not
+        // go into the sample count.
+   
+        histogram.record(f64::INFINITY);
+        histogram.record(f64::NEG_INFINITY);
+        histogram.record(f64::NAN);
+   
+        assert!(histogram.nans       == 1);
+        assert!(histogram.infinities == 2);
+        assert!(histogram.samples    == sample_count as usize + 2);
+    }
+
     #[test]
     fn run_tests() {
-        simple_print_test()
+        simple_test();
+        test_documentation()
     }
 }

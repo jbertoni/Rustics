@@ -557,7 +557,8 @@ pub trait Rustics {
 
     fn count(&self) -> u64;
 
-    /// Returns the most common pseudo-log seen in the data samples.
+    /// Returns the most common pseudo-log seen in the data samples.  This
+    /// method is supported only for integer and time types.
 
     fn log_mode(&self) -> isize;
 

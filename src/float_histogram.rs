@@ -237,7 +237,6 @@ impl FloatHistogram {
         let result   = 2.0_f64;
         let result   = result.powi(exponent as i32);
 
-        println!("mode_value({}) = {}", log_mode, sign as f64 * result);
         sign as f64 * result
     }
 

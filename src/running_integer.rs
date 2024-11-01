@@ -83,7 +83,7 @@ use super::printable::Printable;
 use super::compute_variance;
 use super::compute_skewness;
 use super::compute_kurtosis;
-use super::sum::kbk_sum;
+use super::sum::kbk_sum_sort;
 
 use crate::hier::HierExporter;
 use crate::LogHistogram;
@@ -232,10 +232,10 @@ pub fn sum_running(exports: &Vec::<RunningExport>) -> RunningExport {
         moment_4_vec.push(export.moment_4);
     }
 
-    let mean          = kbk_sum(&mut mean_vec[..]) / count as f64;
-    let moment_2      = kbk_sum(&mut moment_2_vec[..]);
-    let moment_3      = kbk_sum(&mut moment_3_vec[..]);
-    let moment_4      = kbk_sum(&mut moment_4_vec[..]);
+    let mean          = kbk_sum_sort(&mut mean_vec[..]) / count as f64;
+    let moment_2      = kbk_sum_sort(&mut moment_2_vec[..]);
+    let moment_3      = kbk_sum_sort(&mut moment_3_vec[..]);
+    let moment_4      = kbk_sum_sort(&mut moment_4_vec[..]);
     let log_histogram = Rc::from(RefCell::new(log_histogram));
 
     RunningExport { count, mean, moment_2, moment_3, moment_4, min, max, log_histogram }

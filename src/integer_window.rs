@@ -90,7 +90,7 @@ use super::compute_variance;
 use super::compute_skewness;
 use super::compute_kurtosis;
 use super::sum::kbk_sum;
-use super::sum::kbk_sum_sorted;
+use super::sum::kbk_sum_sort;
 use super::parse_print_opts;
 
 /// An IntegerWindow instance collects integer data samples into
@@ -232,7 +232,7 @@ impl IntegerWindow {
             samples.push(*value as f64)
         }
 
-        let sum  = kbk_sum(&mut samples);
+        let sum  = kbk_sum_sort(&mut samples);
         let mean =  sum / self.vector.len() as f64;
 
         // Create the vectors of the addends for the moments about
@@ -253,11 +253,13 @@ impl IntegerWindow {
             vec_4.push(square   * square);
         }
 
-        // Use kbk_sum to try to get more precision.
+        // Use kbk_sum_no_sort to try to get more precision.  The
+        // samples vector was sorted by kbk_sum, so these vectors
+        // are sorted already.
 
-        let moment_2 = kbk_sum_sorted(&mut vec_2);
-        let moment_3 = kbk_sum_sorted(&mut vec_3);
-        let moment_4 = kbk_sum_sorted(&mut vec_4);
+        let moment_2 = kbk_sum(&vec_2);
+        let moment_3 = kbk_sum(&vec_3);
+        let moment_4 = kbk_sum(&vec_4);
 
         Crunched { mean, sum, moment_2, moment_3, moment_4 }
     }

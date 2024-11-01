@@ -10,19 +10,22 @@ fn sort(input: &mut [f64]) {
     input.sort_by(|a, b| a.abs().partial_cmp(&b.abs()).unwrap())
 }
 
-/// The kbk_sum() function performs a Kahan-Babushka-Klein summation.
+/// The kbk_sum_sort() function performs a Kahan-Babushka-Klein summation.
 /// It has a sort on the inputs in addition to the normal algoritm.
 ///
 /// See the Wikipedia page on Kahan summation for details of this
 /// algorithm.
 
-pub fn kbk_sum(input: &mut [f64]) -> f64 {
+pub fn kbk_sum_sort(input: &mut [f64]) -> f64 {
     sort(input);
-    kbk_sum_sorted(input)
+    kbk_sum(input)
 }
 
-pub fn kbk_sum_sorted(input: &mut [f64]) -> f64 {
+/// The kbk_sum() function performs a Kahan-Babushka-Klein summation.  It does
+/// not sort its inputs.  Currently, it is used by IntegerWindow code because
+/// it sums vectors that are presorted.
 
+pub fn kbk_sum(input: &[f64]) -> f64 {
     let mut sum = 0.0;
     let mut cs  = 0.0;
     let mut ccs = 0.0;
@@ -69,7 +72,6 @@ mod tests {
         }
 
         let result = kbk_sum(&mut inputs);
-        println!("vector sum 1:  {}", result);
 
         //  Compute the expected value of the sum
 
@@ -79,6 +81,13 @@ mod tests {
 
         assert!(result == expected as f64);
 
+        // The version with the sort should match...
+
+        let result = kbk_sum_sort(&mut inputs);
+        assert!(result == expected as f64);
+
+        println!("vector sum 1:  {}", result);
+
         //  Now add some negative values to the vector.
 
         for i in 0..=limit {
@@ -86,7 +95,14 @@ mod tests {
         }
 
         let result = kbk_sum(&mut inputs);
+
         println!("vector sum 2:  {}", result);
+
+        assert!(result == 0.0);
+
+        // Use the sort...
+
+        let result = kbk_sum_sort(&mut inputs);
 
         assert!(result == 0.0);
 
@@ -102,6 +118,10 @@ mod tests {
         inputs.push(-large);
 
         let result = kbk_sum(&mut inputs);
+
+        assert!(result == 2.0);
+
+        let result = kbk_sum_sort(&mut inputs);
 
         println!("vector sum 3:  {}", result);
         assert!(result == 2.0);

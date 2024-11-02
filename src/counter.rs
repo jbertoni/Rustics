@@ -31,8 +31,9 @@
 //!     let units       = Some(Units { singular, plural });
 //!     let printer     = None;
 //!     let title       = None;
-//!     let print_opts  = Some(PrintOpts { printer, title, units });
-//!     let mut counter = Counter::new("test counter", print_opts);
+//!     let histo_opts  = None;
+//!     let print_opts  = Some(PrintOpts { printer, title, units, histo_opts });
+//!     let mut counter = Counter::new("test counter", &print_opts);
 //!
 //!     // Add some counts to the counter.  record_event() adds one, to
 //!     // implement an event counter.  record_i64() adds any i64 value
@@ -90,8 +91,8 @@ impl Counter {
     /// Constructs an instance with a given name and optional Printer
     /// instance
 
-    pub fn new(name: &str, print_opts: PrintOption) -> Counter {
-        let (printer, title, units) = parse_print_opts(&print_opts, name);
+    pub fn new(name: &str, print_opts: &PrintOption) -> Counter {
+        let (printer, title, units, _histo_opts) = parse_print_opts(print_opts, name);
 
         let name    = String::from(name);
         let count   = 0;
@@ -99,6 +100,10 @@ impl Counter {
 
 
         Counter { name, count, id, printer, title, units }
+    }
+
+    pub fn set_units(&mut self, units: Units) {
+        self.units = units;
     }
 
     fn event_increment(&self) -> i64 {
@@ -307,7 +312,7 @@ mod tests {
 
     fn test_simple_counter() {
         let test_limit  = 20;
-        let mut counter = Counter::new("test counter", None);
+        let mut counter = Counter::new("test counter", &None);
 
         for i in 1..=test_limit {
             counter.record_event();

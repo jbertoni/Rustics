@@ -13,7 +13,7 @@ fn sort(input: &mut [f64]) {
 /// The kbk_sum_sort() function performs a Kahan-Babushka-Klein summation.
 /// It has a sort on the inputs in addition to the normal algoritm.
 ///
-/// See the Wikipedia page on Kahan summation for details of this
+/// See the Wikipedia page on Kahan summation for the details of this
 /// algorithm.
 
 pub fn kbk_sum_sort(input: &mut [f64]) -> f64 {

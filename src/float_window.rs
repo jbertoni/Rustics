@@ -30,7 +30,7 @@
 //!    let window_size = 1000;
 //!
 //!    let mut packet_sizes =
-//!        FloatWindow::new("Packet Sizes", window_size, &None, &None);
+//!        FloatWindow::new("Packet Sizes", window_size, &None);
 //!
 //!    // Record some hypothetical packet sizes.  Let's fill the window.
 //!
@@ -94,8 +94,6 @@ use super::compute_kurtosis;
 use super::sum::kbk_sum;
 use super::sum::kbk_sum_sort;
 use super::parse_print_opts;
-use super::float_histogram::HistoOpts;
-use super::float_histogram::HistoOption;
 
 /// An FloatWindow instance collects integer data samples into
 /// a fixed-size window. It also maintains a histogram based on
@@ -132,18 +130,13 @@ pub struct FloatWindow {
 }
 
 impl FloatWindow {
-    pub fn new(name: &str, window_size: usize, print_opts: &PrintOption, histo_opts: &HistoOption)
+    pub fn new(name: &str, window_size: usize, print_opts: &PrintOption)
             -> FloatWindow {
         if window_size == 0 {
             panic!("The window size is zero.");
         }
 
-        let histo_opts =
-            if let Some(histo_opts) = histo_opts {
-                histo_opts
-            } else {
-                &HistoOpts::default()
-            };
+        let (printer, title, units, histo_opts) = parse_print_opts(print_opts, name);
 
         let name          = String::from(name);
         let id            = usize::MAX;
@@ -155,10 +148,8 @@ impl FloatWindow {
         let moment_2      = 0.0;
         let moment_3      = 0.0;
         let moment_4      = 0.0;
-        let histogram     = FloatHistogram::new(histo_opts);
+        let histogram     = FloatHistogram::new(&Some(histo_opts));
         let histogram     = Rc::from(RefCell::new(histogram));
-
-        let (printer, title, units) = parse_print_opts(print_opts, &name);
 
         FloatWindow {
             name,
@@ -549,7 +540,7 @@ mod tests {
         let     window_size = 100;
 
         let mut stats =
-            FloatWindow::new(&"Test Statistics", window_size, &None, &None);
+            FloatWindow::new(&"Test Statistics", window_size, &None);
 
         assert!(stats.class() == "integer");
         assert!(!stats.int_extremes  ());

@@ -442,7 +442,7 @@ impl Hier {
                 0
             };
 
-        let (printer, title, _units) = parse_print_opts(&print_opts, &name);
+        let (printer, title, _units, _histo_opts) = parse_print_opts(&print_opts, &name);
 
         let window =
             if window_size > 0 {

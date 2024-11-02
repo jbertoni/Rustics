@@ -36,7 +36,7 @@
 //!    let mut timer = DurationTimer::new_box();
 //!
 //!    let mut packet_latency =
-//!        TimeWindow::new("Packet Latency", window_size, timer.clone(), None);
+//!        TimeWindow::new("Packet Latency", window_size, timer.clone(), &None);
 //!
 //!    // Record some hypothetical packet latencies.  The clock started
 //!    // running when we created the timer.  Use the start() method to
@@ -81,7 +81,6 @@ use super::FloatHistogramBox;
 use super::timer_box_hz;
 use super::parse_print_opts;
 use super::integer_window::IntegerWindow;
-use super::stdout_printer;
 
 /// TimeWindow implements a statistics type that retains a
 //  window of the last n samples of astream of data samples
@@ -101,6 +100,7 @@ pub struct TimeWindow {
 impl TimeWindow {
     /// Make a new TimeWindow instance.
 
+    /*
     pub fn new(name: &str, window_size: usize, timer:  TimerBox, printer: PrinterOption)
             -> TimeWindow {
         let hz = timer_box_hz(&timer);
@@ -122,9 +122,10 @@ impl TimeWindow {
 
         TimeWindow { printer, integer_window, timer, hz }
     }
+    */
 
-    pub fn new_opts(name: &str, window_size: usize, timer: TimerBox, print_opts: &PrintOption) -> TimeWindow {
-        let (printer, _title, _units) = parse_print_opts(print_opts, name);
+    pub fn new(name: &str, window_size: usize, timer: TimerBox, print_opts: &PrintOption) -> TimeWindow {
+        let (printer, _title, _units, _histo_opts) = parse_print_opts(print_opts, name);
 
         let hz = timer_box_hz(&timer);
 
@@ -133,7 +134,7 @@ impl TimeWindow {
         }
 
         let hz             = hz as i64;
-        let integer_window = IntegerWindow::new_opts(name, window_size, print_opts);
+        let integer_window = IntegerWindow::new(name, window_size, print_opts);
         let integer_window = Box::new(integer_window);
 
         TimeWindow { printer, integer_window, timer, hz }

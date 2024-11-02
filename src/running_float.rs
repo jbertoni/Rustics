@@ -19,7 +19,7 @@
 //!     use rustics::printable::Printable;
 //!     use rustics::running_float::RunningFloat;
 //!
-//!     let mut float = RunningFloat::new("Test Statistic", &None, &None);
+//!     let mut float = RunningFloat::new("Test Statistic", &None);
 //!     let     end   = 1000;
 //!
 //!     // Record the integers from 1 to "end".
@@ -51,14 +51,19 @@
 //!
 //!     float.print();
 //!
+//!     // NaN and non-finite values shouldn't be counted
+//!     // as samples.
+//!
 //!     assert!(float.mean()    == mean      );
 //!     assert!(float.count()   == end as u64);
 //!
-//!     // Check that the non-finite values were counted.  Test
-//!     // export_stats and the more direct methods.
+//!     // Check that the non-finite values were counted in their
+//!     // special counters.  Test export_stats and the more direct
+//!     // methods of getting those counts.
 //!
 //!     let stats = float.export_stats();
 //!
+//!     assert!(stats.printable.n          == end);
 //!     assert!(stats.printable.nans       == 1);
 //!     assert!(stats.printable.infinities == 2);
 //!
@@ -95,14 +100,9 @@ use super::FloatHistogramBox;
 use super::sum::kbk_sum_sort;
 use super::min_f64;
 use super::max_f64;
-use super::min_exponent;
-use super::max_exponent;
-
-use super::float_histogram::HistoOpts;
-use super::float_histogram::HistoOption;
 
 #[derive(Clone)]
-pub struct RunningFloatExport {
+pub struct FloatExport {
     pub count:      u64,
     pub nans:       u64,
     pub infinities: u64,
@@ -117,36 +117,36 @@ pub struct RunningFloatExport {
     pub histogram:  FloatHistogramBox,
 }
 
-// RunningFloatExporter instances are used to export statistics from a
+// FloatExporter instances are used to export statistics from a
 // RunningFloat instance so that multiple RunningFloat instances can
 // be summed.  This is used by FloatHier to allow the Hier code to use
 // RunningFloat instances.
 
-/// RunningFloatExport mostly is for internal use.  It is available for
+/// FloatExport mostly is for internal use.  It is available for
 /// general use, but most commonly, it will be used by a Hier instance
 /// to make summations of statistics instances.
 
 #[derive(Clone, Default)]
-pub struct RunningFloatExporter {
-    addends: Vec<RunningFloatExport>,
+pub struct FloatExporter {
+    addends: Vec<FloatExport>,
 }
 
-/// RunningFloatExporter is intend mostly for internal use by Hier instances.
+/// FloatExporter is intend mostly for internal use by Hier instances.
 /// It is used to sum a list of RunningInteger statistics instances.
 
-impl RunningFloatExporter {
-    /// Creates a new RunningFloatExporter instance
+impl FloatExporter {
+    /// Creates a new FloatExporter instance
 
-    pub fn new() -> RunningFloatExporter {
+    pub fn new() -> FloatExporter {
         let addends = Vec::new();
 
-        RunningFloatExporter { addends }
+        FloatExporter { addends }
     }
 
     /// Pushes a statistics instance onto the list of instances to
     /// be summed.
 
-    pub fn push(&mut self, addend: RunningFloatExport) {
+    pub fn push(&mut self, addend: FloatExport) {
         self.addends.push(addend);
     }
 
@@ -165,7 +165,7 @@ impl RunningFloatExporter {
 // We just need downcasting capabilities since all the work
 // is implementation-specific.
 
-impl HierExporter for RunningFloatExporter {
+impl HierExporter for FloatExporter {
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -197,14 +197,14 @@ pub fn sum_float_histogram(sum:  &mut FloatHistogram, addend: &FloatHistogram) {
 
 /// The sum_running() function merges a vector of exported statistics.
 
-pub fn sum_running(exports: &Vec::<RunningFloatExport>) -> RunningFloatExport {
+pub fn sum_running(exports: &Vec::<FloatExport>) -> FloatExport {
     let mut count          = 0;
     let mut nans           = 0;
     let mut infinities     = 0;
     let mut min            = f64::MAX;
     let mut max            = f64::MIN;
-    // TODO implement histo_opts
-    let mut histogram      = FloatHistogram::new(&HistoOpts::default());
+    let     histo_opts     = exports[0].histogram.borrow().histo_opts();
+    let mut histogram      = FloatHistogram::new(&Some(histo_opts));
 
     let mut mean_vec       = Vec::with_capacity(exports.len());
     let mut moment_2_vec   = Vec::with_capacity(exports.len());
@@ -238,7 +238,7 @@ pub fn sum_running(exports: &Vec::<RunningFloatExport>) -> RunningFloatExport {
     let moment_4      = kbk_sum_sort(&mut moment_4_vec[..]);
     let histogram     = Rc::from(RefCell::new(histogram));
 
-    RunningFloatExport {
+    FloatExport {
         count,  nans,   infinities, mean, moment_2, moment_3, moment_4,
         min,    max,    histogram
     }
@@ -270,19 +270,8 @@ impl RunningFloat {
     /// the output of print functions looks.  "None" will accept the defaults,
     /// which sends the output to stdout.
 
-    pub fn new(name: &str, print_opts: &PrintOption, histo_opts: &HistoOption) -> RunningFloat {
-        let (printer, title, units) = parse_print_opts(print_opts, name);
-
-        let histo_opts =
-            if let Some(histo_opts) = histo_opts {
-                histo_opts
-            } else {
-                let merge_min    = min_exponent();
-                let merge_max    = max_exponent();
-                let no_zero_rows = true;
-
-                &HistoOpts { merge_min, merge_max, no_zero_rows }
-            };
+    pub fn new(name: &str, print_opts: &PrintOption) -> RunningFloat {
+        let (printer, title, units, histo_opts) = parse_print_opts(print_opts, name);
 
         let name        = name.to_string();
         let id          = usize::MAX;
@@ -295,7 +284,7 @@ impl RunningFloat {
         let moment_2    = 0.0;
         let moment_3    = 0.0;
         let moment_4    = 0.0;
-        let histogram   = FloatHistogram::new(histo_opts);
+        let histogram   = FloatHistogram::new(&Some(histo_opts));
         let histogram   = Rc::from(RefCell::new(histogram));
 
         RunningFloat {
@@ -305,9 +294,9 @@ impl RunningFloat {
         }
     }
 
-    pub fn new_from_exporter(name: &str, title: &str, print_opts: &PrintOption, import: RunningFloatExport)
+    pub fn new_from_exporter(name: &str, title: &str, print_opts: &PrintOption, import: FloatExport)
             -> RunningFloat {
-        let (printer, _title, units) = parse_print_opts(print_opts, name);
+        let (printer, _title, units, _histo_opts) = parse_print_opts(print_opts, name);
 
         let name       = String::from(name);
         let title      = title.to_string();
@@ -348,7 +337,6 @@ impl RunningFloat {
         let kurtosis    = self.kurtosis();
         let units       = self.units.clone();
 
-
         Printable {
             n,         nans,  infinities,  min_i64,   max_i64,   min_f64,  max_f64,
             log_mode,  mean,  variance,    skewness,  kurtosis,  units,    mode_value
@@ -374,7 +362,7 @@ impl RunningFloat {
     /// Exports all the statistics kept for a given instance to
     /// be used to create a sum of many instances.
 
-    pub fn export_data(&self) -> RunningFloatExport {
+    pub fn export_data(&self) -> FloatExport {
         let count           = self.count;
         let nans            = self.nans;
         let infinities      = self.infinities;
@@ -386,7 +374,7 @@ impl RunningFloat {
         let min             = self.min;
         let max             = self.max;
 
-        RunningFloatExport { 
+        FloatExport { 
             count,      nans,       infinities,
             mean,       moment_2,   moment_3,
             moment_4,   histogram,  min,
@@ -634,7 +622,7 @@ mod tests {
     use super::*;
 
     fn simple_float_test() {
-        let mut float = RunningFloat::new("Test Statistic", &None, &None);
+        let mut float = RunningFloat::new("Test Statistic", &None);
         let     end   = 1000;
 
         assert!( float.float_extremes());
@@ -667,7 +655,9 @@ mod tests {
         // NaNs should be counted but then ignored.
         // Same for non-finite values.
 
-        assert!(float.count() == end as u64);
+        assert!(float.count()      == end as u64);
+        assert!(float.nans()       == 1);
+        assert!(float.infinities() == 2);
 
         float.print();
     }

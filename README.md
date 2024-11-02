@@ -8,8 +8,8 @@ various statistical characterizations of the data, such as the mean and
 variance.  The trait Rustics defines the common interface for all
 statistical types.
 
-Many testing modules contain very example functions called "sample_usage",
-and most modules have sample code in their documentation.
+Most modules have sample code in their documentation, and many testing
+modules contain example functions called "sample_usage",
 
 At this time, statistics can be gathered for i64 values, time periods (also
 of type i64), and f64 samples.  Statistics can gathered collected as a running

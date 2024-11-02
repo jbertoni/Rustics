@@ -189,7 +189,7 @@ use super::TimerBox;
 use super::PrintOption;
 use super::running_time::RunningTime;
 use super::time_window::TimeWindow;
-use crate::running_integer::RunningExporter;
+use crate::running_integer::IntegerExporter;
 
 use crate::Hier;
 use crate::HierDescriptor;
@@ -295,14 +295,14 @@ impl HierGenerator for TimeHier {
     // Creates a member with the given name and printer.
 
     fn make_member(&self, name: &str, print_opts: &PrintOption) -> MemberRc {
-        let member = RunningTime::new_opts(name, self.timer.clone(), print_opts);
+        let member = RunningTime::new(name, self.timer.clone(), print_opts);
 
         Rc::from(RefCell::new(member))
     }
 
     fn make_window(&self, name: &str, window_size: usize, print_opts: &PrintOption)
             -> Box<dyn Rustics> {
-        let window = TimeWindow::new_opts(name, window_size, self.timer.clone(), print_opts);
+        let window = TimeWindow::new(name, window_size, self.timer.clone(), print_opts);
 
         Box::new(window)
     }
@@ -312,7 +312,7 @@ impl HierGenerator for TimeHier {
     fn make_from_exporter(&self, name: &str, print_opts: &PrintOption, exporter: ExporterRc) -> MemberRc {
         let mut exporter_borrow = exporter.borrow_mut();
         let     exporter_any    = exporter_borrow.as_any_mut();
-        let     exporter_impl   = exporter_any.downcast_mut::<RunningExporter>().unwrap();
+        let     exporter_impl   = exporter_any.downcast_mut::<IntegerExporter>().unwrap();
         let     member          = exporter_impl.make_member(name, print_opts);
         let     timer           = self.timer.clone();
         let     member          = RunningTime::from_integer(timer, print_opts, member);
@@ -324,7 +324,7 @@ impl HierGenerator for TimeHier {
     // instances.
 
     fn make_exporter(&self) -> ExporterRc {
-        let exporter = RunningExporter::new();
+        let exporter = IntegerExporter::new();
 
         Rc::from(RefCell::new(exporter))
     }
@@ -334,7 +334,7 @@ impl HierGenerator for TimeHier {
 
     fn push(&self, exporter: &mut dyn HierExporter, member_rc: MemberRc) {
         let     exporter_any  = exporter.as_any_mut();
-        let     exporter_impl = exporter_any.downcast_mut::<RunningExporter>().unwrap();
+        let     exporter_impl = exporter_any.downcast_mut::<IntegerExporter>().unwrap();
 
         let     member_borrow = member_rc.borrow();
         let     member_impl   = member_borrow.as_any().downcast_ref::<RunningTime>().unwrap();

@@ -13,7 +13,7 @@
 //! * Statistics for Integer Samples
 //!     * Integer statistics provide basic parameters, like the mean, and a pseudo-log histogram.
 //!
-//!     * For the pseudo-log histogram, the pseudo-log of a negative number n is defines as 
+//!     * For the pseudo-log histogram, the pseudo-log of a negative number n is defines as
 //!       -log(-n).  The pseudo-log of 0 is defined as 0.  Logs of positive values are computed by
 //!       rounding up any fractional part, so the pseudo-log of 5 is 3.  From the definition, the
 //!       pseudo-log of -5 is -3.
@@ -133,7 +133,7 @@
 //!
 //!         * SimpleClock implementation provide a hz() member to return the hertz the ClockTimer
 //!           layer.
-//!  
+//!
 //! * Printing
 //!     *  Printer
 //!         * This trait provides a method to use custom printers.  By default, output from the
@@ -192,6 +192,7 @@ use hier::ExporterRc;
 use hier::MemberRc;
 use log_histogram::LogHistogram;
 use float_histogram::FloatHistogram;
+use float_histogram::HistoOpts;
 use printable::Printable;
 
 pub type HierBox            = Arc<Mutex<Hier>>;
@@ -199,6 +200,7 @@ pub type PrinterBox         = Arc<Mutex<dyn Printer>>;
 pub type PrinterOption      = Option<Arc<Mutex<dyn Printer>>>;
 pub type TitleOption        = Option<String>;
 pub type UnitsOption        = Option<Units>;
+pub type HistoOption        = Option<HistoOpts>;
 pub type TimerBox           = Rc<RefCell<dyn Timer>>;
 pub type PrintOption        = Option<PrintOpts>;
 pub type LogHistogramBox    = Rc<RefCell<LogHistogram>>;
@@ -253,7 +255,7 @@ pub fn biased_exponent(input: f64) -> isize {
     if input.is_nan() {
         return 0;
     }
-    
+
     if input.is_infinite() {
         return max_exponent();
     }
@@ -417,10 +419,12 @@ impl Default for Units {
     }
 }
 
+#[derive(Clone)]
 pub struct PrintOpts {
-    pub printer:  PrinterOption,
-    pub title:    TitleOption,
-    pub units:    UnitsOption,
+    pub printer:     PrinterOption,
+    pub title:       TitleOption,
+    pub units:       UnitsOption,
+    pub histo_opts:  HistoOption,
 }
 
 /// The Printer trait allows users to create custom output types to
@@ -436,10 +440,37 @@ pub trait Printer {
     fn print(&self, output: &str);
 }
 
-pub fn parse_print_opts(print_opts: &PrintOption, name: &str) -> (PrinterBox, String, Units) {
+pub fn parse_printer(print_opts: &PrintOption) -> PrinterBox {
+    match print_opts {
+        Some(print_opts) => {
+            match &print_opts.printer {
+                Some(printer) => { printer.clone()  }
+                None          => { stdout_printer() }
+            }
+        }
+
+        None => { stdout_printer() }
+    }
+}
+
+pub fn parse_title(print_opts: &PrintOption, name: &str) -> String {
+    match print_opts {
+        Some(print_opts) => {
+            match &print_opts.title {
+                Some(title) => { title.clone()    }
+                None        => { name.to_string() }
+            }
+        }
+
+        None => { name.to_string() }
+    }
+}
+
+pub fn parse_print_opts(print_opts: &PrintOption, name: &str) -> (PrinterBox, String, Units, HistoOpts) {
     let printer;
     let title;
     let units;
+    let histo_opts;
 
     match print_opts {
         Some(print_opts) => {
@@ -461,18 +492,25 @@ pub fn parse_print_opts(print_opts: &PrintOption, name: &str) -> (PrinterBox, St
 
                     None => { Units::default() }
                 };
+
+            histo_opts =
+                match &print_opts.histo_opts {
+                    Some(histo_opts) => { *histo_opts          }
+                    None             => { HistoOpts::default() }
+                }
         }
 
         None => {
-            printer = stdout_printer();
-            title   = name.to_string();
-            units   = Units::default();
+            printer    = stdout_printer();
+            title      = name.to_string();
+            units      = Units::default();
+            histo_opts = HistoOpts::default();
         }
     }
 
     let title = title.to_string();
 
-    (printer, title, units)
+    (printer, title, units, histo_opts)
 }
 
 // Define a printer that will send output to Stdout or Stderr, as
@@ -865,8 +903,7 @@ mod tests {
         let     both       = TestTimer::new_box(hz);
         let     test_timer = ConverterTrait::as_test_timer(both.clone());
         let mut stat_timer = ConverterTrait::as_timer(both.clone());
-        let     printer    = Some(stdout_printer());
-        let mut time_stat  = RunningTime::new("Test Running Time 1", stat_timer.clone(), printer);
+        let mut time_stat  = RunningTime::new("Test Running Time 1", stat_timer.clone(), &None);
 
         test_timer.borrow_mut().setup(i64::MAX);
         time_stat.record_event();
@@ -907,8 +944,7 @@ mod tests {
 
         // Okay, use a more restricted range of times.
 
-        let     printer    = Some(stdout_printer());
-        let mut time_stat  = RunningTime::new("Test Running Time 2", stat_timer.clone(), printer);
+        let mut time_stat = RunningTime::new("Test Running Time 2", stat_timer.clone(), &None);
 
         let limit = 99;
 
@@ -932,8 +968,7 @@ mod tests {
 
         // Get a sample with easily calculated summary statistics.
 
-        let     printer   = Some(stdout_printer());
-        let mut time_stat = RunningTime::new("Test Time => 1..100", stat_timer.clone(), printer);
+        let mut time_stat = RunningTime::new("Test Time => 1..100", stat_timer.clone(), &None);
 
         for i in 1..101 {
             test_timer.borrow_mut().setup(i);
@@ -946,8 +981,7 @@ mod tests {
 
         // Cover all the scales.
 
-        let     printer   = Some(stdout_printer());
-        let mut time_stat = RunningTime::new("Time => Scale", stat_timer.clone(), printer);
+        let mut time_stat = RunningTime::new("Time => Scale", stat_timer.clone(), &None);
 
         let mut time    = 1;
         let mut printer = TestPrinter::new("Time Scale Test");
@@ -1002,7 +1036,9 @@ mod tests {
         let     both       = TestTimer::new_box(hz);
         let     test_timer = ConverterTrait::as_test_timer(both.clone());
         let     stat_timer = ConverterTrait::as_timer(both.clone());
-        let mut time_stat = TimeWindow::new("Test Time Window 1", 50, stat_timer.clone(), None);
+
+        let mut time_stat =
+            TimeWindow::new("Test Time Window 1", 50, stat_timer.clone(), &None);
 
         assert!(time_stat.class() == "time");
 
@@ -1040,8 +1076,7 @@ mod tests {
 
         // Okay, use a more restricted range of times.
 
-        let     printer   = Some(stdout_printer());
-        let mut time_stat = RunningTime::new("Test Time Window 2", stat_timer.clone(), printer);
+        let mut time_stat = RunningTime::new("Test Time Window 2", stat_timer.clone(), &None);
 
         assert!(time_stat.class() == "time");
 
@@ -1061,8 +1096,7 @@ mod tests {
 
         // Get a sample with easily calculated summary statistics.
 
-        let     printer   = Some(stdout_printer());
-        let mut time_stat = RunningTime::new("Time Window => 1..100", stat_timer.clone(), printer);
+        let mut time_stat = RunningTime::new("Time Window => 1..100", stat_timer.clone(), &None);
 
         for i in 1..101 {
             test_timer.borrow_mut().setup(i);
@@ -1082,8 +1116,7 @@ mod tests {
         // Cover all the scales.
 
         let mut timer     = TestTimer::new_box(hz);
-        let     printer   = Some(stdout_printer());
-        let mut time_stat = RunningTime::new("Time => Scale", timer.clone(), printer);
+        let mut time_stat = RunningTime::new("Time => Scale", timer.clone(), &None);
 
         let mut time    = 1;
         let     printer = &mut StdioPrinter::new(StreamKind::Stdout);
@@ -1102,10 +1135,10 @@ mod tests {
 
     fn run_all_histo_tests() {
         let     timer           = continuing_box();
-        let mut running_integer = RunningInteger::new("RunningInteger", None);
-        let mut running_time    = RunningTime::new   ("RunningTime",    timer.clone(), None);
-        let mut integer_window  = IntegerWindow::new ("IntegerWindow",  100, None);
-        let mut time_window     = TimeWindow::new    ("TimeWindow",     100, timer.clone(), None);
+        let mut running_integer = RunningInteger::new("RunningInteger",                     &None);
+        let mut running_time    = RunningTime::new   ("RunningTime",    timer.clone(),      &None);
+        let mut integer_window  = IntegerWindow::new ("IntegerWindow",  100,                &None);
+        let mut time_window     = TimeWindow::new    ("TimeWindow",     100, timer.clone(), &None);
 
         run_histogram_tests(&mut running_integer);
         run_histogram_tests(&mut running_time   );

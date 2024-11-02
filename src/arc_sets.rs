@@ -136,7 +136,8 @@ use super::PrinterOption;
 use super::PrintOpts;
 use super::PrintOption;
 use super::Units;
-use super::parse_print_opts;
+use super::parse_printer;
+use super::parse_title;
 use super::make_title;
 
 pub type RusticsArc = Arc<Mutex<dyn Rustics>>;
@@ -170,6 +171,7 @@ pub struct ArcSet {
     members:    Vec<RusticsArc>,
     subsets:    Vec<ArcSetBox>,
     printer:    PrinterBox,
+    print_opts: PrintOption,
 }
 
 /// This struct is passed to new_from_config to create an ArcSetBox.
@@ -178,9 +180,9 @@ pub struct ArcSetConfig {
     name:          String,
     members_hint:  usize,
     subsets_hint:  usize,
-    printer:       PrinterBox,
-    title:         String,
+    title:         Option<String>,
     id:            usize,
+    print_opts:    PrintOption,
 }
 
 impl ArcSet {
@@ -191,34 +193,56 @@ impl ArcSet {
     /// instances in the set.  These hints can improve performance a bit.  They
     /// might be especially useful in embedded environments.
 
-    /// Creates a new ArcSetBox.
+    /// Creates a new ArcSet.
 
-    pub fn new_box(name: &str, members_hint: usize, subsets_hint: usize, print_opts: &PrintOption)
-            -> ArcSetBox {
-        let (printer, title, _units) = parse_print_opts(print_opts, name);
-
-        let name  = name.to_string();
-        let id    = usize::MAX;
+    pub fn new(name: &str, members_hint: usize, subsets_hint: usize, print_opts: &PrintOption)
+            -> ArcSet {
+        let name       = name.to_string();
+        let id         = usize::MAX;
+        let print_opts = print_opts.clone();
+        let title      = None;
 
         let configuration = 
-            ArcSetConfig { name, members_hint, subsets_hint, title, printer, id };
+            ArcSetConfig { name, members_hint, subsets_hint, title, id, print_opts };
 
         ArcSet::new_from_config(configuration)
     }
 
+    /// Creates a new ArcSetBox (an Arc<Mutex<ArcSet>>).
+
+    pub fn new_box(name: &str, members_hint: usize, subsets_hint: usize, print_opts: &PrintOption)
+            -> ArcSetBox {
+        let arc_set = ArcSet::new(name, members_hint, subsets_hint, print_opts);
+
+        Arc::from(Mutex::new(arc_set))
+    }
+
+    /// Creates a new ArcSet given a configuration.
+
+    pub fn new_from_config(configuration: ArcSetConfig) -> ArcSet {
+        let name       = configuration.name;
+        let print_opts = configuration.print_opts;
+        let title      = configuration.title;
+        let id         = configuration.id;
+        let next_id    = 1;
+        let members    = Vec::with_capacity(configuration.members_hint);
+        let subsets    = Vec::with_capacity(configuration.subsets_hint);
+        let printer    = parse_printer(&print_opts);
+
+        let title =
+            if let Some(title) = title {
+                title
+            } else {
+                parse_title(&print_opts, &name)
+            };
+
+        ArcSet { name, title, id, next_id, members, subsets, printer, print_opts }
+    }
+
     /// Creates a new ArcSetBox given a configuration.
 
-    pub fn new_from_config(configuration: ArcSetConfig) -> ArcSetBox {
-        let name     = configuration.name;
-        let printer  = configuration.printer;
-        let title    = configuration.title;
-        let id       = configuration.id;
-        let next_id  = 1;
-        let members  = Vec::with_capacity(configuration.members_hint);
-        let subsets  = Vec::with_capacity(configuration.subsets_hint);
-
-        let subset =
-            ArcSet { name, title, id, next_id, members, subsets, printer };
+    pub fn new_box_from_config(configuration: ArcSetConfig) -> ArcSetBox {
+        let subset = ArcSet::new_from_config(configuration);
 
         Arc::from(Mutex::new(subset))
     }
@@ -351,8 +375,7 @@ impl ArcSet {
     /// Creates a RunningInteger instance and adds it to the set.
 
     pub fn add_running_integer(&mut self, name: &str, units: Option<Units>) -> RusticsArc {
-        let     printer = Some(self.printer.clone());
-        let mut member  = RunningInteger::new(name, printer);
+        let mut member  = RunningInteger::new(name, &self.print_opts);
 
         if let Some(units) = units {
             member.set_units(units);
@@ -368,8 +391,7 @@ impl ArcSet {
 
     pub fn add_integer_window(&mut self, name: &str, window_size: usize, units: Option<Units>)
             -> RusticsArc {
-        let     printer = Some(self.printer.clone());
-        let mut member  = IntegerWindow::new(name, window_size, printer);
+        let mut member = IntegerWindow::new(name, window_size, &self.print_opts);
 
         if let Some(units) = units {
             member.set_units(units);
@@ -387,8 +409,7 @@ impl ArcSet {
     /// for the samples.
 
     pub fn add_running_time(&mut self, name: &str, timer: TimerBox) -> RusticsArc {
-        let printer = Some(self.printer.clone());
-        let member  = RunningTime::new(name, timer, printer);
+        let member  = RunningTime::new(name, timer, &self.print_opts);
         let member  = Arc::from(Mutex::new(member));
 
         self.add_member(member.clone());
@@ -399,8 +420,7 @@ impl ArcSet {
 
     pub fn add_time_window(&mut self, name: &str, window_size: usize, timer: TimerBox)
             -> RusticsArc {
-        let printer = Some(self.printer.clone());
-        let member  = TimeWindow::new(name, window_size, timer, printer);
+        let member  = TimeWindow::new(name, window_size, timer, &self.print_opts);
         let member  = Arc::from(Mutex::new(member));
 
         self.add_member(member.clone());
@@ -410,12 +430,13 @@ impl ArcSet {
     /// Creates a Counter and adds it to the set.
 
     pub fn add_counter(&mut self, name: &str, units: Option<Units>) -> RusticsArc {
-        let printer = Some(self.printer.clone());
-        let title   = None;
+        let printer    = Some(self.printer.clone());
+        let title      = None;
+        let histo_opts = None;
 
-        let print_opts = Some(PrintOpts { printer, title, units });
+        let print_opts = Some(PrintOpts { printer, title, units, histo_opts });
 
-        let member  = Counter::new(name, print_opts);
+        let member  = Counter::new(name, &print_opts);
         let member  = Arc::from(Mutex::new(member));
 
         self.add_member(member.clone());
@@ -455,15 +476,15 @@ impl ArcSet {
 
     pub fn add_subset(&mut self, name: &str, members_hint: usize, subsets_hint: usize)
             -> ArcSetBox {
-        let name    = name.to_string();
-        let printer = self.printer.clone();
-        let title   = make_title(&self.title, &name);
-        let id      = self.next_id;
+        let name       = name.to_string();
+        let title      = Some(make_title(&self.title, &name));
+        let id         = self.next_id;
+        let print_opts = self.print_opts.clone();
 
         let configuration =
-            ArcSetConfig { name, members_hint, subsets_hint, printer, title, id };
+            ArcSetConfig { name, members_hint, subsets_hint, title, id, print_opts };
 
-        let subset = ArcSet::new_from_config(configuration);
+        let subset = ArcSet::new_box_from_config(configuration);
 
         self.next_id += 1;
         self.subsets.push(subset.clone());
@@ -826,7 +847,7 @@ pub mod tests {
 
         //  print should still work.
 
-        let member = RunningInteger::new("added as member", None);
+        let member = RunningInteger::new("added as member", &None);
         let member = Arc::from(Mutex::new(member));
 
         set.add_member(member);

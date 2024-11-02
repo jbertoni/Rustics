@@ -21,7 +21,7 @@
 //!    // printing output is stdout, which we'll assume is fine for this
 //!    // example, so None works for the printer.
 //!
-//!    let mut packet_sizes = RunningInteger::new("Packet Sizes", None);
+//!    let mut packet_sizes = RunningInteger::new("Packet Sizes", &None);
 //!
 //!    // Record some hypothetical packet sizes.
 //!
@@ -75,7 +75,6 @@ use super::ExportStats;
 use super::PrinterBox;
 use super::PrinterOption;
 use super::PrintOption;
-use super::PrintOpts;
 use super::LogHistogramBox;
 use super::FloatHistogramBox;
 use super::Units;
@@ -116,38 +115,38 @@ pub struct RunningInteger {
     units:      Units,
 }
 
-// RunningExporter instances are used to export statistics from a
+// IntegerExporter instances are used to export statistics from a
 // RunningInteger instance so that multiple RunningInteger instances
 // can be summed.  This is used by IntegerHier to allow the Hier
 // code to use RunningInteger instance.  The RunningTime code uses
 // a RunningInteger instance underneath a wrapper, so TimeHier uses this
 // code, as well.
 
-/// RunningExport mostly is for internal use.  It is available for
+/// IntegerExport mostly is for internal use.  It is available for
 /// general use, but most commonly, it will be used by a Hier instance
 /// to make summations of statistics instances.
 
 #[derive(Clone, Default)]
-pub struct RunningExporter {
-    addends: Vec<RunningExport>,
+pub struct IntegerExporter {
+    addends: Vec<IntegerExport>,
 }
 
-/// RunningExporter is intend mostly for internal use by Hier instances.
+/// IntegerExporter is intend mostly for internal use by Hier instances.
 /// It is used to sum a list of RunningInteger statistics instances.
 
-impl RunningExporter {
-    /// Creates a new RunningExporter instance
+impl IntegerExporter {
+    /// Creates a new IntegerExporter instance
 
-    pub fn new() -> RunningExporter {
+    pub fn new() -> IntegerExporter {
         let addends = Vec::new();
 
-        RunningExporter { addends }
+        IntegerExporter { addends }
     }
 
     /// Pushes a statistics instance onto the list of instances to
     /// be summed.
 
-    pub fn push(&mut self, addend: RunningExport) {
+    pub fn push(&mut self, addend: IntegerExport) {
         self.addends.push(addend);
     }
 
@@ -166,7 +165,7 @@ impl RunningExporter {
 // We just need downcasting capabilities since all the work
 // is implementation-specific.
 
-impl HierExporter for RunningExporter {
+impl HierExporter for IntegerExporter {
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -176,11 +175,11 @@ impl HierExporter for RunningExporter {
     }
 }
 
-/// RunningExport is used by various modules to create sums of
+/// IntegerExport is used by various modules to create sums of
 /// statistics instances of type RunningInteger.
 
 #[derive(Clone)]
-pub struct RunningExport {
+pub struct IntegerExport {
     pub count:      u64,
     pub mean:       f64,
     pub moment_2:   f64,
@@ -208,7 +207,7 @@ pub fn sum_log_histogram(sum:  &mut LogHistogram, addend: &LogHistogram) {
 
 /// The sum_running() function merges a vector of exported statistics.
 
-pub fn sum_running(exports: &Vec::<RunningExport>) -> RunningExport {
+pub fn sum_running(exports: &Vec::<IntegerExport>) -> IntegerExport {
     let mut count          = 0;
     let mut min            = i64::MAX;
     let mut max            = i64::MIN;
@@ -238,29 +237,16 @@ pub fn sum_running(exports: &Vec::<RunningExport>) -> RunningExport {
     let moment_4      = kbk_sum_sort(&mut moment_4_vec[..]);
     let log_histogram = Rc::from(RefCell::new(log_histogram));
 
-    RunningExport { count, mean, moment_2, moment_3, moment_4, min, max, log_histogram }
+    IntegerExport { count, mean, moment_2, moment_3, moment_4, min, max, log_histogram }
 }
 
 impl RunningInteger {
     /// Creates a new RunningInteger instance with the given name and
-    /// an optional print function.
+    /// an optional set of print options.
 
-    pub fn new(name: &str, printer: PrinterOption) -> RunningInteger {
-        let units      = None;
-        let title      = None;
-        let print_opts = PrintOpts { printer, title, units };
-        let print_opts = Some(print_opts);
+    pub fn new(name: &str, print_opts: &PrintOption) -> RunningInteger {
+        let (printer, title, units, _histo_opts) = parse_print_opts(print_opts, name);
 
-        RunningInteger::new_opts(name, &print_opts)
-    }
-
-    pub fn new_opts(name: &str, print_opts: &PrintOption) -> RunningInteger {
-        let (printer, title, units) = parse_print_opts(print_opts, name);
-
-        RunningInteger::new_parsed(name, printer, title, units)
-    }
-
-    fn new_parsed(name: &str, printer: PrinterBox, title: String, units: Units) -> RunningInteger {
         let name            = name.to_string();
         let id              = usize::MAX;
         let count           = 0;
@@ -285,9 +271,9 @@ impl RunningInteger {
     /// Creates a RunningInteger instance from data from a list of
     /// instances.
 
-    pub fn new_from_exporter(name: &str, title: &str, print_opts: &PrintOption, import: RunningExport)
+    pub fn new_from_exporter(name: &str, title: &str, print_opts: &PrintOption, import: IntegerExport)
             -> RunningInteger {
-        let (printer, _title, units) = parse_print_opts(print_opts, name);
+        let (printer, _title, units, _histo_opts) = parse_print_opts(print_opts, name);
 
         let name            = String::from(name);
         let title           = title.to_string();
@@ -313,7 +299,7 @@ impl RunningInteger {
     /// Exports all the statistics kept for a given instance to
     /// be used to create a sum of many instances.
 
-    pub fn export_data(&self) -> RunningExport {
+    pub fn export_data(&self) -> IntegerExport {
         let count           = self.count;
         let mean            = self.mean;
         let moment_2        = self.moment_2;
@@ -323,7 +309,7 @@ impl RunningInteger {
         let min             = self.min;
         let max             = self.max;
 
-        RunningExport {
+        IntegerExport {
             count,      mean,       moment_2,
             moment_3,   moment_4,   log_histogram,
             min,        max
@@ -587,7 +573,7 @@ mod tests {
     use std::sync::Mutex;
     use std::sync::Arc;
     use crate::log_histogram::pseudo_log_index;
-    use super::PrintOpts;
+    use crate::PrintOpts;
 
     pub fn test_simple_running_integer() {
         let     printer    = None;
@@ -596,12 +582,13 @@ mod tests {
         let     singular   = "byte" .to_string();
         let     plural     = "bytes".to_string();
         let     units      = Some(Units { singular, plural });
-        let     print_opts = Some(PrintOpts { printer, title, units });
+        let     histo_opts = None;
+        let     print_opts = Some(PrintOpts { printer, title, units, histo_opts });
 
         let     name       = "Test Statistics";
         let     title      = "Test Title";
         let     id         = 42;
-        let mut stats      = RunningInteger::new_opts(&name, &print_opts);
+        let mut stats      = RunningInteger::new(&name, &print_opts);
         let mut events     =    0;
         let     min        = -256;
         let     max        =  511;

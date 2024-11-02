@@ -34,7 +34,7 @@
 //!     // Create a histogram and accept the default output format.
 //!
 //!     println!("at create");
-//!     let mut histogram = FloatHistogram::new(&histo_opts);
+//!     let mut histogram = FloatHistogram::new(&Some(histo_opts));
 //!
 //!     let sample_count = 1000;
 //!
@@ -80,14 +80,13 @@
 use super::Histogram;
 use super::Printable;
 use super::FloatHistogramBox;
+use super::HistoOption;
 use super::LogHistogramBox;
 use super::Printer;
 use super::biased_exponent;
 use super::max_biased_exponent;
 use super::exponent_bias;
 use super::sign;
-
-pub type HistoOption  = Option<HistoOpts>;
 
 /// The HistoOpts struct is used to specify options on how to print
 /// a histogram.
@@ -156,7 +155,7 @@ impl FloatHistogram {
     /// Creates a new histogram.  The histo_opts option currently is
     /// only partially implemented.
 
-    pub fn new(histo_opts: &HistoOpts) -> FloatHistogram {
+    pub fn new(histo_opts: &HistoOption) -> FloatHistogram {
         let buckets    = buckets() as usize;
         let buckets    = roundup(buckets, print_roundup());
         let negative   = vec![0; buckets];
@@ -164,6 +163,14 @@ impl FloatHistogram {
         let samples    = 0;
         let nans       = 0;
         let infinities = 0;
+
+        let histo_opts =
+            if let Some(histo_opts) = histo_opts {
+                histo_opts
+            } else {
+                &HistoOpts::default()
+            };
+
         let histo_opts = *histo_opts;
 
         FloatHistogram { negative, positive, buckets, samples, nans, infinities, histo_opts }
@@ -396,6 +403,10 @@ impl FloatHistogram {
     pub fn non_finites(&self) -> (usize, usize) {
         (self.nans, self.infinities)
     }
+
+    pub fn histo_opts(&self) -> HistoOpts {
+        self.histo_opts
+    }
 }
 
 impl Histogram for FloatHistogram {
@@ -432,7 +443,7 @@ mod tests {
         let     merge_max    = min_exponent();
         let     no_zero_rows = true;
         let     histo_opts   = HistoOpts { merge_min, merge_max, no_zero_rows };
-        let mut histogram    = FloatHistogram::new(&histo_opts);
+        let mut histogram    = FloatHistogram::new(&Some(histo_opts));
         let     max_index    = max_biased_exponent() / bucket_divisor();
 
         for i in 0..= max_index {
@@ -526,7 +537,7 @@ mod tests {
    
         // Create a histogram and accept the default output format.
    
-        let mut histogram = FloatHistogram::new(&histo_opts);
+        let mut histogram = FloatHistogram::new(&Some(histo_opts));
    
         let sample_count = 1000;
    
@@ -576,7 +587,7 @@ mod tests {
    
         // Create a histogram and accept the default output format.
    
-        let mut histogram = FloatHistogram::new(&histo_opts);
+        let mut histogram = FloatHistogram::new(&Some(histo_opts));
    
         let sample_count = 1000;
    

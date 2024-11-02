@@ -31,7 +31,7 @@
 //!    // print output goes to stdout, and that's fine for an example, so
 //!    // just give "None" to accept the default.
 //!
-//!    let mut set = RcSet::new("Main Statistics", 8, 0, None);
+//!    let mut set = RcSet::new("Main Statistics", 8, 0, &None);
 //!
 //!    // Add an instance to record query latencies.  It's a time
 //!    // statistic, so we need a timer.  Use an adapter for the Rust
@@ -109,12 +109,10 @@
 use std::rc::Rc;
 use std::cell::RefCell;
 use super::Rustics;
-use super::PrinterBox;
 use super::PrinterOption;
-use super::PrintOpts;
+use super::PrintOption;
 use super::Units;
 use super::TimerBox;
-use super::stdout_printer;
 use super::counter::Counter;
 use super::make_title;
 
@@ -151,7 +149,7 @@ pub struct RcSet {
     next_id:    usize,
     members:    Vec<RusticsRc>,
     subsets:    Vec<RcSetBox>,
-    printer:    PrinterBox,
+    print_opts: PrintOption,
 }
 
 impl RcSet {
@@ -162,22 +160,16 @@ impl RcSet {
     /// of elements to be expected.  "members_hint" refers to the number of Rustics
     /// statistics in the set.  These hints can improve performance a bit.
 
-    pub fn new(name_in: &str, members: usize, subsets: usize, printer: PrinterOption) -> RcSet {
-        let name    = String::from(name_in);
-        let title   = String::from(name_in);
-        let id      = usize::MAX;
-        let next_id = 1;
-        let members = Vec::with_capacity(members);
-        let subsets = Vec::with_capacity(subsets);
+    pub fn new(name_in: &str, members: usize, subsets: usize, print_opts: &PrintOption) -> RcSet {
+        let name       = String::from(name_in);
+        let title      = String::from(name_in);
+        let id         = usize::MAX;
+        let next_id    = 1;
+        let members    = Vec::with_capacity(members);
+        let subsets    = Vec::with_capacity(subsets);
+        let print_opts = print_opts.clone();
 
-        let printer =
-            if let Some(printer) = printer {
-                printer
-            } else {
-                stdout_printer()
-            };
-
-        RcSet { name, title, id, next_id, members, subsets, printer }
+        RcSet { name, title, id, next_id, members, subsets, print_opts }
     }
 
     /// Returns the name of the set.
@@ -295,8 +287,7 @@ impl RcSet {
     /// Creates a RunningInteger instance and adds it to the set.
 
     pub fn add_running_integer(&mut self, name: &str, units: Option<Units>) -> RusticsRc {
-        let     printer = Some(self.printer.clone());
-        let mut member  = RunningInteger::new(name, printer);
+        let mut member  = RunningInteger::new(name, &self.print_opts);
 
         if let Some(units) = units {
             member.set_units(units);
@@ -312,14 +303,13 @@ impl RcSet {
 
     pub fn add_integer_window(&mut self, name: &str, window_size: usize, units: Option<Units>)
             -> RusticsRc {
-        let     printer = Some(self.printer.clone());
-        let mut member  = IntegerWindow::new(name, window_size, printer);
+        let mut member  = IntegerWindow::new(name, window_size, &self.print_opts);
 
         if let Some(units) = units {
             member.set_units(units);
         }
 
-        let member  = Rc::from(RefCell::new(member));
+        let member = Rc::from(RefCell::new(member));
 
         self.add_member(member.clone());
         member
@@ -328,8 +318,7 @@ impl RcSet {
     /// Creates a RunningTime instance and adds it to the set.
 
     pub fn add_running_time(&mut self, name: &str, timer: TimerBox) -> RusticsRc {
-        let printer = Some(self.printer.clone());
-        let member  = RunningTime::new(name, timer, printer);
+        let member  = RunningTime::new(name, timer, &self.print_opts);
         let member  = Rc::from(RefCell::new(member));
 
         self.add_member(member.clone());
@@ -339,8 +328,7 @@ impl RcSet {
     /// Creates a TimeWindow instance and adds it to the set.
 
     pub fn add_time_window(&mut self, name: &str, window_size: usize, timer: TimerBox) -> RusticsRc {
-        let printer = Some(self.printer.clone());
-        let member  = TimeWindow::new(name, window_size, timer, printer);
+        let member  = TimeWindow::new(name, window_size, timer, &self.print_opts);
         let member  = Rc::from(RefCell::new(member));
 
         self.add_member(member.clone());
@@ -350,12 +338,12 @@ impl RcSet {
     /// Creates a Counter instance and adds it to the set.
 
     pub fn add_counter(&mut self, name: &str, units: Option<Units>) -> RusticsRc {
-        let printer    = Some(self.printer.clone());
-        let title      = None;
-
-        let print_opts = Some(PrintOpts { printer, title, units });
-        let member     = Counter::new(name, print_opts);
+        let member     = Counter::new(name, &self.print_opts);
         let member     = Rc::from(RefCell::new(member));
+
+        if let Some(units) = units {
+            member.borrow_mut().set_units(units);
+        }
 
         self.add_member(member.clone());
         member
@@ -393,8 +381,7 @@ impl RcSet {
     /// Creates a new subset and adds it to the set.
 
     pub fn add_subset(&mut self, name: &str, members: usize, subsets: usize) -> RcSetBox {
-        let     printer = Some(self.printer.clone());
-        let mut subset  = RcSet::new(name, members, subsets, printer);
+        let mut subset  = RcSet::new(name, members, subsets, &self.print_opts);
         let     title   = make_title(&self.title, name);
 
         subset.set_title(&title);
@@ -512,7 +499,7 @@ mod tests {
 
         // Create the parent set for all the Rustics instances.
 
-        let mut set = RcSet::new("parent set", 4, 4, None);
+        let mut set = RcSet::new("parent set", 4, 4, &None);
 
         // Add integer statistics instances, both a running total and a window.
 
@@ -631,7 +618,7 @@ mod tests {
         //
         //  Create the parent set and add a subset.
 
-        let mut set     = RcSet::new("sample usage parent", 0, 0, None);
+        let mut set     = RcSet::new("sample usage parent", 0, 0, &None);
         let     subset  = set.add_subset("subset", 0, 0);
         let mut subset  = (*subset).borrow_mut();
 
@@ -669,7 +656,7 @@ mod tests {
 
         // Do a minimal test of "add".
 
-        let member = RunningInteger::new("added as member", None);
+        let member = RunningInteger::new("added as member", &None);
         let member = Rc::from(RefCell::new(member));
         set.add_member(member);
 

@@ -24,7 +24,7 @@
 //!       RunningInteger instance.
 //!
 //!     * In general, a Rustics intance at level j is a sum of of i
-//!       instance from level j - 1, where i is configured per level.
+//!       instances from level j - 1, where i is configured per level.
 //!
 //!     * Each window retains RunningInteger instances that have
 //!       already been summed, in case they are wanted for queries.
@@ -79,7 +79,7 @@
 //!     // Now specify some parameters used by Hier to do printing.  The
 //!     // defaults for the title and printer are fine, so just pass None.
 //!     // The title defaults to the name and output will go to stdout.
-//!     // Don't configura a window.
+//!     // Don't configure a window for this example.
 //!
 //!     let name        = "test hierarchical integer".to_string();
 //!     let print_opts  = None;
@@ -186,9 +186,8 @@ use std::sync::Mutex;
 use super::Rustics;
 use super::Histogram;
 use super::PrintOption;
-// use super::Units;
 use super::running_integer::RunningInteger;
-use crate::running_integer::RunningExporter;
+use crate::running_integer::IntegerExporter;
 use super::integer_window::IntegerWindow;
 
 use crate::Hier;
@@ -292,14 +291,14 @@ impl IntegerHier {
 
 impl HierGenerator for IntegerHier {
     fn make_member(&self, name: &str, print_opts: &PrintOption) -> MemberRc {
-        let member = RunningInteger::new_opts(name, print_opts);
+        let member = RunningInteger::new(name, print_opts);
 
         Rc::from(RefCell::new(member))
     }
 
     fn make_window(&self, name: &str, window_size: usize, print_opts: &PrintOption)
             -> Box<dyn Rustics> {
-        let window = IntegerWindow::new_opts(name, window_size, print_opts);
+        let window = IntegerWindow::new(name, window_size, print_opts);
 
         Box::new(window)
     }
@@ -310,14 +309,14 @@ impl HierGenerator for IntegerHier {
             -> MemberRc {
         let mut exporter_borrow = exporter.borrow_mut();
         let     exporter_any    = exporter_borrow.as_any_mut();
-        let     exporter_impl   = exporter_any.downcast_mut::<RunningExporter>().unwrap();
+        let     exporter_impl   = exporter_any.downcast_mut::<IntegerExporter>().unwrap();
         let     member          = exporter_impl.make_member(name, print_opts);
 
         Rc::from(RefCell::new(member))
     }
 
     fn make_exporter(&self) -> ExporterRc {
-        let exporter = RunningExporter::new();
+        let exporter = IntegerExporter::new();
 
         Rc::from(RefCell::new(exporter))
     }
@@ -327,7 +326,7 @@ impl HierGenerator for IntegerHier {
 
     fn push(&self, exporter: &mut dyn HierExporter, member_rc: MemberRc) {
         let     exporter_any    = exporter.as_any_mut();
-        let     exporter_impl   = exporter_any.downcast_mut::<RunningExporter>().unwrap();
+        let     exporter_impl   = exporter_any.downcast_mut::<IntegerExporter>().unwrap();
 
         let     member_borrow   = member_rc.borrow();
         let     member_any      = member_borrow.as_any();

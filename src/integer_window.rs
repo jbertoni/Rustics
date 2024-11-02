@@ -30,7 +30,7 @@
 //!    let window_size = 1000;
 //!
 //!    let mut packet_sizes =
-//!        IntegerWindow::new("Packet Sizes", window_size, None);
+//!        IntegerWindow::new("Packet Sizes", window_size, &None);
 //!
 //!    // Record some hypothetical packet sizes.  Let's fill the window.
 //!
@@ -78,7 +78,6 @@ use super::PrinterBox;
 use super::ExportStats;
 use super::PrinterOption;
 use super::PrintOption;
-use super::PrintOpts;
 use super::Units;
 use super::TimerBox;
 use super::Histogram;
@@ -156,16 +155,7 @@ impl Crunched {
 }
 
 impl IntegerWindow {
-    pub fn new(name: &str, window_size: usize, printer: PrinterOption) -> IntegerWindow {
-        let title = None;
-        let units = None;
-
-        let print_opts = Some(PrintOpts { printer, title, units });
-
-        IntegerWindow::new_opts(name, window_size, &print_opts)
-    }
-
-    pub fn new_opts(name: &str, window_size: usize, print_opts: &PrintOption) -> IntegerWindow {
+    pub fn new(name: &str, window_size: usize, print_opts: &PrintOption) -> IntegerWindow {
         if window_size == 0 {
             panic!("The window size is zero.");
         }
@@ -183,7 +173,7 @@ impl IntegerWindow {
         let log_histogram = LogHistogram::new();
         let log_histogram = Rc::from(RefCell::new(log_histogram));
 
-        let (printer, title, units) = parse_print_opts(print_opts, &name);
+        let (printer, title, units, _histo_opts) = parse_print_opts(print_opts, &name);
 
         IntegerWindow {
             name,
@@ -555,7 +545,7 @@ mod tests {
 
     pub fn test_simple_integer_window() {
         let     window_size = 100;
-        let mut stats       = IntegerWindow::new(&"Test Statistics", window_size, None);
+        let mut stats       = IntegerWindow::new(&"Test Statistics", window_size, &None);
 
         assert!(stats.class() == "integer");
         assert!( stats.int_extremes  ());

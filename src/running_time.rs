@@ -31,7 +31,7 @@
 //!    let timer = DurationTimer::new_box();
 //!
 //!    let mut query_latency =
-//!        RunningTime::new("Query Latency", timer, None);
+//!        RunningTime::new("Query Latency", timer, &None);
 //!
 //!    // By way of example, we assume that the queries are single-
 //!    // threaded, so we can use the record_time() method to query the
@@ -62,7 +62,7 @@
 //!    let timer = DurationTimer::new_box();
 //!
 //!    let mut query_latency =
-//!        RunningTime::new("Custom Timer", timer.clone(), None);
+//!        RunningTime::new("Custom Timer", timer.clone(), &None);
 //!
 //!    // Start the Duration timer.
 //!
@@ -100,11 +100,10 @@ use super::PrintOption;
 use super::LogHistogramBox;
 use super::FloatHistogramBox;
 use super::parse_print_opts;
-use super::stdout_printer;
 use super::TimerBox;
 use super::timer_box_hz;
 use super::running_integer::RunningInteger;
-use super::running_integer::RunningExport;
+use super::running_integer::IntegerExport;
 
 /// A RunningTime instance accumulates statistics on a stream
 /// of integer data samples representing time intervals.
@@ -123,39 +122,19 @@ pub struct RunningTime {
 }
 
 impl RunningTime {
-    /// Creates a new RunningTime instance
+    /// Creates a new RunningTime instance.
 
-    pub fn new(name_in: &str, timer: TimerBox, printer: PrinterOption) -> RunningTime {
+    pub fn new(name: &str, timer: TimerBox, print_opts: &PrintOption) -> RunningTime {
         let hz = timer_box_hz(&timer);
+
+        let (printer, _title, _units, _histo_opts) = parse_print_opts(print_opts, name);
 
         if hz > i64::MAX as u128 {
             panic!("Rustics::RunningTime:  The timer hz value is too large.");
         }
 
         let hz              = hz as i64;
-        let running_integer = Box::new(RunningInteger::new(name_in, printer.clone()));
-
-        let printer =
-            if let Some(printer) = printer {
-                printer
-            } else {
-                stdout_printer()
-            };
-
-        RunningTime { printer, running_integer, timer, hz }
-    }
-
-    pub fn new_opts(name: &str, timer: TimerBox, print_opts: &PrintOption) -> RunningTime {
-        let hz = timer_box_hz(&timer);
-
-        let (printer, _title, _units) = parse_print_opts(print_opts, name);
-
-        if hz > i64::MAX as u128 {
-            panic!("Rustics::RunningTime:  The timer hz value is too large.");
-        }
-
-        let hz              = hz as i64;
-        let running_integer = Box::new(RunningInteger::new_opts(name, print_opts));
+        let running_integer = Box::new(RunningInteger::new(name, print_opts));
 
         RunningTime { printer, running_integer, timer, hz }
     }
@@ -165,7 +144,7 @@ impl RunningTime {
 
     pub fn from_integer(timer: TimerBox, print_opts: &PrintOption, mut running: RunningInteger)
             -> RunningTime {
-        let (printer, title, _units) = parse_print_opts(print_opts, &running.name());
+        let (printer, title, _units, _histo_opts) = parse_print_opts(print_opts, &running.name());
 
         running.set_title(&title);
         running.set_units(Units::empty());
@@ -185,7 +164,7 @@ impl RunningTime {
 
     /// Exports the statistics for this instance.
 
-    pub fn export(&self) -> RunningExport {
+    pub fn export(&self) -> IntegerExport {
         self.running_integer.export_data()
     }
 }

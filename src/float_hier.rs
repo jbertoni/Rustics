@@ -8,7 +8,8 @@
 //!
 //! * FloatHier
 //!     * This type implements hierarchical statistics using the
-//!       RunningFloat type, q.v.
+//!       RunningFloat type, q.v.  It is substantially identical
+//!       to IntegerHier.
 //!
 //!     * Each level uses a Window instance containing a configurable
 //!       number of RunningFloat instances.  See the window module
@@ -24,7 +25,7 @@
 //!       RunningFloat instance.
 //!
 //!     * In general, a Rustics intance at level j is a sum of of i
-//!       instance from level j - 1, where i is configured per level.
+//!       instances from level j - 1, where i is configured per level.
 //!
 //!     * Each window retains RunningFloat instances that have
 //!       already been summed, in case they are wanted for queries.
@@ -33,7 +34,7 @@
 //!
 //! ## Example
 //!```
-//!    // This example also is used in the Hier documentation.
+//!    // This example is largely identical to the IntegerHier example.
 //!
 //!     use rustics::Rustics;
 //!     use rustics::stdout_printer;
@@ -79,11 +80,10 @@
 //!     // Now specify some parameters used by Hier to do printing.  The
 //!     // defaults for the title and printer are fine, so just pass None.
 //!     // The title defaults to the name and output will go to stdout.
-//!     // Don't configura a window.
+//!     // Don't configure a window for this example.
 //!
-//!     let name        = "test hierarchical integer".to_string();
+//!     let name        = "hierarchical float".to_string();
 //!     let print_opts  = None;
-//!     let histo_opts  = None;
 //!     let window_size = None;
 //!
 //!     // Finally, create the configuration description for the
@@ -91,7 +91,7 @@
 //!
 //!     let configuration =
 //!         FloatHierConfig {
-//!             descriptor, name, window_size, print_opts, histo_opts
+//!             descriptor, name, window_size, print_opts
 //!         };
 //!
 //!     // Now make the Hier instance and lock it.
@@ -189,11 +189,8 @@ use std::sync::Mutex;
 use super::Rustics;
 use super::Histogram;
 use super::PrintOption;
-use super::float_histogram::HistoOption;
-// TODO units
-// use super::Units;
 use super::running_float::RunningFloat;
-use crate::running_float::RunningFloatExporter;
+use crate::running_float::FloatExporter;
 use super::float_window::FloatWindow;
 
 use crate::Hier;
@@ -240,7 +237,6 @@ impl HierMember for RunningFloat {
 
 #[derive(Default)]
 pub struct FloatHier {
-    histo_opts: HistoOption,
 }
 
 /// FloatHierConfig is used to pass the constructor parameters
@@ -253,13 +249,12 @@ pub struct FloatHierConfig {
     pub descriptor:  HierDescriptor,
     pub name:        String,
     pub print_opts:  PrintOption,
-    pub histo_opts:  HistoOption,
     pub window_size: Option<usize>,
 }
 
 impl FloatHier {
-    pub fn new_raw(histo_opts: HistoOption) -> FloatHier  {
-        FloatHier { histo_opts }
+    pub fn new_raw() -> FloatHier  {
+        FloatHier { }
     }
 
     /// new_hier() creates a new Hier instance from the given
@@ -267,7 +262,7 @@ impl FloatHier {
     /// to the RunningFloat type.
 
     pub fn new_hier(configuration: FloatHierConfig) -> Hier {
-        let generator    = FloatHier::new_raw(configuration.histo_opts);
+        let generator    = FloatHier::new_raw();
         let generator    = Rc::from(RefCell::new(generator));
         let class        = "float".to_string();
 
@@ -302,14 +297,14 @@ impl FloatHier {
 
 impl HierGenerator for FloatHier {
     fn make_member(&self, name: &str, print_opts: &PrintOption) -> MemberRc {
-        let member = RunningFloat::new(name, print_opts, &self.histo_opts);
+        let member = RunningFloat::new(name, print_opts);
 
         Rc::from(RefCell::new(member))
     }
 
     fn make_window(&self, name: &str, window_size: usize, print_opts: &PrintOption)
             -> Box<dyn Rustics> {
-        let window = FloatWindow::new(name, window_size, print_opts, &self.histo_opts);
+        let window = FloatWindow::new(name, window_size, print_opts);
 
         Box::new(window)
     }
@@ -320,14 +315,14 @@ impl HierGenerator for FloatHier {
             -> MemberRc {
         let mut exporter_borrow = exporter.borrow_mut();
         let     exporter_any    = exporter_borrow.as_any_mut();
-        let     exporter_impl   = exporter_any.downcast_mut::<RunningFloatExporter>().unwrap();
+        let     exporter_impl   = exporter_any.downcast_mut::<FloatExporter>().unwrap();
         let     member          = exporter_impl.make_member(name, print_opts);
 
         Rc::from(RefCell::new(member))
     }
 
     fn make_exporter(&self) -> ExporterRc {
-        let exporter = RunningFloatExporter::new();
+        let exporter = FloatExporter::new();
 
         Rc::from(RefCell::new(exporter))
     }
@@ -336,12 +331,12 @@ impl HierGenerator for FloatHier {
     // them at some point.
 
     fn push(&self, exporter: &mut dyn HierExporter, member_rc: MemberRc) {
-        let     exporter_any    = exporter.as_any_mut();
-        let     exporter_impl   = exporter_any.downcast_mut::<RunningFloatExporter>().unwrap();
+        let exporter_any   = exporter.as_any_mut();
+        let exporter_impl  = exporter_any.downcast_mut::<FloatExporter>().unwrap();
 
-        let     member_borrow   = member_rc.borrow();
-        let     member_any      = member_borrow.as_any();
-        let     member_impl     = member_any.downcast_ref::<RunningFloat>().unwrap();
+        let member_borrow  = member_rc.borrow();
+        let member_any     = member_borrow.as_any();
+        let member_impl    = member_any.downcast_ref::<RunningFloat>().unwrap();
 
         exporter_impl.push(member_impl.export_data());
     }
@@ -388,7 +383,7 @@ mod tests {
         }
 
         let descriptor    = HierDescriptor::new(dimensions, Some(auto_next));
-        let generator     = FloatHier::new_raw(None);
+        let generator     = FloatHier::new_raw();
         let generator     = Rc::from(RefCell::new(generator));
         let class         = "float".to_string();
         let name          = "test hier".to_string();
@@ -405,7 +400,7 @@ mod tests {
     fn test_simple_running_generator() {
         //  First, just make a generator and a member, then record one event.
 
-        let     generator    = FloatHier::new_raw(None);
+        let     generator    = FloatHier::new_raw();
         let     member_rc    = generator.make_member("test member", &None);
         let     member_clone = member_rc.clone();
         let mut member       = member_clone.borrow_mut();

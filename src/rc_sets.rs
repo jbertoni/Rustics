@@ -109,17 +109,32 @@
 use std::rc::Rc;
 use std::cell::RefCell;
 use super::Rustics;
+use super::PrinterBox;
 use super::PrinterOption;
+use super::PrintOpts;
 use super::PrintOption;
 use super::Units;
 use super::TimerBox;
 use super::counter::Counter;
 use super::make_title;
+use super::parse_printer;
+use super::parse_units;
+use super::parse_histo_opts;
 
 use super::running_integer::RunningInteger;
-use super::running_time::RunningTime;
+use super::running_time   ::RunningTime;
+use super::running_float  ::RunningFloat;
+
 use super::integer_window::IntegerWindow;
 use super::time_window::TimeWindow;
+use super::float_window::FloatWindow;
+
+use super::integer_hier::IntegerHier;
+use super::integer_hier::IntegerHierConfig;
+use super::time_hier::TimeHier;
+use super::time_hier::TimeHierConfig;
+use super::float_hier::FloatHier;
+use super::float_hier::FloatHierConfig;
 
 pub type RusticsRc = Rc<RefCell<dyn Rustics>>;
 pub type RcSetBox  = Rc<RefCell<RcSet>>;
@@ -149,6 +164,7 @@ pub struct RcSet {
     next_id:    usize,
     members:    Vec<RusticsRc>,
     subsets:    Vec<RcSetBox>,
+    printer:    PrinterBox,
     print_opts: PrintOption,
 }
 
@@ -167,9 +183,10 @@ impl RcSet {
         let next_id    = 1;
         let members    = Vec::with_capacity(members);
         let subsets    = Vec::with_capacity(subsets);
+        let printer    = parse_printer(print_opts);
         let print_opts = print_opts.clone();
 
-        RcSet { name, title, id, next_id, members, subsets, print_opts }
+        RcSet { name, title, id, next_id, members, subsets, printer, print_opts }
     }
 
     /// Returns the name of the set.
@@ -315,6 +332,21 @@ impl RcSet {
         member
     }
 
+    /// Creates a Hier using RunningInteger instances and adds it to the set.
+
+    pub fn add_integer_hier(&mut self, mut configuration: IntegerHierConfig) -> RusticsRc {
+        let print_opts =
+            self.make_print_opts(&configuration.name, &configuration.print_opts);
+
+        configuration.print_opts = print_opts;
+
+        let member = IntegerHier::new_hier(configuration);
+        let member = Rc::from(RefCell::new(member));
+
+        self.add_member(member.clone());
+        member
+    }
+
     /// Creates a RunningTime instance and adds it to the set.
 
     pub fn add_running_time(&mut self, name: &str, timer: TimerBox) -> RusticsRc {
@@ -330,6 +362,67 @@ impl RcSet {
     pub fn add_time_window(&mut self, name: &str, window_size: usize, timer: TimerBox) -> RusticsRc {
         let member  = TimeWindow::new(name, window_size, timer, &self.print_opts);
         let member  = Rc::from(RefCell::new(member));
+
+        self.add_member(member.clone());
+        member
+    }
+
+    /// Creates a Hier using RunningTime instances and adds it to the set.
+
+    pub fn add_time_hier(&mut self, mut configuration: TimeHierConfig) -> RusticsRc {
+        let print_opts =
+            self.make_print_opts(&configuration.name, &configuration.print_opts);
+
+        configuration.print_opts = print_opts;
+
+        let member = TimeHier::new_hier(configuration);
+        let member = Rc::from(RefCell::new(member));
+
+        self.add_member(member.clone());
+        member
+    }
+
+    /// Creates a RunningFloat instance and adds it to the set.
+
+    pub fn add_running_float(&mut self, name: &str, units: Option<Units>) -> RusticsRc {
+        let mut member  = RunningFloat::new(name, &self.print_opts);
+
+        if let Some(units) = units {
+            member.set_units(units);
+        }
+
+        let member = Rc::from(RefCell::new(member));
+
+        self.add_member(member.clone());
+        member
+    }
+
+    /// Creates a FloatWindow statistics instance and adds it to the set.
+
+    pub fn add_float_window(&mut self, name: &str, window_size: usize, units: Option<Units>)
+            -> RusticsRc {
+        let mut member  = FloatWindow::new(name, window_size, &self.print_opts);
+
+        if let Some(units) = units {
+            member.set_units(units);
+        }
+
+        let member = Rc::from(RefCell::new(member));
+
+        self.add_member(member.clone());
+        member
+    }
+
+    /// Creates a Hier using RunningFloat instances and adds it to the set.
+
+    pub fn add_float_hier(&mut self, mut configuration: FloatHierConfig) -> RusticsRc {
+        let print_opts =
+            self.make_print_opts(&configuration.name, &configuration.print_opts);
+
+        configuration.print_opts = print_opts;
+
+        let member = FloatHier::new_hier(configuration);
+        let member = Rc::from(RefCell::new(member));
 
         self.add_member(member.clone());
         member
@@ -430,6 +523,16 @@ impl RcSet {
 
     fn id(&self) -> usize {
         self.id
+    }
+
+    fn make_print_opts(&self, name: &str, print_opts: &PrintOption) -> PrintOption {
+        let     printer    = Some(self.printer.clone());
+        let     title      = Some(make_title(&self.title, name));
+        let     units      = Some(parse_units(print_opts));
+        let     histo_opts = Some(parse_histo_opts(print_opts));
+        let     print_opts = PrintOpts { printer, title, units, histo_opts };
+
+        Some(print_opts)
     }
 }
 

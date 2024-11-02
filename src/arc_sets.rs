@@ -127,17 +127,27 @@ use std::sync::Arc;
 use super::Rustics;
 use super::running_integer::RunningInteger;
 use super::running_time::RunningTime;
+use super::running_float::RunningFloat;
 use super::integer_window::IntegerWindow;
 use super::time_window::TimeWindow;
+use super::float_window::FloatWindow;
+use super::integer_hier::IntegerHier;
+use super::integer_hier::IntegerHierConfig;
+use super::time_hier::TimeHier;
+use super::time_hier::TimeHierConfig;
+use super::float_hier::FloatHier;
+use super::float_hier::FloatHierConfig;
 use super::counter::Counter;
 use super::TimerBox;
 use super::PrinterBox;
 use super::PrinterOption;
 use super::PrintOpts;
 use super::PrintOption;
-use super::Units;
+use super::UnitsOption;
 use super::parse_printer;
 use super::parse_title;
+use super::parse_units;
+use super::parse_histo_opts;
 use super::make_title;
 
 pub type RusticsArc = Arc<Mutex<dyn Rustics>>;
@@ -374,7 +384,7 @@ impl ArcSet {
 
     /// Creates a RunningInteger instance and adds it to the set.
 
-    pub fn add_running_integer(&mut self, name: &str, units: Option<Units>) -> RusticsArc {
+    pub fn add_running_integer(&mut self, name: &str, units: UnitsOption) -> RusticsArc {
         let mut member  = RunningInteger::new(name, &self.print_opts);
 
         if let Some(units) = units {
@@ -389,7 +399,7 @@ impl ArcSet {
 
     /// Creates a IntegerWindow instance and adds it to the set.
 
-    pub fn add_integer_window(&mut self, name: &str, window_size: usize, units: Option<Units>)
+    pub fn add_integer_window(&mut self, name: &str, window_size: usize, units: UnitsOption)
             -> RusticsArc {
         let mut member = IntegerWindow::new(name, window_size, &self.print_opts);
 
@@ -398,6 +408,21 @@ impl ArcSet {
         }
 
         let member  = Arc::from(Mutex::new(member));
+
+        self.add_member(member.clone());
+        member
+    }
+
+    /// Creates a Hier using RunningInteger as the base type and adds it to the set.
+
+    pub fn add_integer_hier(&mut self, mut configuration: IntegerHierConfig) -> RusticsArc {
+        let print_opts =
+            self.make_print_opts(&configuration.name, &configuration.print_opts);
+
+        configuration.print_opts = print_opts;
+
+        let member = IntegerHier::new_hier(configuration);
+        let member = Arc::from(Mutex::new(member));
 
         self.add_member(member.clone());
         member
@@ -427,9 +452,80 @@ impl ArcSet {
         member
     }
 
+    /// Creates a Hier using RunningTime as the base type and adds it to the set.
+
+    pub fn add_time_hier(&mut self, mut configuration: TimeHierConfig) -> RusticsArc {
+        let print_opts =
+            self.make_print_opts(&configuration.name, &configuration.print_opts);
+
+        configuration.print_opts = print_opts;
+
+        let member = TimeHier::new_hier(configuration);
+        let member = Arc::from(Mutex::new(member));
+
+        self.add_member(member.clone());
+        member
+    }
+
+    // Creates a RunningFloat instance and adds it to the set.
+
+    pub fn add_running_float(&mut self, name: &str, units: UnitsOption) -> RusticsArc {
+        let mut member = RunningFloat::new(name, &self.print_opts);
+
+        if let Some(units) = units {
+            member.set_units(units);
+        }
+
+        let member = Arc::from(Mutex::new(member));
+
+        self.add_member(member.clone());
+        member
+    }
+
+    /// Creates a FloatWindow instance and adds it to the set.
+
+    pub fn add_float_window(&mut self, name: &str, window_size: usize, units: UnitsOption)
+            -> RusticsArc {
+        let mut member = FloatWindow::new(name, window_size, &self.print_opts);
+
+        if let Some(units) = units {
+            member.set_units(units);
+        }
+
+        let member  = Arc::from(Mutex::new(member));
+
+        self.add_member(member.clone());
+        member
+    }
+
+    /// Creates a Hier using RunningFloat as the base type and adds it to the set.
+
+    pub fn add_float_hier(&mut self, mut configuration: FloatHierConfig) -> RusticsArc {
+        let print_opts =
+            self.make_print_opts(&configuration.name, &configuration.print_opts);
+
+        configuration.print_opts = print_opts;
+
+        let member = FloatHier::new_hier(configuration);
+        let member = Arc::from(Mutex::new(member));
+
+        self.add_member(member.clone());
+        member
+    }
+
+    fn make_print_opts(&self, name: &str, print_opts: &PrintOption) -> PrintOption {
+        let     printer    = Some(self.printer.clone());
+        let     title      = Some(make_title(&self.title, name));
+        let     units      = Some(parse_units(print_opts));
+        let     histo_opts = Some(parse_histo_opts(print_opts));
+        let     print_opts = PrintOpts { printer, title, units, histo_opts };
+
+        Some(print_opts)
+    }
+
     /// Creates a Counter and adds it to the set.
 
-    pub fn add_counter(&mut self, name: &str, units: Option<Units>) -> RusticsArc {
+    pub fn add_counter(&mut self, name: &str, units: UnitsOption) -> RusticsArc {
         let printer    = Some(self.printer.clone());
         let title      = None;
         let histo_opts = None;

@@ -381,6 +381,10 @@ impl RunningFloat {
             max
         } 
     }
+
+    pub fn set_units(&mut self, units: Units) {
+        self.units = units;
+    }
 }
 
 impl Rustics for RunningFloat {

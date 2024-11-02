@@ -466,6 +466,32 @@ pub fn parse_title(print_opts: &PrintOption, name: &str) -> String {
     }
 }
 
+pub fn parse_histo_opts(print_opts: &PrintOption) -> HistoOpts {
+    match print_opts {
+        Some(print_opts) => {
+            match &print_opts.histo_opts {
+                Some(histo_opts) => { *histo_opts          }
+                None             => { HistoOpts::default() }
+            }
+        }
+
+        None => { HistoOpts::default()  }
+    }
+}
+
+pub fn parse_units(print_opts: &PrintOption) -> Units {
+    match print_opts {
+        Some(print_opts) => {
+            match &print_opts.units {
+                Some(units) => { units.clone()    }
+                None        => { Units::default() }
+            }
+        }
+
+        None => { Units::default()  }
+    }
+}
+
 pub fn parse_print_opts(print_opts: &PrintOption, name: &str) -> (PrinterBox, String, Units, HistoOpts) {
     let printer;
     let title;

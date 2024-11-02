@@ -253,7 +253,7 @@ pub struct FloatHierConfig {
 }
 
 impl FloatHier {
-    pub fn new_raw() -> FloatHier  {
+    pub fn new() -> FloatHier  {
         FloatHier { }
     }
 
@@ -262,7 +262,7 @@ impl FloatHier {
     /// to the RunningFloat type.
 
     pub fn new_hier(configuration: FloatHierConfig) -> Hier {
-        let generator    = FloatHier::new_raw();
+        let generator    = FloatHier::new();
         let generator    = Rc::from(RefCell::new(generator));
         let class        = "float".to_string();
 
@@ -383,7 +383,7 @@ mod tests {
         }
 
         let descriptor    = HierDescriptor::new(dimensions, Some(auto_next));
-        let generator     = FloatHier::new_raw();
+        let generator     = FloatHier::new();
         let generator     = Rc::from(RefCell::new(generator));
         let class         = "float".to_string();
         let name          = "test hier".to_string();
@@ -400,7 +400,7 @@ mod tests {
     fn test_simple_running_generator() {
         //  First, just make a generator and a member, then record one event.
 
-        let     generator    = FloatHier::new_raw();
+        let     generator    = FloatHier::new();
         let     member_rc    = generator.make_member("test member", &None);
         let     member_clone = member_rc.clone();
         let mut member       = member_clone.borrow_mut();

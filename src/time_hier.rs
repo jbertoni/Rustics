@@ -249,11 +249,11 @@ pub struct TimeHierConfig {
 }
 
 impl TimeHier {
-    /// The new_raw() function constructs a TimeHier instance, which is an
+    /// The new() function constructs a TimeHier instance, which is an
     /// implementation of HierGenerator for the RunningTime type.  Most users
     /// should just invoke new_hier() or new_hier_box().
 
-    pub fn new_raw(timer: TimerBox) -> TimeHier  {
+    pub fn new(timer: TimerBox) -> TimeHier  {
         TimeHier { timer }
     }
 
@@ -262,7 +262,7 @@ impl TimeHier {
     /// RunningTime type.
 
     pub fn new_hier(configuration: TimeHierConfig) -> Hier {
-        let generator   = TimeHier::new_raw(configuration.timer);
+        let generator   = TimeHier::new(configuration.timer);
         let generator   = Rc::from(RefCell::new(generator));
         let class       = "time".to_string();
 
@@ -442,7 +442,9 @@ mod tests {
         // expectations.
 
         assert!(hier_impl.event_count() == events);
-        assert!(hier_impl.mean() == mean);
+        assert!(hier_impl.mean()        == mean  );
+        assert!(hier_impl.class()       == "time");
+
         hier_impl.print();
     }
 
@@ -452,7 +454,7 @@ mod tests {
         //  First, just make a generator and a member, then record one event.
 
         let     timer        = continuing_box();
-        let     generator    = TimeHier::new_raw(timer);
+        let     generator    = TimeHier::new(timer);
         let     member_rc    = generator.make_member("test member", &None);
         let     member_clone = member_rc.clone();
         let mut member       = member_clone.borrow_mut();
@@ -484,6 +486,7 @@ mod tests {
 
         assert!(new_member.to_rustics().count() == 1);
         assert!(new_member.to_rustics().mean()  == value as f64);
+        assert!(new_member.to_rustics().class() == "time");
 
         // Now make an actual hier instance.
 
@@ -506,7 +509,7 @@ mod tests {
         let     auto_next   = 100;
         let     window_size = Some(1000);
         let     timer       = continuing_box();
-        let     generator   = TimeHier::new_raw(timer);
+        let     generator   = TimeHier::new(timer);
         let     generator   = Rc::from(RefCell::new(generator));
         let mut hier        = make_time_hier(generator, auto_next, window_size);
         let     period      = level_0_period();
@@ -562,7 +565,7 @@ mod tests {
         // Start again and test record_event().
 
         let     timer           = continuing_box();
-        let     generator       = TimeHier::new_raw(timer);
+        let     generator       = TimeHier::new(timer);
         let     generator       = Rc::from(RefCell::new(generator));
         let mut hier            = make_time_hier(generator, auto_next, Some(window_size as usize));
         let     timer_increment = continuing_timer_increment();
@@ -583,7 +586,8 @@ mod tests {
 
         let mean = total_time as f64 / events as f64;
 
-        assert!(hier.mean() == mean);
+        assert!(hier.mean()  == mean  );
+        assert!(hier.class() == "time");
     }
 
     #[test]

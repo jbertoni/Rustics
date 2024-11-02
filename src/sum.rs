@@ -4,7 +4,7 @@
 //  permitted by law.
 //
 
-//  Sort a set by absolute value to improve the accuracy of summation.
+//  Sort a set by absolute value to try to improve the accuracy of summation.
 
 fn sort(input: &mut [f64]) {
     input.sort_by(|a, b| a.abs().partial_cmp(&b.abs()).unwrap())

@@ -616,7 +616,6 @@ impl Histogram for RunningFloat {
     }
 }
 
-// TODO:  tests
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -653,7 +652,7 @@ mod tests {
         float.record_f64(f64::NAN);
 
         // NaNs should be counted but then ignored.
-        // Same for non-finite values.
+        // Same for other non-finite values.
 
         assert!(float.count()      == end as u64);
         assert!(float.nans()       == 1);

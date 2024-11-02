@@ -250,7 +250,7 @@ pub struct IntegerHierConfig {
 }
 
 impl IntegerHier {
-    pub fn new_raw() -> IntegerHier  {
+    pub fn new() -> IntegerHier  {
         IntegerHier { }
     }
 
@@ -259,7 +259,7 @@ impl IntegerHier {
     /// to the RunningInteger type.
 
     pub fn new_hier(configuration: IntegerHierConfig) -> Hier {
-        let generator    = IntegerHier::new_raw();
+        let generator    = IntegerHier::new();
         let generator    = Rc::from(RefCell::new(generator));
         let class        = "integer".to_string();
 
@@ -377,7 +377,7 @@ mod tests {
         }
 
         let descriptor    = HierDescriptor::new(dimensions, Some(auto_next));
-        let generator     = IntegerHier::new_raw();
+        let generator     = IntegerHier::new();
         let generator     = Rc::from(RefCell::new(generator));
         let class         = "integer".to_string();
         let name          = "test hier".to_string();
@@ -394,7 +394,7 @@ mod tests {
     fn test_simple_running_generator() {
         //  First, just make a generator and a member, then record one event.
 
-        let     generator    = IntegerHier::new_raw();
+        let     generator    = IntegerHier::new();
         let     member_rc    = generator.make_member("test member", &None);
         let     member_clone = member_rc.clone();
         let mut member       = member_clone.borrow_mut();

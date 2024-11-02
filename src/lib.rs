@@ -437,7 +437,7 @@ pub trait Printer {
     /// Prints a line of output.  The print method itself must append
     /// the newline.
 
-    fn print(&self, output: &str);
+    fn print(&mut self, output: &str);
 }
 
 pub fn parse_printer(print_opts: &PrintOption) -> PrinterBox {
@@ -537,7 +537,7 @@ impl StdioPrinter {
 }
 
 impl Printer for StdioPrinter {
-    fn print(&self, output: &str) {
+    fn print(&mut self, output: &str) {
         match self.which {
             StreamKind::Stdout => println!("{}", output),
             StreamKind::Stderr => eprintln!("{}", output),
@@ -748,11 +748,41 @@ mod tests {
     }
 
     impl Printer for TestPrinter {
-        fn print(&self, output: &str) {
+        fn print(&mut self, output: &str) {
             println!("{}:  {}", self.prefix, output);
         }
     }
 
+    pub struct CheckPrinter {
+        expected:  Vec<String>,
+        current:   usize,
+    }
+
+    impl CheckPrinter {
+        pub fn new(expected: &[&str]) -> CheckPrinter {
+            let expected: Vec<String> = expected.iter().map(|x| (*x).into()).collect();
+            let current  = 0;
+
+            CheckPrinter { expected, current }
+        }
+    }
+
+    impl Printer for CheckPrinter {
+        fn print(&mut self, output: &str) {
+            if self.current < self.expected.len() {
+                let expected = self.expected[self.current].clone();
+
+                println!("check_printer:  got \"{}\", expect \"{}\"",
+                    output,
+                    expected);
+
+                assert!(expected == *output);
+                self.current += 1;
+            }
+
+            println!("{}", output);
+        }
+    }
     // Define a testing clock that allows us to define the
     // intervals that the clock returns.  We do this through
     // a global variable, although creating a list might be
@@ -986,26 +1016,6 @@ mod tests {
         let mut time    = 1;
         let mut printer = TestPrinter::new("Time Scale Test");
 
-        /* TODO To-do:  create a printer that saves the string for examination.
-        let expected_output =
-            [
-                (  1.000, "ns"     ),
-                ( 10.000, "ns"     ),
-                (100.000, "ns"     ),
-                (  1.000, "us"     ),
-                ( 10.000, "us"     ),
-                (100.000, "us"     ),
-                (  1.000, "ms"     ),
-                ( 10.000, "ms"     ),
-                (100.000, "ms"     ),
-                (  1.000, "second" ),
-                ( 10.000, "seconds"),
-                (  1.667, "minutes"),
-                ( 16.667, "minutes"),
-                (  2.778, "hours"  ),
-                (  1.157, "days"   )
-            ];
-        */
 
         for i in 1..16 {
             let elapsed = i * 100;
@@ -1027,6 +1037,71 @@ mod tests {
         }
 
         time_stat.print();
+    }
+
+    fn test_time_printing() {
+        /* TODO To-do:  create a printer that saves the string for examination. */
+        let hz = 1_000_000_000;
+
+        let ns     =    1;
+        let us     = 1000 * ns;
+        let ms     = 1000 * us;
+        let second = 1000 * ms;
+        let minute =   60 * second;
+        let hour   =   60 * minute;
+        let day    =   24 * hour;
+
+        let values =
+            [
+                  1_u64,
+                 10 * ns,
+                100 * ns,
+                  1 * us,
+                 10 * us,
+                100 * us,
+                  1 * ms,
+                 10 * ms,
+                100 * ms,
+                  1 * second,
+                 10 * second,
+                  1 * minute,
+                 16 * minute,
+                  2 * hour,
+                  1 * day,
+                  2 * day,
+
+               1175 * day    / 1000,
+               1001 * second / 1000
+            ];
+
+        let expected_output =
+            [
+                  "    >                   1.000 ns",
+                  "    >                  10.000 ns",
+                  "    >                 100.000 ns",
+                  "    >                   1.000 us",
+                  "    >                  10.000 us",
+                  "    >                 100.000 us",
+                  "    >                   1.000 ms",
+                  "    >                  10.000 ms",
+                  "    >                 100.000 ms",
+                  "    >                   1.000 second",
+                  "    >                  10.000 seconds",
+                  "    >                   1.000 minute",
+                  "    >                  16.000 minutes",
+                  "    >                   2.000 hours",
+                  "    >                   1.000 day",
+                  "    >                   2.000 days",
+                  "    >                   1.175 days",
+                  "    >                   1.001 seconds"
+            ];
+
+        let mut check_printer = CheckPrinter::new(&expected_output);
+
+        for i in 0..values.len() {
+            println!("test_time_printing:  value {}, expect {}", values[i], expected_output[i]);
+            Printable::print_time(">", values[i] as f64, hz, &mut check_printer);
+        }
     }
 
     fn test_time_window() {
@@ -1234,6 +1309,7 @@ mod tests {
 
     #[test]
     pub fn run_lib_tests() {
+        test_time_printing();
         test_time_window();
         test_running_time();
         run_all_histo_tests();

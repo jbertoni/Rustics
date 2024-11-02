@@ -791,7 +791,7 @@ pub mod tests {
     }
 
     impl Printer for CustomPrinter {
-        fn print(&self, output: &str) {
+        fn print(&mut self, output: &str) {
             println!("CustomPrinter:  {}", output);
         }
     }

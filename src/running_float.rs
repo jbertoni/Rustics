@@ -7,8 +7,8 @@
 //!  
 //! ## Type
 //! * RunningFloat
-//!   * RunningFloat provides statistical summaries of data sample given as
-//!     f64 values.
+//!   * RunningFloat provides statistical summaries of samples of type f64.
+//!
 //!   * This includes a very coarse log histogram very similar to the one
 //!     that supports i64 data.
 //!
@@ -203,8 +203,8 @@ pub fn sum_running(exports: &Vec::<FloatExport>) -> FloatExport {
     let mut infinities     = 0;
     let mut min            = f64::MAX;
     let mut max            = f64::MIN;
-    let     histo_opts     = exports[0].histogram.borrow().histo_opts();
-    let mut histogram      = FloatHistogram::new(&Some(histo_opts));
+    let     print_opts     = &exports[0].histogram.borrow().print_opts;
+    let mut histogram      = FloatHistogram::new(print_opts);
 
     let mut mean_vec       = Vec::with_capacity(exports.len());
     let mut moment_2_vec   = Vec::with_capacity(exports.len());
@@ -271,7 +271,7 @@ impl RunningFloat {
     /// which sends the output to stdout.
 
     pub fn new(name: &str, print_opts: &PrintOption) -> RunningFloat {
-        let (printer, title, units, histo_opts) = parse_print_opts(print_opts, name);
+        let (printer, title, units, _histo_opts) = parse_print_opts(print_opts, name);
 
         let name        = name.to_string();
         let id          = usize::MAX;
@@ -284,7 +284,7 @@ impl RunningFloat {
         let moment_2    = 0.0;
         let moment_3    = 0.0;
         let moment_4    = 0.0;
-        let histogram   = FloatHistogram::new(&Some(histo_opts));
+        let histogram   = FloatHistogram::new(print_opts);
         let histogram   = Rc::from(RefCell::new(histogram));
 
         RunningFloat {

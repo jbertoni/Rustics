@@ -565,7 +565,7 @@ impl StdioPrinter {
 impl Printer for StdioPrinter {
     fn print(&mut self, output: &str) {
         match self.which {
-            StreamKind::Stdout => println!("{}", output),
+            StreamKind::Stdout => println! ("{}", output),
             StreamKind::Stderr => eprintln!("{}", output),
         }
     }

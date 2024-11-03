@@ -9,6 +9,8 @@
 //! * FloatHistogram
 //!   * FloatHistogram provides a very coarse log histogram that is similar to
 //!     the LogHistogram type.
+//!   * Each count in the histogram corresponds to 16 exponents from samples.
+//!     The mantissa is ignored.
 //!   * NaNs are counted separately, but otherwise are ignored.
 //!   * f64::INFINITY samples go into the largest bucket, and into a count of
 //!     infinite values.
@@ -19,10 +21,10 @@
 //!     use rustics::float_histogram::FloatHistogram;
 //!     use rustics::float_histogram::bucket_divisor;
 //!     use rustics::exponent_bias;
+//!     use rustics::PrintOpts;
 //!     use rustics::float_histogram::HistoOpts;
 //!     use rustics::stdout_printer;
 //!
-//!     println!("started");
 //!     // Create a HistOp for new().
 //!
 //!     let merge_min    = 0;  // not implemented yet
@@ -30,11 +32,15 @@
 //!     let no_zero_rows = false;
 //!
 //!     let histo_opts = HistoOpts { merge_min, merge_max, no_zero_rows };
+//!     let histo_opts = Some(histo_opts);
+//!     let printer    = None;
+//!     let title      = None;
+//!     let units      = None;
+//!     let print_opts = PrintOpts { printer, title, units, histo_opts };
 //!
 //!     // Create a histogram and accept the default output format.
 //!
-//!     println!("at create");
-//!     let mut histogram = FloatHistogram::new(&Some(histo_opts));
+//!     let mut histogram = FloatHistogram::new(&Some(print_opts));
 //!
 //!     let sample_count = 1000;
 //!
@@ -44,10 +50,8 @@
 //!
 //!     // Create a Printer instance for output.
 //!
-//!     println!("before first print");
 //!     let printer = stdout_printer();
 //!     let printer = &mut *printer.lock().unwrap();
-//!     println!("at first print");
 //!
 //!     histogram.print(printer);
 //!
@@ -80,13 +84,14 @@
 use super::Histogram;
 use super::Printable;
 use super::FloatHistogramBox;
-use super::HistoOption;
+use super::PrintOption;
 use super::LogHistogramBox;
 use super::Printer;
 use super::biased_exponent;
 use super::max_biased_exponent;
 use super::exponent_bias;
 use super::sign;
+use super::parse_histo_opts;
 
 /// The HistoOpts struct is used to specify options on how to print
 /// a histogram.
@@ -122,7 +127,8 @@ pub struct FloatHistogram {
     pub nans:       usize,
     pub infinities: usize,
     pub samples:    usize,
-        histo_opts: HistoOpts,
+    pub print_opts: PrintOption,
+    pub histo_opts: HistoOpts,
 }
 
 /// Defines how many exponent values are merged into one bucket.
@@ -155,7 +161,7 @@ impl FloatHistogram {
     /// Creates a new histogram.  The histo_opts option currently is
     /// only partially implemented.
 
-    pub fn new(histo_opts: &HistoOption) -> FloatHistogram {
+    pub fn new(print_opts: &PrintOption) -> FloatHistogram {
         let buckets    = buckets() as usize;
         let buckets    = roundup(buckets, print_roundup());
         let negative   = vec![0; buckets];
@@ -163,17 +169,12 @@ impl FloatHistogram {
         let samples    = 0;
         let nans       = 0;
         let infinities = 0;
+        let histo_opts = parse_histo_opts(print_opts);
+        let print_opts = print_opts.clone();
 
-        let histo_opts =
-            if let Some(histo_opts) = histo_opts {
-                histo_opts
-            } else {
-                &HistoOpts::default()
-            };
-
-        let histo_opts = *histo_opts;
-
-        FloatHistogram { negative, positive, buckets, samples, nans, infinities, histo_opts }
+        FloatHistogram {
+            negative, positive, buckets, samples, nans, infinities, print_opts, histo_opts
+        }
     }
 
     ///  Records one f64 sample into its bucket.
@@ -436,14 +437,20 @@ impl Histogram for FloatHistogram {
 mod tests {
     use crate::stdout_printer;
     use crate::min_exponent;
+    use crate::PrintOpts;
     use super::*;
 
     fn simple_test() {
         let     merge_min    = min_exponent();
         let     merge_max    = min_exponent();
         let     no_zero_rows = true;
+        let     printer      = None;
+        let     title        = None;
+        let     units        = None;
         let     histo_opts   = HistoOpts { merge_min, merge_max, no_zero_rows };
-        let mut histogram    = FloatHistogram::new(&Some(histo_opts));
+        let     histo_opts   = Some(histo_opts);
+        let     print_opts   = PrintOpts { printer, title, units, histo_opts };
+        let mut histogram    = FloatHistogram::new(&Some(print_opts));
         let     max_index    = max_biased_exponent() / bucket_divisor();
 
         for i in 0..= max_index {
@@ -532,12 +539,16 @@ mod tests {
         let merge_min    = 0;  // not implemented yet
         let merge_max    = 0;  // not implemented yet
         let no_zero_rows = false;
-   
-        let histo_opts = HistoOpts { merge_min, merge_max, no_zero_rows };
+        let histo_opts   = HistoOpts { merge_min, merge_max, no_zero_rows };
+        let printer      = None;
+        let title        = None;
+        let units        = None;
+        let histo_opts   = Some(histo_opts);
+        let print_opts   = PrintOpts { printer, title, units, histo_opts };
    
         // Create a histogram and accept the default output format.
    
-        let mut histogram = FloatHistogram::new(&Some(histo_opts));
+        let mut histogram = FloatHistogram::new(&Some(print_opts));
    
         let sample_count = 1000;
    
@@ -582,12 +593,17 @@ mod tests {
         let merge_min    = 0;  // not implemented yet
         let merge_max    = 0;  // not implemented yet
         let no_zero_rows = false;
-   
-        let histo_opts = HistoOpts { merge_min, merge_max, no_zero_rows };
+        let histo_opts   = HistoOpts { merge_min, merge_max, no_zero_rows };
+
+        let printer      = None;
+        let title        = None;
+        let units        = None;
+        let histo_opts   = Some(histo_opts);
+        let print_opts   = PrintOpts { printer, title, units, histo_opts };
    
         // Create a histogram and accept the default output format.
    
-        let mut histogram = FloatHistogram::new(&Some(histo_opts));
+        let mut histogram = FloatHistogram::new(&Some(print_opts));
    
         let sample_count = 1000;
    
@@ -596,8 +612,6 @@ mod tests {
         }
 
         let (sign, exponent) = histogram.log_mode();
-
-        println!("sign = {}, exponent = {}", sign, exponent);
 
         let sign     = sign as f64;
         let expected = sign * 2_f64.powi(exponent as i32);

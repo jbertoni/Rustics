@@ -8,7 +8,7 @@
 //!
 //! * FloatWindow
 //!     * FloatWindow maintains a set consisting of the last n samples
-//!       recorded into it.
+//!       recorded into it.  Each sample is of type f64.
 //!
 //!     * This type also maintains a log histogram that contains counts
 //!       of all events seen, not just the window of n samples.
@@ -68,6 +68,13 @@
 //!       packet_sizes.record_f64(i as f64);
 //!       assert!(packet_sizes.count() == window_size as u64);
 //!    }
+//!
+//!    // We are overwriting samples with the same value, so the
+//!    // mean, min, and max shouldn't change.
+//!
+//!    assert!(packet_sizes.mean()    == mean       );
+//!    assert!(packet_sizes.min_f64() == 1.0        );
+//!    assert!(packet_sizes.max_f64() == float_count);
 //!```
 
 use std::any::Any;
@@ -106,11 +113,11 @@ pub struct FloatWindow {
     name:           String,
     title:          String,
     window_size:    usize,
-    vector:         Vec<f64>,
     id:             usize,
 
     // These fields must be zeroed or reset in clear():
 
+    vector:         Vec<f64>,
     index:          usize,
     stats_valid:    bool,
 
@@ -130,13 +137,15 @@ pub struct FloatWindow {
 }
 
 impl FloatWindow {
+    /// Creates a window of size "window_size".
+
     pub fn new(name: &str, window_size: usize, print_opts: &PrintOption)
             -> FloatWindow {
         if window_size == 0 {
             panic!("The window size is zero.");
         }
 
-        let (printer, title, units, histo_opts) = parse_print_opts(print_opts, name);
+        let (printer, title, units, _histo_opts) = parse_print_opts(print_opts, name);
 
         let name          = String::from(name);
         let id            = usize::MAX;
@@ -148,7 +157,7 @@ impl FloatWindow {
         let moment_2      = 0.0;
         let moment_3      = 0.0;
         let moment_4      = 0.0;
-        let histogram     = FloatHistogram::new(&Some(histo_opts));
+        let histogram     = FloatHistogram::new(print_opts);
         let histogram     = Rc::from(RefCell::new(histogram));
 
         FloatWindow {
@@ -438,11 +447,11 @@ impl Rustics for FloatWindow {
     }
 
     fn clear(&mut self) {
-        self.vector.clear();
-        self.index = 0;
-        self.histogram.borrow_mut().clear();
-
+        self.index       = 0;
         self.stats_valid = false;
+
+        self.vector.clear();
+        self.histogram.borrow_mut().clear();
     }
 
     fn print(&self) {
@@ -563,21 +572,37 @@ mod tests {
         assert!(stats.mean() == sample as f64);
         assert!(stats.histogram.borrow().mode_value() == 2.0_f64);
 
+        // Clear the statistics and do some checking.
+
         stats.clear();
 
         assert!(stats.min_f64() == 0.0);
         assert!(stats.max_f64() == 0.0);
 
+        // Record one value and see what happens.
+
         stats.record_f64(-1.0);
+
         assert!(stats.min_f64() == -1.0);
         assert!(stats.max_f64() == -1.0);
+        assert!(stats.count()   ==  1  );
+        assert!(stats.mean()    == -1.0);
+
+        assert!(stats.variance() == 0.0   );
+        assert!(stats.skewness() == 0.0   );
+        assert!(stats.kurtosis() == 0.0   );
+
+        // Record another sample and do more checking.
 
         stats.record_f64(1.0);
+
         assert!(stats.min_f64() == -1.0);
         assert!(stats.max_f64() ==  1.0);
 
         assert!(stats.count() == 2  );
         assert!(stats.mean()  == 0.0);
+
+        // Clear the statistics and record the same value a few times.
 
         stats.clear();
         let sample = 4.0;
@@ -586,12 +611,45 @@ mod tests {
             stats.record_f64(sample);
         }
 
+        // If all the data was erased, we should match these values
+        // for the summary statistics.
+
         assert!(stats.standard_deviation() == 0.0);
 
         assert!(stats.mean()     == sample);
         assert!(stats.variance() == 0.0   );
         assert!(stats.skewness() == 0.0   );
         assert!(stats.kurtosis() == 0.0   );
+
+        // Try one final test.  Record 2 * window_size samples
+        // in two loops.
+
+        stats.clear();
+
+        for i in 1..=window_size {
+            stats.record_f64(i as f64);
+
+            assert!(stats.count() == i as u64);
+        }
+
+        let count = window_size as f64;
+        let sum   = count * (count + 1.0) / 2.0;
+        let mean  = sum / count;
+
+        assert!(stats.mean() == mean);
+
+        // Now overwrite the data with the next "window_size"
+        // integers.
+
+        for i in 1..=window_size {
+            stats.record_f64(i as f64 + count);
+
+            assert!(stats.count() == window_size as u64);
+        }
+
+        // Check that the instance contains the right samples.
+
+        assert!(stats.mean() == mean + count);
     }
 
     #[test]

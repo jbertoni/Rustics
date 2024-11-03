@@ -1066,12 +1066,19 @@ impl Rustics for Hier {
     }
 
     fn print_opts(&self, printer: PrinterOption, title: Option<&str>) {
+        let title =
+            if let Some(title) = title {
+                title
+            } else {
+                &self.title
+            };
+
         if let Some(window) = &self.window {
-            window.print_opts(printer, title);
+            window.print_opts(printer, Some(title));
         } else {
             let index = HierIndex::new(HierSet::Live, 0, self.live_len(0) - 1);
 
-            self.local_print(index, printer, title);
+            self.local_print(index, printer, Some(title));
         }
     }
 
@@ -1383,9 +1390,7 @@ pub mod tests {
         assert!(hier_integer.mean()         == mean           );
 
         check_sizes(&hier_integer, events, false);
-        println!("simple_hier_test:  print 1 at {}", events);
         hier_integer.print();
-        println!("simple_hier_test:  print 1.5 at {}", events);
 
         assert!(hier_integer.count() == events as u64);
 
@@ -1403,7 +1408,6 @@ pub mod tests {
         }
 
         assert!(hier_integer.stats[0].all_len() == 2);
-        println!("simple_hier_test:  print 2 at {}", events);
         hier_integer.print();
 
         let floating_window = signed_auto as f64;
@@ -1437,7 +1441,6 @@ pub mod tests {
             check_sizes(&hier_integer, events, false);
         }
 
-        println!("simple_hier_test:  print 3 at {}", events);
         hier_integer.print();
 
         let expected_mean = sum as f64 / floating_window;
@@ -1518,7 +1521,6 @@ pub mod tests {
 
         assert!(!hier_integer.equals(stat));
 
-        println!("simple_hier_test:  print 4 at {}", events);
         stat.print();
 
         hier_integer.print_all(None, None);

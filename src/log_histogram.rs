@@ -322,7 +322,8 @@ mod tests {
         let mut i = 0;
 
         for sample in test.iter() {
-            println!("pseudo_log_index({}) = {}", *sample, pseudo_log_index(*sample));
+            println!("test_pseudo_log:  pseudo_log_index({}) = {}",
+                *sample, pseudo_log_index(*sample));
             assert_eq!(pseudo_log_index(*sample), expect[i]);
             i += 1;
         }

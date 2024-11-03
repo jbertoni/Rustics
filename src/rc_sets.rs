@@ -874,17 +874,17 @@ mod tests {
 
         let event_count = samples + auto_next;
 
-        let integer_generic = integer_stat.generic();
-        let time_generic    = time_stat   .generic();
-        let float_generic   = float_stat  .generic();
+        let integer_generic   = integer_stat.generic();
+        let time_generic      = time_stat   .generic();
+        let float_generic     = float_stat  .generic();
 
-        let integer_hier    = integer_generic.downcast_ref::<Hier>().unwrap();
-        let time_hier       = time_generic   .downcast_ref::<Hier>().unwrap();
-        let float_hier      = float_generic  .downcast_ref::<Hier>().unwrap();
+        let hier_integer_hier = integer_generic.downcast_ref::<Hier>().unwrap();
+        let hier_time_hier    = time_generic   .downcast_ref::<Hier>().unwrap();
+        let hier_float_hier   = float_generic  .downcast_ref::<Hier>().unwrap();
 
-        assert!(integer_hier.event_count() == event_count);
-        assert!(time_hier   .event_count() == event_count);
-        assert!(float_hier  .event_count() == event_count);
+        assert!(hier_integer_hier.event_count() == event_count);
+        assert!(hier_time_hier   .event_count() == event_count);
+        assert!(hier_float_hier  .event_count() == event_count);
 
         // Now drop the locks and print the set.
 
@@ -892,7 +892,16 @@ mod tests {
         drop(time_stat   );
         drop(float_stat  );
 
+        println!("test_hier:  Setting the title");
+        set.set_title("New Title");
         set.print();
+        set.clear();
+
+        let mut float_stat = float_hier.borrow_mut();
+        assert!(float_stat.count() == 0);
+        float_stat.record_f64(1.0);
+        assert!(float_stat.count() == 1);
+        drop(float_stat);
     }
 
     #[test]

@@ -341,7 +341,6 @@ impl ArcSet {
             let mut subset  = mutex.lock().unwrap();
             let     title   = make_title(title, &subset.name());
 
-
             subset.set_title(&title);
         }
 
@@ -1201,21 +1200,42 @@ pub mod tests {
         let time_generic    = time_stat   .generic();
         let float_generic   = float_stat  .generic();
 
-        let integer_hier    = integer_generic.downcast_ref::<Hier>().unwrap();
-        let time_hier       = time_generic   .downcast_ref::<Hier>().unwrap();
-        let float_hier      = float_generic  .downcast_ref::<Hier>().unwrap();
+        let hier_integer_hier    = integer_generic.downcast_ref::<Hier>().unwrap();
+        let hier_time_hier       = time_generic   .downcast_ref::<Hier>().unwrap();
+        let hier_float_hier      = float_generic  .downcast_ref::<Hier>().unwrap();
 
-        assert!(integer_hier.event_count() == event_count);
-        assert!(time_hier   .event_count() == event_count);
-        assert!(float_hier  .event_count() == event_count);
+        assert!(hier_integer_hier.event_count() == event_count);
+        assert!(hier_time_hier   .event_count() == event_count);
+        assert!(hier_float_hier  .event_count() == event_count);
 
-        // Now drop the locks and print the set.
+        // Now drop the locks and print the set with a new title.
 
         drop(integer_stat);
         drop(time_stat   );
         drop(float_stat  );
 
+        set.set_title("New Title");
         set.print();
+        set.clear();
+
+        let mut float_stat      = float_hier.lock().unwrap();
+        let     float_generic   = float_stat.generic();
+        let     hier_float_hier = float_generic.downcast_ref::<Hier>().unwrap();
+
+        assert!(float_stat.count() == 0);
+        assert!(hier_float_hier.event_count() == 0);
+
+        float_stat.record_f64(1.0);
+
+        assert!(float_stat.count() == 1);
+
+        drop(float_stat);
+
+        let float_stat      = float_hier.lock  ().unwrap();
+        let float_generic   = float_stat.generic();
+        let hier_float_hier = float_generic.downcast_ref::<Hier>().unwrap();
+
+        assert!(hier_float_hier.event_count() == 1);
     }
 
     #[test]

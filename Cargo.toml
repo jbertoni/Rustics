@@ -10,6 +10,7 @@ keywords = ["monitoring", "statistics", "performance" ]
 categories = ["development-tools::profiling"]
 description = "simple statistic library for performance analysis"
 repository = "https://github.com/jbertoni/Rustics"
+profiler = true
 
 [dependencies]
 

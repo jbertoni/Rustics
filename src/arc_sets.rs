@@ -125,18 +125,22 @@
 use std::sync::Mutex;
 use std::sync::Arc;
 use super::Rustics;
+
 use super::running_integer::RunningInteger;
 use super::running_time::RunningTime;
 use super::running_float::RunningFloat;
+
 use super::integer_window::IntegerWindow;
 use super::time_window::TimeWindow;
 use super::float_window::FloatWindow;
+
 use super::integer_hier::IntegerHier;
 use super::integer_hier::IntegerHierConfig;
 use super::time_hier::TimeHier;
 use super::time_hier::TimeHierConfig;
 use super::float_hier::FloatHier;
 use super::float_hier::FloatHierConfig;
+
 use super::counter::Counter;
 use super::TimerBox;
 use super::PrinterBox;
@@ -513,16 +517,6 @@ impl ArcSet {
         member
     }
 
-    fn make_print_opts(&self, name: &str, print_opts: &PrintOption) -> PrintOption {
-        let     printer    = Some(self.printer.clone());
-        let     title      = Some(make_title(&self.title, name));
-        let     units      = Some(parse_units(print_opts));
-        let     histo_opts = Some(parse_histo_opts(print_opts));
-        let     print_opts = PrintOpts { printer, title, units, histo_opts };
-
-        Some(print_opts)
-    }
-
     /// Creates a Counter and adds it to the set.
 
     pub fn add_counter(&mut self, name: &str, units: UnitsOption) -> RusticsArc {
@@ -537,6 +531,19 @@ impl ArcSet {
 
         self.add_member(member.clone());
         member
+    }
+
+    // Merge the input print_ops with the title that we generate and the printer
+    // for the set.
+
+    fn make_print_opts(&self, name: &str, print_opts: &PrintOption) -> PrintOption {
+        let     printer    = Some(self.printer.clone());
+        let     title      = Some(make_title(&self.title, name));
+        let     units      = Some(parse_units(print_opts));
+        let     histo_opts = Some(parse_histo_opts(print_opts));
+        let     print_opts = PrintOpts { printer, title, units, histo_opts };
+
+        Some(print_opts)
     }
 
     /// Removes a Rustics element from the set.
@@ -631,6 +638,11 @@ pub mod tests {
     use crate::tests::continuing_box;
     use crate::hier::Hier;
     use crate::Printer;
+    use crate::time::Timer;
+    use crate::time::DurationTimer;
+    use crate::hier::HierDescriptor;
+    use crate::hier::HierDimension;
+    use std::time::Instant;
 
     struct TestTraverser {
         pub members:  i64,
@@ -725,36 +737,50 @@ pub mod tests {
 
         //  Now create the instances in our set.
 
-        let window_mutex        = set.add_integer_window("window", 32, None);
-        let running_mutex       = set.add_running_integer("running", None);
-        let time_window_mutex   = set.add_time_window("time window", 32, window_timer);
-        let running_time_mutex  = set.add_running_time("running time", running_timer);
+        let window_size = 32;
+
+        let window_mutex        = set.add_integer_window ("window",        window_size, None         );
+        let running_mutex       = set.add_running_integer("running",       None                      );
+        let time_window_mutex   = set.add_time_window    ("time window",   window_size, window_timer );
+        let running_time_mutex  = set.add_running_time   ("running time",               running_timer);
+        let float_window_mutex  = set.add_float_window  ("float window",  window_size, None          );
+        let running_float_mutex = set.add_running_float ("running float", None                       );
 
         //  Lock the instances for manipulation.
 
-        let mut window          = window_mutex.lock().unwrap();
-        let mut running         = running_mutex.lock().unwrap();
-        let mut time_window     = time_window_mutex.lock().unwrap();
-        let mut running_time    = running_time_mutex.lock().unwrap();
+        let mut window          = window_mutex       .lock().unwrap();
+        let mut running         = running_mutex      .lock().unwrap();
+        let mut time_window     = time_window_mutex  .lock().unwrap();
+        let mut running_time    = running_time_mutex .lock().unwrap();
+        let mut float_window    = float_window_mutex .lock().unwrap();
+        let mut running_float   = running_float_mutex.lock().unwrap();
 
         //  Create some simple timers to be started manually.
 
         let     running_both  = TestTimer::new_box(test_hz);
+
         let     running_test  = ConverterTrait::as_test_timer(running_both.clone());
-        let mut running_stat  = ConverterTrait::as_timer(running_both.clone());
+        let mut running_stat  = ConverterTrait::as_timer     (running_both.clone());
 
         let     window_both   = TestTimer::new_box(test_hz);
+
         let     window_test   = ConverterTrait::as_test_timer(window_both.clone());
-        let mut window_stat   = ConverterTrait::as_timer(window_both.clone());
+        let mut window_stat   = ConverterTrait::as_timer     (window_both.clone());
 
         //  Now record some data in all the instances.
 
         for i in lower..upper {
-            window.record_i64(i);
-            running.record_i64(i);
+            let f = i as f64;
 
-            assert!(window.max_i64()  == i);
-            assert!(running.max_i64() == i);
+            window       .record_i64(i);
+            running      .record_i64(i);
+            running_float.record_f64(f);
+            float_window .record_f64(f);
+
+            assert!(window       .max_i64() == i);
+            assert!(running      .max_i64() == i);
+            assert!(running_float.max_f64() == f);
+            assert!(float_window .max_f64() == f);
 
             // Get a test value to use.  It must be positive.
 
@@ -806,19 +832,22 @@ pub mod tests {
         drop(running);
         drop(running_time);
         drop(time_window);
+        drop(running_float);
+        drop(float_window);
 
         //  Make sure that print completes.
 
         set.print();
 
-        //  Do a test of the traverser.
+        //  Do a test of the traverser.  Check that we see the correct
+        //  number of members and subsets.
 
         let mut traverser = TestTraverser::new();
 
         set.traverse(&mut traverser);
         println!(" *** arc members {}, sets {}", traverser.members, traverser.sets);
 
-        assert!(traverser.members == 5);
+        assert!(traverser.members == 7);
         assert!(traverser.sets    == 2);
 
         //  Now test removing Rustics instances.
@@ -847,7 +876,7 @@ pub mod tests {
         set.traverse(&mut traverser);
         println!(" *** arc members {}, sets {}", traverser.members, traverser.sets);
 
-        assert!(traverser.members == 21);
+        assert!(traverser.members == 23);
         assert!(traverser.sets    == 12);
 
         // Print the set, as well.
@@ -960,10 +989,6 @@ pub mod tests {
         set.print();
     }
 
-    use crate::time::Timer;
-    use crate::time::DurationTimer;
-    use std::time::Instant;
-
     fn documentation() {
        // Create a set.  We're expecting 8 statistics instances but
        // no subsets, so we set those hints appropriately.  The
@@ -1036,10 +1061,160 @@ pub mod tests {
 
     }
 
+    // These routines are used by RcSet tests.
+
+    pub fn level_0_period() -> usize {
+        100
+    }
+
+    pub fn level_0_retain() -> usize {
+        3 * level_0_period()
+    }
+
+    pub fn make_descriptor(auto_next: i64) -> HierDescriptor {
+        let     levels         = 4;
+        let     level_0_period = level_0_period();
+        let     dimension      = HierDimension::new(level_0_period, level_0_retain());
+        let mut dimensions     = Vec::<HierDimension>::with_capacity(levels);
+
+        // Push the level 0 descriptor.
+
+        dimensions.push(dimension);
+
+        // Create a hierarchy.
+
+        let mut period = 4;
+
+        for _i in 1..levels {
+            let dimension = HierDimension::new(period, 3 * period);
+
+            dimensions.push(dimension);
+
+            period += 2;
+        }
+
+        HierDescriptor::new(dimensions, Some(auto_next))
+    }
+
+    pub fn make_integer_config(name: &str, auto_next: i64, window_size: Option<usize>)
+            -> IntegerHierConfig {
+        let name       = name.to_string();
+        let descriptor = make_descriptor(auto_next);
+        let print_opts = None;
+
+        IntegerHierConfig { name, descriptor, print_opts, window_size }
+    }
+
+    pub fn make_time_config(name: &str, auto_next: i64, window_size: Option<usize>)
+            -> TimeHierConfig {
+        let name       = name.to_string();
+        let descriptor = make_descriptor(auto_next);
+        let print_opts = None;
+        let hz         = 1_000_000_000;
+        let timer      = TestTimer::new_box(hz);
+
+        TimeHierConfig { name, descriptor, timer, print_opts, window_size }
+    }
+
+    pub fn make_float_config(name: &str, auto_next: i64, window_size: Option<usize>)
+            -> FloatHierConfig {
+        let name       = name.to_string();
+        let descriptor = make_descriptor(auto_next);
+        let print_opts = None;
+
+        FloatHierConfig { name, descriptor, print_opts, window_size }
+    }
+
+    fn test_hier() {
+        let     auto_next      = 1000;
+        let mut set            = ArcSet::new("Hier Test", 0, 0, &None);
+
+        let     integer_name   = "Integer Test";
+        let     time_name      = "Time Test";
+        let     float_name     = "Float Test";
+
+        let     integer_config = make_integer_config(integer_name, auto_next, None);
+        let     time_config    = make_time_config   (time_name,    auto_next, None);
+        let     float_config   = make_float_config  (float_name,   auto_next, None);
+
+        let     integer_hier   = set.add_integer_hier(integer_config);
+        let     time_hier      = set.add_time_hier   (time_config   );
+        let     float_hier     = set.add_float_hier  (float_config  );
+
+        let mut integer_stat = integer_hier.lock().unwrap();
+        let mut time_stat    = time_hier.lock   ().unwrap();
+        let mut float_stat   = float_hier.lock  ().unwrap();
+
+        // Fill the first level 0 Rustics instance in each of the
+        // Hier instances and check the values recorded.
+
+        let samples = auto_next as i64;
+
+        for i in 1..=samples {
+            let f = i as f64;
+
+            integer_stat.record_i64 (i);
+            time_stat   .record_time(i);
+            float_stat  .record_f64 (f);
+        }
+
+        // Now record a partial window and check that we have
+        // moved past the old samples.
+
+        let sum  = (samples * (samples + 1)) / 2;
+        let mean = sum as f64 / samples as f64;
+
+        assert!(integer_stat.mean()  == mean);
+        assert!(time_stat   .mean()  == mean);
+        assert!(float_stat  .mean()  == mean);
+
+        assert!(integer_stat.count() == samples as u64);
+        assert!(time_stat   .count() == samples as u64);
+        assert!(float_stat  .count() == samples as u64);
+
+        let samples = samples / 4;
+
+        for i in 1..=samples {
+            let f = i as f64;
+
+            integer_stat.record_i64 (i);
+            time_stat   .record_time(i);
+            float_stat  .record_f64 (f);
+        }
+
+        let sum  = (samples * (samples + 1)) / 2;
+        let mean = sum as f64 / samples as f64;
+
+        assert!(integer_stat.mean()  == mean);
+        assert!(time_stat   .mean()  == mean);
+        assert!(float_stat  .mean()  == mean);
+
+        assert!(integer_stat.count() == samples as u64);
+        assert!(time_stat   .count() == samples as u64);
+        assert!(float_stat  .count() == samples as u64);
+
+        //  Now check that the total sample counter is correct.
+
+        let event_count = samples + auto_next;
+
+        let integer_generic = integer_stat.generic();
+        let time_generic    = time_stat   .generic();
+        let float_generic   = float_stat  .generic();
+
+        let integer_hier    = integer_generic.downcast_ref::<Hier>().unwrap();
+        let time_hier       = time_generic   .downcast_ref::<Hier>().unwrap();
+        let float_hier      = float_generic  .downcast_ref::<Hier>().unwrap();
+
+        assert!(integer_hier.event_count() == event_count);
+        assert!(time_hier   .event_count() == event_count);
+        assert!(float_hier  .event_count() == event_count);
+    }
+
     #[test]
     pub fn run_tests() {
         simple_test();
         sample_usage();
+        test_hier();
         documentation();
     }
 }

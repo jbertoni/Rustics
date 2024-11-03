@@ -232,11 +232,11 @@ pub fn sum_running(exports: &Vec::<FloatExport>) -> FloatExport {
         moment_4_vec.push(export.moment_4);
     }
 
-    let mean          = kbk_sum_sort(&mut mean_vec[..]) / count as f64;
-    let moment_2      = kbk_sum_sort(&mut moment_2_vec[..]);
-    let moment_3      = kbk_sum_sort(&mut moment_3_vec[..]);
-    let moment_4      = kbk_sum_sort(&mut moment_4_vec[..]);
-    let histogram     = Rc::from(RefCell::new(histogram));
+    let mean       = kbk_sum_sort(&mut mean_vec[..]) / count as f64;
+    let moment_2   = kbk_sum_sort(&mut moment_2_vec[..]);
+    let moment_3   = kbk_sum_sort(&mut moment_3_vec[..]);
+    let moment_4   = kbk_sum_sort(&mut moment_4_vec[..]);
+    let histogram  = Rc::from(RefCell::new(histogram));
 
     FloatExport {
         count,  nans,   infinities, mean, moment_2, moment_3, moment_4,

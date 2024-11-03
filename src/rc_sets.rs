@@ -541,6 +541,9 @@ mod tests {
     use super::*;
     use crate::tests::continuing_box;
     use crate::hier::Hier;
+    use crate::arc_sets::tests::make_integer_config;
+    use crate::arc_sets::tests::make_time_config;
+    use crate::arc_sets::tests::make_float_config;
 
     struct TestTraverser {
         pub members:  i64,
@@ -606,30 +609,54 @@ mod tests {
 
         // Add integer statistics instances, both a running total and a window.
 
-        let window  = set.add_integer_window("window", 32, None);
+        let window_size = 32;
+
+        let window  = set.add_integer_window("window", window_size, None);
         let running = set.add_running_integer("running", None);
 
         let window_timer:  TimerBox = continuing_box();
         let running_timer: TimerBox = continuing_box();
 
-        let time_window  = set.add_time_window("time window", 32, window_timer);
-        let running_time = set.add_running_time("running time", running_timer);
+        let time_window   = set.add_time_window ("time window",    window_size, window_timer);
+        let running_time  = set.add_running_time ("running time",  running_timer);
+
+        let float_window  = set.add_float_window ("float window",  window_size, None);
+        let running_float = set.add_running_float("running float", None);
 
         // Now test recording data.
 
-        let mut window_stat       = (*window).borrow_mut();
-        let mut running_stat      = (*running).borrow_mut();
+        let mut window_stat        = (*window).borrow_mut();
+        let mut running_stat       = (*running).borrow_mut();
 
-        let mut time_window_stat  = (*time_window).borrow_mut();
-        let mut running_time_stat = (*running_time).borrow_mut();
+        let mut time_window_stat   = (*time_window).borrow_mut();
+        let mut running_time_stat  = (*running_time).borrow_mut();
+
+        let mut float_window_stat  = (*float_window).borrow_mut();
+        let mut running_float_stat = (*running_float).borrow_mut();
 
         for i in lower..upper {
-            window_stat.record_i64(i);
-            running_stat.record_i64(i);
+            let f = i as f64;
+
+            window_stat       .record_i64(i);
+            running_stat      .record_i64(i);
+            float_window_stat .record_f64(f);
+            running_float_stat.record_f64(f);
 
             time_window_stat.record_event();
             running_time_stat.record_event();
         }
+
+        let i_max   = upper - 1;
+        let f_max   = i_max as f64;
+
+        let i_min   = lower;
+        let f_min   = i_min as f64;
+
+        assert!(window_stat.max_i64()        == i_max);
+        assert!(running_stat.min_i64()       == i_min);
+
+        assert!(float_window_stat.max_f64()  == f_max);
+        assert!(running_float_stat.min_f64() == f_min);
 
         // Check that the titles are being set correctly.
 
@@ -661,6 +688,8 @@ mod tests {
         drop(subset);
         drop(time_window_stat);
         drop(running_time_stat);
+        drop(running_float_stat);
+        drop(float_window_stat);
 
         set.print();
 
@@ -669,7 +698,7 @@ mod tests {
         set.traverse(&mut traverser);
         println!(" *** rc members {}, sets {}", traverser.members, traverser.sets);
 
-        assert!(traverser.members == 5);
+        assert!(traverser.members == 7);
         assert!(traverser.sets == 2);
 
         // Add more subsets to test removal operations.
@@ -773,9 +802,95 @@ mod tests {
         set.print();
     }
 
+    fn test_hier() {
+        let     auto_next      = 1000;
+        let mut set            = RcSet::new("Hier Test", 0, 0, &None);
+
+        let     integer_name   = "Integer Test";
+        let     time_name      = "Time Test";
+        let     float_name     = "Float Test";
+
+        let     integer_config = make_integer_config(integer_name, auto_next, None);
+        let     time_config    = make_time_config   (time_name,    auto_next, None);
+        let     float_config   = make_float_config  (float_name,   auto_next, None);
+
+        let     integer_hier   = set.add_integer_hier(integer_config);
+        let     time_hier      = set.add_time_hier   (time_config   );
+        let     float_hier     = set.add_float_hier  (float_config  );
+
+        let mut integer_stat = integer_hier.borrow_mut();
+        let mut time_stat    = time_hier.   borrow_mut();
+        let mut float_stat   = float_hier.  borrow_mut();
+
+        // Fill the first level 0 Rustics instance in each of the
+        // Hier instances and check the values recorded.
+
+        let samples = auto_next as i64;
+
+        for i in 1..=samples {
+            let f = i as f64;
+
+            integer_stat.record_i64 (i);
+            time_stat   .record_time(i);
+            float_stat  .record_f64 (f);
+        }
+
+        // Now record a partial window and check that we have
+        // moved past the old samples.
+
+        let sum  = (samples * (samples + 1)) / 2;
+        let mean = sum as f64 / samples as f64;
+
+        assert!(integer_stat.mean()  == mean);
+        assert!(time_stat   .mean()  == mean);
+        assert!(float_stat  .mean()  == mean);
+
+        assert!(integer_stat.count() == samples as u64);
+        assert!(time_stat   .count() == samples as u64);
+        assert!(float_stat  .count() == samples as u64);
+
+        let samples = samples / 4;
+
+        for i in 1..=samples {
+            let f = i as f64;
+
+            integer_stat.record_i64 (i);
+            time_stat   .record_time(i);
+            float_stat  .record_f64 (f);
+        }
+
+        let sum  = (samples * (samples + 1)) / 2;
+        let mean = sum as f64 / samples as f64;
+
+        assert!(integer_stat.mean()  == mean);
+        assert!(time_stat   .mean()  == mean);
+        assert!(float_stat  .mean()  == mean);
+
+        assert!(integer_stat.count() == samples as u64);
+        assert!(time_stat   .count() == samples as u64);
+        assert!(float_stat  .count() == samples as u64);
+
+        //  Now check that the total sample counter is correct.
+
+        let event_count = samples + auto_next;
+
+        let integer_generic = integer_stat.generic();
+        let time_generic    = time_stat   .generic();
+        let float_generic   = float_stat  .generic();
+
+        let integer_hier    = integer_generic.downcast_ref::<Hier>().unwrap();
+        let time_hier       = time_generic   .downcast_ref::<Hier>().unwrap();
+        let float_hier      = float_generic  .downcast_ref::<Hier>().unwrap();
+
+        assert!(integer_hier.event_count() == event_count);
+        assert!(time_hier   .event_count() == event_count);
+        assert!(float_hier  .event_count() == event_count);
+    }
+
     #[test]
     pub fn run_tests() {
         simple_test();
         sample_usage();
+        test_hier();
     }
 }

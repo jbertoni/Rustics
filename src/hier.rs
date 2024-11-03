@@ -1231,7 +1231,7 @@ pub mod tests {
         // IntegerHier, which does some of the work for
         // us.
 
-        let name        = "hier".to_string();
+        let name        = "Hier Test Instance".to_string();
         let print_opts  = None;
         let window_size = None;
 

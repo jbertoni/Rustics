@@ -477,6 +477,7 @@ impl Rustics for IntegerWindow {
         printable.print_common_i64(printer);
         printable.print_common_float(printer);
         self.log_histogram.borrow().print(printer);
+        printer.print("");
     }
 
     fn equals(&self, other: &dyn Rustics) -> bool {

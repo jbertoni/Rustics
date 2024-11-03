@@ -241,6 +241,7 @@ impl Rustics for Counter {
 
         printer.print(title);
         Printable::print_integer_units("Count", self.count, printer, &self.units);
+        printer.print("");
     }
 
     // For internal use only.

@@ -389,9 +389,19 @@ impl Printable {
         Self::print_integer_units("Count", self.n as i64, printer, &self.units);
 
         if self.n > 0 {
-            Self::print_integer_units("Minumum",  self.min_i64,  printer, &self.units);
-            Self::print_integer_units("Maximum",  self.max_i64,  printer, &self.units);
-            Self::print_integer      ("Log Mode", self.log_mode, printer             );
+            let mode_value = 1_i64 << self.log_mode.abs();
+
+            let mode_value =
+                if self.log_mode < 0 {
+                    -mode_value
+                } else {
+                    mode_value
+                };
+
+            Self::print_integer_units("Minumum",    self.min_i64,  printer, &self.units);
+            Self::print_integer_units("Maximum",    self.max_i64,  printer, &self.units);
+            Self::print_integer      ("Log Mode",   self.log_mode, printer             );
+            Self::print_integer      ("Mode Value", mode_value,    printer             );
         }
     }
 

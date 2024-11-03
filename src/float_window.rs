@@ -480,6 +480,7 @@ impl Rustics for FloatWindow {
         printable.print_common_f64(printer);
         printable.print_common_float(printer);
         self.histogram.borrow().print(printer);
+        printer.print("");
     }
 
     fn equals(&self, other: &dyn Rustics) -> bool {

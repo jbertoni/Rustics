@@ -302,6 +302,7 @@ impl Rustics for RunningTime {
         printable.print_common_integer_times(self.hz, printer);
         printable.print_common_float_times(self.hz, printer);
         self.running_integer.print_histogram(printer);
+        printer.print("");
     }
 
     // For internal use only.

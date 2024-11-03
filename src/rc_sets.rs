@@ -885,6 +885,14 @@ mod tests {
         assert!(integer_hier.event_count() == event_count);
         assert!(time_hier   .event_count() == event_count);
         assert!(float_hier  .event_count() == event_count);
+
+        // Now drop the locks and print the set.
+
+        drop(integer_stat);
+        drop(time_stat   );
+        drop(float_stat  );
+
+        set.print();
     }
 
     #[test]

@@ -525,6 +525,7 @@ impl Rustics for RunningInteger {
         printable.print_common_i64(printer);
         printable.print_common_float(printer);
         self.log_histogram.borrow().print(printer);
+        printer.print("");
     }
 
     fn set_title(&mut self, title: &str) {
@@ -572,7 +573,6 @@ mod tests {
     use crate::tests::TestPrinter;
     use std::sync::Mutex;
     use std::sync::Arc;
-    use crate::log_histogram::pseudo_log_index;
     use crate::PrintOpts;
 
     pub fn test_simple_running_integer() {
@@ -637,10 +637,12 @@ mod tests {
             events += 1;
         }
 
-        println!("log mode index {}", pseudo_log_index(common_value));
-        println!("log mode {}", stats.log_mode());
-        println!("log mode {}", stats.log_mode());
-        assert!(stats.log_mode() == 7);
+        let expected = 7;
+
+        println!("test_simple_running_integer:  log mode {}, expected {}",
+            stats.log_mode(), expected);
+
+        assert!(stats.log_mode() == expected);
 
         stats.clear();
         assert!(stats.min_i64() == i64::MAX);

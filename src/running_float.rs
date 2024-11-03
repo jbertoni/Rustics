@@ -557,8 +557,8 @@ impl Rustics for RunningFloat {
         printer.print(title);
         printable.print_common_f64(printer);
         printable.print_common_float(printer);
-        printer.print("");
         self.histogram.borrow().print(printer);
+        printer.print("");
     }
 
     fn set_title (&mut self, title: &str) {

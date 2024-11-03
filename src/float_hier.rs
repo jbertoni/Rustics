@@ -367,6 +367,9 @@ mod tests {
         let     dimension      = HierDimension::new(level_0_period, level_0_retain());
         let mut dimensions     = Vec::<HierDimension>::with_capacity(levels);
 
+        assert!(dimension.period()    == level_0_period  );
+        assert!(dimension.retention() == level_0_retain());
+
         // Push the level 0 descriptor.
 
         dimensions.push(dimension);

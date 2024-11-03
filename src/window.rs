@@ -279,7 +279,7 @@ impl<T> Window<T> {
 
     pub fn index_live(&self, index: usize) -> Option<&T> {
         if index >= self.live_limit {
-            panic!("Window::index_live:  That index is too large");
+            return None;
         }
 
         if index >= self.data.len() {

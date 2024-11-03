@@ -603,16 +603,6 @@ mod tests {
         assert!(nans       == 0);
         assert!(infinities == 0);
 
-        match histogram.to_log_histogram() {
-            None   => { }
-            Some(_h) => { panic!("to_log_histogram"); }
-        }
-
-        match histogram.to_float_histogram() {
-            None   => { }
-            Some(_h) => { panic!("to_float_histogram"); }
-        }
-
         // Check histo_opts().
 
         let histo_opts = histogram.histo_opts();
@@ -655,6 +645,22 @@ mod tests {
 
         println!("test_log_mode:  got {}, expected {}", log_mode, expected);
         assert!(log_mode == expected);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_to_log() {
+        let histogram = FloatHistogram::new(&None);
+
+        let _ = histogram.to_log_histogram().unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_to_float() {
+        let histogram = FloatHistogram::new(&None);
+
+        let _ = histogram.to_float_histogram().unwrap();
     }
 
     #[test]

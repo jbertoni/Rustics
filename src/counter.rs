@@ -364,18 +364,6 @@ mod tests {
 
         counter.precompute();
 
-        // No histograms supported.
-
-        match counter.float_histogram() {
-            None     => { }
-            Some(_n) => { panic!("counter:  float_histogram present"); }
-        }
-
-        match counter.log_histogram() {
-            None     => { }
-            Some(_n) => { panic!("counter:  log_histogram present"); }
-        }
-
         // Take a brief look at the statistics.
 
         let stats = counter.export_stats();
@@ -515,6 +503,22 @@ mod tests {
         let counter = Counter::new("test counter", &None);
 
         let _ = counter.min_f64();
+    }
+
+    #[test]
+    #[should_panic]
+    fn log_histogram_panic_test() {
+        let counter = Counter::new("test counter", &None);
+
+        let _ = counter.log_histogram().unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn float_histogram_panic_test() {
+        let counter = Counter::new("test counter", &None);
+
+        let _ = counter.float_histogram().unwrap();
     }
 
     #[test]

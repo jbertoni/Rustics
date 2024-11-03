@@ -789,16 +789,17 @@ mod tests {
     }
 
     pub struct CheckPrinter {
-        expected:  Vec<String>,
-        current:   usize,
+        expected:         Vec<String>,
+        current:          usize,
+        fail_on_overage:  bool,
     }
 
     impl CheckPrinter {
-        pub fn new(expected: &[&str]) -> CheckPrinter {
+        pub fn new(expected: &[&str], fail_on_overage: bool) -> CheckPrinter {
             let expected: Vec<String> = expected.iter().map(|x| (*x).into()).collect();
             let current  = 0;
 
-            CheckPrinter { expected, current }
+            CheckPrinter { expected, current, fail_on_overage }
         }
     }
 
@@ -813,6 +814,8 @@ mod tests {
 
                 assert!(expected == *output);
                 self.current += 1;
+            } else if self.fail_on_overage {
+                panic!("CheckPrinter:  too many lines");
             }
 
             println!("{}", output);
@@ -1131,7 +1134,7 @@ mod tests {
                   "    >                   1.001 seconds"
             ];
 
-        let mut check_printer = CheckPrinter::new(&expected_output);
+        let mut check_printer = CheckPrinter::new(&expected_output, true);
 
         for i in 0..values.len() {
             println!("test_time_printing:  value {}, expect {}", values[i], expected_output[i]);

@@ -562,6 +562,10 @@ impl Hier {
         let level = index.level;
         let which = index.which;
 
+        if level >= self.stats.len() {
+            return None;
+        }
+
         let target =
             match index.set {
                 HierSet::Live => { self.stats[level].index_live(which) }
@@ -1238,6 +1242,9 @@ pub mod tests {
     use crate::time_hier::TimeHier;
     use crate::time_hier::TimeHierConfig;
     use crate::running_time::RunningTime;
+    use crate::stdout_printer;
+    use crate::integer_hier::tests::make_test_hier;
+    use crate::tests::continuing_box;
 
     // Make a Hier instance for testing.  The tests use the RunningInteger
     // implementation via IntegerHier.
@@ -1431,7 +1438,7 @@ pub mod tests {
         assert!(hier_integer.max_i64()      == signed_auto - 1);
         assert!(hier_integer.mean()         == mean           );
 
-        check_sizes(&hier_integer, events, false);
+        check_sizes(&hier_integer, events, true);
         hier_integer.print();
 
         assert!(hier_integer.count() == events as u64);
@@ -1695,9 +1702,10 @@ pub mod tests {
     }
 
     fn test_time_hier_sanity() {
+        let     printer    = stdout_printer();
+        let     printer    = &mut *printer.lock().unwrap();
         let     name       = "time_hier sanity test".to_string();
-        let     timer      = crate::tests::ContinuingTimer::new(1_000_0000);
-        let     timer      = Rc::from(RefCell::new(timer));
+        let     timer      = continuing_box();
         let     print_opts = None;
 
         // Create the dimensions.
@@ -1723,15 +1731,27 @@ pub mod tests {
 
         let mut events             = 0;
         let     events_per_level_1 = auto_next * dimension_0.period() as i64;
+        let mut timer              = continuing_box();
 
         for i in 0..2 * events_per_level_1 {
             hier.record_time(i + 1);
+            hier.record_interval(&mut timer);
 
-            events += 1;
+            events += 2;
         }
 
         assert!(hier.event_count() == events);
         hier.print();
+        hier.print_histogram(printer);
+
+        hier.clear_histogram();
+
+        let histogram = hier.to_log_histogram().unwrap();
+        let histogram = histogram.borrow();
+
+        for sample in histogram.positive.iter() {
+            assert!(*sample == 0);
+        }
 
         // Do a sanity test on the members.
 
@@ -1752,6 +1772,17 @@ pub mod tests {
         assert!(rustics.class() == "time");
 
         println!("test_time_hier_sanity:  got \"{}\" for class", rustics.class());
+
+        let index = HierIndex::new(HierSet::Live, 0, 0);
+
+        let printer = stdout_printer();
+        let title   = "Index Print Title";
+
+        hier.print_index_opts(index, Some(printer), Some(title));
+
+        let export = hier.export_stats();
+
+        assert!(export.printable.n as i64 == auto_next);
     }
 
     fn sample_usage() {
@@ -1814,6 +1845,14 @@ pub mod tests {
             integer_hier.record_i64(i + 10);
         }
 
+        assert!( integer_hier.log_mode() == 11);
+        assert!( integer_hier.int_extremes());
+        assert!(!integer_hier.float_extremes());
+
+        // This is a no-op that shouldn't panic.
+
+        integer_hier.precompute();
+
         // We have just completed the first level 0 instance, but
         // the implementation creates the next instance only when
         // it has data to record, so there should be only one level
@@ -1871,6 +1910,145 @@ pub mod tests {
         // Test the histograms while we have a Hier.
 
         run_histogram_tests(&mut (*integer_hier) as &mut dyn Rustics);
+
+
+        // Test clear_all with a window.
+
+        integer_hier.clear_all();
+
+        assert!(integer_hier.count() == 0);
+
+        // Test printing with bad indices.
+
+        let printer = stdout_printer();
+        let index   = HierIndex::new(HierSet::Live, 5000, 0);
+
+        integer_hier.print_index_opts(index, Some(printer), None);
+
+        let printer = stdout_printer();
+        let index   = HierIndex::new(HierSet::Live, 0, 10000);
+
+        integer_hier.print_index_opts(index, Some(printer), None);
+    }
+
+    fn test_sum() {
+        let     printer      = stdout_printer();
+        let     printer      = &mut *printer.lock().unwrap();
+        let     window_size  = 200;
+        let mut integer_hier = make_test_hier(100, Some(200));
+
+        for i in 1..=window_size {
+            integer_hier.record_i64(i as i64);
+        }
+
+        integer_hier.print_opts(None, None);
+        integer_hier.print_histogram(printer);
+
+        let count = window_size as f64;
+        let sum   = (count * (count + 1.0)) / 2.0;
+        let mean  = sum / count;
+
+        integer_hier.print();
+
+        assert!(integer_hier.mean()     == mean);
+        assert!(integer_hier.variance() >  0.0);
+        assert!(integer_hier.skewness() == 0.0);
+        assert!(integer_hier.kurtosis() == 0.0);
+        assert!(integer_hier.log_mode() == 8  );
+
+        assert!(integer_hier.standard_deviation() >  0.0);
+
+        for i in 1..10000 {
+            integer_hier.record_i64(i as i64);
+        }
+
+        // Create a vector of indices.
+
+        let mut addends      = Vec::new();
+        let     level        = 0;
+        let     addend_count = 1000;
+
+        for i in 0..addend_count {
+            addends.push(HierIndex::new(HierSet::Live, level, i));
+        }
+
+        // Now compute the sum and print it.
+
+        let (sum, count) = integer_hier.sum(addends, "Level 0 Summary");
+        let sum          = sum.unwrap();
+
+        assert!(count > 0);
+        assert!(count < addend_count);
+        assert!(sum.borrow().to_rustics().mean() > 0.0);
+
+        let mut addends = Vec::new();
+
+        for i in 0..addend_count {
+            addends.push(HierIndex::new(HierSet::Live, 500, i));
+        }
+
+        let (_sum, count) = integer_hier.sum(addends, "Level 0 Summary");
+        
+        assert!(count == 0);
+
+        integer_hier.clear_all();
+
+        assert!(integer_hier.count() == 0);
+
+        // Test title handling.
+
+        let new_title   = "Hier Test Title";
+        let start_title = integer_hier.title();
+
+        assert!(start_title != new_title);
+        
+        integer_hier.set_title(new_title);
+
+        assert!(integer_hier.title() == new_title);
+
+        // This is a no-op that should not panic.
+
+        integer_hier.precompute();
+
+        // Check set_id() and id().
+
+        integer_hier.set_id(1);
+        assert!(integer_hier.id() == 1);
+
+        integer_hier.set_id(2);
+        assert!(integer_hier.id() == 2);
+
+        let export = integer_hier.export_stats();
+
+        assert!(export.printable.n == 0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_bad_retention() {
+        let _ = HierDimension::new(8, 4);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_bad_auto_next() {
+        let _ = HierDescriptor::new(Vec::new(), Some(-2));
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_float_histogram() {
+        let hier = make_test_hier(100, None);
+
+        let _ = hier.float_histogram().unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_float_histogram_window() {
+        let hier = make_test_hier(100, Some(100));
+
+        let _ = hier.float_histogram().unwrap();
     }
 
     #[test]
@@ -1879,6 +2057,7 @@ pub mod tests {
         simple_hier_test();
         long_test();
         test_time_hier_sanity();
+        test_sum();
         sample_usage();
     }
 }

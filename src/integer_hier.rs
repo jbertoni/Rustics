@@ -341,7 +341,7 @@ impl HierGenerator for IntegerHier {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::*;
     use crate::hier::HierDescriptor;
     use crate::hier::HierDimension;
@@ -354,7 +354,7 @@ mod tests {
         3 * level_0_period()
     }
 
-    fn make_test_hier(auto_next: i64, window_size: Option<usize>) -> Hier {
+    pub fn make_test_hier(auto_next: i64, window_size: Option<usize>) -> Hier {
         let     levels         = 4;
         let     level_0_period = level_0_period();
         let     dimension      = HierDimension::new(level_0_period, level_0_retain());

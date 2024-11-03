@@ -545,9 +545,14 @@ impl Histogram for FloatWindow {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::running_float::RunningFloat;
+    use crate::tests::continuing_box;
+    use crate::stdout_printer;
 
     pub fn test_simple_float_window() {
-        let     window_size = 100;
+        let window_size = 100;
+        let printer     = stdout_printer();
+        let printer     = &mut *printer.lock().unwrap();
 
         let mut stats =
             FloatWindow::new(&"Test Statistics", window_size, &None);
@@ -556,13 +561,33 @@ mod tests {
         assert!(!stats.int_extremes  ());
         assert!( stats.float_extremes());
 
+        let crunched = stats.crunch();
+
+        assert!(crunched.mean      == 0.0);
+        assert!(crunched.sum       == 0.0);
+        assert!(crunched.moment_2  == 0.0);
+        assert!(crunched.moment_3  == 0.0);
+        assert!(crunched.moment_4  == 0.0);
+
         for sample in -256..512 {
             stats.record_f64(sample as f64);
         }
 
-        assert!(stats.histogram.borrow().mode_value() == 2.0_f64);
+        // This depends on the loop limits.
+
+        let mode_value = 2.0;
+
+        {
+            let histogram = stats.float_histogram().unwrap();
+            let histogram = histogram.borrow();
+
+            assert!(histogram.mode_value() == mode_value);
+        }
+
+        stats.to_float_histogram().unwrap().borrow().print_histogram(printer);
 
         stats.print();
+        stats.print_histogram(printer);
         let sample = 100;
 
         for _i in 0..2 * window_size {
@@ -571,7 +596,26 @@ mod tests {
 
         stats.print();
         assert!(stats.mean() == sample as f64);
-        assert!(stats.histogram.borrow().mode_value() == 2.0_f64);
+        assert!(stats.histogram.borrow().mode_value() == mode_value);
+
+        stats.precompute();
+
+        assert!(stats.variance() == 0.0);
+
+        // precompute should be idempotent.
+
+        stats.precompute();
+
+        assert!(stats.variance() == 0.0);
+
+        let printable = stats.get_printable();
+
+        assert!(printable.n          == window_size as u64);
+        assert!(printable.mean       == window_size as f64);
+        assert!(printable.mode_value == mode_value        );
+
+        stats.set_title("New Title");
+        assert!(stats.title() == "New Title");
 
         // Clear the statistics and do some checking.
 
@@ -579,6 +623,13 @@ mod tests {
 
         assert!(stats.min_f64() == 0.0);
         assert!(stats.max_f64() == 0.0);
+        assert!(stats.mean()    == 0.0);
+
+        let export = stats.export_stats();
+
+        assert!(export.printable.n        == 0  );
+        assert!(export.printable.mean     == 0.0);
+        assert!(export.printable.kurtosis == 0.0);
 
         // Record one value and see what happens.
 
@@ -651,10 +702,128 @@ mod tests {
         // Check that the instance contains the right samples.
 
         assert!(stats.mean() == mean + count);
+
+        // Now test the Histogram clear member.
+
+        stats.record_f64(f64::NAN);
+
+        {
+            let histogram = stats.to_float_histogram().unwrap();
+            let histogram = histogram.borrow();
+
+            assert!(histogram.nans == 1);
+        }
+
+        stats.clear_histogram();
+
+        {
+            let histogram = stats.to_float_histogram().unwrap();
+            let histogram = histogram.borrow();
+
+            assert!(histogram.nans == 0);
+        }
+    }
+
+    fn test_casting_functions() {
+        let stats_1 = FloatWindow::new ("Cast 1", 10, &None);
+        let stats_2 = FloatWindow::new ("Cast 2", 10, &None);
+        let stats_3 = RunningFloat::new("Cast 3"    , &None);
+
+        assert!( stats_1.equals(&stats_1));
+        assert!(!stats_1.equals(&stats_2));
+        assert!(!stats_1.equals(&stats_3));
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_zero_size() {
+        let _ = FloatWindow::new("Fail", 0, &None);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_record_i64() {
+        let mut stats = FloatWindow::new("Fail", 10, &None);
+
+        stats.record_i64(4);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_record_event() {
+        let mut stats = FloatWindow::new("Fail", 10, &None);
+
+        stats.record_event();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_record_event_report() {
+        let mut stats = FloatWindow::new("Fail", 10, &None);
+
+        let _ = stats.record_event_report();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_record_time() {
+        let mut stats = FloatWindow::new("Fail", 10, &None);
+
+        stats.record_time(4);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_record_interval() {
+        let mut timer = continuing_box();
+        let mut stats = FloatWindow::new("Fail", 10, &None);
+
+        stats.record_interval(&mut timer);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_max_i64() {
+        let stats = FloatWindow::new("Fail", 10, &None);
+
+        let _ = stats.max_i64();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_min_i64() {
+        let stats = FloatWindow::new("Fail", 10, &None);
+
+        let _ = stats.min_i64();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_log_mode() {
+        let stats = FloatWindow::new("Fail", 10, &None);
+
+        let _ = stats.log_mode();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_log_histogram() {
+        let stats = FloatWindow::new("Fail", 10, &None);
+
+        let _ = stats.log_histogram().unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_to_log_histogram() {
+        let stats = FloatWindow::new("Fail", 10, &None);
+
+        let _ = stats.to_log_histogram().unwrap();
     }
 
     #[test]
     fn run_tests() {
+        test_casting_functions();
         test_simple_float_window();
     }
 }

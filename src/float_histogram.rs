@@ -536,8 +536,8 @@ mod tests {
     fn test_documentation() {
         // Create a HistOp for new().
    
-        let merge_min    = 0;  // not implemented yet
-        let merge_max    = 0;  // not implemented yet
+        let merge_min    = 10;  // not implemented yet
+        let merge_max    = 11;  // not implemented yet
         let no_zero_rows = false;
         let histo_opts   = HistoOpts { merge_min, merge_max, no_zero_rows };
         let printer      = None;
@@ -585,6 +585,41 @@ mod tests {
         assert!(histogram.nans       == 1);
         assert!(histogram.infinities == 2);
         assert!(histogram.samples    == sample_count as usize + 2);
+
+        // Check the official interface.
+
+        let (nans, infinities) = histogram.non_finites();
+
+        assert!(nans       == 1);
+        assert!(infinities == 2);
+
+        // Check the Histogram trait.
+
+        histogram.print_histogram(printer);
+        histogram.clear_histogram();
+
+        let (nans, infinities) = histogram.non_finites();
+
+        assert!(nans       == 0);
+        assert!(infinities == 0);
+
+        match histogram.to_log_histogram() {
+            None   => { }
+            Some(_h) => { panic!("to_log_histogram"); }
+        }
+
+        match histogram.to_float_histogram() {
+            None   => { }
+            Some(_h) => { panic!("to_float_histogram"); }
+        }
+
+        // Check histo_opts().
+
+        let histo_opts = histogram.histo_opts();
+
+        assert!(histo_opts.merge_min    == merge_min);
+        assert!(histo_opts.merge_max    == merge_max);
+        assert!(histo_opts.no_zero_rows == no_zero_rows);
     }
 
     fn test_log_mode() {

@@ -759,6 +759,15 @@ mod tests {
     use crate::printable::Printable;
     use crate::log_histogram::pseudo_log_index;
 
+    // This function is shared.
+
+    pub fn bytes() -> Option<Units> {
+        let singular = "byte".to_string();
+        let plural   = "bytes".to_string();
+
+        Some(Units { singular, plural })
+    }
+
     // This struct is used by other modules.
 
     pub struct TestPrinter {

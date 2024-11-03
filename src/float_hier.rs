@@ -351,6 +351,7 @@ mod tests {
     use super::*;
     use crate::hier::HierDescriptor;
     use crate::hier::HierDimension;
+    use crate::stdout_printer;
 
     fn level_0_period() -> usize {
         8
@@ -360,7 +361,7 @@ mod tests {
         3 * level_0_period()
     }
 
-    fn make_test_hier(auto_next: i64, window_size: Option<usize>) -> Hier {
+    fn make_test_hier(auto_next: i64, window_size: Option<usize>) -> HierBox {
         let     levels         = 4;
         let     level_0_period = level_0_period();
         let     dimension      = HierDimension::new(level_0_period, level_0_retain());
@@ -383,16 +384,13 @@ mod tests {
         }
 
         let descriptor    = HierDescriptor::new(dimensions, Some(auto_next));
-        let generator     = FloatHier::new();
-        let generator     = Rc::from(RefCell::new(generator));
-        let class         = "float".to_string();
         let name          = "test hier".to_string();
         let print_opts    = None;
 
         let configuration =
-            HierConfig { descriptor, generator, class, name, window_size, print_opts };
+            FloatHierConfig { descriptor, name, window_size, print_opts };
 
-        Hier::new(configuration)
+        FloatHier::new_hier_box(configuration)
     }
 
     // Do a minimal liveness test of the generic hier implementation.
@@ -438,7 +436,8 @@ mod tests {
         // Now make an actual hier instance.
 
         let     auto_next = 200;
-        let mut hier      = make_test_hier(auto_next, None);
+        let     hier      = make_test_hier(auto_next, None);
+        let mut hier      = hier.lock().unwrap();
         let mut events    = 0;
 
         for i in 1..auto_next / 2 {
@@ -458,7 +457,8 @@ mod tests {
     fn test_window() {
         let     auto_next   = 100;
         let     window_size = Some(1000);
-        let mut hier        = make_test_hier(auto_next, window_size);
+        let     hier        = make_test_hier(auto_next, window_size);
+        let mut hier        = hier.lock().unwrap();
         let     period      = level_0_period();
         let     window_size = window_size.unwrap() as i64;
         let mut events      = 0 as i64;
@@ -505,6 +505,28 @@ mod tests {
         hier.record_f64(window_size as f64 + 1.0);
         
         assert!(hier.count() == window_size as u64);
+
+        // See whether we can get back to a member.
+
+        let     member_rc = hier.current();
+        let     member    = &mut *member_rc.borrow_mut();
+        let     histogram = member.to_histogram();
+
+        histogram.print_histogram(&mut *stdout_printer().lock().unwrap());
+        member.to_rustics_mut().record_f64(1.0);
+
+        let _any_mut = member.as_any_mut();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_hz() {
+        let     auto_next   = 200;
+        let     window_size = None;
+        let     hier        = make_test_hier(auto_next, window_size);
+        let     hier        = hier.lock().unwrap();
+
+        let _hz = hier.hz();
     }
 
     #[test]

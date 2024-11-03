@@ -310,10 +310,17 @@ impl Rustics for Counter {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::running_float::RunningFloat;
+    use crate::tests::bytes;
+    use crate::tests::continuing_box;
 
     fn test_simple_counter() {
         let test_limit  = 20;
-        let mut counter = Counter::new("test counter", &None);
+        let test_title  = "Test Counter";
+        let mut counter = Counter::new(test_title, &None);
+
+        assert!(counter.title() == test_title);
+        assert!(counter.class() == "integer");
 
         for i in 1..=test_limit {
             counter.record_event();
@@ -330,11 +337,184 @@ mod tests {
 
         assert!(counter.count() == expected as u64);
 
+        // Test the Rustics interface.
+
         assert!(!counter.float_extremes());
         assert!(!counter.int_extremes  ());
 
+        let i = counter.record_event_report();
+        assert!(i == counter.event_increment());
 
         counter.print();
+        counter.print_opts(None, Some("Option Title"));
+
+        // Check that set_units works.
+
+        counter.set_units(bytes().unwrap());
+
+        assert!(counter.units.singular == "byte");
+
+        // Check that clear works.
+
+        assert!(counter.count() != 0);
+        counter.clear();
+        assert!(counter.count() == 0);
+
+        // precompute is a null function.
+
+        counter.precompute();
+
+        // No histograms supported.
+
+        match counter.float_histogram() {
+            None     => { }
+            Some(_n) => { panic!("counter:  float_histogram present"); }
+        }
+
+        match counter.log_histogram() {
+            None     => { }
+            Some(_n) => { panic!("counter:  log_histogram present"); }
+        }
+
+        // Take a brief look at the statistics.
+
+        let stats = counter.export_stats();
+
+        assert!(stats.printable.n     == 0  );
+        assert!(stats.printable.mean  == 0.0);
+
+        // Now test set_id.  First, set an id that we can increment.
+
+        counter.set_id(1);
+        let test_id = counter.id() + 1;
+        counter.set_id(test_id);
+        assert!(counter.id() == test_id);
+
+        // Check the comparison function.
+
+        assert!(counter.equals(&counter));
+
+        let counter2 = Counter::new("Test Counter 2", &None);
+
+        assert!(!counter.equals(&counter2));
+
+        // Check a false branch in equals() with a RunningFloat.
+
+        let running_float = RunningFloat::new("Float", &None);
+
+        assert!(!counter.equals(&running_float));
+    }
+
+    #[test]
+    #[should_panic]
+    fn record_f64_panic_test() {
+        let mut counter = Counter::new("test counter", &None);
+        counter.record_f64(-1.0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn record_i64_panic_test() {
+        let mut counter = Counter::new("test counter", &None);
+
+        counter.record_i64(-1);
+    }
+
+    #[test]
+    #[should_panic]
+    fn record_time_panic_test() {
+        let mut counter = Counter::new("test counter", &None);
+
+        counter.record_time(1);
+    }
+
+    #[test]
+    #[should_panic]
+    fn record_interval_panic_test() {
+        let mut counter = Counter::new("test counter", &None);
+        let mut timer   = continuing_box();
+
+        counter.record_interval(&mut timer);
+    }
+
+    #[test]
+    #[should_panic]
+    fn log_mode_panic_test() {
+        let counter = Counter::new("test counter", &None);
+
+        let _ = counter.log_mode();
+    }
+
+    #[test]
+    #[should_panic]
+    fn mean_panic_test() {
+        let counter = Counter::new("test counter", &None);
+
+        let _ = counter.mean();
+    }
+
+    #[test]
+    #[should_panic]
+    fn variance_panic_test() {
+        let counter = Counter::new("test counter", &None);
+
+        let _ = counter.variance();
+    }
+
+    #[test]
+    #[should_panic]
+    fn standard_deviation_panic_test() {
+        let counter = Counter::new("test counter", &None);
+
+        let _ = counter.standard_deviation();
+    }
+
+    #[test]
+    #[should_panic]
+    fn skewness_panic_test() {
+        let counter = Counter::new("test counter", &None);
+
+        let _ = counter.skewness();
+    }
+
+    #[test]
+    #[should_panic]
+    fn kurtosis_panic_test() {
+        let counter = Counter::new("test counter", &None);
+
+        let _ = counter.kurtosis();
+    }
+
+    #[test]
+    #[should_panic]
+    fn max_i64_panic_test() {
+        let counter = Counter::new("test counter", &None);
+
+        let _ = counter.max_i64();
+    }
+
+    #[test]
+    #[should_panic]
+    fn min_i64_panic_test() {
+        let counter = Counter::new("test counter", &None);
+
+        let _ = counter.min_i64();
+    }
+
+    #[test]
+    #[should_panic]
+    fn max_f64_panic_test() {
+        let counter = Counter::new("test counter", &None);
+
+        let _ = counter.max_f64();
+    }
+
+    #[test]
+    #[should_panic]
+    fn min_f64_panic_test() {
+        let counter = Counter::new("test counter", &None);
+
+        let _ = counter.min_f64();
     }
 
     #[test]

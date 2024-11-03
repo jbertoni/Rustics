@@ -631,17 +631,20 @@ impl ArcSet {
 
 #[cfg(test)]
 pub mod tests {
+    use std::time::Instant;
+
     use super::*;
     use crate::tests::TestTimer;
     use crate::tests::ConverterTrait;
     use crate::tests::continuing_box;
+    use crate::tests::bytes;
     use crate::hier::Hier;
     use crate::Printer;
     use crate::time::Timer;
     use crate::time::DurationTimer;
     use crate::hier::HierDescriptor;
     use crate::hier::HierDimension;
-    use std::time::Instant;
+    use crate::stdout_printer;
 
     struct TestTraverser {
         pub members:  i64,
@@ -682,7 +685,7 @@ pub mod tests {
 
             let     window_name   = format!("generated window {}", i);
             let     running_name  = format!("generated running {}", i);
-            let     window_mutex  = subset.add_integer_window(&window_name, events_limit, None);
+            let     window_mutex  = subset.add_integer_window(&window_name, events_limit, bytes());
             let     running_mutex = subset.add_running_integer(&running_name, None);
 
             let mut window        = window_mutex.lock().unwrap();
@@ -738,12 +741,12 @@ pub mod tests {
 
         let window_size = 32;
 
-        let window_mutex        = set.add_integer_window ("window",        window_size, None         );
-        let running_mutex       = set.add_running_integer("running",       None                      );
+        let window_mutex        = set.add_integer_window ("window",        window_size, bytes()      );
+        let running_mutex       = set.add_running_integer("running",       bytes()                   );
         let time_window_mutex   = set.add_time_window    ("time window",   window_size, window_timer );
         let running_time_mutex  = set.add_running_time   ("running time",               running_timer);
-        let float_window_mutex  = set.add_float_window  ("float window",  window_size, None          );
-        let running_float_mutex = set.add_running_float ("running float", None                       );
+        let float_window_mutex  = set.add_float_window   ("float window",  window_size, bytes()     );
+        let running_float_mutex = set.add_running_float  ("running float", bytes()                  );
 
         //  Lock the instances for manipulation.
 
@@ -867,6 +870,8 @@ pub mod tests {
 
         add_stats(&subset_1);
         add_stats(&subset_2);
+
+        set.print_opts(Some(stdout_printer()), Some("print_opts Test"));
 
         // Before testing remove operations, traverse again...
 
@@ -1127,6 +1132,9 @@ pub mod tests {
     fn test_hier() {
         let     auto_next      = 1000;
         let mut set            = ArcSet::new("Hier Test", 0, 0, &None);
+        let     subset         = set.add_subset("Hier Subset", 0, 0);
+        let mut subset         = subset.lock().unwrap();
+        let     subset_member  = subset.add_running_integer("Subset Member", bytes());
 
         let     integer_name   = "Integer Test";
         let     time_name      = "Time Test";
@@ -1140,9 +1148,12 @@ pub mod tests {
         let     time_hier      = set.add_time_hier   (time_config   );
         let     float_hier     = set.add_float_hier  (float_config  );
 
-        let mut integer_stat = integer_hier.lock().unwrap();
-        let mut time_stat    = time_hier.lock   ().unwrap();
-        let mut float_stat   = float_hier.lock  ().unwrap();
+        let mut integer_stat   = integer_hier.lock ().unwrap();
+        let mut time_stat      = time_hier.lock    ().unwrap();
+        let mut float_stat     = float_hier.lock   ().unwrap();
+        let mut subset_stat    = subset_member.lock().unwrap();
+
+        drop(subset);
 
         // Fill the first level 0 Rustics instance in each of the
         // Hier instances and check the values recorded.
@@ -1155,6 +1166,7 @@ pub mod tests {
             integer_stat.record_i64 (i);
             time_stat   .record_time(i);
             float_stat  .record_f64 (f);
+            subset_stat .record_i64 (i);
         }
 
         // Now record a partial window and check that we have
@@ -1213,6 +1225,7 @@ pub mod tests {
         drop(integer_stat);
         drop(time_stat   );
         drop(float_stat  );
+        drop(subset_stat );
 
         set.set_title("New Title");
         set.print();
@@ -1236,6 +1249,10 @@ pub mod tests {
         let hier_float_hier = float_generic.downcast_ref::<Hier>().unwrap();
 
         assert!(hier_float_hier.event_count() == 1);
+
+        drop(float_stat);
+
+        set.print_opts(Some(stdout_printer()), Some("Option Title"));
     }
 
     #[test]

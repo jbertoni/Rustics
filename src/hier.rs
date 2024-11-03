@@ -354,7 +354,6 @@ pub trait HierGenerator {
     fn hz                (&self) -> u128;
 }
 
-
 //
 //  The HierMember trait is used to extend a specific type
 //  implementing the Rustics trait to work with the Hier code.
@@ -522,15 +521,12 @@ impl Hier {
         self.advance_count = 0;
         self.event_count   = 0;
 
-        for i in 0..self.stats.len() {
-            let level = &self.stats[i];
+        let mut traverser = ClearAll::new();
 
-            for j in 0..level.all_len() {
-                let     target = self.stats[i].index_all(j);
-                let mut target = target.unwrap().borrow_mut();
+        self.traverse_all(&mut traverser);
 
-                target.to_rustics_mut().clear();
-            }
+        if let Some(window) = &mut self.window {
+            window.clear();
         }
     }
 
@@ -546,7 +542,6 @@ impl Hier {
             }
         }
     }
-
 
     /// Invokes a user-supplied function on all the live members on every level.
 
@@ -671,6 +666,12 @@ impl Hier {
         self.event_count
     }
 
+    pub fn hz(&self) -> u128 {
+        let generator = self.generator.borrow();
+
+        generator.hz()
+    }
+
     // Prints one statistics instance using the Rustics trait.  This method
     // always appends the indices to the title.
 
@@ -768,6 +769,16 @@ impl Hier {
         // called when a statistical value is being recorded.
 
         self.event_count += 1;
+    }
+
+    fn title_all(&mut self) {
+        let mut traverser = TitleAll::new(&self.title);
+
+        self.traverse_all(&mut traverser);
+
+        if let Some(window) = &mut self.window {
+            window.set_title(&self.title);
+        }
     }
 }
 
@@ -1047,10 +1058,6 @@ impl Rustics for Hier {
 
     fn clear(&mut self) {
         self.clear_all();
-
-        if let Some(window) = &mut self.window {
-            window.clear();
-        }
     }
 
     // Functions for printing
@@ -1089,6 +1096,8 @@ impl Rustics for Hier {
 
     fn set_title(&mut self, title: &str) {
         self.title = title.to_string();
+
+        self.title_all();
     }
 
     fn set_id(&mut self, id: usize) {
@@ -1145,6 +1154,39 @@ impl Rustics for Hier {
 
             rustics.export_stats()
         }
+    }
+}
+
+struct TitleAll {
+    title:  String,
+}
+
+impl TitleAll {
+    fn new(title: &str) -> TitleAll {
+        let title = title.to_string();
+
+        TitleAll { title }
+    }
+}
+
+impl HierTraverser for TitleAll {
+    fn visit(&mut self, member: &mut dyn Rustics) {
+        member.set_title(&self.title);
+    }
+}
+
+struct ClearAll {
+}
+
+impl ClearAll {
+    fn new() -> ClearAll {
+        ClearAll { }
+    }
+}
+
+impl HierTraverser for ClearAll {
+    fn visit(&mut self, member: &mut dyn Rustics) {
+        member.clear();
     }
 }
 

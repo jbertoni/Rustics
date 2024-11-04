@@ -425,6 +425,14 @@ mod tests {
 
         generator.push(&mut *exporter_clone.borrow_mut(), member_rc);
 
+        {
+            let exporter_borrow = exporter_rc.borrow();
+            let exporter_any    = exporter_borrow.as_any();
+            let exporter_impl   = exporter_any.downcast_ref::<FloatExporter>().unwrap();
+
+            assert!(exporter_impl.count() == 1);
+        }
+
         let name    = "member export";
 
         let new_member_rc = generator.make_from_exporter(name, &None, exporter_rc);

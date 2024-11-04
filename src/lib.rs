@@ -1076,7 +1076,6 @@ mod tests {
     }
 
     fn test_time_printing() {
-        /* TODO To-do:  create a printer that saves the string for examination. */
         let hz = 1_000_000_000;
 
         let ns     =    1;

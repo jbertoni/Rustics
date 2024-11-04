@@ -158,6 +158,10 @@ impl FloatExporter {
 
         RunningFloat::new_from_exporter(name, title, print_opts, sum)
     }
+
+    pub fn count(&self) -> usize {
+        self.addends.len()
+    }
 }
 
 // The Hier code uses this trait to do summation of statistics.
@@ -349,14 +353,6 @@ impl RunningFloat {
 
     pub fn infinities(&self) -> u64 {
         self.infinities
-    }
-
-    pub fn export_stats(&self) -> ExportStats {
-        let printable       = self.get_printable();
-        let log_histogram   = None;
-        let float_histogram = Some(self.histogram.clone());
-
-        ExportStats { printable, log_histogram, float_histogram }
     }
 
     /// Exports all the statistics kept for a given instance to
@@ -623,6 +619,23 @@ impl Histogram for RunningFloat {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::stdout_printer;
+    use crate::tests::continuing_box;
+    use crate::counter::Counter;
+
+    fn compute_sum(histogram: &FloatHistogram) -> i64 {
+        let mut sum = 0;
+
+        for sample in histogram.positive.iter() {
+            sum += *sample;
+        }
+
+        for sample in histogram.negative.iter() {
+            sum += *sample;
+        }
+
+        sum as i64
+    }
 
     fn simple_float_test() {
         let mut float = RunningFloat::new("Test Statistic", &None);
@@ -662,11 +675,183 @@ mod tests {
         assert!(float.nans()       == 1);
         assert!(float.infinities() == 2);
 
-        float.print();
+        // precompute should be a safe no-op.
+
+        float.precompute();
+
+        assert!(float.count()      == end as u64);
+        assert!(float.nans()       == 1);
+        assert!(float.infinities() == 2);
+
+        let stats = float.export_stats();
+
+        assert!(stats.printable.n            == end as u64);
+        assert!(stats.printable.nans         == 1);
+        assert!(stats.printable.infinities   == 2);
+
+        let histogram = stats.float_histogram.unwrap();
+        
+        let     printer = stdout_printer();
+        let mut printer = printer.lock().unwrap();
+        let     printer = &mut *printer;
+
+        histogram.borrow().print(printer);
+
+        let samples = compute_sum(&histogram.borrow());
+
+        assert!(samples == stats.printable.n as i64);
+    }
+
+    fn test_standard_deviation() {
+        let mut float = RunningFloat::new("Test Statistic", &None);
+
+        for _i in 1..100 {
+            float.record_f64(1.0);
+        }
+
+        assert!(float.standard_deviation() == 0.0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_export_log_histogram() {
+        let float = RunningFloat::new("Test Statistic", &None);
+
+        let stats = float.export_stats();
+
+        let _     = stats.log_histogram.unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_record_i64() {
+        let mut float = RunningFloat::new("Test Statistic", &None);
+
+        float.record_i64(1);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_record_event() {
+        let mut float = RunningFloat::new("Test Statistic", &None);
+
+        float.record_event();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_record_event_report() {
+        let mut float = RunningFloat::new("Test Statistic", &None);
+
+        let _ = float.record_event_report();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_record_time() {
+        let mut float = RunningFloat::new("Test Statistic", &None);
+
+        float.record_time(1);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_log_mode() {
+        let float = RunningFloat::new("Test Statistic", &None);
+
+        let _ = float.log_mode();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_min_i64() {
+        let float = RunningFloat::new("Test Statistic", &None);
+
+        let _ = float.min_i64();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_max_i64() {
+        let float = RunningFloat::new("Test Statistic", &None);
+
+        let _ = float.max_i64();
+    }
+
+    fn test_equality() {
+        let stat_1 = RunningFloat::new("Equality Statistic 1", &None);
+        let stat_2 = RunningFloat::new("Equality Statistic 2", &None);
+        let stat_3 = Counter::new     ("Equality Statistic 3", &None);
+
+        assert!( stat_1.equals(&stat_1));
+        assert!(!stat_1.equals(&stat_2));
+        assert!(!stat_1.equals(&stat_3));
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_record_interval() {
+        let mut float = RunningFloat::new("Test Statistic", &None);
+        let mut timer = continuing_box();
+
+        float.record_interval(&mut timer);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_to_log_histogram() {
+        let float = RunningFloat::new("Test Statistic", &None);
+
+        let _ = float.to_log_histogram().unwrap();
+    }
+
+    fn test_title() {
+        let mut float      = RunningFloat::new("Test Statistic", &None);
+        let     test_title = "set_title Test";
+
+        let start_title = float.title();
+
+        float.set_title(test_title);
+
+        assert!(&float.title() == test_title);
+        assert!(test_title     != start_title);
+    }
+
+    fn test_histogram() {
+        let mut float      = RunningFloat::new("Test Statistic", &None);
+        // let     histogram  = float.to_float_histogram().unwrap();
+        // let mut histogram  = histogram.borrow_mut();
+        let     samples    = 1000;
+
+        for i in 1..=samples {
+            float.record_f64(i as f64);
+        }
+
+        {
+            let histogram = float.to_float_histogram().unwrap();
+            let histogram = &*histogram.borrow();
+
+            let sum = compute_sum(histogram);
+            assert!(sum == samples);
+        }
+
+        float.clear_histogram();
+
+        {
+            let histogram = float.to_float_histogram().unwrap();
+            let histogram = &*histogram.borrow();
+
+            let sum = compute_sum(histogram);
+            assert!(sum == 0);
+        }
     }
 
     #[test]
     fn run_tests() {
         simple_float_test();
+        test_standard_deviation();
+        test_equality();
+        test_title();
+        test_histogram();
     }
 }

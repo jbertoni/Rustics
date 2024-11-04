@@ -100,6 +100,10 @@
 //!         integer_hier.record_i64(i + 10);
 //!     }
 //!
+//!     // Print our data.
+//!
+//!     integer_hier.print();
+//!
 //!     // The first level 0 instance is ready to be retired, but the
 //!     // implementation creates the next instance only when it has data
 //!     // to record, so there should be only one level zero instance,

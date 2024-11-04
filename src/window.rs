@@ -825,8 +825,7 @@ mod tests {
     #[should_panic]
     fn test_empty_index_newest() { 
         let window = Window::<usize>::new(200, 100);
-
-        let _  = window.index_newest().unwrap();
+        let _      = window.index_newest().unwrap();
     }
 
     #[test]
@@ -843,8 +842,7 @@ mod tests {
     fn test_index_all_size() { 
         let size_limit = 200;
         let window     = Window::<usize>::new(size_limit, size_limit / 2);
-
-        let _  = window.index_all(1).unwrap();
+        let _          = window.index_all(1).unwrap();
     }
 
     #[test]
@@ -852,8 +850,7 @@ mod tests {
     fn test_index_live_size() { 
         let size_limit = 200;
         let window     = Window::<usize>::new(size_limit, size_limit / 2);
-
-        let _  = window.index_live(1).unwrap();
+        let _          = window.index_live(1).unwrap();
     }
 
     #[test]
@@ -861,24 +858,21 @@ mod tests {
     fn test_index_live_limit() { 
         let size_limit = 200;
         let window     = Window::<usize>::new(size_limit, size_limit / 2);
-
-        let _  = window.index_live(size_limit).unwrap();
+        let _          = window.index_live(size_limit).unwrap();
     }
 
     #[test]
     #[should_panic]
     fn test_empty_newest() { 
         let window = Window::<usize>::new(200, 100);
-
-        let _  = window.newest().unwrap();
+        let _      = window.newest().unwrap();
     }
 
     #[test]
     #[should_panic]
     fn test_empty_newest_mut() { 
         let mut window = Window::<usize>::new(200, 100);
-
-        let _  = window.newest_mut().unwrap();
+        let     _      = window.newest_mut().unwrap();
     }
 
     #[test]
@@ -890,29 +884,26 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_empty_all_iter() {
-        let window = Window::<usize>::new(200, 100);
-
-        let mut iter = window.iter_all();
-
-        let _ = iter.next().unwrap();
+        let     window = Window::<usize>::new(200, 100);
+        let mut iter   = window.iter_all();
+        let     _      = iter.next().unwrap();
     }
 
     #[test]
     #[should_panic]
     fn test_empty_live_iter() {
-        let window = Window::<usize>::new(200, 100);
-
-        let mut iter = window.iter_live();
-
-        let _ = iter.next().unwrap();
+        let     window = Window::<usize>::new(200, 100);
+        let mut iter   = window.iter_live();
+        let     _      = iter.next().unwrap();
     }
 
     #[test]
     #[should_panic]
     fn test_iterator() {
-        let window = Window::<usize>::new(200, 100);
+        let     window = Window::<usize>::new(200, 100);
+        let mut iter   = window.iter_all();
 
-        let mut iter = window.iter_all();
+        // An empty iterator should panic on the second query.
 
         let _ = iter.find_next_index();
         let _ = iter.find_next_index();

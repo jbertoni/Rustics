@@ -99,6 +99,10 @@
 //!         time_hier.record_event();
 //!     }
 //!
+//!     // Print our data.
+//!
+//!     time_hier.print();
+//!
 //!     // We have just completed the first level 0 instance, but the
 //!     // implementation creates the next instance only when it has data
 //!     // to record, so there should be only one level zero instance,

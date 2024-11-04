@@ -28,6 +28,10 @@
 //!         float.record_f64(i as f64);
 //!     }
 //!
+//!     // Print our data.
+//!
+//!     float.print();
+//!
 //!    // Compute the expected mean.  We need the sum of
 //!    //     1 + 2 + ... + n
 //!    // which is

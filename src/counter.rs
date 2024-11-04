@@ -45,6 +45,10 @@
 //!         counter.record_i64(i);
 //!     }
 //!
+//!     // Print our data.
+//!
+//!     counter.print();
+//!
 //!     // Now compute what we expect as the total count, and check that
 //!     // against the counter's value.  The sum of the sequence
 //!     //     1 + 2 + 3 ... + n 

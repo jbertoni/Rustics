@@ -1,7 +1,6 @@
 //
-//  This code is available under the Berkeley 2-Clause, Berkely 2-clause,
-//  and MIT licenses.  It is also available as public domain source where
-//  permitted by law.
+//  This code is available under the Berkeley 2-Clause, Berkely 3-clause,
+//  and MIT licenses.
 //
 
 //!
@@ -51,7 +50,7 @@
 //!
 //!     // Now compute what we expect as the total count, and check that
 //!     // against the counter's value.  The sum of the sequence
-//!     //     1 + 2 + 3 ... + n 
+//!     //     1 + 2 + 3 ... + n
 //!     // is
 //!     //     (n * (n + 1)) / 2
 //!
@@ -298,7 +297,7 @@ impl Rustics for Counter {
         let units      = self.units.clone();
 
         let printable =
-            Printable { 
+            Printable {
                 n,           nans,      infinities,  min_i64,   max_i64,   min_f64,
                 max_f64,     log_mode,  mean,        variance,  skewness,  kurtosis,
                 mode_value,  units

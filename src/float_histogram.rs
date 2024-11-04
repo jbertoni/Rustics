@@ -1,7 +1,6 @@
 //
-//  This code is available under the Berkeley 2-Clause, Berkely 2-clause,
-//  and MIT licenses.  It is also available as public domain source where
-//  permitted by law.
+//  This code is available under the Berkeley 2-Clause, Berkely 3-clause,
+//  and MIT licenses.
 //
 
 //!
@@ -286,7 +285,7 @@ impl FloatHistogram {
         let mut index       = start_row * print_roundup();
 
         while rows > 0 {
-            if 
+            if
                 histo_opts.no_zero_rows
             ||  self.negative[index    ] != 0
             ||  self.negative[index + 1] != 0
@@ -535,7 +534,7 @@ mod tests {
 
     fn test_documentation() {
         // Create a HistOp for new().
-   
+
         let merge_min    = 10;  // not implemented yet
         let merge_max    = 11;  // not implemented yet
         let no_zero_rows = false;
@@ -545,43 +544,43 @@ mod tests {
         let units        = None;
         let histo_opts   = Some(histo_opts);
         let print_opts   = PrintOpts { printer, title, units, histo_opts };
-   
+
         // Create a histogram and accept the default output format.
-   
+
         let mut histogram = FloatHistogram::new(&Some(print_opts));
-   
+
         let sample_count = 1000;
-   
+
         for i in 0..sample_count {
              histogram.record(-(i as f64));
         }
-   
+
         // Create a Printer instance for output.
-   
+
         let printer_box = stdout_printer();
         let printer     = &mut *printer_box.lock().unwrap();
-   
+
         histogram.print(printer);
-   
+
         assert!(histogram.samples     == sample_count as usize);
         assert!(histogram.nans        == 0);
         assert!(histogram.infinities  == 0);
-   
+
         // Values -0.0 and -1.0 should be in the same bucket.
-   
+
         let zero_bucket = exponent_bias() / bucket_divisor();
         let zero_bucket = zero_bucket as usize;
-   
+
         assert!(histogram.negative[zero_bucket    ] == 2);
         assert!(histogram.negative[zero_bucket + 1] == sample_count - 2);
-   
+
         // Now test some non-finite values.  NaN values do not
         // go into the sample count.
-   
+
         histogram.record(f64::INFINITY);
         histogram.record(f64::NEG_INFINITY);
         histogram.record(f64::NAN);
-   
+
         assert!(histogram.nans       == 1);
         assert!(histogram.infinities == 2);
         assert!(histogram.samples    == sample_count as usize + 2);
@@ -614,7 +613,7 @@ mod tests {
 
     fn test_log_mode() {
         // Create a HistOp for new().
-   
+
         let merge_min    = 0;  // not implemented yet
         let merge_max    = 0;  // not implemented yet
         let no_zero_rows = false;
@@ -625,13 +624,13 @@ mod tests {
         let units        = None;
         let histo_opts   = Some(histo_opts);
         let print_opts   = PrintOpts { printer, title, units, histo_opts };
-   
+
         // Create a histogram and accept the default output format.
-   
+
         let mut histogram = FloatHistogram::new(&Some(print_opts));
-   
+
         let sample_count = 1000;
-   
+
         for i in 0..sample_count {
              histogram.record(-(i as f64));
         }

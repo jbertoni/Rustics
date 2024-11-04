@@ -1,10 +1,9 @@
 //
-//  This code is available under the Berkeley 2-Clause, Berkely 2-clause,
-//  and MIT licenses.  It is also available as public domain source where
-//  permitted by law.
+//  This code is available under the Berkeley 2-Clause, Berkely 3-clause,
+//  and MIT licenses.
 //
 
-//!  
+//!
 //! ## Type
 //! * RunningFloat
 //!   * RunningFloat provides statistical summaries of samples of type f64.
@@ -370,16 +369,16 @@ impl RunningFloat {
         let moment_2        = self.moment_2;
         let moment_3        = self.moment_3;
         let moment_4        = self.moment_4;
-        let histogram       = self.histogram.clone(); 
+        let histogram       = self.histogram.clone();
         let min             = self.min;
         let max             = self.max;
 
-        FloatExport { 
+        FloatExport {
             count,      nans,       infinities,
             mean,       moment_2,   moment_3,
             moment_4,   histogram,  min,
             max
-        } 
+        }
     }
 
     pub fn set_units(&mut self, units: Units) {
@@ -694,7 +693,7 @@ mod tests {
         assert!(stats.printable.infinities   == 2);
 
         let histogram = stats.float_histogram.unwrap();
-        
+
         let     printer = stdout_printer();
         let mut printer = printer.lock().unwrap();
         let     printer = &mut *printer;

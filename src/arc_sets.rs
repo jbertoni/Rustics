@@ -1,7 +1,6 @@
 //
-//  This code is available under the Berkeley 2-Clause, Berkely 2-clause,
-//  and MIT licenses.  It is also available as public domain source where
-//  permitted by law.
+//  This code is available under the Berkeley 2-Clause, Berkely 3-clause,
+//  and MIT licenses.
 //
 
 //!
@@ -119,7 +118,7 @@
 //!    assert!(query_lock.count() == 1);
 //!    assert!(query_lock.mean() == time_spent as f64);
 //!    assert!(query_lock.standard_deviation() == 0.0);
-//! 
+//!
 //!```
 
 use std::sync::Mutex;
@@ -216,7 +215,7 @@ impl ArcSet {
         let print_opts = print_opts.clone();
         let title      = None;
 
-        let configuration = 
+        let configuration =
             ArcSetConfig { name, members_hint, subsets_hint, title, id, print_opts };
 
         ArcSet::new_from_config(configuration)
@@ -1000,19 +999,19 @@ pub mod tests {
        // default print output goes to stdout, and that's fine for
        // an example, so just give "None" to accept the default.
        // See the Printer trait to implement a custom printer.
-   
+
        let     set = ArcSet::new_box("Main Statistics", 8, 0, &None);
        let mut set = set.lock().unwrap();
-   
+
        // Add an instance to record query latencies.  It's a time
        // statistic, so we need a timer.  Use an adapter for the
        // rust standard Duration timer.  The add_running_timer
        // function is a help for creating RunningTime instances.
-   
+
        let timer = DurationTimer::new_box();
-   
+
        let query_latency = set.add_running_time("Query Latency", timer);
-   
+
        // By way of example, we assume that the queries are single-
        // threaded, so we can use the record_time() method to
        // query the timer and restart it.  Multi-threaded apps will
@@ -1020,50 +1019,50 @@ pub mod tests {
        // if they want to share a single RunningTime instance.
        //
        // So record one event time for the single-threaded case.
-   
+
        query_latency.lock().unwrap().record_event();
-   
+
        // For the multithreaded case, you can use DurationTimer manually.
-   
+
        let mut local_timer = DurationTimer::new();
-   
+
        // Do our query.
        // ...
-   
+
        let mut lock = query_latency.lock().unwrap();
 
        lock.record_time(local_timer.finish() as i64);
 
        drop(lock);
-   
+
        // If you want to use your own timer, you'll need to implement
        // the Timer trait to initialize the RunningTime instance, but you
        //can use it directly to get data. Let's use Duration timer directly
        // as an example.  Make a new instance for this example.
-   
+
        let timer = DurationTimer::new_box();
-   
+
        let query_latency = set.add_running_time("Custom Timer Query Latency", timer);
-   
+
        // Start the Duration timer.
-   
+
        let start = Instant::now();
-   
+
        // Do our query.
-   
+
        // Now get the elapsed time.  DurationTimer works in nanoseconds,
        // so use as_nanos().
-   
+
        let time_spent = start.elapsed().as_nanos();
-   
+
        query_latency.lock().unwrap().record_time(time_spent as i64);
-   
+
        // Print our statistics.  This example has only one event recorded.
-   
+
        let query_lock = query_latency.lock().unwrap();
-   
+
        query_lock.print();
-   
+
        assert!(query_lock.count() == 1);
        assert!(query_lock.mean() == time_spent as f64);
        assert!(query_lock.standard_deviation() == 0.0);

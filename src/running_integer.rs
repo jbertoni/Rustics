@@ -1,7 +1,6 @@
 //
-//  This code is available under the Berkeley 2-Clause, Berkely 2-clause,
-//  and MIT licenses.  It is also available as public domain source where
-//  permitted by law.
+//  This code is available under the Berkeley 2-Clause, Berkely 3-clause,
+//  and MIT licenses.
 //
 
 //! ## Type
@@ -161,6 +160,7 @@ impl IntegerExporter {
 
     // For testing
 
+    #[cfg(test)]
     pub fn count(&self) -> usize {
         self.addends.len()
     }
@@ -669,7 +669,7 @@ mod tests {
         assert!(stats.mean()  == 0.0);
 
         stats.clear();
-        
+
         let sample = 4;
 
         for _i in 0..10 {

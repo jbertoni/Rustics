@@ -1,7 +1,6 @@
 //
-//  This code is available under the Berkeley 2-Clause, Berkely 2-clause,
-//  and MIT licenses.  It is also available as public domain source where
-//  permitted by law.
+//  This code is available under the Berkeley 2-Clause, Berkely 3-clause,
+//  and MIT licenses.
 //
 
 //!
@@ -752,7 +751,7 @@ mod tests {
 
         for i in 0..window.live_len() {
             let data = window.index_live(i).unwrap();
-            
+
             // For debugging the test.
             //
             //let data =
@@ -817,20 +816,20 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn test_size_limit() { 
+    fn test_size_limit() {
         let _ = Window::<usize>::new(0, 100);
     }
 
     #[test]
     #[should_panic]
-    fn test_empty_index_newest() { 
+    fn test_empty_index_newest() {
         let window = Window::<usize>::new(200, 100);
         let _      = window.index_newest().unwrap();
     }
 
     #[test]
     #[should_panic]
-    fn test_index_all_limit() { 
+    fn test_index_all_limit() {
         let size_limit = 200;
         let window     = Window::<usize>::new(size_limit, size_limit / 2);
 
@@ -839,7 +838,7 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn test_index_all_size() { 
+    fn test_index_all_size() {
         let size_limit = 200;
         let window     = Window::<usize>::new(size_limit, size_limit / 2);
         let _          = window.index_all(1).unwrap();
@@ -847,7 +846,7 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn test_index_live_size() { 
+    fn test_index_live_size() {
         let size_limit = 200;
         let window     = Window::<usize>::new(size_limit, size_limit / 2);
         let _          = window.index_live(1).unwrap();
@@ -855,7 +854,7 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn test_index_live_limit() { 
+    fn test_index_live_limit() {
         let size_limit = 200;
         let window     = Window::<usize>::new(size_limit, size_limit / 2);
         let _          = window.index_live(size_limit).unwrap();
@@ -863,21 +862,21 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn test_empty_newest() { 
+    fn test_empty_newest() {
         let window = Window::<usize>::new(200, 100);
         let _      = window.newest().unwrap();
     }
 
     #[test]
     #[should_panic]
-    fn test_empty_newest_mut() { 
+    fn test_empty_newest_mut() {
         let mut window = Window::<usize>::new(200, 100);
         let     _      = window.newest_mut().unwrap();
     }
 
     #[test]
     #[should_panic]
-    fn test_bad_live_limit() { 
+    fn test_bad_live_limit() {
         let _ = Window::<usize>::new(50, 100);
     }
 

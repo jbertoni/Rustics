@@ -1,7 +1,6 @@
 //
-//  This code is available under the Berkeley 2-Clause, Berkely 2-clause,
-//  and MIT licenses.  It is also available as public domain source where
-//  permitted by law.
+//  This code is available under the Berkeley 2-Clause, Berkely 3-clause,
+//  and MIT licenses.
 //
 
 //!
@@ -103,7 +102,6 @@
 //!    assert!(query_borrow.count() == 1);
 //!    assert!(query_borrow.mean() == time_spent as f64);
 //!    assert!(query_borrow.standard_deviation() == 0.0);
-//! 
 //!```
 
 use std::rc::Rc;

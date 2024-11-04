@@ -1,7 +1,6 @@
 //
-//  This code is available under the Berkeley 2-Clause, Berkely 2-clause,
-//  and MIT licenses.  It is also available as public domain source where
-//  permitted by law.
+//  This code is available under the Berkeley 2-Clause, Berkely 3-clause,
+//  and MIT licenses.
 //
 
 //! ## Type
@@ -13,7 +12,7 @@
 //!     * For positive numbers, the pseudo-log is define as the base 2
 //!       log of the value, rounded up to an integer.
 //!
-//!     * For a negative number n, the pseudo-log is defined as 
+//!     * For a negative number n, the pseudo-log is defined as
 //!       -pseudo-log(-n)
 //!
 //!     * The pseudo-log of zero is defined as zero.

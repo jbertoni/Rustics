@@ -1,7 +1,6 @@
 //
-//  This code is available under the Berkeley 2-Clause, Berkely 2-clause,
-//  and MIT licenses.  It is also available as public domain source where
-//  permitted by law.
+//  This code is available under the Berkeley 2-Clause, Berkely 3-clause,
+//  and MIT licenses.
 //
 
 //! ## Type
@@ -502,7 +501,7 @@ pub mod tests {
 
         hier.record_i64(window_size + 1);
         events += 1;
-        
+
         assert!(hier.count() == window_size as u64);
 
         {
@@ -546,7 +545,7 @@ pub mod tests {
 
         assert!(any_exporter.count() == 3);
 
-        let any          = exporter.as_any_mut(); 
+        let any          = exporter.as_any_mut();
         let any_exporter = any.downcast_ref::<IntegerExporter>().unwrap();
 
         assert!(any_exporter.count() == 3);

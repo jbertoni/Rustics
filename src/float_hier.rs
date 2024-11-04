@@ -1,7 +1,6 @@
 //
-//  This code is available under the Berkeley 2-Clause, Berkely 2-clause,
-//  and MIT licenses.  It is also available as public domain source where
-//  permitted by law.
+//  This code is available under the Berkeley 2-Clause, Berkely 3-clause,
+//  and MIT licenses.
 //
 
 //! ## Type
@@ -276,7 +275,7 @@ impl FloatHier {
         let window_size  = configuration.window_size;
 
         let config =
-            HierConfig { 
+            HierConfig {
                 descriptor, generator, name, window_size, class, print_opts
             };
 
@@ -518,7 +517,7 @@ mod tests {
         {
             let histogram = hier.to_float_histogram().unwrap();
             let histogram = histogram.borrow();
-            
+
             let mut sum = 0;
 
             for sample in histogram.positive.iter() {
@@ -546,7 +545,7 @@ mod tests {
         // Make sure that count() obeys the window_size...
 
         hier.record_f64(window_size as f64 + 1.0);
-        
+
         assert!(hier.count() == window_size as u64);
 
         // See whether we can get back to a member.

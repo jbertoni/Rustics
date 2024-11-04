@@ -102,6 +102,7 @@ use super::LogHistogramBox;
 use super::FloatHistogramBox;
 use super::parse_print_opts;
 use super::TimerBox;
+use super::printer;
 use super::timer_box_hz;
 use super::running_integer::RunningInteger;
 use super::running_integer::IntegerExport;
@@ -293,7 +294,7 @@ impl Rustics for RunningTime {
             };
 
         let printable = self.running_integer.get_printable();
-        let printer   = &mut *printer_box.lock().unwrap();
+        let printer   = printer!(printer_box);
 
         printer.print(title);
         printable.print_common_integer_times(self.hz, printer);
@@ -376,7 +377,7 @@ pub mod tests {
         let     timer        = continuing_box();
         let mut stat         = RunningTime::new("Query Latency", timer, &None);
         let     printer      = stdout_printer();
-        let     printer      = &mut *printer.lock().unwrap();
+        let     printer      = printer!(printer);
         let     sample_count = 200;
 
         for i in 1..=sample_count {

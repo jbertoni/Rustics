@@ -25,6 +25,7 @@
 //!     use rustics::PrintOpts;
 //!     use rustics::float_histogram::HistoOpts;
 //!     use rustics::stdout_printer;
+//!     use rustics::printer;
 //!
 //!     // Create a HistOp for new().
 //!
@@ -52,7 +53,7 @@
 //!     // Create a Printer instance for output.
 //!
 //!     let printer = stdout_printer();
-//!     let printer = &mut *printer.lock().unwrap();
+//!     let printer = printer!(printer);
 //!
 //!     histogram.print(printer);
 //!
@@ -439,6 +440,7 @@ mod tests {
     use crate::stdout_printer;
     use crate::min_exponent;
     use crate::PrintOpts;
+    use crate::printer;
     use super::*;
 
     fn simple_test() {
@@ -463,7 +465,7 @@ mod tests {
         }
 
         let printer_box = stdout_printer();
-        let printer     = &mut *printer_box.lock().unwrap();
+        let printer     = printer!(printer_box);
 
         histogram.print(printer);
 
@@ -560,7 +562,7 @@ mod tests {
         // Create a Printer instance for output.
 
         let printer_box = stdout_printer();
-        let printer     = &mut *printer_box.lock().unwrap();
+        let printer     = printer!(printer_box);
 
         histogram.print(printer);
 

@@ -197,8 +197,9 @@ use float_histogram::HistoOpts;
 use printable::Printable;
 
 pub type HierBox            = Arc<Mutex<Hier>>;
-pub type PrinterBox         = Arc<Mutex<dyn Printer>>;
-pub type PrinterOption      = Option<Arc<Mutex<dyn Printer>>>;
+// pub type PrinterBox         = Arc<Mutex<dyn Printer>>;
+pub type PrinterBox         = Rc<RefCell<dyn Printer>>;
+pub type PrinterOption      = Option<PrinterBox>;
 pub type TitleOption        = Option<String>;
 pub type UnitsOption        = Option<Units>;
 pub type HistoOption        = Option<HistoOpts>;
@@ -297,7 +298,7 @@ pub fn timer_box_hz(timer:  &TimerBox) -> u128 {
 pub fn stdout_printer() -> PrinterBox {
     let printer = StdioPrinter::new(StreamKind::Stdout);
 
-    Arc::new(Mutex::new(printer))
+    printer_box!(printer)
 }
 
 /// Computes a variance estimator.
@@ -437,6 +438,18 @@ pub trait Printer {
 
     fn print(&mut self, output: &str);
 }
+
+/// The printer macro converts a PrinterBox into borrowed or locked
+/// object for printing.
+
+#[macro_export]
+macro_rules! printer { ($x:expr) => { &mut *$x.borrow_mut() } }
+
+/// The printer_box macro converts a Printer instance into the
+/// shareable form, currently Rc<RefCell<Printer>>.
+
+#[macro_export]
+macro_rules! printer_box { ($x:expr) => { Rc::from(RefCell::new($x)) } }
 
 pub fn parse_printer(print_opts: &PrintOption) -> PrinterBox {
     match print_opts {
@@ -714,10 +727,10 @@ pub trait Rustics {
 
     // For internal use.
 
-    fn set_id   (&mut self, id: usize      );
-    fn id       (&self                     ) -> usize;
-    fn equals   (&self, other: &dyn Rustics) -> bool;
-    fn generic  (&self                     ) -> &dyn Any;
+    fn set_id (&mut self, id: usize      );
+    fn id     (&self                     ) -> usize;
+    fn equals (&self, other: &dyn Rustics) -> bool;
+    fn generic(&self                     ) -> &dyn Any;
 
     fn export_stats(&self) -> ExportStats;
 }

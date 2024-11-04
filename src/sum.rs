@@ -72,7 +72,7 @@ mod tests {
             inputs.push(i as f64);
         }
 
-        let result = kbk_sum(&mut inputs);
+        let result = kbk_sum(&inputs);
 
         //  Compute the expected value of the sum
 
@@ -95,7 +95,7 @@ mod tests {
             inputs.push(-i as f64);
         }
 
-        let result = kbk_sum(&mut inputs);
+        let result = kbk_sum(&inputs);
 
         println!("vector sum 2:  {}", result);
 
@@ -118,7 +118,7 @@ mod tests {
         inputs.push(1.0);
         inputs.push(-large);
 
-        let result = kbk_sum(&mut inputs);
+        let result = kbk_sum(&inputs);
 
         assert!(result == 2.0);
 

@@ -103,6 +103,7 @@ use super::compute_kurtosis;
 use super::FloatHistogram;
 use super::FloatHistogramBox;
 use super::sum::kbk_sum_sort;
+use super::printer;
 use super::min_f64;
 use super::max_f64;
 
@@ -553,7 +554,7 @@ impl Rustics for RunningFloat {
             };
 
         let printable = self.get_printable();
-        let printer   = &mut *printer.lock().unwrap();
+        let printer   = printer!(printer);
 
         printer.print(title);
         printable.print_common_f64(printer);
@@ -697,8 +698,7 @@ mod tests {
         let histogram = stats.float_histogram.unwrap();
 
         let     printer = stdout_printer();
-        let mut printer = printer.lock().unwrap();
-        let     printer = &mut *printer;
+        let     printer = printer!(printer);
 
         histogram.borrow().print(printer);
 

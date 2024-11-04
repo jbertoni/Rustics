@@ -210,6 +210,7 @@ use super::FloatHistogramBox;
 use super::parse_print_opts;
 use super::TimerBox;
 use super::window::Window;
+use super::printer;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::any::Any;
@@ -711,7 +712,7 @@ impl Hier {
             };
 
         if level >= self.stats.len() {
-            let printer = &mut *printer_box.lock().unwrap();
+            let printer = printer!(printer_box);
             printer.print(&title);
             printer.print(&format!("  This configuration has only {} levels.", self.stats.len()));
             return;
@@ -723,7 +724,7 @@ impl Hier {
             if let Some(target) = target {
                 target
             } else {
-                let printer = &mut *printer_box.lock().unwrap();
+                let printer = printer!(printer_box);
                 printer.print(&title);
                 printer.print(&format!("  That index ({}) is out of bounds.", which));
                 return;
@@ -1715,7 +1716,7 @@ pub mod tests {
 
     fn test_time_hier_sanity() {
         let     printer    = stdout_printer();
-        let     printer    = &mut *printer.lock().unwrap();
+        let     printer    = printer!(printer);
         let     name       = "time_hier sanity test".to_string();
         let     timer      = continuing_box();
         let     print_opts = None;
@@ -1948,7 +1949,7 @@ pub mod tests {
 
     fn test_sum() {
         let     printer      = stdout_printer();
-        let     printer      = &mut *printer.lock().unwrap();
+        let     printer      = printer!(printer);
         let     window_size  = 200;
         let mut integer_hier = make_test_hier(100, Some(200));
 

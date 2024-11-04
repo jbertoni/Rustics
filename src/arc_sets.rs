@@ -635,6 +635,8 @@ pub mod tests {
     use std::time::Instant;
 
     use super::*;
+    use std::rc::Rc;
+    use std::cell::RefCell;
     use crate::tests::TestTimer;
     use crate::tests::ConverterTrait;
     use crate::tests::continuing_box;
@@ -646,6 +648,7 @@ pub mod tests {
     use crate::hier::HierDescriptor;
     use crate::hier::HierDimension;
     use crate::stdout_printer;
+    use crate::printer_box;
 
     struct TestTraverser {
         pub members:  i64,
@@ -953,7 +956,7 @@ pub mod tests {
 
         // Try a custom printer.
 
-        let printer = Arc::new(Mutex::new(CustomPrinter { }));
+        let printer = printer_box!(CustomPrinter { });
 
         set.print_opts(Some(printer.clone()), None);
 

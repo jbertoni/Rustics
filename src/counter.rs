@@ -78,6 +78,7 @@ use super::Units;
 use super::TimerBox;
 use super::printable::Printable;
 use super::parse_print_opts;
+use super::printer;
 
 /// The Counter type provides a simple counter that implements
 /// the Rustics trait.
@@ -242,7 +243,7 @@ impl Rustics for Counter {
                 &self.title
             };
 
-        let printer = &mut *printer_box.lock().unwrap();
+        let printer = printer!(printer_box);
 
         printer.print(title);
         Printable::print_integer_units("Count", self.count, printer, &self.units);

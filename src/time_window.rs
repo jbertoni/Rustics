@@ -81,6 +81,7 @@ use super::LogHistogramBox;
 use super::FloatHistogramBox;
 use super::timer_box_hz;
 use super::parse_print_opts;
+use super::printer;
 use super::integer_window::IntegerWindow;
 
 /// TimeWindow implements a statistics type that retains a
@@ -262,7 +263,7 @@ impl Rustics for TimeWindow {
             };
 
         let printable = self.integer_window.get_printable();
-        let printer   = &mut *printer_box.lock().unwrap();
+        let printer   = printer!(printer_box);
 
         printer.print(title);
         printable.print_common_integer_times(self.hz, printer);
@@ -446,7 +447,7 @@ mod tests {
 
     fn test_histogram() {
         let     printer = stdout_printer();
-        let     printer = &mut *printer.lock().unwrap();
+        let     printer = printer!(printer);
         let     size    = 200;
         let     timer   = continuing_box();
         let mut stat    = TimeWindow::new("Test Time Window", size, timer, &None);

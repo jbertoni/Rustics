@@ -86,6 +86,7 @@ use super::LogHistogramBox;
 use super::FloatHistogramBox;
 use crate::printable::Printable;
 use crate::log_histogram::LogHistogram;
+use super::printer;
 use super::compute_variance;
 use super::compute_skewness;
 use super::compute_kurtosis;
@@ -472,7 +473,7 @@ impl Rustics for IntegerWindow {
             };
 
         let printable = self.get_printable();
-        let printer   = &mut *printer_box.lock().unwrap();
+        let printer   = printer!(printer_box);
 
         printer.print(title);
         printable.print_common_i64(printer);

@@ -79,6 +79,7 @@ use super::PrintOption;
 use super::LogHistogramBox;
 use super::FloatHistogramBox;
 use super::Units;
+use super::printer;
 use super::printable::Printable;
 use super::compute_variance;
 use super::compute_skewness;
@@ -527,7 +528,7 @@ impl Rustics for RunningInteger {
             };
 
         let printable = self.get_printable();
-        let printer   = &mut *printer_box.lock().unwrap();
+        let printer   = printer!(printer_box);
 
         printer.print(title);
         printable.print_common_i64(printer);
@@ -578,8 +579,7 @@ impl Histogram for RunningInteger {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::Mutex;
-    use std::sync::Arc;
+    use crate::printer_box;
     use crate::counter::Counter;
     use crate::PrintOpts;
     use crate::hier::HierMember;
@@ -635,7 +635,7 @@ mod tests {
         assert!(stats.class()   == "integer");
 
         let printer = TestPrinter::new("test header ======");
-        let printer = Arc::new(Mutex::new(printer));
+        let printer = printer_box!(printer);
 
         stats.print_opts(Some(printer), None);
 

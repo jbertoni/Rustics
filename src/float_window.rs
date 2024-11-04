@@ -95,6 +95,7 @@ use super::float_histogram::FloatHistogram;
 use super::FloatHistogramBox;
 use super::integer_window::Crunched;
 use super::TimerBox;
+use super::printer;
 use super::printable::Printable;
 use super::compute_variance;
 use super::compute_skewness;
@@ -229,9 +230,8 @@ impl FloatWindow {
             vec_4.push(square   * square);
         }
 
-        // Use kbk_sum_no_sort to try to get more precision.  The
-        // samples vector was sorted by kbk_sum, so these vectors
-        // are sorted already.
+        // Use kbk_sum to try to get more precision.  The samples vector
+        // was sorted by kbk_sum, so these vectors are sorted already.
 
         let moment_2 = kbk_sum(&vec_2);
         let moment_3 = kbk_sum(&vec_3);
@@ -475,7 +475,7 @@ impl Rustics for FloatWindow {
             };
 
         let printable = self.get_printable();
-        let printer   = &mut *printer_box.lock().unwrap();
+        let printer   = printer!(printer_box);
 
         printer.print(title);
         printable.print_common_f64(printer);
@@ -549,11 +549,12 @@ mod tests {
     use crate::running_float::RunningFloat;
     use crate::tests::continuing_box;
     use crate::stdout_printer;
+    use crate::printer;
 
     pub fn test_simple_float_window() {
         let window_size = 100;
         let printer     = stdout_printer();
-        let printer     = &mut *printer.lock().unwrap();
+        let printer     = printer!(printer);
 
         let mut stats =
             FloatWindow::new(&"Test Statistics", window_size, &None);

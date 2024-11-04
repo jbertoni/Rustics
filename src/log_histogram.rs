@@ -286,6 +286,7 @@ mod tests {
     use super::*;
     use crate::tests::TestPrinter;
     use crate::stdout_printer;
+    use crate::printer;
 
     pub fn test_log_histogram() {
         let mut histogram = LogHistogram::new();
@@ -333,7 +334,7 @@ mod tests {
 
     fn test_default() {
         let     printer   = stdout_printer();
-        let     printer   = &mut *printer.lock().unwrap();
+        let     printer   = printer!(printer);
         let mut histogram = LogHistogram::default();
         let     values    = 1000;
         let     samples   = values * 2;

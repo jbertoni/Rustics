@@ -357,6 +357,7 @@ mod tests {
     use crate::hier::HierDescriptor;
     use crate::hier::HierDimension;
     use crate::stdout_printer;
+    use crate::printer;
 
     fn level_0_period() -> usize {
         8
@@ -482,8 +483,8 @@ mod tests {
     }
 
     fn test_window() {
-        let     printer   = stdout_printer();
-        let     printer   = &mut *printer.lock().unwrap();
+        let     printer     = stdout_printer();
+        let     printer     = printer!(printer);
         let     auto_next   = 100;
         let     window_size = Some(1000);
         let     hier        = make_test_hier(auto_next, window_size);

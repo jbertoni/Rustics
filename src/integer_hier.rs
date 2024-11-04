@@ -525,22 +525,31 @@ pub mod tests {
             println!("test_window:  got {}, expected {}", sum, expected);
             assert!(sum == expected as u64);
         }
-
-        let     current_rc = hier.current();
-        let mut current    = current_rc.borrow_mut();
-
-        // TODO learn how to check these results.
-
-        let _any = current.as_any_mut();
-        let _any = current.as_any();
     }
 
     fn test_exporter() {
-        let exporter = IntegerExporter::new();
+        let mut exporter = IntegerExporter::new();
+        let     running  = RunningInteger::new("Test Stat", &None);
+        let     export   = running.export_data();
 
-        // TODO Learn how to check this return result.
+        exporter.push(export.clone());
+        exporter.push(export.clone());
+        exporter.push(export.clone());
 
-        let _ = exporter.as_any();
+        // Do a feeble test for equality.  We could set an id to do
+        // a stronger test.
+
+        assert!(exporter.count() == 3);
+
+        let any          = exporter.as_any();
+        let any_exporter = any.downcast_ref::<IntegerExporter>().unwrap();
+
+        assert!(any_exporter.count() == 3);
+
+        let any          = exporter.as_any_mut(); 
+        let any_exporter = any.downcast_ref::<IntegerExporter>().unwrap();
+
+        assert!(any_exporter.count() == 3);
     }
 
     #[test]

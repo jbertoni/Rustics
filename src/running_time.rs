@@ -413,7 +413,21 @@ pub mod tests {
 
         assert!(stat.hz == hz as i64);
 
-        let _ = stat.as_any_mut();
+        let any      = stat.as_any();
+        let any_stat = any.downcast_ref::<RunningTime>().unwrap();
+
+        assert!(stat.equals(any_stat));
+
+        // Now set_id() and id() to check equality.
+
+        let expected = 12034; // Something unliklely.
+
+        stat.set_id(expected);
+
+        let any      = stat.as_any_mut();
+        let any_stat = any.downcast_ref::<RunningTime>().unwrap();
+
+        assert!(any_stat.id() == expected);
     }
 
     #[test]
@@ -513,9 +527,10 @@ pub mod tests {
         assert!(!stat_1.equals(&stat_2));
         assert!(!stat_1.equals(&stat_3));
 
-        // TODO Find a way to check this value.
+        let generic = stat_1.generic();
+        let recast  = generic.downcast_ref::<RunningTime>().unwrap();
 
-        let _ = stat_1.generic();
+        assert!(stat_1.equals(recast));
     }
 
     pub struct LargeTimer {

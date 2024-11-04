@@ -742,11 +742,11 @@ pub mod tests {
         let window_size = 32;
 
         let window_mutex        = set.add_integer_window ("window",        window_size, bytes()      );
-        let running_mutex       = set.add_running_integer("running",       bytes()                   );
+        let running_mutex       = set.add_running_integer("running",                    bytes()      );
         let time_window_mutex   = set.add_time_window    ("time window",   window_size, window_timer );
         let running_time_mutex  = set.add_running_time   ("running time",               running_timer);
-        let float_window_mutex  = set.add_float_window   ("float window",  window_size, bytes()     );
-        let running_float_mutex = set.add_running_float  ("running float", bytes()                  );
+        let float_window_mutex  = set.add_float_window   ("float window",  window_size, bytes()      );
+        let running_float_mutex = set.add_running_float  ("running float",              bytes()      );
 
         //  Lock the instances for manipulation.
 
@@ -800,6 +800,7 @@ pub mod tests {
             // Try this with the window.
 
             let expected = 100 + (i + -lower) * 100;
+
             window_test.borrow_mut().setup(expected);
             time_window.record_interval(&mut window_stat);
 
@@ -828,14 +829,14 @@ pub mod tests {
 
         //  Drop all the locks.
 
-        drop(subset);
-        drop(subset_stat);
-        drop(window);
-        drop(running);
-        drop(running_time);
-        drop(time_window);
+        drop(subset       );
+        drop(subset_stat  );
+        drop(window       );
+        drop(running      );
+        drop(running_time );
+        drop(time_window  );
         drop(running_float);
-        drop(float_window);
+        drop(float_window );
 
         //  Make sure that print completes.
 
@@ -934,10 +935,10 @@ pub mod tests {
         // The same is true for add_subset.
 
         let      set     = ArcSet::new_box("parent set", 0, 1, &None);
-        let mut  set     = set.lock().unwrap();
-        let      subset  = set.add_subset("subset", 1, 0);
-        let mut  subset  = subset.lock().unwrap();
-        let      running = subset.add_running_integer("running", None);
+        let mut  set     = set    .lock().unwrap();
+        let      subset  = set    .add_subset("subset", 1, 0);
+        let mut  subset  = subset .lock().unwrap();
+        let      running = subset .add_running_integer("running", None);
         let mut  running = running.lock().unwrap();
 
         for i in 0..64 {
@@ -1029,7 +1030,11 @@ pub mod tests {
        // Do our query.
        // ...
    
-       query_latency.lock().unwrap().record_time(local_timer.finish() as i64);
+       let mut lock = query_latency.lock().unwrap();
+
+       lock.record_time(local_timer.finish() as i64);
+
+       drop(lock);
    
        // If you want to use your own timer, you'll need to implement
        // the Timer trait to initialize the RunningTime instance, but you
@@ -1062,7 +1067,6 @@ pub mod tests {
        assert!(query_lock.count() == 1);
        assert!(query_lock.mean() == time_spent as f64);
        assert!(query_lock.standard_deviation() == 0.0);
-
     }
 
     // These routines are used by RcSet tests.

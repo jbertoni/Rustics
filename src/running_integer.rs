@@ -158,6 +158,12 @@ impl IntegerExporter {
 
         RunningInteger::new_from_exporter(name, title, print_opts, sum)
     }
+
+    // For testing
+
+    pub fn count(&self) -> usize {
+        self.addends.len()
+    }
 }
 
 // The Hier code uses this trait to do summation of statistics.
@@ -596,10 +602,6 @@ mod tests {
         let     min        = -256;
         let     max        =  511;
 
-        // TODO Find how to validate this return.
-
-        let _ = stats.as_any();
-
         assert!(stats.name()  == name);
         assert!(stats.title() == name);
         assert!(stats.class() == "integer");
@@ -742,9 +744,23 @@ mod tests {
         assert!(!stats_1.equals(&stats_2));
         assert!(!stats_1.equals(&stats_3));
 
-        // TODO Find a way to check the return value.
+        let mut stats = RunningInteger::new("Equality Test 1", &None);
 
-        let _ = stats_1.as_any();
+        let any       = stats.as_any();
+        let any_stats = any.downcast_ref::<RunningInteger>().unwrap();
+
+        assert!(stats.equals(any_stats));
+
+        // Now set_id() and id() to check equality.
+
+        let expected = 12034; // Something unliklely.
+
+        stats.set_id(expected);
+
+        let any       = stats.as_any_mut();
+        let any_stats = any.downcast_ref::<RunningInteger>().unwrap();
+
+        assert!(any_stats.id() == expected);
     }
 
     #[test]

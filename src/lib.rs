@@ -323,7 +323,9 @@ pub fn compute_skewness(count: u64, moment_2: f64, moment_3: f64) -> f64 {
 
     // Deal with floating point non-finite values.
 
-    // assert!(moment_2 > 0.0);
+    // For debugging new statistics types.
+    //
+    //assert!(moment_2 > 0.0);
 
     if moment_2 <= 0.0 {
         return 0.0;
@@ -349,6 +351,8 @@ pub fn compute_kurtosis(count: u64, moment_2: f64, moment_4: f64) -> f64 {
 
     // Deal with floating point non-finite values.
 
+    // For debugging new statistics types.
+    //
     // assert!(moment_2 > 0.0 && moment_4 >= 0.0);
 
     if moment_2 <= 0.0 || moment_4 <= 0.0 {
@@ -1368,7 +1372,10 @@ mod tests {
         let value = -0.0;
         assert!(is_zero(value));
 
-        // Test Nan arguments.
+        let value =  0.0;
+        assert!(is_zero(value));
+
+        // Test NaN arguments.
 
         let value  = f64::NAN;
         let value2 = 1.0;

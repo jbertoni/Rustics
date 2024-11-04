@@ -387,9 +387,10 @@ mod tests {
         assert!(!stat_1.equals(&stat_2));
         assert!(!stat_1.equals(&stat_3));
 
-        // TODO Find a way to check this value.
+        let generic = stat_1.generic();
+        let recast  = generic.downcast_ref::<TimeWindow>().unwrap();
 
-        let _ = stat_1.generic();
+        assert!(stat_1.equals(recast));
     }
 
     #[test]

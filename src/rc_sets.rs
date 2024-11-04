@@ -544,6 +544,7 @@ mod tests {
     use crate::arc_sets::tests::make_integer_config;
     use crate::arc_sets::tests::make_time_config;
     use crate::arc_sets::tests::make_float_config;
+    use crate::tests::bytes;
 
     struct TestTraverser {
         pub members:  i64,
@@ -579,7 +580,7 @@ mod tests {
             let     subset  = parent_set.add_subset("generated subset", 4, 4);
             let mut subset  = (*subset).borrow_mut();
 
-            let window      = subset.add_integer_window("generated subset window", 32, None);
+            let window      = subset.add_integer_window("generated subset window", 32, bytes());
             let running     = subset.add_running_integer("generated subset running", None);
 
             let mut window  = (*window).borrow_mut();
@@ -591,7 +592,7 @@ mod tests {
             }
         }
 
-        let     counter = parent_set.add_counter("generated counter", None);
+        let     counter = parent_set.add_counter("generated counter", bytes());
         let mut counter = (*counter).borrow_mut();
 
         for i in 0..upper {
@@ -620,8 +621,8 @@ mod tests {
         let time_window   = set.add_time_window ("time window",    window_size, window_timer);
         let running_time  = set.add_running_time ("running time",  running_timer);
 
-        let float_window  = set.add_float_window ("float window",  window_size, None);
-        let running_float = set.add_running_float("running float", None);
+        let float_window  = set.add_float_window ("float window",  window_size, bytes());
+        let running_float = set.add_running_float("running float", bytes());
 
         // Now test recording data.
 
@@ -738,6 +739,8 @@ mod tests {
 
         let found = set.remove_stat(running);
         assert!(!found);
+
+        let _ = set.add_counter("No Units", None);
     }
 
     fn new_hier_integer() -> Hier {
@@ -901,7 +904,29 @@ mod tests {
         assert!(float_stat.count() == 0);
         float_stat.record_f64(1.0);
         assert!(float_stat.count() == 1);
+
         drop(float_stat);
+
+        let     subset    = set.add_subset("print_opts Subset", 0, 0);
+        let mut locked    = subset.borrow_mut();
+        let     member_rc = locked.add_running_integer("print_opts Stat", bytes());
+        let mut member    = member_rc.borrow_mut();
+
+        member.record_i64(42);
+
+        drop(member);
+        drop(locked);
+
+        set.print_opts(None, Some("print_opts Title"));
+
+        set.set_title("New Top Title");
+
+        set.print_opts(None, None);
+
+        set.clear();
+
+        let member = member_rc.borrow();
+        assert!(member.count() == 0);
     }
 
     #[test]

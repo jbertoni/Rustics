@@ -835,11 +835,8 @@ impl Rustics for Hier {
         let sample = rustics.record_event_report();
 
         if let Some(window) = &mut self.window {
-            if self.class == "integer" {
-                window.record_i64(sample);
-            } else {
-                window.record_time(sample);
-            }
+            assert!(self.class == "time");
+            window.record_time(sample);
         }
 
         sample
@@ -1198,12 +1195,16 @@ impl Histogram for Hier {
     fn print_histogram(&self, printer: &mut dyn Printer) {
         if let Some(log_histogram) = self.log_histogram() {
             log_histogram.borrow().print(printer);
+        } else if let Some(float_histogram) = self.float_histogram() {
+            float_histogram.borrow().print(printer);
         }
     }
 
     fn clear_histogram(&mut self) {
         if let Some(log_histogram) = self.log_histogram() {
             log_histogram.borrow_mut().clear();
+        } else if let Some(float_histogram) = self.float_histogram() {
+            float_histogram.borrow_mut().clear();
         }
     }
 
@@ -1320,7 +1321,7 @@ pub mod tests {
     }
 
     fn compute_len(hier_integer: &Hier, level: usize, set: HierSet, events: i64) -> usize {
-        assert!(events > 0);
+        assert!(events > 0 || level == 0);
 
         let recorded_events =
             if level == 0 {
@@ -1384,6 +1385,9 @@ pub mod tests {
         let mut sum_of_events  = 0;
         let mut hier_integer   = make_hier(level_0_period, auto_next);
         let     hier_integer_2 = make_hier(level_0_period, auto_next);
+
+        let expected_len = compute_len(&hier_integer, 0, HierSet::All,  events);
+        assert!(expected_len == 1);
 
         // Do a quick sanity test on equals().
 
@@ -1687,17 +1691,20 @@ pub mod tests {
         let member_borrow = member_opt.borrow();
         let member        = member_borrow.as_any().downcast_ref::<RunningInteger>();
 
-        let proper_type =
-            match member {
-                Some(_) => { true  }
-                None    => { false }
-            };
+        // For test debugging.
+        //
+        //let proper_type =
+        //    match member {
+        //        Some(_) => { true  }
+        //        None    => { false }
+        //    };
+        //
+        //assert!(proper_type);
 
         let rustics = member.unwrap().to_rustics();
 
         println!("long_test:  got \"{}\" for class", rustics.class());
 
-        assert!(proper_type);
         assert!(rustics.class() == "integer");
     }
 
@@ -1759,15 +1766,18 @@ pub mod tests {
         let member_borrow = member_opt.borrow();
         let member        = member_borrow.as_any().downcast_ref::<RunningTime>();
 
-        let proper_type =
-            match member {
-                Some(_) => { true  }
-                None    => { false }
-            };
+        // For test debugging.
+        //
+        //let proper_type =
+        //    match member {
+        //        Some(_) => { true  }
+        //        None    => { false }
+        //    };
+        //
+        //assert!(proper_type);
 
         let rustics = member.unwrap().to_rustics();
 
-        assert!(proper_type);
         assert!(rustics.count() == events_per_level_1 as u64);
         assert!(rustics.class() == "time");
 
@@ -1988,7 +1998,7 @@ pub mod tests {
         }
 
         let (_sum, count) = integer_hier.sum(addends, "Level 0 Summary");
-        
+
         assert!(count == 0);
 
         integer_hier.clear_all();
@@ -2001,7 +2011,7 @@ pub mod tests {
         let start_title = integer_hier.title();
 
         assert!(start_title != new_title);
-        
+
         integer_hier.set_title(new_title);
 
         assert!(integer_hier.title() == new_title);
@@ -2053,7 +2063,6 @@ pub mod tests {
 
     #[test]
     fn run_tests() {
-        println!("Running the hierarchical stats tests.");
         simple_hier_test();
         long_test();
         test_time_hier_sanity();

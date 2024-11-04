@@ -588,6 +588,29 @@ mod tests {
 
         assert!(hier.mean()  == mean  );
         assert!(hier.class() == "time");
+
+        {
+            let histogram = hier.to_log_histogram().unwrap();
+            let histogram = histogram.borrow();
+
+            let mut sum = 0;
+
+            for sample in histogram.positive.iter() {
+                sum += *sample;
+            }
+
+            assert!(sum == events);
+        }
+
+        hier.clear_all();
+        assert!(hier.mean() == 0.0);
+
+        hier.record_interval(&mut continuing_box());
+        events = 1;
+
+        assert!(hier.mean()  == continuing_timer_increment() as f64);
+        assert!(hier.count() == events);
+
     }
 
     #[test]

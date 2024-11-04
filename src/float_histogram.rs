@@ -379,7 +379,7 @@ impl FloatHistogram {
 
     pub fn print_opts(&self, printer: &mut dyn Printer, histo_opts: &HistoOpts) {
         let header =
-            format!("  Log Histogram:  ({} NaN, {} infinite, {} samples)",
+            format!("  Float Histogram:  ({} NaN, {} infinite, {} samples)",
                 self.nans, self.infinities, self.samples);
 
         printer.print(&header);

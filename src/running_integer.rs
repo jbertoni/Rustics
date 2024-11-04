@@ -460,11 +460,11 @@ impl Rustics for RunningInteger {
     }
 
     fn min_f64(&self) -> f64 {
-        self.min as f64
+        panic!("RunningInteger:: min_f64 is not supported.");
     }
 
     fn max_f64(&self) -> f64 {
-        self.max as f64
+        panic!("RunningInteger:: max_f64 is not supported.");
     }
 
     fn clear(&mut self) {

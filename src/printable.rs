@@ -486,6 +486,7 @@ impl Printable {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::tests::CheckPrinter;
 
     pub fn test_commas() {
         let test   = [ 123456, 12, -1, -1234, 4000000, -200, -2000, -20000 ];
@@ -680,11 +681,33 @@ mod tests {
         }
     }
 
+    fn test_print_string() {
+        let expected = [ "    >                   hello" ];
+
+        let mut check_printer = CheckPrinter::new(&expected, false);
+
+        Printable::print_string(">", "hello", &mut check_printer);
+    }
+
+    fn test_print_time() {
+        let expected          = [ "    >                +1.00000 e+6 days" ];
+        let mut check_printer = CheckPrinter::new(&expected, false);
+
+        let     hz     = 1;
+        let     days   = 60 * 60 * 24 * hz;
+        let     sample = 1_000_000 * days;
+        let     sample = sample as f64;
+
+        Printable::print_time(">", sample, hz, &mut check_printer);
+    }
+
     #[test]
     fn run_tests() {
         test_commas();
         test_log_mode_to_time();
         test_format_float();
+        test_print_string();
+        test_print_time();
         documentation();
     }
 }

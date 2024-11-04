@@ -497,8 +497,44 @@ pub mod tests {
         // Make sure that count() obeys the window_size...
 
         hier.record_i64(window_size + 1);
+        events += 1;
         
         assert!(hier.count() == window_size as u64);
+
+        {
+            let current_rc = hier.current();
+            let current    = current_rc.borrow();
+            let histogram  = current.to_histogram();
+            let histogram  = histogram.to_log_histogram().unwrap();
+            let histogram  = histogram.borrow();
+
+            let mut sum = 0;
+
+            for sample in histogram.positive.iter() {
+                sum += *sample;
+            }
+
+            let expected = events % window_size;
+
+            assert!(expected != 0);
+
+            println!("test_window:  got {}, expected {}", sum, expected);
+            assert!(sum == expected as u64);
+        }
+
+        let     current_rc = hier.current();
+        let mut current    = current_rc.borrow_mut();
+
+        let _any = current.as_any_mut();
+        // TODO learn how to cast this into something useful.
+    }
+
+    #[test]
+    #[should_panic]
+    fn hz_panic() {
+        let hier = make_test_hier(200, None);
+
+        let _ = hier.hz();
     }
 
     #[test]

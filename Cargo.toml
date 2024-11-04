@@ -7,10 +7,8 @@ include = ["Cargo.toml", "src/*.rs", "README"]
 
 license = "MIT OR BSD-2-Clause OR BSD-1-Clause"
 keywords = ["monitoring", "statistics", "performance" ]
-categories = ["development-tools::profiling"]
 description = "simple statistic library for performance analysis"
 repository = "https://github.com/jbertoni/Rustics"
-profiler = true
 
 [dependencies]
 

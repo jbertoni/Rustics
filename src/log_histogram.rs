@@ -284,6 +284,7 @@ impl Histogram for LogHistogram {
 mod tests {
     use super::*;
     use crate::tests::TestPrinter;
+    use crate::stdout_printer;
 
     pub fn test_log_histogram() {
         let mut histogram = LogHistogram::new();
@@ -315,6 +316,60 @@ mod tests {
         histogram.print(printer);
     }
 
+    fn sum_histogram(histogram: &LogHistogram) -> i64 {
+        let mut sum = 0;
+
+        for count in histogram.positive.iter() {
+            sum += *count;
+        }
+
+        for count in histogram.negative.iter() {
+            sum += *count;
+        }
+
+        sum as i64
+    }
+
+    fn test_default() {
+        let     printer   = stdout_printer();
+        let     printer   = &mut *printer.lock().unwrap();
+        let mut histogram = LogHistogram::default();
+        let     values    = 1000;
+        let     samples   = values * 2;
+
+        for i in 1..=values {
+            histogram.record( i as i64);
+            histogram.record(-i as i64);
+        }
+
+        histogram.print_histogram(printer);
+
+        let sum = sum_histogram(&histogram);
+
+        assert!(sum == samples);
+
+        histogram.clear_histogram();
+
+        let sum = sum_histogram(&histogram);
+
+        assert!(sum == 0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_to_log() {
+        let histogram = LogHistogram::default();
+        let _         = histogram.to_log_histogram().unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_to_float() {
+        let histogram = LogHistogram::default();
+        let _         = histogram.to_float_histogram().unwrap();
+    }
+
+
     pub fn test_pseudo_log() {
         let test   = [ 1, 0, -1, -4, -3, i64::MIN, 3, 4, 5, 8, i64::MAX ];
         let expect = [ 0, 0,  0,  2,  2,       63, 2, 2, 3, 3,       63 ];
@@ -333,5 +388,6 @@ mod tests {
     fn run_tests() {
         test_log_histogram();
         test_pseudo_log();
+        test_default();
     }
 }

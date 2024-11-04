@@ -219,7 +219,7 @@ pub fn max_exponent() -> isize {
     1023
 }
 
-pub fn max_raw_exponent() -> isize {
+pub fn max_biased_exponent() -> isize {
     max_exponent() + exponent_bias()
 }
 
@@ -229,14 +229,6 @@ pub fn min_exponent() -> isize {
 
 pub fn exponent_bias() -> isize {
     1023
-}
-
-pub fn biased_exponent_to_real(biased: isize) -> isize {
-    biased - exponent_bias()
-}
-
-pub fn max_biased_exponent() -> isize {
-    max_exponent() + exponent_bias()
 }
 
 pub fn sign(input: f64) -> isize {
@@ -328,9 +320,10 @@ pub fn compute_skewness(count: u64, moment_2: f64, moment_3: f64) -> f64 {
         return 0.0;
     }
 
-    assert!(moment_2 > 0.0);
 
     // Deal with floating point non-finite values.
+
+    // assert!(moment_2 > 0.0);
 
     if moment_2 <= 0.0 {
         return 0.0;
@@ -356,7 +349,7 @@ pub fn compute_kurtosis(count: u64, moment_2: f64, moment_4: f64) -> f64 {
 
     // Deal with floating point non-finite values.
 
-    assert!(moment_2 > 0.0 && moment_4 >= 0.0);
+    // assert!(moment_2 > 0.0 && moment_4 >= 0.0);
 
     if moment_2 <= 0.0 || moment_4 <= 0.0 {
         return 0.0;
@@ -808,7 +801,7 @@ mod tests {
             if self.current < self.expected.len() {
                 let expected = self.expected[self.current].clone();
 
-                println!("check_printer:  got \"{}\", expect \"{}\"",
+                println!("CheckPrinter:  got \"{}\", expect \"{}\"",
                     output,
                     expected);
 
@@ -816,11 +809,14 @@ mod tests {
                 self.current += 1;
             } else if self.fail_on_overage {
                 panic!("CheckPrinter:  too many lines");
+            } else {
+                println!("CheckPrinter: ignoring extra lines");
             }
 
             println!("{}", output);
         }
     }
+
     // Define a testing clock that allows us to define the
     // intervals that the clock returns.  We do this through
     // a global variable, although creating a list might be
@@ -989,8 +985,9 @@ mod tests {
 
         // Let the random number generator run wild.
 
+        let mut random: i32 = 0; // make sure that we test zero.
+
         for _i in 1..100 {
-            let random: i32 = rng.gen();
 
             let interval =
                 if random > 0 {
@@ -1003,6 +1000,7 @@ mod tests {
 
             test_timer.borrow_mut().setup(interval);
             time_stat.record_event();
+            random = rng.gen();
         }
 
         println!("test_running_time:  first stats added.");
@@ -1345,6 +1343,152 @@ mod tests {
         }
     }
 
+    fn test_float_functions() {
+        let value = 1.0;
+
+        let mantissa = to_mantissa(value);
+        assert!(mantissa == 0);
+
+        let value = max_biased_exponent();
+        assert!(value == 2046);
+
+        let value = -0.0;
+        assert!(is_zero(value));
+
+        // Test Nan arguments.
+
+        let value  = f64::NAN;
+        let value2 = 1.0;
+
+        assert!(biased_exponent(value) == 0);
+
+        let result = min_f64(value, value2);
+        assert!(result.is_nan());
+
+        let result = max_f64(value, value2);
+        assert!(result.is_nan());
+
+        let value = f64::INFINITY;
+        assert!(biased_exponent(value) == max_exponent());
+    }
+
+    fn test_make_title() {
+        let title  = "";
+        let name   = "hello";
+        let result = make_title(title, name);
+
+        assert!(result == name);
+
+        let title = "say";
+        let result = make_title(title, name);
+
+        assert!(result == "say ==> hello");
+    }
+
+    fn test_units() {
+        let singular = "byte";
+        let plural   = "bytes";
+        let result   = Units::new(singular, plural);
+
+        assert!(result.singular == "byte" );
+        assert!(result.plural   == "bytes");
+    }
+
+    fn test_parsing() {
+        let printer      = Some(stdout_printer());
+        let title        = Some("Title".to_string());
+        let merge_min    = 24;
+        let merge_max    = 28;
+        let no_zero_rows = true;
+        let histo_opts   = Some(HistoOpts { merge_min, merge_max, no_zero_rows });
+        let units        = bytes();
+
+        let print_opts = Some(PrintOpts { printer, title, histo_opts, units });
+
+        let _     = parse_printer   (&print_opts);
+        let title = parse_title     (&print_opts, "default");
+        let histo = parse_histo_opts(&print_opts);
+        let units = parse_units     (&print_opts);
+
+        assert!( histo.no_zero_rows          );
+        assert!( histo.merge_min == merge_min);
+        assert!( histo.merge_max == merge_max);
+        assert!( units.singular  == "byte"   );
+        assert!( units.plural    == "bytes"  );
+        assert!( title           == "Title"  );
+
+        let printer    = None;
+        let title      = None;
+        let histo_opts = None;
+        let units      = None;
+        let print_opts = Some(PrintOpts { printer, title, histo_opts, units });
+
+        let _     = parse_printer   (&print_opts);
+        let title = parse_title     (&print_opts, "default");
+        let histo = parse_histo_opts(&print_opts);
+        let units = parse_units     (&print_opts);
+
+        assert!(!histo.no_zero_rows          );
+        assert!( histo.merge_min == 0        );
+        assert!( histo.merge_max == 0        );
+        assert!( units.singular  == ""       );
+        assert!( units.plural    == ""       );
+        assert!( title           == "default");
+    }
+
+    fn test_stdio_printer() {
+        let mut printer = StdioPrinter::new(StreamKind::Stderr);
+
+        printer.print("test_stdio_printer:  performed output");
+    }
+
+    fn test_check_printer_forgive() {
+        let expected_output = [ "test_check_printer:  output" ];
+
+        let mut printer = CheckPrinter::new(&expected_output, false);
+
+        printer.print(expected_output[0]);
+        printer.print(expected_output[0]);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_check_printer() {
+        let expected_output = [ "test_check_printer:  output" ];
+
+        let mut printer = CheckPrinter::new(&expected_output, true);
+
+        printer.print(expected_output[0]);
+        printer.print(expected_output[0]);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_timer_start() {
+        let hz    = 1_000;
+        let timer = TestTimer::new_box(hz);
+
+        timer.borrow_mut().start();
+    }
+
+    fn test_test_timer_setup () {
+        let hz    = 1_000;
+        let timer = TestTimer::new_box(hz);
+
+        timer.borrow_mut().setup_elapsed_time(hz as i64);
+        timer.borrow_mut().start();
+
+        assert!(timer.borrow_mut().finish() == hz as i64);
+    }
+
+    fn test_math() {
+        assert!(compute_kurtosis(4,  0.0, 0.0) == 0.0);
+        assert!(compute_kurtosis(4,  1.0, 0.0) == 0.0);
+        assert!(compute_kurtosis(4, -1.0, 0.0) == 0.0);
+        assert!(compute_skewness(4,  0.0, 0.0) == 0.0);
+        assert!(compute_skewness(4, -1.0, 0.0) == 0.0);
+    }
+
     #[test]
     pub fn run_lib_tests() {
         test_time_printing();
@@ -1352,5 +1496,13 @@ mod tests {
         test_running_time();
         run_all_histo_tests();
         test_test_timer();
+        test_test_timer_setup();
+        test_float_functions();
+        test_make_title();
+        test_units();
+        test_parsing();
+        test_stdio_printer();
+        test_check_printer_forgive();
+        test_math();
     }
 }

@@ -452,12 +452,25 @@ mod tests {
         let float = events as f64;
         let mean  = (float * (float + 1.0) / 2.0) / float;
 
-        assert!(hier.mean() == mean);
+        assert!(hier.mean()        == mean);
         assert!(hier.event_count() == events);
+        assert!(hier.min_f64()     == 1.0  );
+        assert!(hier.max_f64()     == float);
+
         hier.print();
+
+        hier.record_f64(f64::NAN);
+        assert!(hier.to_float_histogram().unwrap().borrow().samples == events as usize);
+
+        hier.clear_histogram();
+        hier.print();
+
+        assert!(hier.to_float_histogram().unwrap().borrow().samples == 0);
     }
 
     fn test_window() {
+        let     printer   = stdout_printer();
+        let     printer   = &mut *printer.lock().unwrap();
         let     auto_next   = 100;
         let     window_size = Some(1000);
         let     hier        = make_test_hier(auto_next, window_size);
@@ -490,6 +503,19 @@ mod tests {
             }
         }
 
+        {
+            let histogram = hier.to_float_histogram().unwrap();
+            let histogram = histogram.borrow();
+            
+            let mut sum = 0;
+
+            for sample in histogram.positive.iter() {
+                sum += *sample;
+            }
+
+            assert!(sum == events as u64);
+        }
+
         // Compute the expected mean of the window.
 
         let sum   = (window_size * (window_size + 1)) / 2;
@@ -503,6 +529,8 @@ mod tests {
         assert!(hier.mean()        == mean         );
         assert!(hier.event_count() == events       );
 
+        hier.print_histogram(printer);
+
         // Make sure that count() obeys the window_size...
 
         hier.record_f64(window_size as f64 + 1.0);
@@ -515,7 +543,8 @@ mod tests {
         let     member    = &mut *member_rc.borrow_mut();
         let     histogram = member.to_histogram();
 
-        histogram.print_histogram(&mut *stdout_printer().lock().unwrap());
+        member.to_rustics().print();
+        histogram.print_histogram(printer);
         member.to_rustics_mut().record_f64(1.0);
 
         let _any_mut = member.as_any_mut();
@@ -530,6 +559,17 @@ mod tests {
         let     hier        = hier.lock().unwrap();
 
         let _hz = hier.hz();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_log_histogram() {
+        let     auto_next   = 200;
+        let     window_size = None;
+        let     hier        = make_test_hier(auto_next, window_size);
+        let     hier        = hier.lock().unwrap();
+
+        let _ = hier.to_log_histogram().unwrap();
     }
 
     #[test]

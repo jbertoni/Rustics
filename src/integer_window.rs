@@ -413,11 +413,11 @@ impl Rustics for IntegerWindow {
     }
 
     fn min_f64(&self) -> f64 {
-        self.compute_min() as f64
+        panic!("IntegerWindow:: min_f64 is not supported.");
     }
 
     fn max_f64(&self) -> f64 {
-        self.compute_max() as f64
+        panic!("IntegerWindow:: max_f64 is not supported.");
     }
 
     fn min_i64(&self) -> i64 {
@@ -543,6 +543,8 @@ impl Histogram for IntegerWindow {
 mod tests {
     use super::*;
     use crate::log_histogram::pseudo_log_index;
+    use crate::tests::continuing_box;
+    use crate::running_integer::RunningInteger;
 
     pub fn test_simple_integer_window() {
         let     window_size = 100;
@@ -567,6 +569,14 @@ mod tests {
         stats.print();
         assert!(stats.mean() == sample as f64);
         assert!(stats.log_mode() as usize == pseudo_log_index(sample));
+
+        // Check precompute().
+
+        stats.precompute();
+        assert!(stats.mean() == sample as f64);
+
+        stats.precompute();
+        assert!(stats.mean() == sample as f64);
 
         stats.clear();
 
@@ -601,8 +611,126 @@ mod tests {
         assert!(stats.kurtosis() == 0.0   );
     }
 
+    fn test_equality() {
+        let stats_1 = IntegerWindow::new (&"Equal 1", 10, &None);
+        let stats_2 = IntegerWindow::new (&"Equal 2", 10, &None);
+        let stats_3 = RunningInteger::new(&"Equal 3",     &None);
+
+        assert!( stats_1.equals(&stats_1));
+        assert!(!stats_1.equals(&stats_2));
+        assert!(!stats_1.equals(&stats_3));
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_record_f64() {
+        let mut stats = IntegerWindow::new(&"Test Statistics", 20, &None);
+
+        stats.record_f64(1.0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_record_event() {
+        let mut stats = IntegerWindow::new(&"Test Statistics", 20, &None);
+
+        stats.record_event();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_record_event_report() {
+        let mut stats = IntegerWindow::new(&"Test Statistics", 20, &None);
+
+        let _ = stats.record_event_report();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_record_time() {
+        let mut stats = IntegerWindow::new(&"Test Statistics", 20, &None);
+
+        stats.record_time(1);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_record_interval() {
+        let mut timer  = continuing_box();
+        let mut stats  = IntegerWindow::new(&"Test Statistics", 20, &None);
+
+        stats.record_interval(&mut timer);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_min_f64() {
+        let stats = IntegerWindow::new(&"Test Statistics", 20, &None);
+
+        let _  = stats.min_f64();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_max_f64() {
+        let stats = IntegerWindow::new(&"Test Statistics", 20, &None);
+
+        let _  = stats.max_f64();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_zero_size() {
+        let _stats = IntegerWindow::new(&"Test Statistics", 0, &None);
+    }
+
+    fn test_histogram() {
+        let     size  = 100;
+        let mut stats = IntegerWindow::new(&"Test Statistics", size, &None);
+
+        for i in 1..=size {
+            stats.record_i64(i as i64);
+        }
+
+        {
+            let histogram = stats.to_log_histogram().unwrap();
+            let histogram = histogram.borrow();
+
+            let mut sum = 0;
+
+            for sample in histogram.positive.iter() {
+                sum += *sample;
+            }
+
+            assert!(sum == size as u64);
+        }
+        {
+            stats.clear_histogram();
+
+            let histogram = stats.to_log_histogram().unwrap();
+            let histogram = histogram.borrow();
+
+            let mut sum = 0;
+
+            for sample in histogram.positive.iter() {
+                sum += *sample;
+            }
+
+            assert!(sum == 0);
+        }
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_float_histogram() {
+        let stats = IntegerWindow::new(&"Test Statistics", 100, &None);
+        let _     = stats.to_float_histogram().unwrap();
+    }
+
     #[test]
     fn run_tests() {
         test_simple_integer_window();
+        test_equality();
+        test_histogram();
     }
 }

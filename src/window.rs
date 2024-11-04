@@ -80,8 +80,6 @@
 //!
 //!         window.push(next_data);
 //!
-//!         // Let verify_window run the iterators.
-//!
 //!         assert!(window.live_len() == live_limit);
 //!         assert!(window.all_len()  == size_limit);
 //!     }
@@ -514,7 +512,9 @@ mod tests {
             assert!(window.live_len() == i + 1);
         }
 
-        let (data, oldest, oldest_live) = window.data(verbose);
+        // Always be verbose here so that the code is tested.
+
+        let (data, oldest, oldest_live) = window.data(true);
 
         assert!(data.len() == window_size);
         assert!(oldest     == 0          );
@@ -524,6 +524,13 @@ mod tests {
             assert!(data[i] == i);
         }
 
+        window.clear();
+
+        let (data, oldest, oldest_live) = window.data(true);
+
+        assert!(data.len()  == 0);
+        assert!(oldest      == 0);
+        assert!(oldest_live == 0);
 
         // Make a new window and test the overwrite case.
 
@@ -686,17 +693,23 @@ mod tests {
         // Now test the "all" indexing.
 
         for i in 0..window.all_len() {
-            let data =
-                if let Some(data) = window.index_all(i) {
-                    data
-                } else {
-                    panic!("verify_window:  All indexing failed at {}", i);
-                };
+            let data = window.index_all(i).unwrap();
 
-            if *data != expected {
-                println!("verify_window:  all iterator at {}, got {}, expected {}",
-                    i, *data, expected);
-            }
+            // For debugging the test.
+            //
+            //let data =
+            //    if let Some(data) = window.index_all(i) {
+            //        data
+            //    } else {
+            //        panic!("verify_window:  All indexing failed at {}", i);
+            //    };
+
+            // For debugging the test.
+            //
+            //if *data != expected {
+            //    println!("verify_window:  all iterator at {}, got {}, expected {}",
+            //        i, *data, expected);
+            //}
 
             assert!(*data == expected);
 
@@ -738,17 +751,21 @@ mod tests {
         let mut expected = first_expected;
 
         for i in 0..window.live_len() {
-            let data =
-                if let Some(data) = window.index_live(i) {
-                    data
-                } else {
-                    panic!("verify_window:  Live indexing failed at {}", i);
-                };
+            let data = window.index_live(i).unwrap();
+            
+            // For debugging the test.
+            //
+            //let data =
+            //    if let Some(data) = window.index_live(i) {
+            //        data
+            //    } else {
+            //        panic!("verify_window:  Live indexing failed at {}", i);
+            //    };
 
-            if *data != expected {
-                println!("verify_window:  index_live(i) = {}, expected {}",
-                    *data, expected);
-            }
+            //if *data != expected {
+            //    println!("verify_window:  index_live(i) = {}, expected {}",
+            //        *data, expected);
+            //}
 
             assert!(*data == expected);
 
@@ -765,15 +782,7 @@ mod tests {
         let     live_limit  = 32;
         let mut window      = Window::<usize>::new(size_limit, live_limit);
 
-        // Fill the window while checking that the results match expectations.
-
-        for _i in window.iter_all() {
-            panic!("iterator_test:  The window should be empty.");
-        }
-
-        for _i in window.iter_live() {
-            panic!("iterator_test:  The window should be empty.");
-        }
+        assert!(window.is_empty());
 
         // First, just fill the array.
 
@@ -786,7 +795,11 @@ mod tests {
 
             // Let verify_window run the iterators.
 
-            verify_window(&window, 0, verbose);
+            if i == 0 {
+                verify_window(&window, 0, true);
+            } else {
+                verify_window(&window, 0, verbose);
+            }
         }
 
         // Now keep pushing, and make sure that old elements disappear.
@@ -803,8 +816,111 @@ mod tests {
     }
 
     #[test]
+    #[should_panic]
+    fn test_size_limit() { 
+        let _ = Window::<usize>::new(0, 100);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_empty_index_newest() { 
+        let window = Window::<usize>::new(200, 100);
+
+        let _  = window.index_newest().unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_index_all_limit() { 
+        let size_limit = 200;
+        let window     = Window::<usize>::new(size_limit, size_limit / 2);
+
+        let _  = window.index_all(size_limit + 1);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_index_all_size() { 
+        let size_limit = 200;
+        let window     = Window::<usize>::new(size_limit, size_limit / 2);
+
+        let _  = window.index_all(1).unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_index_live_size() { 
+        let size_limit = 200;
+        let window     = Window::<usize>::new(size_limit, size_limit / 2);
+
+        let _  = window.index_live(1).unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_index_live_limit() { 
+        let size_limit = 200;
+        let window     = Window::<usize>::new(size_limit, size_limit / 2);
+
+        let _  = window.index_live(size_limit).unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_empty_newest() { 
+        let window = Window::<usize>::new(200, 100);
+
+        let _  = window.newest().unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_empty_newest_mut() { 
+        let mut window = Window::<usize>::new(200, 100);
+
+        let _  = window.newest_mut().unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_bad_live_limit() { 
+        let _ = Window::<usize>::new(50, 100);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_empty_all_iter() {
+        let window = Window::<usize>::new(200, 100);
+
+        let mut iter = window.iter_all();
+
+        let _ = iter.next().unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_empty_live_iter() {
+        let window = Window::<usize>::new(200, 100);
+
+        let mut iter = window.iter_live();
+
+        let _ = iter.next().unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_iterator() {
+        let window = Window::<usize>::new(200, 100);
+
+        let mut iter = window.iter_all();
+
+        let _ = iter.find_next_index();
+        let _ = iter.find_next_index();
+    }
+
+    #[test]
     fn run_tests() {
-        simple_window_test(false);
-        sample_usage(false);
+        simple_window_test(true);
+        sample_usage(true);
     }
 }

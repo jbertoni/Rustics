@@ -132,11 +132,7 @@ impl Timer for DurationTimer {
         let result    = end_time - self.previous;
         self.previous = end_time;
 
-        if result <= i64::MAX as u128 {
-            result as i64
-        } else {
-            i64::MAX
-        }
+        std::cmp::min(result, i64::MAX as u128) as i64
     }
 
     // We read the clock in nanoseconds currently.
@@ -226,7 +222,7 @@ mod tests {
     use std::thread::sleep;
     use std::time::Duration;
 
-    pub fn simple_test_duration() {
+    fn simple_duration_test() {
         let mut clock         = DurationTimer::new();
         let     seconds       = 1;
         let     sleep_time    = Duration::new(seconds, 0);
@@ -330,9 +326,19 @@ mod tests {
         assert!(clock.hz() == hz);
     }
 
+    fn simple_default_test() {
+        let mut timer = DurationTimer::default();
+
+        for _i in 1..100 {
+            let nanoseconds = timer.finish();
+            assert!(nanoseconds >= 0)
+        }
+    }
+
     #[test]
     pub fn run_tests() {
-        simple_test_duration();
+        simple_duration_test();
+        simple_default_test();
         simple_test_clock();
         example_clock();
     }

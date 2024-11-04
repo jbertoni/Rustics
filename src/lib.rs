@@ -761,6 +761,20 @@ mod tests {
         Some(Units { singular, plural })
     }
 
+    pub fn compute_sum(histogram: &LogHistogram) -> i64 {
+        let mut sum = 0;
+
+        for sample in histogram.positive.iter() {
+            sum += *sample;
+        }
+
+        for sample in histogram.negative.iter() {
+            sum += *sample;
+        }
+
+        sum as i64
+    }
+
     // This struct is used by other modules.
 
     pub struct TestPrinter {

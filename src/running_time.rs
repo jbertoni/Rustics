@@ -155,10 +155,6 @@ impl RunningTime {
         RunningTime { running_integer, timer, hz, printer }
     }
 
-    pub fn hz(&self) -> i64 {
-        self.hz
-    }
-
     // This function is used by RunningTime as it is simply
     // a wrapper for a RunningInteger.
 
@@ -319,7 +315,11 @@ impl Rustics for RunningTime {
     }
 
     fn equals(&self, other: &dyn Rustics) -> bool {
-        self.running_integer.equals(other)
+        if let Some(other) = <dyn Any>::downcast_ref::<RunningTime>(other.generic()) {
+            std::ptr::eq(self, other)
+        } else {
+            false
+        }
     }
 
     fn generic(&self) -> &dyn Any {
@@ -354,5 +354,207 @@ impl Histogram for RunningTime {
 
     fn to_float_histogram(&self) -> Option<FloatHistogramBox> {
         self.running_integer.float_histogram()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::stdout_printer;
+    use crate::tests::continuing_box;
+    use crate::tests::compute_sum;
+    use crate::hier::HierMember;
+    use crate::counter::Counter;
+    use crate::time::Timer;
+    use std::rc::Rc;
+    use std::cell::RefCell;
+
+    fn simple_test() {
+        println!("RunningTime::simple_test:  starting");
+
+        let     timer        = continuing_box();
+        let mut stat         = RunningTime::new("Query Latency", timer, &None);
+        let     printer      = stdout_printer();
+        let     printer      = &mut *printer.lock().unwrap();
+        let     sample_count = 200;
+
+        for i in 1..=sample_count {
+            stat.record_time(i);
+        }
+
+        assert!( stat.log_mode      () == 8);
+        assert!( stat.int_extremes  ()     );
+        assert!(!stat.float_extremes()     );
+
+        assert!(stat.max_i64() == sample_count);
+        assert!(stat.min_i64() == 1           );
+
+        // precompute() should be a harmess nopl
+
+        stat.precompute();
+
+        assert!( stat.log_mode      () == 8);
+        assert!( stat.int_extremes  ()     );
+        assert!(!stat.float_extremes()     );
+
+        let histogram = stat.to_histogram();
+
+        histogram.print_histogram(printer);
+
+        {
+            let histogram = histogram.to_log_histogram().unwrap();
+            let histogram = histogram.borrow();
+            let sum       = compute_sum(&histogram);
+
+            assert!(sum == sample_count);
+        }
+
+        let hz = continuing_box().borrow().hz();
+
+        assert!(stat.hz == hz as i64);
+
+        let _ = stat.as_any_mut();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_record_i64() {
+        let     timer = continuing_box();
+        let mut stat  = RunningTime::new("Panic Test", timer, &None);
+
+        let _ = stat.record_i64(1);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_record_f64() {
+        let     timer = continuing_box();
+        let mut stat  = RunningTime::new("Panic Test", timer, &None);
+
+        let _ = stat.record_f64(1.0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_min_f64() {
+        let timer = continuing_box();
+        let stat  = RunningTime::new("Panic Test", timer, &None);
+
+        let _ = stat.min_f64();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_max_f64() {
+        let timer = continuing_box();
+        let stat  = RunningTime::new("Panic Test", timer, &None);
+
+        let _ = stat.max_f64();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_float_histogram() {
+        let timer = continuing_box();
+        let stat  = RunningTime::new("Panic Test", timer, &None);
+
+        let _ = stat.float_histogram().unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_to_float() {
+        let timer = continuing_box();
+        let stat  = RunningTime::new("Panic Test", timer, &None);
+
+        let _ = stat.to_float_histogram().unwrap();
+    }
+
+    fn test_histogram() {
+        let     timer   = continuing_box();
+        let mut stat    = RunningTime::new("Panic Test", timer, &None);
+        let     samples = 200;
+
+        for i in 1..=samples {
+            stat.record_time(i as i64);
+        }
+
+        {
+            let histogram = stat.to_log_histogram().unwrap();
+            let histogram = histogram.borrow();
+
+            let sum = compute_sum(&histogram);
+
+            assert!(sum == samples)
+        }
+
+        stat.clear_histogram();
+
+        {
+            let histogram = stat.to_log_histogram().unwrap();
+            let histogram = histogram.borrow();
+
+            let sum = compute_sum(&histogram);
+
+            assert!(sum == 0)
+        }
+    }
+
+    fn test_equality() {
+        let timer  = continuing_box();
+        let stat_1 = RunningTime::new("Equality Test 1", timer, &None);
+
+        let timer  = continuing_box();
+        let stat_2 = RunningTime::new("Equality Test 2", timer, &None);
+
+        let stat_3 = Counter::new("Equality Test 2", &None);
+
+        assert!( stat_1.equals(&stat_1));
+        assert!(!stat_1.equals(&stat_2));
+        assert!(!stat_1.equals(&stat_3));
+
+        // TODO Find a way to check this value.
+
+        let _ = stat_1.generic();
+    }
+
+    struct LargeTimer {
+    }
+
+    impl Timer for LargeTimer {
+        fn start(&mut self) {
+        }
+
+        fn finish(&mut self) -> i64 {
+            1
+        }
+
+        fn hz(&self) -> u128 {
+            u128::MAX
+        }
+    }
+
+    fn test_large_timer() {
+        let mut timer = LargeTimer { };
+
+        timer.start();
+
+        let _ = timer.finish();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_large_clock() {
+        let timer = LargeTimer { };
+        let timer = Rc::from(RefCell::new(timer));
+        let _     = RunningTime::new("Panic Test", timer, &None);
+    }
+
+    #[test]
+    fn run_tests() {
+        simple_test();
+        test_equality();
+        test_histogram();
+        test_large_timer();
     }
 }

@@ -570,10 +570,13 @@ impl Histogram for RunningInteger {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tests::TestPrinter;
     use std::sync::Mutex;
     use std::sync::Arc;
+    use crate::counter::Counter;
     use crate::PrintOpts;
+    use crate::hier::HierMember;
+    use crate::tests::continuing_box;
+    use crate::tests::TestPrinter;
 
     pub fn test_simple_running_integer() {
         let     printer    = None;
@@ -592,6 +595,10 @@ mod tests {
         let mut events     =    0;
         let     min        = -256;
         let     max        =  511;
+
+        // TODO Find how to validate this return.
+
+        let _ = stats.as_any();
 
         assert!(stats.name()  == name);
         assert!(stats.title() == name);
@@ -678,7 +685,71 @@ mod tests {
     }
 
     #[test]
+    #[should_panic]
+    fn test_record_f64() {
+        let mut stats = RunningInteger::new("Panic Test", &None);
+
+        stats.record_f64(1.0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_record_event() {
+        let mut stats = RunningInteger::new("Panic Test", &None);
+
+        stats.record_event();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_record_event_report() {
+        let mut stats = RunningInteger::new("Panic Test", &None);
+
+        let _ = stats.record_event_report();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_record_time() {
+        let mut stats = RunningInteger::new("Panic Test", &None);
+
+        stats.record_time(1);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_record_interval() {
+        let mut timer = continuing_box();
+        let mut stats = RunningInteger::new("Panic Test", &None);
+
+        stats.record_interval(&mut timer);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_to_float_histogram() {
+        let stats = RunningInteger::new("Panic Test", &None);
+
+        let _ = stats.to_float_histogram().unwrap();
+    }
+
+    fn test_equality() {
+        let stats_1 = RunningInteger::new("Equality Test 1", &None);
+        let stats_2 = RunningInteger::new("Equality Test 2", &None);
+        let stats_3 = Counter::       new("Equality Test 3", &None);
+
+        assert!( stats_1.equals(&stats_1));
+        assert!(!stats_1.equals(&stats_2));
+        assert!(!stats_1.equals(&stats_3));
+
+        // TODO Find a way to check the return value.
+
+        let _ = stats_1.as_any();
+    }
+
+    #[test]
     fn run_tests() {
         test_simple_running_integer();
+        test_equality();
     }
 }

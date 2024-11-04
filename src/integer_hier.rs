@@ -525,8 +525,18 @@ pub mod tests {
         let     current_rc = hier.current();
         let mut current    = current_rc.borrow_mut();
 
+        // TODO learn how to check these results.
+
         let _any = current.as_any_mut();
-        // TODO learn how to cast this into something useful.
+        let _any = current.as_any();
+    }
+
+    fn test_exporter() {
+        let exporter = IntegerExporter::new();
+
+        // TODO Learn how to check this return result.
+
+        let _ = exporter.as_any();
     }
 
     #[test]
@@ -541,5 +551,6 @@ pub mod tests {
     fn run_tests() {
         test_simple_running_generator();
         test_window();
+        test_exporter();
     }
 }

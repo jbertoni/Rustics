@@ -358,7 +358,7 @@ impl Histogram for RunningTime {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::*;
     use crate::stdout_printer;
     use crate::tests::continuing_box;
@@ -518,7 +518,7 @@ mod tests {
         let _ = stat_1.generic();
     }
 
-    struct LargeTimer {
+    pub struct LargeTimer {
     }
 
     impl Timer for LargeTimer {

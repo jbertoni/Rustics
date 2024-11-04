@@ -100,30 +100,6 @@ pub struct TimeWindow {
 impl TimeWindow {
     /// Make a new TimeWindow instance.
 
-    /*
-    pub fn new(name: &str, window_size: usize, timer:  TimerBox, printer: PrinterOption)
-            -> TimeWindow {
-        let hz = timer_box_hz(&timer);
-
-        if hz > i64::MAX as u128 {
-            panic!("Rustics::TimeWindow:  The timer hz value is too large.");
-        }
-
-        let hz             = hz as i64;
-        let integer_window = IntegerWindow::new(name, window_size, printer.clone());
-        let integer_window = Box::new(integer_window);
-
-        let printer =
-            if let Some(printer) = printer {
-                printer
-            } else {
-                stdout_printer()
-            };
-
-        TimeWindow { printer, integer_window, timer, hz }
-    }
-    */
-
     pub fn new(name: &str, window_size: usize, timer: TimerBox, print_opts: &PrintOption) -> TimeWindow {
         let (printer, _title, _units, _histo_opts) = parse_print_opts(print_opts, name);
 
@@ -309,7 +285,11 @@ impl Rustics for TimeWindow {
     }
 
     fn equals(&self, other: &dyn Rustics) -> bool {
-        self.integer_window.equals(other)
+        if let Some(other) = <dyn Any>::downcast_ref::<TimeWindow>(other.generic()) {
+            std::ptr::eq(self, other)
+        } else {
+            false
+        }
     }
 
     fn generic(&self) -> &dyn Any {
@@ -344,5 +324,179 @@ impl Histogram for TimeWindow {
 
     fn to_float_histogram(&self) -> Option<FloatHistogramBox> {
         self.integer_window.to_float_histogram()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::rc::Rc;
+    use std::cell::RefCell;
+    use crate::counter::Counter;
+    use crate::stdout_printer;
+    use crate::running_time::tests::LargeTimer;
+    use crate::tests::compute_sum;
+    use crate::tests::continuing_box;
+
+    fn simple_test() {
+        let     size  = 200;
+        let     timer = continuing_box();
+        let mut stat  = TimeWindow::new("Test Time Window", size, timer, &None);
+
+        let     timer = continuing_box();
+        let     timer = timer.borrow();
+        let     hz    = timer.hz();
+
+        assert!(stat.hz() == hz as i64);
+
+        for i in 1..=size {
+            stat.record_time(i as i64);
+            assert!(stat.count() == i as u64)
+        }
+
+        assert!(stat.log_mode() == 8);
+
+        // precompute() should be harmless.
+
+        stat.precompute();
+
+        let count = size as f64;
+        let sum   = (count * (count + 1.0)) / 2.0;
+        let mean  = sum / count;
+
+        assert!(stat.count() == size as u64);
+        assert!(stat.mean () == mean       );
+
+        let export = stat.export_stats();
+
+        assert!(export.printable.n    == size as u64);
+        assert!(export.printable.mean == mean       );
+    }
+
+    fn test_equality() {
+        let size   = 200;
+        let timer  = continuing_box();
+        let stat_1 = TimeWindow::new("Equality Test 1", size, timer, &None);
+
+        let timer  = continuing_box();
+        let stat_2 = TimeWindow::new("Equality Test 2", size, timer, &None);
+
+        let stat_3 = Counter::new("Equality Test 2", &None);
+
+        assert!( stat_1.equals(&stat_1));
+        assert!(!stat_1.equals(&stat_2));
+        assert!(!stat_1.equals(&stat_3));
+
+        // TODO Find a way to check this value.
+
+        let _ = stat_1.generic();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_record_i64() {
+        let     size  = 200;
+        let     timer = continuing_box();
+        let mut stat  = TimeWindow::new("Test Time Window", size, timer, &None);
+
+        let _ = stat.record_i64(1 as i64);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_max_f64() {
+        let size  = 200;
+        let timer = continuing_box();
+        let stat  = TimeWindow::new("Test Time Window", size, timer, &None);
+
+        let _ = stat.max_f64();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_min_f64() {
+        let size  = 200;
+        let timer = continuing_box();
+        let stat  = TimeWindow::new("Test Time Window", size, timer, &None);
+
+        let _ = stat.min_f64();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_record_f64() {
+        let     size  = 200;
+        let     timer = continuing_box();
+        let mut stat  = TimeWindow::new("Test Time Window", size, timer, &None);
+
+        let _ = stat.record_f64(1.0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_float_histogram() {
+        let size  = 200;
+        let timer = continuing_box();
+        let stat  = TimeWindow::new("Test Time Window", size, timer, &None);
+
+        let _ = stat.float_histogram().unwrap();
+    }
+
+    fn test_histogram() {
+        let     printer = stdout_printer();
+        let     printer = &mut *printer.lock().unwrap();
+        let     size    = 200;
+        let     timer   = continuing_box();
+        let mut stat    = TimeWindow::new("Test Time Window", size, timer, &None);
+
+        for i in 1..=size {
+            stat.record_time(i as i64);
+            assert!(stat.count() == i as u64)
+        }
+
+        {
+            let histogram = stat.to_log_histogram().unwrap();
+            let histogram = histogram.borrow();
+            let sum       = compute_sum(&histogram);
+
+            assert!(sum == size as i64);
+        }
+
+        stat.print_histogram(printer);
+        stat.clear_histogram();
+
+        {
+            let histogram = stat.to_log_histogram().unwrap();
+            let histogram = histogram.borrow();
+            let sum       = compute_sum(&histogram);
+
+            assert!(sum == 0);
+        }
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_to_float_histogram() {
+        let size    = 200;
+        let timer   = continuing_box();
+        let stat    = TimeWindow::new("Test Time Window", size, timer, &None);
+
+        let _ = stat.to_float_histogram().unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_large_clock() {
+        let size    = 200;
+        let timer   = LargeTimer { };
+        let timer   = Rc::from(RefCell::new(timer));
+        let _       = TimeWindow::new("Test Time Window", size, timer, &None);
+    }
+
+    #[test]
+    fn run_tests() {
+        simple_test();
+        test_equality();
+        test_histogram();
     }
 }

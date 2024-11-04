@@ -573,6 +573,17 @@ mod tests {
         let mut total_time      = 0;
         let mut events          = 0;
 
+        // Check the clock.
+
+        {
+            let timer     = continuing_box();
+            let generator = TimeHier::new(timer);
+            let timer     = continuing_box();
+            let timer     = timer.borrow();
+
+            assert!(generator.hz() == timer.hz());
+        }
+
         for i in 1..=window_size {
             hier.record_event();
             assert!(hier.max_i64() == timer_interval );

@@ -23,11 +23,10 @@ simple counter for which no other statistics are generated.  This can be
 useful for counting events, for example.
 
 This library also implements a form of hierarchical statistics.  The
-hierarchical statistics combine fixed-size sets of samples into a
-single Rustics instance into a sum Rustics instance in a hierarchical
-fashion, to try to reduce of information for long-running programs,and
-provide summaries over larger sample spaces.  See the hier.rs file and
-documentation for more information.
+hierarchical statistics combine a set of Rustics instances into a single
+Rustics instance.  This summation can allow keeping historical data at a lower
+storage cost, and can reduce floating-point loss of precision.  See the
+hier.rs file and documentation for more information.
 
 Rustics also implements sets that contain Rustics instances.  All the
 instances in a set can be printed via the print() method of the set, and

@@ -301,7 +301,7 @@ impl FloatHistogram {
                 assert!(print_roundup() == 4);    // This format assumes a
 
                 let output =
-                    format!("    -2^{:>5}:    {:>14}    {:>14}    {:>14}    {:>14}",
+                    format!("    -2^{:>5}:    {:>10}    {:>10}    {:>10}    {:>10}",
                         exponent,
                         Printable::commas_u64(self.negative[index    ]),
                         Printable::commas_u64(self.negative[index + 1]),
@@ -355,7 +355,7 @@ impl FloatHistogram {
                 let exponent = exponent - exponent_bias();
 
                 let output =
-                    format!("    2^{:>5}:    {:>14}    {:>14}    {:>14}    {:>14}",
+                    format!("    2^{:>5}:    {:>10}    {:>10}    {:>10}    {:>10}",
                         exponent,
                         Printable::commas_u64(self.positive[i]    ),
                         Printable::commas_u64(self.positive[i + 1]),

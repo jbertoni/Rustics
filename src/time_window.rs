@@ -334,11 +334,13 @@ mod tests {
     use super::*;
     use std::rc::Rc;
     use std::cell::RefCell;
+    use crate::PrintOpts;
     use crate::counter::Counter;
     use crate::stdout_printer;
     use crate::running_time::tests::LargeTimer;
     use crate::tests::compute_sum;
     use crate::tests::continuing_box;
+    use crate::tests::check_printer_box;
 
     fn simple_test() {
         let     size  = 200;
@@ -496,10 +498,53 @@ mod tests {
         let _       = TimeWindow::new("Test Time Window", size, timer, &None);
     }
 
+    fn test_print_output() {
+        let expected =
+            [
+                "Test Statistics",
+                "    Count               1,000 ",
+                "    Minumum             1.000 us",
+                "    Maximum             1.000 ms",
+                "    Log Mode            1.049 ms",
+                "    Mean              500.500 us",
+                "    Std Dev           288.819 us",
+                "    Variance         +8.34166 e+10 ",
+                "    Skewness         +0.00000 e+0 ",
+                "    Kurtosis         -1.20000 e+0 ",
+                "  Log Histogram",
+                "  -----------------------",
+                "    0:                 0                 0                 0                 0",
+                "    4:                 0                 0                 0                 0",
+                "    8:                 0                 0                 1                 1",
+                "   12:                 2                 4                 8                16",
+                "   16:                33                66               131               262",
+                "   20:               476                 0                 0                 0",
+                ""
+            ];
+
+        let     timer      = continuing_box();
+        let     printer    = Some(check_printer_box(&expected, true));
+        let     title      = None;
+        let     units      = None;
+        let     histo_opts = None;
+        let     print_opts = Some(PrintOpts { printer, title, units, histo_opts });
+
+        let     name       = "Test Statistics";
+        let     samples    = 1000;
+        let mut stats      = TimeWindow::new(&name, samples, timer, &print_opts);
+
+        for _i in 1..=samples {
+            stats.record_event();
+        }
+
+        stats.print();
+    }
+
     #[test]
     fn run_tests() {
         simple_test();
         test_equality();
         test_histogram();
+        test_print_output();
     }
 }

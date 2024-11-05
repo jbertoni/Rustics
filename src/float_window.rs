@@ -546,10 +546,13 @@ impl Histogram for FloatWindow {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::PrintOpts;
+    use crate::printer;
+    use crate::stdout_printer;
     use crate::running_float::RunningFloat;
     use crate::tests::continuing_box;
-    use crate::stdout_printer;
-    use crate::printer;
+    use crate::tests::bytes;
+    use crate::tests::check_printer_box;
 
     pub fn test_simple_float_window() {
         let window_size = 100;
@@ -823,9 +826,49 @@ mod tests {
         let _ = stats.to_log_histogram().unwrap();
     }
 
+    fn test_print_output() {
+        let expected =
+            [
+                "Test Statistics",
+                "    Count               1,000 bytes",
+                "    NaNs                    0 bytes",
+                "    Infinities              0 bytes",
+                "    Minumum          +1.00000 e+0 byte",
+                "    Maximum          +1.00000 e+3 bytes",
+                "    Mode Bucket      +2.00000 e+0 bytes",
+                "    Mean             +5.00500 e+2 bytes",
+                "    Std Dev          +2.88819 e+2 bytes",
+                "    Variance         +8.34166 e+4 ",
+                "    Skewness         +0.00000 e+0 ",
+                "    Kurtosis         -1.20000 e+0 ",
+                "  Float Histogram:  (0 NaN, 0 infinite, 1000 samples)",
+                "  -----------------------",
+                "    2^  -63:             0             0             0             1",
+                "    2^    1:           999             0             0             0",
+                ""
+            ];
+
+        let     printer    = Some(check_printer_box(&expected, true));
+        let     title      = None;
+        let     units      = bytes();
+        let     histo_opts = None;
+        let     print_opts = Some(PrintOpts { printer, title, units, histo_opts });
+
+        let     name       = "Test Statistics";
+        let     samples    = 1000;
+        let mut stats      = FloatWindow::new(&name, samples, &print_opts);
+
+        for i in 1..=samples {
+            stats.record_f64(i as f64);
+        }
+
+        stats.print();
+    }
+
     #[test]
     fn run_tests() {
         test_casting_functions();
         test_simple_float_window();
+        test_print_output();
     }
 }

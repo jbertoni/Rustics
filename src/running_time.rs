@@ -362,9 +362,11 @@ impl Histogram for RunningTime {
 #[cfg(test)]
 pub mod tests {
     use super::*;
+    use crate::PrintOpts;
     use crate::stdout_printer;
     use crate::tests::continuing_box;
     use crate::tests::compute_sum;
+    use crate::tests::check_printer_box;
     use crate::hier::HierMember;
     use crate::counter::Counter;
     use crate::time::Timer;
@@ -567,11 +569,54 @@ pub mod tests {
         let _     = RunningTime::new("Panic Test", timer, &None);
     }
 
+    fn test_print_output() {
+        let expected =
+            [
+                "Test Statistics",
+                "    Count               1,000 ",
+                "    Minumum             1.000 us",
+                "    Maximum             1.000 ms",
+                "    Log Mode            1.049 ms",
+                "    Mean              500.500 us",
+                "    Std Dev           288.819 us",
+                "    Variance         +8.34166 e+10 ",
+                "    Skewness         -4.16336 e-11 ",
+                "    Kurtosis         -1.19999 e+0 ",
+                "  Log Histogram",
+                "  -----------------------",
+                "    0:                 0                 0                 0                 0",
+                "    4:                 0                 0                 0                 0",
+                "    8:                 0                 0                 1                 1",
+                "   12:                 2                 4                 8                16",
+                "   16:                33                66               131               262",
+                "   20:               476                 0                 0                 0",
+                ""
+            ];
+
+        let     timer      = continuing_box();
+        let     printer    = Some(check_printer_box(&expected, true));
+        let     title      = None;
+        let     units      = None;
+        let     histo_opts = None;
+        let     print_opts = Some(PrintOpts { printer, title, units, histo_opts });
+
+        let     name       = "Test Statistics";
+        let mut stats      = RunningTime::new(&name, timer, &print_opts);
+        let     samples    = 1000;
+
+        for _i in 1..=samples {
+            stats.record_event();
+        }
+
+        stats.print();
+    }
+
     #[test]
     fn run_tests() {
         simple_test();
         test_equality();
         test_histogram();
         test_large_timer();
+        test_print_output();
     }
 }

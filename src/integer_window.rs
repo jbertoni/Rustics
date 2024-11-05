@@ -397,13 +397,25 @@ impl Rustics for IntegerWindow {
     fn skewness(&self) -> f64 {
         let count = self.vector.len() as u64;
 
-        compute_skewness(count, self.moment_2, self.moment_3)
+        if self.stats_valid {
+            compute_skewness(count, self.moment_2, self.moment_3)
+        } else {
+            let crunched = self.crunch();
+
+            compute_skewness(count, crunched.moment_2, crunched.moment_3)
+        }
     }
 
     fn kurtosis(&self) -> f64 {
         let count = self.vector.len() as u64;
 
-        compute_kurtosis(count, self.moment_2, self.moment_4)
+        if self.stats_valid {
+            compute_kurtosis(count, self.moment_2, self.moment_3)
+        } else {
+            let crunched = self.crunch();
+
+            compute_kurtosis(count, crunched.moment_2, crunched.moment_4)
+        }
     }
 
     fn int_extremes(&self) -> bool {
@@ -544,9 +556,12 @@ impl Histogram for IntegerWindow {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::PrintOpts;
     use crate::log_histogram::pseudo_log_index;
     use crate::tests::continuing_box;
     use crate::running_integer::RunningInteger;
+    use crate::tests::check_printer_box;
+    use crate::tests::bytes;
 
     pub fn test_simple_integer_window() {
         let     window_size = 100;
@@ -729,10 +744,50 @@ mod tests {
         let _     = stats.to_float_histogram().unwrap();
     }
 
+    fn test_print_output() {
+        let expected =
+            [
+                "Test Statistics",
+                "    Count               1,000 ",
+                "    Minumum                 1 byte",
+                "    Maximum             1,000 bytes",
+                "    Log Mode               10 ",
+                "    Mode Value          1,024 bytes",
+                "    Mean             +5.00500 e+2 bytes",
+                "    Std Dev          +2.88819 e+2 bytes",
+                "    Variance         +8.34166 e+4 ",
+                "    Skewness         +0.00000 e+0 ",
+                "    Kurtosis         -1.20000 e+0 ",
+                "  Log Histogram",
+                "  -----------------------",
+                "    0:                 1                 1                 2                 4",
+                "    4:                 8                16                32                64",
+                "    8:               128               256               488                 0",
+                ""
+            ];
+
+        let     printer    = Some(check_printer_box(&expected, false));
+        let     title      = None;
+        let     units      = bytes();
+        let     histo_opts = None;
+        let     print_opts = Some(PrintOpts { printer, title, units, histo_opts });
+
+        let     name       = "Test Statistics";
+        let     samples    = 1000;
+        let mut stats      = IntegerWindow::new(&name, samples, &print_opts);
+
+        for i in 1..=samples {
+            stats.record_i64(i as i64);
+        }
+
+        stats.print();
+    }
+
     #[test]
     fn run_tests() {
         test_simple_integer_window();
         test_equality();
         test_histogram();
+        test_print_output();
     }
 }

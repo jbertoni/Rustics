@@ -313,6 +313,29 @@ pub fn compute_variance(count: u64, moment_2: f64) -> f64 {
     moment_2 / (n - 1.0)
 }
 
+pub struct EstimateMoment3 {
+    pub n:          f64,    // sample count
+    pub mean:       f64,
+    pub moment_2:   f64,
+    pub cubes:      f64,    // sum of the cubes of each sample
+}
+
+/// Estimate moment 3 about the mean given moment 2, etc.
+///
+/// I know of no good way to keep a running estimate of
+/// moment 3.
+
+pub fn estimate_moment_3(data: EstimateMoment3) -> f64 {
+    let n         = data.n;
+    let mean      = data.mean;
+    let cubes     = data.cubes;
+    let moment_2  = data.moment_2;
+    let sum       = n * mean;
+    let squares   = moment_2 + 2.0 * sum * mean - n * mean * mean;
+
+    cubes - (3.0 * squares * mean) + 3.0 * (sum * mean.powi(2)) - n * mean.powi(3)
+}
+
 /// Computes the sample skewness.
 ///
 /// This formula is from brownmath.com.
@@ -836,21 +859,27 @@ mod tests {
         }
     }
 
+    pub fn check_printer_box(expected: &[&str], fail_on_overage: bool) -> PrinterBox {
+        let printer = CheckPrinter::new(expected, fail_on_overage);
+
+        printer_box!(printer)
+    }
+
     impl Printer for CheckPrinter {
         fn print(&mut self, output: &str) {
             if self.current < self.expected.len() {
                 let expected = self.expected[self.current].clone();
 
-                println!("CheckPrinter:  got \"{}\", expect \"{}\"",
-                    output,
-                    expected);
+                println!("CheckPrinter:");
+                println!("    got      \"{}\"", output);
+                println!("    expected \"{}\"", expected);
 
                 assert!(expected == *output);
                 self.current += 1;
             } else if self.fail_on_overage {
                 panic!("CheckPrinter:  too many lines");
             } else {
-                println!("CheckPrinter: ignoring extra lines");
+                println!(" *** CheckPrinter: ignoring extra lines");
             }
 
             println!("{}", output);

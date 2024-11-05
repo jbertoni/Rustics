@@ -1951,7 +1951,7 @@ pub mod tests {
         let     printer      = stdout_printer();
         let     printer      = printer!(printer);
         let     window_size  = 200;
-        let mut integer_hier = make_test_hier(100, Some(200));
+        let mut integer_hier = make_test_hier(100, Some(200), None);
 
         for i in 1..=window_size {
             integer_hier.record_i64(i as i64);
@@ -1967,10 +1967,10 @@ pub mod tests {
         integer_hier.print();
 
         assert!(integer_hier.mean()     == mean);
-        assert!(integer_hier.variance() >  0.0);
-        assert!(integer_hier.skewness() == 0.0);
-        assert!(integer_hier.kurtosis() == 0.0);
-        assert!(integer_hier.log_mode() == 8  );
+        assert!(integer_hier.variance() >   0.0);
+        assert!(integer_hier.skewness() ==  0.0);
+        assert!(integer_hier.log_mode() ==  8  );
+        assert!(integer_hier.kurtosis() == -1.2);
 
         assert!(integer_hier.standard_deviation() >  0.0);
 
@@ -2054,7 +2054,7 @@ pub mod tests {
     #[test]
     #[should_panic]
     fn test_float_histogram() {
-        let hier = make_test_hier(100, None);
+        let hier = make_test_hier(100, None, None);
 
         let _ = hier.float_histogram().unwrap();
     }
@@ -2062,7 +2062,7 @@ pub mod tests {
     #[test]
     #[should_panic]
     fn test_float_histogram_window() {
-        let hier = make_test_hier(100, Some(100));
+        let hier = make_test_hier(100, Some(100), None);
 
         let _ = hier.float_histogram().unwrap();
     }

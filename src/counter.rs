@@ -316,9 +316,11 @@ impl Rustics for Counter {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::PrintOpts;
     use crate::running_float::RunningFloat;
     use crate::tests::bytes;
     use crate::tests::continuing_box;
+    use crate::tests::check_printer_box;
 
     fn test_simple_counter() {
         let test_limit  = 20;
@@ -527,8 +529,34 @@ mod tests {
         let _ = counter.float_histogram().unwrap();
     }
 
+    fn test_print_output() {
+        let expected =
+            [
+                "Test Statistics",
+                "    Count               1,000 ",
+                ""
+            ];
+
+        let     printer    = Some(check_printer_box(&expected, true));
+        let     title      = None;
+        let     units      = None;
+        let     histo_opts = None;
+        let     print_opts = Some(PrintOpts { printer, title, units, histo_opts });
+
+        let     name       = "Test Statistics";
+        let mut stats      = Counter::new(&name, &print_opts);
+        let     samples    = 1000;
+
+        for _i in 1..=samples {
+            stats.record_event();
+        }
+
+        stats.print();
+    }
+
     #[test]
     fn run_tests() {
         test_simple_counter();
+        test_print_output();
     }
 }

@@ -350,6 +350,9 @@ pub mod tests {
     use super::*;
     use crate::hier::HierDescriptor;
     use crate::hier::HierDimension;
+    use crate::PrintOpts;
+    use crate::tests::check_printer_box;
+    use crate::tests::bytes;
 
     fn level_0_period() -> usize {
         8
@@ -359,7 +362,7 @@ pub mod tests {
         3 * level_0_period()
     }
 
-    pub fn make_test_hier(auto_next: i64, window_size: Option<usize>) -> Hier {
+    pub fn make_test_hier(auto_next: i64, window_size: Option<usize>, print_opts:  PrintOption) -> Hier {
         let     levels         = 4;
         let     level_0_period = level_0_period();
         let     dimension      = HierDimension::new(level_0_period, level_0_retain());
@@ -386,7 +389,7 @@ pub mod tests {
         let generator     = Rc::from(RefCell::new(generator));
         let class         = "integer".to_string();
         let name          = "test hier".to_string();
-        let print_opts    = None;
+        let print_opts    = print_opts;
 
         let configuration =
             HierConfig { descriptor, generator, class, name, window_size, print_opts };
@@ -437,7 +440,7 @@ pub mod tests {
         // Now make an actual hier instance.
 
         let     auto_next = 200;
-        let mut hier      = make_test_hier(auto_next, None);
+        let mut hier      = make_test_hier(auto_next, None, None);
         let mut events    = 0;
 
         for i in 1..auto_next / 2 {
@@ -457,7 +460,7 @@ pub mod tests {
     fn test_window() {
         let     auto_next   = 100;
         let     window_size = Some(1000);
-        let mut hier        = make_test_hier(auto_next, window_size);
+        let mut hier        = make_test_hier(auto_next, window_size, None);
         let     period      = level_0_period();
         let     window_size = window_size.unwrap() as i64;
         let mut events      = 0 as i64;
@@ -556,9 +559,46 @@ pub mod tests {
     #[test]
     #[should_panic]
     fn hz_panic() {
-        let hier = make_test_hier(200, None);
+        let hier = make_test_hier(200, None, None);
 
         let _ = hier.hz();
+    }
+
+    fn test_print_output() {
+        let expected =
+            [
+                "test hier",
+                "    Count               1,000 ",
+                "    Minumum                 1 byte",
+                "    Maximum             1,000 bytes",
+                "    Log Mode               10 ",
+                "    Mode Value          1,024 bytes",
+                "    Mean             +5.00500 e+2 bytes",
+                "    Std Dev          +2.88819 e+2 bytes",
+                "    Variance         +8.34166 e+4 ",
+                "    Skewness         +0.00000 e+0 ",
+                "    Kurtosis         -1.20000 e+0 ",
+                "  Log Histogram",
+                "  -----------------------",
+                "    0:                 1                 1                 2                 4",
+                "    4:                 8                16                32                64",
+                "    8:               128               256               488                 0",
+                ""
+            ];
+
+        let     printer    = Some(check_printer_box(&expected, true));
+        let     title      = None;
+        let     units      = bytes();
+        let     histo_opts = None;
+        let     print_opts = Some(PrintOpts { printer, title, units, histo_opts });
+        let     samples    = 1000;
+        let mut stats      = make_test_hier(samples, Some(samples as usize), print_opts);
+
+        for i in 1..=samples {
+            stats.record_i64(i as i64);
+        }
+
+        stats.print();
     }
 
     #[test]
@@ -566,5 +606,6 @@ pub mod tests {
         test_simple_running_generator();
         test_window();
         test_exporter();
+        test_print_output();
     }
 }

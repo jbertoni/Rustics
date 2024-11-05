@@ -354,10 +354,13 @@ impl HierGenerator for FloatHier {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::PrintOpts;
+    use crate::printer;
+    use crate::stdout_printer;
     use crate::hier::HierDescriptor;
     use crate::hier::HierDimension;
-    use crate::stdout_printer;
-    use crate::printer;
+    use crate::tests::check_printer_box;
+    use crate::tests::bytes;
 
     fn level_0_period() -> usize {
         8
@@ -586,9 +589,49 @@ mod tests {
         let _ = hier.to_log_histogram().unwrap();
     }
 
+    fn test_print_output() {
+        let expected =
+            [
+                "Test Statistics",
+                "    Count               1,000 bytes",
+                "    NaNs                    0 bytes",
+                "    Infinities              0 bytes",
+                "    Minumum          +1.00000 e+0 byte",
+                "    Maximum          +1.00000 e+3 bytes",
+                "    Mode Bucket      +2.00000 e+0 bytes",
+                "    Mean             +5.00500 e+2 bytes",
+                "    Std Dev          +2.88819 e+2 bytes",
+                "    Variance         +8.34166 e+4 ",
+                "    Skewness         -4.16317 e-11 ",
+                "    Kurtosis         -1.19999 e+0 ",
+                "  Float Histogram:  (0 NaN, 0 infinite, 1000 samples)",
+                "  -----------------------",
+                "    2^  -63:             0             0             0             1",
+                "    2^    1:           999             0             0             0",
+                ""
+            ];
+
+        let     printer    = Some(check_printer_box(&expected, true));
+        let     title      = None;
+        let     units      = bytes();
+        let     histo_opts = None;
+        let     print_opts = Some(PrintOpts { printer, title, units, histo_opts });
+
+        let     name       = "Test Statistics";
+        let mut stats      = RunningFloat::new(&name, &print_opts);
+        let     samples    = 1000;
+
+        for i in 1..=samples {
+            stats.record_f64(i as f64);
+        }
+
+        stats.print();
+    }
+
     #[test]
     fn run_tests() {
         test_simple_running_generator();
         test_window();
+        test_print_output();
     }
 }

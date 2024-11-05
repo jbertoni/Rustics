@@ -98,6 +98,8 @@ use super::PrinterBox;
 use super::Units;
 use super::parse_print_opts;
 use super::compute_variance;
+use super::EstimateMoment3;
+use super::estimate_moment_3;
 use super::compute_skewness;
 use super::compute_kurtosis;
 use super::FloatHistogram;
@@ -114,7 +116,7 @@ pub struct FloatExport {
     pub infinities: u64,
     pub mean:       f64,
     pub moment_2:   f64,
-    pub moment_3:   f64,
+    pub cubes:      f64,
     pub moment_4:   f64,
 
     pub min:        f64,
@@ -218,7 +220,7 @@ pub fn sum_running(exports: &Vec::<FloatExport>) -> FloatExport {
 
     let mut mean_vec       = Vec::with_capacity(exports.len());
     let mut moment_2_vec   = Vec::with_capacity(exports.len());
-    let mut moment_3_vec   = Vec::with_capacity(exports.len());
+    let mut cubes_vec      = Vec::with_capacity(exports.len());
     let mut moment_4_vec   = Vec::with_capacity(exports.len());
 
     for export in exports {
@@ -238,18 +240,18 @@ pub fn sum_running(exports: &Vec::<FloatExport>) -> FloatExport {
 
         mean_vec.push(export.mean * export.count as f64);
         moment_2_vec.push(export.moment_2);
-        moment_3_vec.push(export.moment_3);
+        cubes_vec   .push(export.cubes   );
         moment_4_vec.push(export.moment_4);
     }
 
     let mean       = kbk_sum_sort(&mut mean_vec[..]) / count as f64;
     let moment_2   = kbk_sum_sort(&mut moment_2_vec[..]);
-    let moment_3   = kbk_sum_sort(&mut moment_3_vec[..]);
+    let cubes      = kbk_sum_sort(&mut cubes_vec[..]);
     let moment_4   = kbk_sum_sort(&mut moment_4_vec[..]);
     let histogram  = Rc::from(RefCell::new(histogram));
 
     FloatExport {
-        count,  nans,   infinities, mean, moment_2, moment_3, moment_4,
+        count,  nans,   infinities, mean, moment_2, cubes, moment_4,
         min,    max,    histogram
     }
 }
@@ -265,7 +267,7 @@ pub struct RunningFloat {
     infinities: u64,
     mean:       f64,
     moment_2:   f64,
-    moment_3:   f64,
+    cubes:      f64,
     moment_4:   f64,
     min:        f64,
     max:        f64,
@@ -292,14 +294,14 @@ impl RunningFloat {
         let max         = f64::MIN;
         let mean        = 0.0;
         let moment_2    = 0.0;
-        let moment_3    = 0.0;
+        let cubes       = 0.0;
         let moment_4    = 0.0;
         let histogram   = FloatHistogram::new(print_opts);
         let histogram   = Rc::from(RefCell::new(histogram));
 
         RunningFloat {
             name,      id,        count,    nans,   infinities,  mean,   moment_2,
-            moment_3,  moment_4,  max,      min,    title,       units,  printer,
+            cubes,     moment_4,  max,      min,    title,       units,  printer,
             histogram
         }
     }
@@ -316,7 +318,7 @@ impl RunningFloat {
         let infinities = import.infinities;
         let mean       = import.mean;
         let moment_2   = import.moment_2;
-        let moment_3   = import.moment_3;
+        let cubes      = import.cubes;
         let moment_4   = import.moment_4;
         let min        = import.min;
         let max        = import.max;
@@ -325,7 +327,7 @@ impl RunningFloat {
         RunningFloat {
             name,       title,      id,
             count,      mean,       moment_2,
-            moment_3,   moment_4,   histogram,
+            cubes,      moment_4,   histogram,
             min,        max,        printer,
             units,      nans,       infinities
         }
@@ -370,7 +372,7 @@ impl RunningFloat {
         let infinities      = self.infinities;
         let mean            = self.mean;
         let moment_2        = self.moment_2;
-        let moment_3        = self.moment_3;
+        let cubes           = self.cubes;
         let moment_4        = self.moment_4;
         let histogram       = self.histogram.clone();
         let min             = self.min;
@@ -378,7 +380,7 @@ impl RunningFloat {
 
         FloatExport {
             count,      nans,       infinities,
-            mean,       moment_2,   moment_3,
+            mean,       moment_2,   cubes,
             moment_4,   histogram,  min,
             max
         }
@@ -414,7 +416,7 @@ impl Rustics for RunningFloat {
         if self.count == 1 {
             self.mean     = sample;
             self.moment_2 = 0.0;
-            self.moment_3 = 0.0;
+            self.cubes    = 0.0;
             self.moment_4 = 0.0;
             self.min      = sample;
             self.max      = sample;
@@ -423,14 +425,13 @@ impl Rustics for RunningFloat {
             let new_mean          = self.mean + distance_mean / self.count as f64;
             let distance_new_mean = sample - new_mean;
             let square_estimate   = distance_mean * distance_new_mean;
-            let cube_estimate     = square_estimate * square_estimate.sqrt();
             let new_moment_2      = self.moment_2 + square_estimate;
-            let new_moment_3      = self.moment_3 + cube_estimate;
+            let new_cubes         = self.cubes + sample.powi(3);
             let new_moment_4      = self.moment_4 + square_estimate * square_estimate;
 
             self.mean             = new_mean;
             self.moment_2         = new_moment_2;
-            self.moment_3         = new_moment_3;
+            self.cubes            = new_cubes;
             self.moment_4         = new_moment_4;
             self.min              = min_f64(self.min, sample);
             self.max              = max_f64(self.max, sample);
@@ -488,7 +489,15 @@ impl Rustics for RunningFloat {
     }
 
     fn skewness(&self) -> f64 {
-        compute_skewness(self.count, self.moment_2, self.moment_3)
+        let n        = self.count as f64;
+        let mean     = self.mean;
+        let moment_2 = self.moment_2;
+        let cubes    = self.cubes;
+        let data     = EstimateMoment3 { n, mean, moment_2, cubes };
+
+        let moment_3 = estimate_moment_3(data);
+
+        compute_skewness(self.count, self.moment_2, moment_3)
     }
 
     fn kurtosis(&self) -> f64 {
@@ -526,7 +535,7 @@ impl Rustics for RunningFloat {
         self.count    = 0;
         self.mean     = 0.0;
         self.moment_2 = 0.0;
-        self.moment_3 = 0.0;
+        self.cubes    = 0.0;
         self.moment_4 = 0.0;
         self.min      = f64::MAX;
         self.max      = f64::MIN;
@@ -625,8 +634,11 @@ impl Histogram for RunningFloat {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::PrintOpts;
     use crate::stdout_printer;
     use crate::tests::continuing_box;
+    use crate::tests::bytes;
+    use crate::tests::check_printer_box;
     use crate::counter::Counter;
 
     fn compute_sum(histogram: &FloatHistogram) -> i64 {
@@ -851,6 +863,45 @@ mod tests {
         }
     }
 
+    fn test_print_output() {
+        let expected =
+            [
+                "Test Statistics",
+                "    Count               1,000 bytes",
+                "    NaNs                    0 bytes",
+                "    Infinities              0 bytes",
+                "    Minumum          +1.00000 e+0 byte",
+                "    Maximum          +1.00000 e+3 bytes",
+                "    Mode Bucket      +2.00000 e+0 bytes",
+                "    Mean             +5.00500 e+2 bytes",
+                "    Std Dev          +2.88819 e+2 bytes",
+                "    Variance         +8.34166 e+4 ",
+                "    Skewness         -4.16317 e-11 ",
+                "    Kurtosis         -1.19999 e+0 ",
+                "  Float Histogram:  (0 NaN, 0 infinite, 1000 samples)",
+                "  -----------------------",
+                "    2^  -63:             0             0             0             1",
+                "    2^    1:           999             0             0             0",
+                ""
+            ];
+
+        let     printer    = Some(check_printer_box(&expected, true));
+        let     title      = None;
+        let     units      = bytes();
+        let     histo_opts = None;
+        let     print_opts = Some(PrintOpts { printer, title, units, histo_opts });
+
+        let     name       = "Test Statistics";
+        let mut stats      = RunningFloat::new(&name, &print_opts);
+        let     samples    = 1000;
+
+        for i in 1..=samples {
+            stats.record_f64(i as f64);
+        }
+
+        stats.print();
+    }
+
     #[test]
     fn run_tests() {
         simple_float_test();
@@ -858,5 +909,6 @@ mod tests {
         test_equality();
         test_title();
         test_histogram();
+        test_print_output();
     }
 }

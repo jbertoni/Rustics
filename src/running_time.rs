@@ -105,7 +105,7 @@ use super::TimerBox;
 use super::printer;
 use super::timer_box_hz;
 use super::running_integer::RunningInteger;
-use super::running_integer::IntegerExport;
+use super::merge::Export;
 
 /// A RunningTime instance accumulates statistics on a stream
 /// of integer data samples representing time intervals.
@@ -162,7 +162,7 @@ impl RunningTime {
 
     /// Exports the statistics for this instance.
 
-    pub fn export(&self) -> IntegerExport {
+    pub fn export(&self) -> Export {
         self.running_integer.export_data()
     }
 }

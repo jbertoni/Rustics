@@ -92,16 +92,13 @@ use super::FloatHistogramBox;
 use super::Units;
 use super::printer;
 use super::printable::Printable;
-use super::StatisticsData;
-use super::compute_statistics;
-use super::RecoverData;
-use super::recover;
 use super::EstimateData;
 use super::estimate_moment_3;
 use super::compute_variance;
 use super::compute_skewness;
 use super::compute_kurtosis;
-use super::sum::kbk_sum_sort;
+use super::merge::Export;
+use super::merge::sum_running;
 
 use crate::hier::HierExporter;
 use crate::LogHistogram;
@@ -147,7 +144,7 @@ pub struct RunningInteger {
 
 #[derive(Clone, Default)]
 pub struct IntegerExporter {
-    addends: Vec<IntegerExport>,
+    addends: Vec<Export>,
 }
 
 /// IntegerExporter is intend mostly for internal use by Hier instances.
@@ -165,7 +162,7 @@ impl IntegerExporter {
     /// Pushes a statistics instance onto the list of instances to
     /// be summed.
 
-    pub fn push(&mut self, addend: IntegerExport) {
+    pub fn push(&mut self, addend: Export) {
         self.addends.push(addend);
     }
 
@@ -201,102 +198,6 @@ impl HierExporter for IntegerExporter {
     }
 }
 
-/// IntegerExport is used by various modules to create sums of
-/// statistics instances of type RunningInteger.
-
-#[derive(Clone)]
-pub struct IntegerExport {
-    pub count:      u64,
-    pub mean:       f64,
-    pub moment_2:   f64,
-    pub cubes:      f64,
-    pub moment_4:   f64,
-
-    pub min:        i64,
-    pub max:        i64,
-
-    pub log_histogram:  LogHistogramBox,
-}
-
-/// sum_log_histogram() is used internally to create sums of
-/// RunningInteger instances.
-
-pub fn sum_log_histogram(sum:  &mut LogHistogram, addend: &LogHistogram) {
-    for i in 0..sum.negative.len() {
-        sum.negative[i] += addend.negative[i];
-    }
-
-    for i in 0..sum.positive.len() {
-        sum.positive[i] += addend.positive[i];
-    }
-}
-
-/// The sum_running() function merges a vector of exported statistics.
-
-pub fn sum_running(exports: &Vec::<IntegerExport>) -> IntegerExport {
-    let mut count          = 0;
-    let mut min            = i64::MAX;
-    let mut max            = i64::MIN;
-    let mut log_histogram  = LogHistogram::new();
-
-    let mut sum_vec     = Vec::with_capacity(exports.len());
-    let mut squares_vec = Vec::with_capacity(exports.len());
-    let mut cubes_vec   = Vec::with_capacity(exports.len());
-    let mut quads_vec   = Vec::with_capacity(exports.len());
-
-    // Iterate through each set of exported data, gather merged
-    // values.  We recover the squares and fourth powers of
-    // each sample from data in the exports.
-
-    for export in exports {
-        count    += export.count;
-        min       = std::cmp::min(min, export.min);
-        max       = std::cmp::max(max, export.max);
-
-        sum_log_histogram(&mut log_histogram, &export.log_histogram.borrow());
-
-        let n        = export.count as f64;
-        let mean     = export.mean;
-        let moment_2 = export.moment_2;
-        let cubes    = export.cubes;
-        let moment_4 = export.moment_4;
-        let data     = RecoverData { n, mean, moment_2, cubes, moment_4 };
-
-        let (squares, quads) = recover(data);
-
-        let sum = export.mean * n;
-
-        sum_vec.push    (sum     );
-        squares_vec.push(squares );
-        cubes_vec.push  (cubes   );
-        quads_vec.push  (quads   );
-    }
-
-    // Now merge the data that we got.  We get the sums
-    // of the squares, cubes, and fourth power of each
-    // original sample.  From that data, we compute
-    // the merged 2nd and 4th moments about the mean,
-    // as well as the mean.
-
-    let n        = count as f64;
-    let sum      = kbk_sum_sort(&mut sum_vec    [..]);
-    let squares  = kbk_sum_sort(&mut squares_vec[..]);
-    let cubes    = kbk_sum_sort(&mut cubes_vec  [..]);
-    let quads    = kbk_sum_sort(&mut quads_vec  [..]);
-    let data     = StatisticsData { n, sum, squares, cubes, quads };
-    let merged   = compute_statistics(data);
-    let mean     = merged.mean;
-    let moment_2 = merged.moment_2;
-    let moment_4 = merged.moment_4;
-
-    // Okay, build the structure from which a RunningInteger
-    // can be built.  First, box the log histogram.
-
-    let log_histogram = Rc::from(RefCell::new(log_histogram));
-
-    IntegerExport { count, mean, moment_2, cubes, moment_4, min, max, log_histogram }
-}
-
 impl RunningInteger {
     /// Creates a new RunningInteger instance with the given name and
     /// an optional set of print options.
@@ -328,7 +229,7 @@ impl RunningInteger {
     /// Creates a RunningInteger instance from data from a list of
     /// instances.
 
-    pub fn new_from_exporter(name: &str, title: &str, print_opts: &PrintOption, import: IntegerExport)
+    pub fn new_from_exporter(name: &str, title: &str, print_opts: &PrintOption, import: Export)
             -> RunningInteger {
         let (printer, _title, units, _histo_opts) = parse_print_opts(print_opts, name);
 
@@ -340,9 +241,9 @@ impl RunningInteger {
         let moment_2        = import.moment_2;
         let cubes           = import.cubes;
         let moment_4        = import.moment_4;
-        let min             = import.min;
-        let max             = import.max;
-        let log_histogram   = import.log_histogram;
+        let min             = import.min_i64;
+        let max             = import.max_i64;
+        let log_histogram   = import.log_histogram.unwrap();
 
         RunningInteger {
             name,       title,      id,
@@ -356,20 +257,27 @@ impl RunningInteger {
     /// Exports all the statistics kept for a given instance to
     /// be used to create a sum of many instances.
 
-    pub fn export_data(&self) -> IntegerExport {
+    pub fn export_data(&self) -> Export {
         let count           = self.count;
+        let nans            = 0;
+        let infinities      = 0;
         let mean            = self.mean;
         let moment_2        = self.moment_2;
         let cubes           = self.cubes;
         let moment_4        = self.moment_4;
-        let log_histogram   = self.log_histogram.clone();
-        let min             = self.min;
-        let max             = self.max;
+        let log_histogram   = Some(self.log_histogram.clone());
+        let float_histogram = None;
+        let min_i64         = self.min;
+        let max_i64         = self.max;
+        let min_f64         = 0.0;
+        let max_f64         = 0.0;
 
-        IntegerExport {
-            count,      mean,       moment_2,
-            cubes,      moment_4,   log_histogram,
-            min,        max
+        Export {
+            count,      nans,        infinities,
+            mean,       moment_2,    cubes,
+            moment_4,   min_i64,     max_i64,
+            min_f64,    max_f64,     log_histogram,
+            float_histogram
         }
     }
 

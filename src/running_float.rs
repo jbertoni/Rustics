@@ -104,26 +104,11 @@ use super::compute_skewness;
 use super::compute_kurtosis;
 use super::FloatHistogram;
 use super::FloatHistogramBox;
-use super::sum::kbk_sum_sort;
 use super::printer;
 use super::min_f64;
 use super::max_f64;
-
-#[derive(Clone)]
-pub struct FloatExport {
-    pub count:      u64,
-    pub nans:       u64,
-    pub infinities: u64,
-    pub mean:       f64,
-    pub moment_2:   f64,
-    pub cubes:      f64,
-    pub moment_4:   f64,
-
-    pub min:        f64,
-    pub max:        f64,
-
-    pub histogram:  FloatHistogramBox,
-}
+use super::merge::Export;
+use super::merge::sum_running;
 
 // FloatExporter instances are used to export statistics from a
 // RunningFloat instance so that multiple RunningFloat instances can
@@ -136,7 +121,7 @@ pub struct FloatExport {
 
 #[derive(Clone, Default)]
 pub struct FloatExporter {
-    addends: Vec<FloatExport>,
+    addends: Vec<Export>,
 }
 
 /// FloatExporter is intend mostly for internal use by Hier instances.
@@ -154,7 +139,7 @@ impl FloatExporter {
     /// Pushes a statistics instance onto the list of instances to
     /// be summed.
 
-    pub fn push(&mut self, addend: FloatExport) {
+    pub fn push(&mut self, addend: Export) {
         self.addends.push(addend);
     }
 
@@ -184,75 +169,6 @@ impl HierExporter for FloatExporter {
 
     fn as_any_mut(&mut self) -> &mut dyn Any {
         self
-    }
-}
-
-/// sum_float_histogram() is used internally to create sums of
-/// RunningFloat instances.
-
-pub fn sum_float_histogram(sum:  &mut FloatHistogram, addend: &FloatHistogram) {
-    assert!(sum.negative.len() == addend.negative.len());
-    assert!(sum.positive.len() == addend.positive.len());
-
-    for i in 0..sum.negative.len() {
-        sum.negative[i] += addend.negative[i];
-    }
-
-    for i in 0..sum.positive.len() {
-        sum.positive[i] += addend.positive[i];
-    }
-
-    sum.nans       += addend.nans;
-    sum.infinities += addend.infinities;
-    sum.samples    += addend.samples;
-}
-
-/// The sum_running() function merges a vector of exported statistics.
-
-pub fn sum_running(exports: &Vec::<FloatExport>) -> FloatExport {
-    let mut count          = 0;
-    let mut nans           = 0;
-    let mut infinities     = 0;
-    let mut min            = f64::MAX;
-    let mut max            = f64::MIN;
-    let     print_opts     = &exports[0].histogram.borrow().print_opts;
-    let mut histogram      = FloatHistogram::new(print_opts);
-
-    let mut mean_vec       = Vec::with_capacity(exports.len());
-    let mut moment_2_vec   = Vec::with_capacity(exports.len());
-    let mut cubes_vec      = Vec::with_capacity(exports.len());
-    let mut moment_4_vec   = Vec::with_capacity(exports.len());
-
-    for export in exports {
-        count      += export.count;
-        nans       += export.nans;
-        infinities += export.infinities;
-
-        if export.min < min {
-            min = export.min;
-        }
-
-        if export.max > max {
-            max = export.max;
-        }
-
-        sum_float_histogram(&mut histogram, &export.histogram.borrow());
-
-        mean_vec.push(export.mean * export.count as f64);
-        moment_2_vec.push(export.moment_2);
-        cubes_vec   .push(export.cubes   );
-        moment_4_vec.push(export.moment_4);
-    }
-
-    let mean       = kbk_sum_sort(&mut mean_vec[..]) / count as f64;
-    let moment_2   = kbk_sum_sort(&mut moment_2_vec[..]);
-    let cubes      = kbk_sum_sort(&mut cubes_vec[..]);
-    let moment_4   = kbk_sum_sort(&mut moment_4_vec[..]);
-    let histogram  = Rc::from(RefCell::new(histogram));
-
-    FloatExport {
-        count,  nans,   infinities, mean, moment_2, cubes, moment_4,
-        min,    max,    histogram
     }
 }
 
@@ -306,7 +222,7 @@ impl RunningFloat {
         }
     }
 
-    pub fn new_from_exporter(name: &str, title: &str, print_opts: &PrintOption, import: FloatExport)
+    pub fn new_from_exporter(name: &str, title: &str, print_opts: &PrintOption, import: Export)
             -> RunningFloat {
         let (printer, _title, units, _histo_opts) = parse_print_opts(print_opts, name);
 
@@ -320,9 +236,9 @@ impl RunningFloat {
         let moment_2   = import.moment_2;
         let cubes      = import.cubes;
         let moment_4   = import.moment_4;
-        let min        = import.min;
-        let max        = import.max;
-        let histogram  = import.histogram;
+        let min        = import.min_f64;
+        let max        = import.max_f64;
+        let histogram  = import.float_histogram.unwrap();
 
         RunningFloat {
             name,       title,      id,
@@ -366,7 +282,7 @@ impl RunningFloat {
     /// Exports all the statistics kept for a given instance to
     /// be used to create a sum of many instances.
 
-    pub fn export_data(&self) -> FloatExport {
+    pub fn export_data(&self) -> Export {
         let count           = self.count;
         let nans            = self.nans;
         let infinities      = self.infinities;
@@ -374,15 +290,19 @@ impl RunningFloat {
         let moment_2        = self.moment_2;
         let cubes           = self.cubes;
         let moment_4        = self.moment_4;
-        let histogram       = self.histogram.clone();
-        let min             = self.min;
-        let max             = self.max;
+        let float_histogram = Some(self.histogram.clone());
+        let log_histogram   = None;
+        let min_i64         = 0;
+        let max_i64         = 0;
+        let min_f64         = self.min;
+        let max_f64         = self.max;
 
-        FloatExport {
+        Export {
             count,      nans,       infinities,
             mean,       moment_2,   cubes,
-            moment_4,   histogram,  min,
-            max
+            moment_4,   min_i64,    max_i64,
+            min_f64,    max_f64,
+            float_histogram,  log_histogram
         }
     }
 

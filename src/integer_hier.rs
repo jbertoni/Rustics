@@ -353,6 +353,7 @@ pub mod tests {
     use crate::PrintOpts;
     use crate::tests::check_printer_box;
     use crate::tests::bytes;
+    use crate::integer_window::AnalyzeData;
 
     fn level_0_period() -> usize {
         8
@@ -399,7 +400,7 @@ pub mod tests {
 
     // Do a minimal liveness test of the generic hier implementation.
 
-    fn test_simple_running_generator() {
+    fn test_generator() {
         //  First, just make a generator and a member, then record one event.
 
         let     generator    = IntegerHier::new();
@@ -601,11 +602,85 @@ pub mod tests {
         stats.print();
     }
 
+    pub fn get_analyze_data(count: i64) -> AnalyzeData {
+        let mut stats = IntegerWindow::new("Analyze", count as usize, &None);
+
+        for i in 1..=count {
+            stats.record_i64(i);
+        }
+
+        stats.analyze()
+    }
+
+    // Test that the sum functions give reasonable results.
+    // IntegerWindow keeps the samples and can do very
+    // accurate computations, so use that as the baseline.
+
+    fn test_sum() {
+        let mut exporter  = IntegerExporter::new();
+        let     generator = IntegerHier    ::new();
+
+        let     stats_1   = generator.make_member("Test Stat 1", &None);
+        let     stats_2   = generator.make_member("Test Stat 2", &None);
+        let     stats_3   = generator.make_member("Test Stat 3", &None);
+        let     stats_4   = generator.make_member("Test Stat 4", &None);
+
+        let samples       = 250;
+        let count         =   4;
+
+        for i in 0..samples {
+            let sample = i as i64 + 1;
+
+            stats_1.borrow_mut().to_rustics_mut().record_i64(sample              );
+            stats_2.borrow_mut().to_rustics_mut().record_i64(sample +     samples);
+            stats_3.borrow_mut().to_rustics_mut().record_i64(sample + 2 * samples);
+            stats_4.borrow_mut().to_rustics_mut().record_i64(sample + 3 * samples);
+        }
+
+        generator.push(&mut exporter, stats_1);
+        generator.push(&mut exporter, stats_2);
+        generator.push(&mut exporter, stats_3);
+        generator.push(&mut exporter, stats_4);
+
+        let exporter = Rc::from(RefCell::new(exporter));
+        let sum      = generator.make_from_exporter("Test Sum", &None, exporter);
+
+        let borrow   = sum.borrow();
+        let borrow   = borrow.to_rustics();
+        let running  = borrow.generic().downcast_ref::<RunningInteger>().unwrap();
+
+        assert!(borrow.count() as i64 == count * samples);
+
+        let expected      = get_analyze_data(count * samples);
+        let export        = running.export_data();
+        let expected_mean = expected.sum / expected.n;
+        let export_count  = export.count as f64;
+
+        assert!(export_count    == expected.n       );
+        assert!(export.mean     == expected_mean    );
+        assert!(export.moment_2 == expected.moment_2);
+
+        let cubes_error        = (export.cubes - expected.cubes).abs();
+        let cubes_tolerance    = cubes_error / expected.cubes; 
+
+        let moment_4_error     = (export.moment_4 - expected.moment_4).abs();
+        let moment_4_tolerance = moment_4_error / expected.moment_4; 
+
+        println!("test_merge:  export cubes    {}, expected {}, error {}",
+            export.cubes, expected.cubes, cubes_tolerance);
+        println!("test_merge:  export moment_4 {}, expected {}, error {}",
+            export.moment_4, expected.moment_4, moment_4_tolerance);
+
+        assert!(cubes_tolerance    < 0.01);
+        assert!(moment_4_tolerance < 0.06);
+    }
+
     #[test]
     fn run_tests() {
-        test_simple_running_generator();
-        test_window();
-        test_exporter();
+        test_generator   ();
+        test_exporter    ();
         test_print_output();
+        test_sum         ();
+        test_window      ();
     }
 }

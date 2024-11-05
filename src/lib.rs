@@ -328,6 +328,15 @@ pub struct Statistics {
     pub moment_4:   f64,
 }
 
+/// Computes the second and fourth moments about the mean
+/// given the values in StatisticsData.  This is used
+/// when merging multiple Rustics instances for upper-
+/// level HierMember instances.
+///
+/// The formulae are derived by applying the binomial
+/// theorem to the formulae for the various moments about
+/// the mean.
+
 pub fn compute_statistics(data: StatisticsData) -> Statistics {
     let n       = data.n;
     let sum     = data.sum;
@@ -342,7 +351,7 @@ pub fn compute_statistics(data: StatisticsData) -> Statistics {
     let mean_4  = mean.powi(4);
 
     let moment_2 =
-        squares
+                       squares
       - 2.0 * mean_1 * sum
       +       mean_2 * n;
 
@@ -364,6 +373,15 @@ pub struct RecoverData {
     pub moment_4:   f64,
 }
 
+/// This routine converts the data in RecoverData
+/// into estimators of the sum of the squares and
+/// 4th power of each sample.  This is used when
+/// merging Rustics instances for a Hier instance.
+///
+/// The formulae are derived by appllying the binomial
+/// theorem to the definition of the various moments
+/// about the mean
+
 pub fn recover(data: RecoverData) -> (f64, f64) {
     let n        = data.n;
     let mean     = data.mean;
@@ -380,11 +398,11 @@ pub fn recover(data: RecoverData) -> (f64, f64) {
     let mean_4   = mean.powi(4);
 
     let quads = 
-             moment_4              
-          + (4.0 * cubes   * mean_1)
-          - (6.0 * squares * mean_2)
-          + (4.0 * sum     * mean_3)
-          - (n   *           mean_4);
+                   moment_4              
+          + (4.0 * cubes    * mean_1)
+          - (6.0 * squares  * mean_2)
+          + (4.0 * sum      * mean_3)
+          - (      n        * mean_4);
 
     (squares, quads)
 }
@@ -396,10 +414,14 @@ pub struct EstimateData {
     pub cubes:      f64,
 }
 
-/// Estimate moment 3 about the mean given moment 2, etc.
+/// Estimate moment 3 about the mean given the data in
+/// EstimateData.
 ///
 /// I know of no good way to keep a running estimate of
-/// moment 3.
+/// the 3rd moment about the mean, so this is the best
+/// I can do.  The equations for the squares and the
+/// third moment about the mean are from the binomial
+/// theorem applied to the definition of those moments.
 
 pub fn estimate_moment_3(data: EstimateData) -> f64 {
     let n         = data.n;
@@ -407,7 +429,13 @@ pub fn estimate_moment_3(data: EstimateData) -> f64 {
     let cubes     = data.cubes;
     let moment_2  = data.moment_2;
     let sum       = n * mean;
-    let squares   = moment_2 + 2.0 * sum * mean - n * mean * mean;
+
+    // Estimate the sums of the squares of each sample.
+
+    let squares = 
+        moment_2
+      + 2.0 * sum * mean
+      -       n   * mean.powi(2);
 
     cubes - (3.0 * squares * mean) + 3.0 * (sum * mean.powi(2)) - n * mean.powi(3)
 }

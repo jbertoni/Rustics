@@ -5,8 +5,22 @@
 //  and MIT licenses.
 //
 
-/// Export is used by various modules to create sums of
-/// statistics instances of type RunningInteger.
+//!
+//! ## Type
+//!
+//! * Export
+//!     * This type is used internally to sum a vector of Rustics instances
+//!       into a merged statistic.
+//!
+//!     * The Hier support code, q.v., uses this module to create instance
+//!       for the upper layers.
+//!
+//!     * RunningInteger and RunningFloat code use this structure and the
+//!       sum_running() function.
+//!
+//!     * This module is of use only for implementing new Rustics types and
+//!       so most users will never need to use it directly.
+//!
 
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -22,6 +36,10 @@ use super::FloatHistogramBox;
 
 use super::log_histogram::LogHistogram;
 use super::float_histogram::FloatHistogram;
+
+/// Export is used by various modules to create sums of
+/// statistics instances of type RunningInteger or
+/// RunningFloat.
 
 #[derive(Clone)]
 pub struct Export {
@@ -61,7 +79,7 @@ pub fn sum_running(exports: &Vec::<Export>) -> Export {
         if let Some(float_histogram) = &exports[0].float_histogram {
             let addend     = float_histogram.borrow();
             let print_opts = &addend.print_opts;
-            
+
             FloatHistogram::new(print_opts)
          } else {
             is_log = true;
@@ -112,7 +130,13 @@ pub fn sum_running(exports: &Vec::<Export>) -> Export {
         let moment_4 = export.moment_4;
         let data     = RecoverData { n, mean, moment_2, cubes, moment_4 };
 
+        // Recreate the sum of the squares of each
+        // sample and the sum of the fourth powers
+        // of each sample.
+
         let (squares, quads) = recover(data);
+
+        // Now recreate the sum of the samples.
 
         let sum = export.mean * n;
 
@@ -140,7 +164,8 @@ pub fn sum_running(exports: &Vec::<Export>) -> Export {
     let moment_4 = merged.moment_4;
 
     // Okay, build the structure from which an instance
-    // can be built.  First, box the log histogram.
+    // can be built.  First, box any histograms we have
+    // created.
 
     let log_histogram =
         if is_log {
@@ -164,7 +189,7 @@ pub fn sum_running(exports: &Vec::<Export>) -> Export {
 }
 
 /// sum_log_histogram() is used internally to create sums of
-/// RunningInteger instances.
+/// histograms of RunningInteger instances.
 
 pub fn sum_log_histogram(sum:  &mut LogHistogram, addend: &LogHistogram) {
     for i in 0..sum.negative.len() {
@@ -177,7 +202,7 @@ pub fn sum_log_histogram(sum:  &mut LogHistogram, addend: &LogHistogram) {
 }
 
 /// sum_float_histogram() is used internally to create sums of
-/// RunningFloat instances.
+/// histograms of RunningFloat instances.
 
 pub fn sum_float_histogram(sum:  &mut FloatHistogram, addend: &FloatHistogram) {
     assert!(sum.negative.len() == addend.negative.len());

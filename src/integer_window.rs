@@ -306,6 +306,63 @@ impl IntegerWindow {
             log_mode,  mean,  variance,    skewness,  kurtosis,  mode_value,  units
         }
     }
+
+    #[cfg(test)]
+    pub fn analyze(&self) -> AnalyzeData {
+        let mut copy         = Vec::new();
+        let mut squared      = Vec::new();
+        let mut cubed        = Vec::new();
+        let mut quadded      = Vec::new();
+
+        for sample in &self.vector {
+            let sample = *sample as f64;
+
+            copy   .push(sample        );
+            squared.push(sample.powi(2));
+            cubed  .push(sample.powi(3));
+            quadded.push(sample.powi(4));
+        }
+
+        let sum      = kbk_sum_sort(&mut copy   );
+        let squares  = kbk_sum_sort(&mut squared);
+        let cubes    = kbk_sum_sort(&mut cubed  );
+        let quads    = kbk_sum_sort(&mut quadded);
+
+        let n        = self.vector.len() as f64;
+        let mean     = sum / n;
+
+        let mut moment_2_vec = Vec::new();
+        let mut moment_3_vec = Vec::new();
+        let mut moment_4_vec = Vec::new();
+
+        for sample in copy.iter() {
+            moment_2_vec.push((*sample - mean).powi(2));
+            moment_3_vec.push((*sample - mean).powi(3));
+            moment_4_vec.push((*sample - mean).powi(4));
+        }
+
+        let moment_2 = kbk_sum(&moment_2_vec);
+        let moment_3 = kbk_sum(&moment_3_vec);
+        let moment_4 = kbk_sum(&moment_4_vec);
+
+        AnalyzeData {
+            n,          sum,        squares,    cubes,      quads,
+            moment_2,   moment_3,   moment_4
+        }
+    }
+}
+
+#[cfg(test)]
+pub struct AnalyzeData {
+    pub n:          f64,
+    pub sum:        f64,
+    pub squares:    f64,
+    pub cubes:      f64,
+    pub quads:      f64,
+
+    pub moment_2:   f64,
+    pub moment_3:   f64,
+    pub moment_4:   f64,
 }
 
 impl Rustics for IntegerWindow {
@@ -554,7 +611,7 @@ impl Histogram for IntegerWindow {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::*;
     use crate::PrintOpts;
     use crate::log_histogram::pseudo_log_index;

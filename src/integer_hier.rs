@@ -616,7 +616,7 @@ pub mod tests {
     // IntegerWindow keeps the samples and can do very
     // accurate computations, so use that as the baseline.
 
-    fn test_sum() {
+    fn test_integer_sum() {
         let mut exporter  = IntegerExporter::new();
         let     generator = IntegerHier    ::new();
 
@@ -666,9 +666,9 @@ pub mod tests {
         let moment_4_error     = (export.moment_4 - expected.moment_4).abs();
         let moment_4_tolerance = moment_4_error / expected.moment_4; 
 
-        println!("test_merge:  export cubes    {}, expected {}, error {}",
+        println!("test_integer_sum:  export cubes    {}, expected {}, error {}",
             export.cubes, expected.cubes, cubes_tolerance);
-        println!("test_merge:  export moment_4 {}, expected {}, error {}",
+        println!("test_integer_sum:  export moment_4 {}, expected {}, error {}",
             export.moment_4, expected.moment_4, moment_4_tolerance);
 
         assert!(cubes_tolerance    < 0.01);
@@ -680,7 +680,7 @@ pub mod tests {
         test_generator   ();
         test_exporter    ();
         test_print_output();
-        test_sum         ();
+        test_integer_sum ();
         test_window      ();
     }
 }

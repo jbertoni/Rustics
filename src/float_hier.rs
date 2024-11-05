@@ -359,6 +359,7 @@ mod tests {
     use crate::stdout_printer;
     use crate::hier::HierDescriptor;
     use crate::hier::HierDimension;
+    use crate::integer_hier::tests::get_analyze_data;
     use crate::tests::check_printer_box;
     use crate::tests::bytes;
 
@@ -628,10 +629,78 @@ mod tests {
         stats.print();
     }
 
+    // Test that the sum functions give reasonable results.
+    // IntegerWindow keeps the samples and can do very
+    // accurate computations, so use that as the baseline.
+
+    fn test_float_sum() {
+        let mut exporter  = FloatExporter::new();
+        let     generator = FloatHier    ::new();
+
+        let     stats_1   = generator.make_member("Test Stat 1", &None);
+        let     stats_2   = generator.make_member("Test Stat 2", &None);
+        let     stats_3   = generator.make_member("Test Stat 3", &None);
+        let     stats_4   = generator.make_member("Test Stat 4", &None);
+
+        let samples       = 250;
+        let count         =   4;
+        let samples_f     = samples as f64;
+
+        for i in 0..samples {
+            let sample = i as f64 + 1.0;
+
+            stats_1.borrow_mut().to_rustics_mut().record_f64(sample                  );
+            stats_2.borrow_mut().to_rustics_mut().record_f64(sample +       samples_f);
+            stats_3.borrow_mut().to_rustics_mut().record_f64(sample + 2.0 * samples_f);
+            stats_4.borrow_mut().to_rustics_mut().record_f64(sample + 3.0 * samples_f);
+        }
+
+        generator.push(&mut exporter, stats_1);
+        generator.push(&mut exporter, stats_2);
+        generator.push(&mut exporter, stats_3);
+        generator.push(&mut exporter, stats_4);
+
+        let exporter = Rc::from(RefCell::new(exporter));
+        let sum      = generator.make_from_exporter("Test Sum", &None, exporter);
+
+        let borrow   = sum.borrow();
+        let borrow   = borrow.to_rustics();
+
+        borrow.print();
+
+        let running  = borrow.generic().downcast_ref::<RunningFloat>().unwrap();
+
+        assert!(borrow.count() as i64 == count * samples);
+
+        let expected      = get_analyze_data(count * samples);
+        let export        = running.export_data();
+        let expected_mean = expected.sum / expected.n;
+        let export_count  = export.count as f64;
+
+        assert!(export_count    == expected.n       );
+        assert!(export.mean     == expected_mean    );
+        assert!(export.moment_2 == expected.moment_2);
+
+        let cubes_error        = (export.cubes - expected.cubes).abs();
+        let cubes_tolerance    = cubes_error / expected.cubes; 
+
+        let moment_4_error     = (export.moment_4 - expected.moment_4).abs();
+        let moment_4_tolerance = moment_4_error / expected.moment_4; 
+
+        println!("test_float_sum:  export cubes    {}, expected {}, error {}",
+            export.cubes, expected.cubes, cubes_tolerance);
+        println!("test_float_sum:  export moment_4 {}, expected {}, error {}",
+            export.moment_4, expected.moment_4, moment_4_tolerance);
+
+        assert!(cubes_tolerance    < 0.01);
+        assert!(moment_4_tolerance < 0.06);
+    }
+
     #[test]
     fn run_tests() {
         test_simple_running_generator();
         test_window();
         test_print_output();
+        test_float_sum();
     }
 }

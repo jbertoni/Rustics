@@ -177,6 +177,7 @@ pub mod rc_sets;
 pub mod hier;
 pub mod window;
 pub mod time;
+pub mod merge;
 pub mod sum;
 pub mod log_histogram;
 pub mod float_histogram;

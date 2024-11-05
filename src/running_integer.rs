@@ -16,6 +16,9 @@
 //!    use std::rc::Rc;
 //!    use std::cell::RefCell;
 //!    use rustics::Rustics;
+//!    use rustics::Histogram;
+//!    use rustics::printer;
+//!    use rustics::stdout_printer;
 //!    use rustics::running_integer::RunningInteger;
 //!
 //!    // Create an instance to record packet sizes.  The default for
@@ -36,6 +39,14 @@
 //!    // Print our statistics.
 //!
 //!    packet_sizes.print();
+//!
+//!    // Print just the histogram.  This example shows how PrinterBox
+//!    // the printer code work.
+//!
+//!    let printer = stdout_printer();  // create a shareable printer
+//!    let printer = printer!(printer); // get the printer out of the cell
+//!
+//!    packet_sizes.print_histogram(printer);
 //!
 //!    // We should have seen "sample_count" events.
 //!

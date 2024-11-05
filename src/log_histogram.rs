@@ -21,16 +21,21 @@
 //!
 //! ## Example
 //!```
+//!
+//!     use std::rc::Rc;
+//!     use std::cell::RefCell;
 //!     use rustics::log_histogram::LogHistogram;
 //!     use rustics::log_histogram::pseudo_log_index;
 //!     use rustics::Printer;
 //!     use rustics::stdout_printer;
+//!     use rustics::printer;
 //!
 //!     // This is a simple sanity test of the LogHistogram code.  It
 //!     // provides an example of what you should expect from its data.
 //!
 //!     let mut histogram = LogHistogram::new();
-//!     let     printer   = &mut stdout_printer();
+//!     let     printer   = stdout_printer();
+//!     let     printer   = printer!(printer);
 //!
 //!     let test =
 //!        [ 1, -1, 4, 25, 4109, -4108, -8, -9, -16, -17, 3, 8, 16 ];

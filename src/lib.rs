@@ -197,8 +197,8 @@ use float_histogram::HistoOpts;
 use printable::Printable;
 
 pub type HierBox            = Arc<Mutex<Hier>>;
-// pub type PrinterBox         = Arc<Mutex<dyn Printer>>;
 pub type PrinterBox         = Rc<RefCell<dyn Printer>>;
+// pub type PrinterBox         = Arc<Mutex<dyn Printer>>;
 pub type PrinterOption      = Option<PrinterBox>;
 pub type TitleOption        = Option<String>;
 pub type UnitsOption        = Option<Units>;
@@ -450,6 +450,14 @@ macro_rules! printer { ($x:expr) => { &mut *$x.borrow_mut() } }
 
 #[macro_export]
 macro_rules! printer_box { ($x:expr) => { Rc::from(RefCell::new($x)) } }
+
+// These macros work with Arc and Mutex
+//
+// #[macro_export]
+// macro_rules! printer { ($x:expr) => { &mut *$x.lock().unwrap() } }
+//
+// #[macro_export]
+// macro_rules! printer_box { ($x:expr) => { Arc::from(Mutex::new($x)) } }
 
 pub fn parse_printer(print_opts: &PrintOption) -> PrinterBox {
     match print_opts {

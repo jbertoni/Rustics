@@ -240,9 +240,9 @@ impl IntegerWindow {
             let distance = *sample - mean;
             let square   = distance * distance;
 
-            vec_2.push(square);
-            vec_3.push(distance * square);
-            vec_4.push(square   * square);
+            vec_2.push(square           );
+            vec_3.push(square * distance);
+            vec_4.push(square * square  );
         }
 
         // Use kbk_sum_no_sort to try to get more precision.  The

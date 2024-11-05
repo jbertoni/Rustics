@@ -98,7 +98,7 @@ use super::PrinterBox;
 use super::Units;
 use super::parse_print_opts;
 use super::compute_variance;
-use super::EstimateMoment3;
+use super::EstimateData;
 use super::estimate_moment_3;
 use super::compute_skewness;
 use super::compute_kurtosis;
@@ -493,7 +493,7 @@ impl Rustics for RunningFloat {
         let mean     = self.mean;
         let moment_2 = self.moment_2;
         let cubes    = self.cubes;
-        let data     = EstimateMoment3 { n, mean, moment_2, cubes };
+        let data     = EstimateData { n, mean, moment_2, cubes };
 
         let moment_3 = estimate_moment_3(data);
 

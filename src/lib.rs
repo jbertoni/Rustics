@@ -313,11 +313,86 @@ pub fn compute_variance(count: u64, moment_2: f64) -> f64 {
     moment_2 / (n - 1.0)
 }
 
-pub struct EstimateMoment3 {
-    pub n:          f64,    // sample count
+pub struct StatisticsData {
+    pub n:        f64,
+    pub sum:      f64,
+    pub squares:  f64,
+    pub cubes:    f64,
+    pub quads:    f64,
+}
+
+pub struct Statistics {
     pub mean:       f64,
     pub moment_2:   f64,
-    pub cubes:      f64,    // sum of the cubes of each sample
+    pub moment_4:   f64,
+}
+
+pub fn compute_statistics(data: StatisticsData) -> Statistics {
+    let n       = data.n;
+    let sum     = data.sum;
+    let squares = data.squares;
+    let cubes   = data.cubes;
+    let quads   = data.quads;
+
+    let mean    = data.sum / n;
+    let mean_1  = mean;
+    let mean_2  = mean.powi(2);
+    let mean_3  = mean.powi(3);
+    let mean_4  = mean.powi(4);
+
+    let moment_2 =
+        squares
+      - 2.0 * mean_1 * sum
+      +       mean_2 * n;
+
+    let moment_4 =
+                       quads
+      - 4.0 * mean_1 * cubes
+      + 6.0 * mean_2 * squares
+      - 4.0 * mean_3 * sum
+      +       mean_4 * n;
+    
+    Statistics { mean, moment_2, moment_4 }
+}
+
+pub struct RecoverData {
+    pub n:          f64,
+    pub mean:       f64,
+    pub moment_2:   f64,
+    pub cubes:      f64,
+    pub moment_4:   f64,
+}
+
+pub fn recover(data: RecoverData) -> (f64, f64) {
+    let n        = data.n;
+    let mean     = data.mean;
+    let moment_2 = data.moment_2;
+    let cubes    = data.cubes;
+    let moment_4 = data.moment_4;
+
+    let sum      = n * mean;
+    let squares  = moment_2 + 2.0 * mean * sum - n * mean.powi(2);
+
+    let mean_1   = mean;
+    let mean_2   = mean.powi(2);
+    let mean_3   = mean.powi(3);
+    let mean_4   = mean.powi(4);
+
+    let quads = 
+             moment_4              
+          + (4.0 * cubes   * mean_1)
+          - (6.0 * squares * mean_2)
+          + (4.0 * sum     * mean_3)
+          - (n   *           mean_4);
+
+    (squares, quads)
+}
+
+pub struct EstimateData {
+    pub n:          f64,
+    pub mean:       f64,
+    pub moment_2:   f64,
+    pub cubes:      f64,
 }
 
 /// Estimate moment 3 about the mean given moment 2, etc.
@@ -325,7 +400,7 @@ pub struct EstimateMoment3 {
 /// I know of no good way to keep a running estimate of
 /// moment 3.
 
-pub fn estimate_moment_3(data: EstimateMoment3) -> f64 {
+pub fn estimate_moment_3(data: EstimateData) -> f64 {
     let n         = data.n;
     let mean      = data.mean;
     let cubes     = data.cubes;

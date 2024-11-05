@@ -92,7 +92,11 @@ use super::FloatHistogramBox;
 use super::Units;
 use super::printer;
 use super::printable::Printable;
-use super::EstimateMoment3;
+use super::StatisticsData;
+use super::compute_statistics;
+use super::RecoverData;
+use super::recover;
+use super::EstimateData;
 use super::estimate_moment_3;
 use super::compute_variance;
 use super::compute_skewness;
@@ -235,10 +239,14 @@ pub fn sum_running(exports: &Vec::<IntegerExport>) -> IntegerExport {
     let mut max            = i64::MIN;
     let mut log_histogram  = LogHistogram::new();
 
-    let mut mean_vec       = Vec::with_capacity(exports.len());
-    let mut moment_2_vec   = Vec::with_capacity(exports.len());
-    let mut cubes_vec      = Vec::with_capacity(exports.len());
-    let mut moment_4_vec   = Vec::with_capacity(exports.len());
+    let mut sum_vec     = Vec::with_capacity(exports.len());
+    let mut squares_vec = Vec::with_capacity(exports.len());
+    let mut cubes_vec   = Vec::with_capacity(exports.len());
+    let mut quads_vec   = Vec::with_capacity(exports.len());
+
+    // Iterate through each set of exported data, gather merged
+    // values.  We recover the squares and fourth powers of
+    // each sample from data in the exports.
 
     for export in exports {
         count    += export.count;
@@ -247,16 +255,43 @@ pub fn sum_running(exports: &Vec::<IntegerExport>) -> IntegerExport {
 
         sum_log_histogram(&mut log_histogram, &export.log_histogram.borrow());
 
-        mean_vec.push    (export.mean * export.count as f64);
-        moment_2_vec.push(export.moment_2);
-        cubes_vec.push   (export.cubes   );
-        moment_4_vec.push(export.moment_4);
+        let n        = export.count as f64;
+        let mean     = export.mean;
+        let moment_2 = export.moment_2;
+        let cubes    = export.cubes;
+        let moment_4 = export.moment_4;
+        let data     = RecoverData { n, mean, moment_2, cubes, moment_4 };
+
+        let (squares, quads) = recover(data);
+
+        let sum = export.mean * n;
+
+        sum_vec.push    (sum     );
+        squares_vec.push(squares );
+        cubes_vec.push  (cubes   );
+        quads_vec.push  (quads   );
     }
 
-    let mean          = kbk_sum_sort(&mut mean_vec[..]) / count as f64;
-    let moment_2      = kbk_sum_sort(&mut moment_2_vec[..]);
-    let cubes         = kbk_sum_sort(&mut cubes_vec[..]);
-    let moment_4      = kbk_sum_sort(&mut moment_4_vec[..]);
+    // Now merge the data that we got.  We get the sums
+    // of the squares, cubes, and fourth power of each
+    // original sample.  From that data, we compute
+    // the merged 2nd and 4th moments about the mean,
+    // as well as the mean.
+
+    let n        = count as f64;
+    let sum      = kbk_sum_sort(&mut sum_vec    [..]);
+    let squares  = kbk_sum_sort(&mut squares_vec[..]);
+    let cubes    = kbk_sum_sort(&mut cubes_vec  [..]);
+    let quads    = kbk_sum_sort(&mut quads_vec  [..]);
+    let data     = StatisticsData { n, sum, squares, cubes, quads };
+    let merged   = compute_statistics(data);
+    let mean     = merged.mean;
+    let moment_2 = merged.moment_2;
+    let moment_4 = merged.moment_4;
+
+    // Okay, build the structure from which a RunningInteger
+    // can be built.  First, box the log histogram.
+
     let log_histogram = Rc::from(RefCell::new(log_histogram));
 
     IntegerExport { count, mean, moment_2, cubes, moment_4, min, max, log_histogram }
@@ -458,7 +493,7 @@ impl Rustics for RunningInteger {
         let mean     = self.mean;
         let moment_2 = self.moment_2;
         let cubes    = self.cubes;
-        let data     = EstimateMoment3 { n, mean, moment_2, cubes };
+        let data     = EstimateData { n, mean, moment_2, cubes };
 
         let moment_3 = estimate_moment_3(data);
 

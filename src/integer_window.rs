@@ -345,9 +345,15 @@ impl IntegerWindow {
         let moment_3 = kbk_sum(&moment_3_vec);
         let moment_4 = kbk_sum(&moment_4_vec);
 
+        let min_i64 = self.compute_min();
+        let max_i64 = self.compute_max();
+        let min_f64 = 0.0;
+        let max_f64 = 0.0;
+
         AnalyzeData {
             n,          sum,        squares,    cubes,      quads,
-            moment_2,   moment_3,   moment_4
+            moment_2,   moment_3,   moment_4,
+            min_i64,    max_i64,    min_f64,    max_f64
         }
     }
 }
@@ -363,6 +369,11 @@ pub struct AnalyzeData {
     pub moment_2:   f64,
     pub moment_3:   f64,
     pub moment_4:   f64,
+
+    pub min_i64:    i64,
+    pub max_i64:    i64,
+    pub min_f64:    f64,
+    pub max_f64:    f64,
 }
 
 impl Rustics for IntegerWindow {

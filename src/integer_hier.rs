@@ -348,6 +348,7 @@ impl HierGenerator for IntegerHier {
 #[cfg(test)]
 pub mod tests {
     use super::*;
+    use crate::LogHistogramBox;
     use crate::hier::HierDescriptor;
     use crate::hier::HierDimension;
     use crate::PrintOpts;
@@ -612,6 +613,24 @@ pub mod tests {
         stats.analyze()
     }
 
+    pub fn verify_histogram(export: &LogHistogramBox, expected: &LogHistogramBox)
+            -> bool {
+        let export   = export.borrow();
+        let expected = expected.borrow();
+
+        export.equals(&expected)
+    }
+
+    pub fn get_analyze_histogram(count: i64) -> LogHistogramBox {
+        let mut stat = IntegerWindow::new("Analyze Histo", count as usize, &None);
+
+        for i in 1..=count {
+            stat.record_i64(i as i64);
+        }
+
+        stat.to_log_histogram().unwrap()
+    }
+
     // Test that the sum functions give reasonable results.
     // IntegerWindow keeps the samples and can do very
     // accurate computations, so use that as the baseline.
@@ -642,8 +661,14 @@ pub mod tests {
         generator.push(&mut exporter, stats_3);
         generator.push(&mut exporter, stats_4);
 
+        // Okay, create an exporter and get the sum.
+
         let exporter = Rc::from(RefCell::new(exporter));
         let sum      = generator.make_from_exporter("Test Sum", &None, exporter);
+
+        // Start looking at the underlying RunningInteger.  Make a
+        // comparison RunningInteger and then get the export data
+        // from both and compare.
 
         let borrow   = sum.borrow();
         let borrow   = borrow.to_rustics();
@@ -655,10 +680,16 @@ pub mod tests {
         let export        = running.export_data();
         let expected_mean = expected.sum / expected.n;
         let export_count  = export.count as f64;
+        let export_histo  = export.log_histogram.unwrap();
 
         assert!(export_count    == expected.n       );
         assert!(export.mean     == expected_mean    );
         assert!(export.moment_2 == expected.moment_2);
+        assert!(export.min_i64  == expected.min_i64 );
+        assert!(export.max_i64  == expected.max_i64 );
+
+        // Now check the difficult exports.  The cube and fourth power
+        // sums drift a bit.
 
         let cubes_error        = (export.cubes - expected.cubes).abs();
         let cubes_tolerance    = cubes_error / expected.cubes; 
@@ -673,6 +704,13 @@ pub mod tests {
 
         assert!(cubes_tolerance    < 0.01);
         assert!(moment_4_tolerance < 0.06);
+
+        // Now check the histograms.  First, get a comparison
+        // standard, then check for equality.
+
+        let expected_histo = get_analyze_histogram(count * samples);
+
+        assert!(verify_histogram(&export_histo, &expected_histo));
     }
 
     #[test]

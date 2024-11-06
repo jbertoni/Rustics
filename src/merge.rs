@@ -220,3 +220,127 @@ pub fn sum_float_histogram(sum:  &mut FloatHistogram, addend: &FloatHistogram) {
     sum.infinities += addend.infinities;
     sum.samples    += addend.samples;
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::Rustics;
+    use crate::LogHistogram;
+    use crate::FloatHistogram;
+    use crate::Histogram;
+
+    use crate::running_integer::RunningInteger;
+    use crate::running_float  ::RunningFloat;
+
+    fn test_sum_integer() {
+        let mut compare   = LogHistogram::new();
+        let mut stat_1    = RunningInteger::new("merge histogram 1", &None);
+        let mut stat_2    = RunningInteger::new("merge histogram 2", &None);
+        let mut stat_3    = RunningInteger::new("merge histogram 3", &None);
+        let mut stat_4    = RunningInteger::new("merge histogram 4", &None);
+
+        let samples = 1000;
+
+        for i in 1..=samples {
+            let sample_1 = i as i64;
+            let sample_2 = i as i64 +   10_000;
+            let sample_3 = i as i64 +  100_000;
+            let sample_4 = i as i64 + 1_000_000;
+
+            stat_1.record_i64(sample_1);
+            stat_2.record_i64(sample_2);
+            stat_3.record_i64(sample_3);
+            stat_4.record_i64(sample_4);
+
+            compare.record(sample_1);
+            compare.record(sample_2);
+            compare.record(sample_3);
+            compare.record(sample_4);
+        }
+
+        stat_1.print();
+
+        let mut sum_histo = LogHistogram::new();
+
+        let addend = stat_1.to_log_histogram().unwrap();
+        let addend = addend.borrow();
+
+        sum_log_histogram(&mut sum_histo, &addend);
+
+        let addend = stat_2.to_log_histogram().unwrap();
+        let addend = addend.borrow();
+
+        sum_log_histogram(&mut sum_histo, &addend);
+
+        let addend = stat_3.to_log_histogram().unwrap();
+        let addend = addend.borrow();
+
+        sum_log_histogram(&mut sum_histo, &addend);
+
+        let addend = stat_4.to_log_histogram().unwrap();
+        let addend = addend.borrow();
+
+        sum_log_histogram(&mut sum_histo, &addend);
+
+        assert!(sum_histo.equals(&compare));
+    }
+
+    fn test_sum_float() {
+        let mut compare   = FloatHistogram::new(&None);
+        let mut stat_1    = RunningFloat::new("merge histogram 1", &None);
+        let mut stat_2    = RunningFloat::new("merge histogram 2", &None);
+        let mut stat_3    = RunningFloat::new("merge histogram 3", &None);
+        let mut stat_4    = RunningFloat::new("merge histogram 4", &None);
+
+        let samples = 1000;
+
+        for i in 1..=samples {
+            let sample_1 = i as f64;
+            let sample_2 = i as f64 +   10_000.0;
+            let sample_3 = i as f64 +  100_000.0;
+            let sample_4 = i as f64 + 1_000_000.0;
+
+            stat_1.record_f64(sample_1);
+            stat_2.record_f64(sample_2);
+            stat_3.record_f64(sample_3);
+            stat_4.record_f64(sample_4);
+
+            compare.record(sample_1);
+            compare.record(sample_2);
+            compare.record(sample_3);
+            compare.record(sample_4);
+        }
+
+        stat_1.print();
+
+        let mut sum_histo = FloatHistogram::new(&None);
+
+        let addend = stat_1.to_float_histogram().unwrap();
+        let addend = addend.borrow();
+
+        sum_float_histogram(&mut sum_histo, &addend);
+
+        let addend = stat_2.to_float_histogram().unwrap();
+        let addend = addend.borrow();
+
+        sum_float_histogram(&mut sum_histo, &addend);
+
+        let addend = stat_3.to_float_histogram().unwrap();
+        let addend = addend.borrow();
+
+        sum_float_histogram(&mut sum_histo, &addend);
+
+        let addend = stat_4.to_float_histogram().unwrap();
+        let addend = addend.borrow();
+
+        sum_float_histogram(&mut sum_histo, &addend);
+
+        assert!(sum_histo.equals(&compare));
+    }
+
+    #[test]
+    fn run_tests() {
+        test_sum_integer();
+        test_sum_float  ();
+    }
+}

@@ -410,6 +410,34 @@ impl FloatHistogram {
     pub fn histo_opts(&self) -> HistoOpts {
         self.histo_opts
     }
+
+    pub fn equals(&self, other: &FloatHistogram) -> bool {
+        for i in 0..other.negative.len() {
+            if self.negative[i] != other.negative[i] {
+                return false;
+            }
+        }
+
+        for i in 0..other.positive.len() {
+            if self.positive[i] != other.positive[i] {
+                return false;
+            }
+        }
+
+        if self.samples != other.samples {
+            return false;
+        }
+
+        if self.nans != other.nans {
+            return false;
+        }
+
+        if self.infinities != other.infinities {
+            return false;
+        }
+
+        true
+    }
 }
 
 impl Histogram for FloatHistogram {

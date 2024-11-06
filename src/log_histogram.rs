@@ -260,6 +260,22 @@ impl LogHistogram {
         self.negative = [0; 64];
         self.positive = [0; 64];
     }
+
+    pub fn equals(&self, other: &LogHistogram) -> bool {
+        for i in 0..other.negative.len() {
+            if self.negative[i] != other.negative[i] {
+                return false;
+            }
+        }
+
+        for i in 0..other.positive.len() {
+            if self.positive[i] != other.positive[i] {
+                return false;
+            }
+        }
+
+        true
+    }
 }
 
 impl Default for LogHistogram {

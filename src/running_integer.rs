@@ -169,8 +169,8 @@ impl IntegerExporter {
     /// Makes a member statistics instance based on the summed exports.
 
     pub fn make_member(&mut self, name: &str, print_opts: &PrintOption) -> RunningInteger {
-        let title   = name;
-        let sum     = sum_running(&self.addends);
+        let title = name;
+        let sum   = sum_running(&self.addends);
 
         RunningInteger::new_from_exporter(name, title, print_opts, sum)
     }

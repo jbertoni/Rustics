@@ -1035,13 +1035,13 @@ mod tests {
                 ""
             ];
 
-        println!("test_printing:  Start first print test");
+        println!("test_rc_printing:  Start first print test");
 
         let printer = check_printer_box(&expected, true, false);
 
         set.print_opts(Some(printer), None);
 
-        println!("test_printing:  End first print test");
+        println!("test_rc_printing:  End first print test");
 
         subset_2.borrow_mut().set_title("New Subset 2");
 
@@ -1189,7 +1189,7 @@ mod tests {
 
         set.print_opts(Some(printer), None);
 
-        println!("test_printing:  End second print test");
+        println!("test_rc_printing:  End second print test");
 
         let expected =
             [

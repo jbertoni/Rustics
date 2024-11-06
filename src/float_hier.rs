@@ -355,6 +355,8 @@ impl HierGenerator for FloatHier {
 mod tests {
     use super::*;
     use crate::PrintOpts;
+    use crate::FloatHistogram;
+    use crate::FloatHistogramBox;
     use crate::printer;
     use crate::stdout_printer;
     use crate::hier::HierDescriptor;
@@ -629,13 +631,22 @@ mod tests {
         stats.print();
     }
 
+    pub fn verify_float_histogram(export: &FloatHistogramBox, expected: &FloatHistogramBox)
+            -> bool {
+        let export   = export.  borrow();
+        let expected = expected.borrow();
+    
+        export.equals(&expected)
+    }   
+
     // Test that the sum functions give reasonable results.
     // IntegerWindow keeps the samples and can do very
     // accurate computations, so use that as the baseline.
 
     fn test_float_sum() {
-        let mut exporter  = FloatExporter::new();
-        let     generator = FloatHier    ::new();
+        let mut exporter       = FloatExporter::new();
+        let     generator      = FloatHier    ::new();
+        let mut expected_histo = FloatHistogram::new(&None);
 
         let     stats_1   = generator.make_member("Test Stat 1", &None);
         let     stats_2   = generator.make_member("Test Stat 2", &None);
@@ -647,12 +658,21 @@ mod tests {
         let samples_f     = samples as f64;
 
         for i in 0..samples {
-            let sample = i as f64 + 1.0;
+            let sample_1 = i as f64 + 1.0;
 
-            stats_1.borrow_mut().to_rustics_mut().record_f64(sample                  );
-            stats_2.borrow_mut().to_rustics_mut().record_f64(sample +       samples_f);
-            stats_3.borrow_mut().to_rustics_mut().record_f64(sample + 2.0 * samples_f);
-            stats_4.borrow_mut().to_rustics_mut().record_f64(sample + 3.0 * samples_f);
+            let sample_2 = sample_1 +       samples_f;
+            let sample_3 = sample_1 + 2.0 * samples_f;
+            let sample_4 = sample_1 + 3.0 * samples_f;
+
+            stats_1.borrow_mut().to_rustics_mut().record_f64(sample_1);
+            stats_2.borrow_mut().to_rustics_mut().record_f64(sample_2);
+            stats_3.borrow_mut().to_rustics_mut().record_f64(sample_3);
+            stats_4.borrow_mut().to_rustics_mut().record_f64(sample_4);
+
+            expected_histo.record(sample_1);
+            expected_histo.record(sample_2);
+            expected_histo.record(sample_3);
+            expected_histo.record(sample_4);
         }
 
         generator.push(&mut exporter, stats_1);
@@ -660,26 +680,28 @@ mod tests {
         generator.push(&mut exporter, stats_3);
         generator.push(&mut exporter, stats_4);
 
-        let exporter = Rc::from(RefCell::new(exporter));
-        let sum      = generator.make_from_exporter("Test Sum", &None, exporter);
+        let exporter     = Rc::from(RefCell::new(exporter));
+        let sum          = generator.make_from_exporter("Test Sum", &None, exporter);
 
-        let borrow   = sum.borrow();
-        let borrow   = borrow.to_rustics();
+        let sum_borrow   = sum.borrow();
+        let sum_borrow   = sum_borrow.to_rustics();
 
-        borrow.print();
+        sum_borrow.print();
 
-        let running  = borrow.generic().downcast_ref::<RunningFloat>().unwrap();
+        let sum_running  = sum_borrow.generic().downcast_ref::<RunningFloat>().unwrap();
 
-        assert!(borrow.count() as i64 == count * samples);
+        assert!(sum_borrow.count() as i64 == count * samples);
 
         let expected      = get_analyze_data(count * samples);
-        let export        = running.export_data();
+        let export        = sum_running.export_data();
         let expected_mean = expected.sum / expected.n;
         let export_count  = export.count as f64;
 
         assert!(export_count    == expected.n       );
         assert!(export.mean     == expected_mean    );
         assert!(export.moment_2 == expected.moment_2);
+        assert!(export.min_f64  == expected.min_i64 as f64);
+        assert!(export.max_f64  == expected.max_i64 as f64);
 
         let cubes_error        = (export.cubes - expected.cubes).abs();
         let cubes_tolerance    = cubes_error / expected.cubes; 
@@ -694,6 +716,13 @@ mod tests {
 
         assert!(cubes_tolerance    < 0.01);
         assert!(moment_4_tolerance < 0.06);
+
+        // Now check the histograms.
+
+        let export_histo   = export.float_histogram.unwrap();
+        let expected_histo = Rc::from(RefCell::new(expected_histo));
+
+        assert!(verify_float_histogram(&export_histo, &expected_histo));
     }
 
     #[test]

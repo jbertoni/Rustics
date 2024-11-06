@@ -613,7 +613,7 @@ pub mod tests {
         stats.analyze()
     }
 
-    pub fn verify_histogram(export: &LogHistogramBox, expected: &LogHistogramBox)
+    pub fn verify_log_histogram(export: &LogHistogramBox, expected: &LogHistogramBox)
             -> bool {
         let export   = export.borrow();
         let expected = expected.borrow();
@@ -710,7 +710,7 @@ pub mod tests {
 
         let expected_histo = get_analyze_histogram(count * samples);
 
-        assert!(verify_histogram(&export_histo, &expected_histo));
+        assert!(verify_log_histogram(&export_histo, &expected_histo));
     }
 
     #[test]

@@ -952,19 +952,20 @@ mod tests {
         expected:         Vec<String>,
         current:          usize,
         fail_on_overage:  bool,
+        verbose:          bool,
     }
 
     impl CheckPrinter {
-        pub fn new(expected: &[&str], fail_on_overage: bool) -> CheckPrinter {
+        pub fn new(expected: &[&str], fail_on_overage: bool, verbose: bool) -> CheckPrinter {
             let expected: Vec<String> = expected.iter().map(|x| (*x).into()).collect();
             let current  = 0;
 
-            CheckPrinter { expected, current, fail_on_overage }
+            CheckPrinter { expected, current, fail_on_overage, verbose }
         }
     }
 
-    pub fn check_printer_box(expected: &[&str], fail_on_overage: bool) -> PrinterBox {
-        let printer = CheckPrinter::new(expected, fail_on_overage);
+    pub fn check_printer_box(expected: &[&str], fail_on_overage: bool, verbose: bool) -> PrinterBox {
+        let printer = CheckPrinter::new(expected, fail_on_overage, verbose);
 
         printer_box!(printer)
     }
@@ -973,17 +974,22 @@ mod tests {
         fn print(&mut self, output: &str) {
             if self.current < self.expected.len() {
                 let expected = self.expected[self.current].clone();
+                let pass     = expected == *output;
 
-                println!("CheckPrinter:");
-                println!("    got      \"{}\"", output);
-                println!("    expected \"{}\"", expected);
+                if !pass || self.verbose {
+                    println!("CheckPrinter:");
+                    println!("    got      \"{}\"", output);
+                    println!("    expected \"{}\"", expected);
+                }
 
-                assert!(expected == *output);
+                assert!(pass);
                 self.current += 1;
             } else if self.fail_on_overage {
                 panic!("CheckPrinter:  too many lines");
             } else {
-                println!(" *** CheckPrinter: ignoring extra lines");
+                if self.verbose {
+                    println!(" *** CheckPrinter: ignoring extra lines");
+                }
             }
 
             println!("{}", output);
@@ -1304,7 +1310,7 @@ mod tests {
                   "    >                   1.001 seconds"
             ];
 
-        let mut check_printer = CheckPrinter::new(&expected_output, true);
+        let mut check_printer = CheckPrinter::new(&expected_output, true, false);
 
         for i in 0..values.len() {
             println!("test_time_printing:  value {}, expect {}", values[i], expected_output[i]);
@@ -1620,7 +1626,7 @@ mod tests {
     fn test_check_printer_forgive() {
         let expected_output = [ "test_check_printer:  output" ];
 
-        let mut printer = CheckPrinter::new(&expected_output, false);
+        let mut printer = CheckPrinter::new(&expected_output, false, false);
 
         printer.print(expected_output[0]);
         printer.print(expected_output[0]);
@@ -1631,7 +1637,7 @@ mod tests {
     fn test_check_printer() {
         let expected_output = [ "test_check_printer:  output" ];
 
-        let mut printer = CheckPrinter::new(&expected_output, true);
+        let mut printer = CheckPrinter::new(&expected_output, true, false);
 
         printer.print(expected_output[0]);
         printer.print(expected_output[0]);
@@ -1644,6 +1650,15 @@ mod tests {
         let timer = TestTimer::new_box(hz);
 
         timer.borrow_mut().start();
+    }
+
+    fn test_verbose_check_printer() {
+        let     expected = [ "Line 1", "Line 2" ];
+        let mut printer  = CheckPrinter::new(&expected, false, true);
+
+        printer.print("Line 1");
+        printer.print("Line 2");
+        printer.print("Line 3");
     }
 
     fn test_test_timer_setup () {
@@ -1679,5 +1694,6 @@ mod tests {
         test_stdio_printer();
         test_check_printer_forgive();
         test_math();
+        test_verbose_check_printer();
     }
 }

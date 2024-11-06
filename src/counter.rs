@@ -537,7 +537,7 @@ mod tests {
                 ""
             ];
 
-        let     printer    = Some(check_printer_box(&expected, true));
+        let     printer    = Some(check_printer_box(&expected, true, true));
         let     title      = None;
         let     units      = None;
         let     histo_opts = None;

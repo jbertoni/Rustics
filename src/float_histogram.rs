@@ -678,6 +678,47 @@ mod tests {
         assert!(log_mode == expected);
     }
 
+    fn test_float_equals() {
+        let mut histo_1 = FloatHistogram::new(&None);
+        let mut histo_2 = FloatHistogram::new(&None);
+
+        for i in 0..1000 {
+            let sample = i as f64;
+
+            histo_1.record( sample);
+            histo_1.record(-sample);
+            histo_2.record( sample);
+            histo_2.record(-sample);
+        }
+
+        assert!(histo_1.equals(&histo_2));
+
+        histo_1.positive[1] += 1;
+        assert!(! histo_1.equals(&histo_2));
+        histo_1.positive[1] -= 1;
+        assert!(histo_1.equals(&histo_2));
+
+        histo_1.negative[1] += 1;
+        assert!(! histo_1.equals(&histo_2));
+        histo_1.negative[1] -= 1;
+        assert!(histo_1.equals(&histo_2));
+
+        histo_1.samples += 1;
+        assert!(! histo_1.equals(&histo_2));
+        histo_1.samples -= 1;
+        assert!(histo_1.equals(&histo_2));
+
+        histo_1.nans += 1;
+        assert!(! histo_1.equals(&histo_2));
+        histo_1.nans -= 1;
+        assert!(histo_1.equals(&histo_2));
+
+        histo_1.infinities += 1;
+        assert!(! histo_1.equals(&histo_2));
+        histo_1.infinities -= 1;
+        assert!(histo_1.equals(&histo_2));
+    }
+
     #[test]
     #[should_panic]
     fn test_to_log() {
@@ -699,5 +740,6 @@ mod tests {
         simple_test();
         test_documentation();
         test_log_mode();
+        test_float_equals();
     }
 }

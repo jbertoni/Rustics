@@ -834,7 +834,7 @@ pub mod tests {
                 ""
             ];
 
-        let     printer    = Some(check_printer_box(&expected, false));
+        let     printer    = Some(check_printer_box(&expected, false, false));
         let     title      = None;
         let     units      = bytes();
         let     histo_opts = None;

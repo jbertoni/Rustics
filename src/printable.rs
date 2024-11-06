@@ -685,14 +685,14 @@ mod tests {
     fn test_print_string() {
         let expected = [ "    >                   hello" ];
 
-        let mut check_printer = CheckPrinter::new(&expected, false);
+        let mut check_printer = CheckPrinter::new(&expected, false, false);
 
         Printable::print_string(">", "hello", &mut check_printer);
     }
 
     fn test_print_time() {
         let expected          = [ "    >                +1.00000 e+6 days" ];
-        let mut check_printer = CheckPrinter::new(&expected, false);
+        let mut check_printer = CheckPrinter::new(&expected, false, false);
 
         let     hz     = 1;
         let     days   = 60 * 60 * 24 * hz;

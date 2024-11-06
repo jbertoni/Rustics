@@ -640,6 +640,7 @@ pub mod tests {
     use crate::tests::TestTimer;
     use crate::tests::ConverterTrait;
     use crate::tests::continuing_box;
+    use crate::tests::check_printer_box;
     use crate::tests::bytes;
     use crate::hier::Hier;
     use crate::Printer;
@@ -1263,11 +1264,358 @@ pub mod tests {
         set.print_opts(Some(stdout_printer()), Some("Option Title"));
     }
 
+    pub fn title_to_print_option(title: &str) -> PrintOption {
+        let printer    = None;
+        let title      = Some(title.to_string());
+        let histo_opts = None;
+        let units      = bytes();
+
+        Some(PrintOpts { printer, title, histo_opts, units })
+    }
+
+    fn test_arc_printing() {
+        let     title          = "Printing Set Title";
+        let     print_opts     = title_to_print_option(title);
+        let mut set            = ArcSet::new("Printing Set",          0, 0, &print_opts);
+
+        let     subset_1       = set.add_subset("Printing Subset 1", 0, 0);
+        let     subset_2       = set.add_subset("Printing Subset 2", 0, 0);
+
+        let     set_stat_1     = set.add_running_integer("Set Rustics 1", None);
+        let     set_stat_2     = set.add_running_integer("Set Rustics 2", None);
+
+        let mut subset_1_lock  = subset_1.lock().unwrap();
+        let mut subset_2_lock  = subset_2.lock().unwrap();
+
+        let     subset_1_stat  = subset_1_lock.add_running_integer("Subset 1 Rustics", None);
+        let     subset_2_stat  = subset_2_lock.add_running_integer("Subset 2 Rustics", None);
+
+        drop(subset_1_lock);
+        drop(subset_2_lock);
+
+        let samples = 200;
+
+        for i in 1..=samples {
+            let sample = i as i64;
+            
+            set_stat_1   .lock().unwrap().record_i64(sample    );
+            set_stat_2   .lock().unwrap().record_i64(sample * 2);
+            subset_1_stat.lock().unwrap().record_i64(sample * 5);
+            subset_2_stat.lock().unwrap().record_i64(sample * 7);
+        }
+
+        let expected =
+            [
+                "Printing Set Title ==> Set Rustics 1",
+                "    Count                 200 ",
+                "    Minumum                 1 byte",
+                "    Maximum               200 bytes",
+                "    Log Mode                8 ",
+                "    Mode Value            256 bytes",
+                "    Mean             +1.00500 e+2 bytes",
+                "    Std Dev          +5.78791 e+1 bytes",
+                "    Variance         +3.35000 e+3 ",
+                "    Skewness         -2.61784 e-8 ",
+                "    Kurtosis         -1.19992 e+0 ",
+                "  Log Histogram",
+                "  -----------------------",
+                "    0:                 1                 1                 2                 4",
+                "    4:                 8                16                32                64",
+                "    8:                72                 0                 0                 0",
+                "",
+                "Printing Set Title ==> Set Rustics 2",
+                "    Count                 200 ",
+                "    Minumum                 2 bytes",
+                "    Maximum               400 bytes",
+                "    Log Mode                9 ",
+                "    Mode Value            512 bytes",
+                "    Mean             +2.01000 e+2 bytes",
+                "    Std Dev          +1.15758 e+2 bytes",
+                "    Variance         +1.34000 e+4 ",
+                "    Skewness         -2.61784 e-8 ",
+                "    Kurtosis         -1.19992 e+0 ",
+                "  Log Histogram",
+                "  -----------------------",
+                "    0:                 0                 1                 1                 2",
+                "    4:                 4                 8                16                32",
+                "    8:                64                72                 0                 0",
+                "",
+                "Printing Set Title ==> Printing Subset 1 ==> Subset 1 Rustics",
+                "    Count                 200 ",
+                "    Minumum                 5 bytes",
+                "    Maximum             1,000 bytes",
+                "    Log Mode               10 ",
+                "    Mode Value          1,024 bytes",
+                "    Mean             +5.02500 e+2 bytes",
+                "    Std Dev          +2.89395 e+2 bytes",
+                "    Variance         +8.37500 e+4 ",
+                "    Skewness         -2.61784 e-8 ",
+                "    Kurtosis         -1.19992 e+0 ",
+                "  Log Histogram",
+                "  -----------------------",
+                "    0:                 0                 0                 0                 1",
+                "    4:                 2                 3                 6                13",
+                "    8:                26                51                98                 0",
+                "",
+                "Printing Set Title ==> Printing Subset 2 ==> Subset 2 Rustics",
+                "    Count                 200 ",
+                "    Minumum                 7 bytes",
+                "    Maximum             1,400 bytes",
+                "    Log Mode               10 ",
+                "    Mode Value          1,024 bytes",
+                "    Mean             +7.03500 e+2 bytes",
+                "    Std Dev          +4.05154 e+2 bytes",
+                "    Variance         +1.64150 e+5 ",
+                "    Skewness         -2.61784 e-8 ",
+                "    Kurtosis         -1.19992 e+0 ",
+                "  Log Histogram",
+                "  -----------------------",
+                "    0:                 0                 0                 0                 1",
+                "    4:                 1                 2                 5                 9",
+                "    8:                18                37                73                54",
+                ""
+            ];
+
+        println!("test_printing:  Start first print test");
+
+        let printer = check_printer_box(&expected, true, false);
+
+        set.print_opts(Some(printer), None);
+
+        println!("test_printing:  End first print test");
+
+        subset_2.lock().unwrap().set_title("New Subset 2");
+
+        let expected =
+            [
+                "Printing Set Title ==> Set Rustics 1",
+                "    Count                 200 ",
+                "    Minumum                 1 byte",
+                "    Maximum               200 bytes",
+                "    Log Mode                8 ",
+                "    Mode Value            256 bytes",
+                "    Mean             +1.00500 e+2 bytes",
+                "    Std Dev          +5.78791 e+1 bytes",
+                "    Variance         +3.35000 e+3 ",
+                "    Skewness         -2.61784 e-8 ",
+                "    Kurtosis         -1.19992 e+0 ",
+                "  Log Histogram",
+                "  -----------------------",
+                "    0:                 1                 1                 2                 4",
+                "    4:                 8                16                32                64",
+                "    8:                72                 0                 0                 0",
+                "",
+                "Printing Set Title ==> Set Rustics 2",
+                "    Count                 200 ",
+                "    Minumum                 2 bytes",
+                "    Maximum               400 bytes",
+                "    Log Mode                9 ",
+                "    Mode Value            512 bytes",
+                "    Mean             +2.01000 e+2 bytes",
+                "    Std Dev          +1.15758 e+2 bytes",
+                "    Variance         +1.34000 e+4 ",
+                "    Skewness         -2.61784 e-8 ",
+                "    Kurtosis         -1.19992 e+0 ",
+                "  Log Histogram",
+                "  -----------------------",
+                "    0:                 0                 1                 1                 2",
+                "    4:                 4                 8                16                32",
+                "    8:                64                72                 0                 0",
+                "",
+                "Printing Set Title ==> Printing Subset 1 ==> Subset 1 Rustics",
+                "    Count                 200 ",
+                "    Minumum                 5 bytes",
+                "    Maximum             1,000 bytes",
+                "    Log Mode               10 ",
+                "    Mode Value          1,024 bytes",
+                "    Mean             +5.02500 e+2 bytes",
+                "    Std Dev          +2.89395 e+2 bytes",
+                "    Variance         +8.37500 e+4 ",
+                "    Skewness         -2.61784 e-8 ",
+                "    Kurtosis         -1.19992 e+0 ",
+                "  Log Histogram",
+                "  -----------------------",
+                "    0:                 0                 0                 0                 1",
+                "    4:                 2                 3                 6                13",
+                "    8:                26                51                98                 0",
+                "",
+                "New Subset 2 ==> Subset 2 Rustics",
+                "    Count                 200 ",
+                "    Minumum                 7 bytes",
+                "    Maximum             1,400 bytes",
+                "    Log Mode               10 ",
+                "    Mode Value          1,024 bytes",
+                "    Mean             +7.03500 e+2 bytes",
+                "    Std Dev          +4.05154 e+2 bytes",
+                "    Variance         +1.64150 e+5 ",
+                "    Skewness         -2.61784 e-8 ",
+                "    Kurtosis         -1.19992 e+0 ",
+                "  Log Histogram",
+                "  -----------------------",
+                "    0:                 0                 0                 0                 1",
+                "    4:                 1                 2                 5                 9",
+                "    8:                18                37                73                54",
+                "",
+                "Option Title ==> Set Rustics 1",
+                "    Count                 200 ",
+                "    Minumum                 1 byte",
+                "    Maximum               200 bytes",
+                "    Log Mode                8 ",
+                "    Mode Value            256 bytes",
+                "    Mean             +1.00500 e+2 bytes",
+                "    Std Dev          +5.78791 e+1 bytes",
+                "    Variance         +3.35000 e+3 ",
+                "    Skewness         -2.61784 e-8 ",
+                "    Kurtosis         -1.19992 e+0 ",
+                "  Log Histogram",
+                "  -----------------------",
+                "    0:                 1                 1                 2                 4",
+                "    4:                 8                16                32                64",
+                "    8:                72                 0                 0                 0",
+                "",
+                "Option Title ==> Set Rustics 2",
+                "    Count                 200 ",
+                "    Minumum                 2 bytes",
+                "    Maximum               400 bytes",
+                "    Log Mode                9 ",
+                "    Mode Value            512 bytes",
+                "    Mean             +2.01000 e+2 bytes",
+                "    Std Dev          +1.15758 e+2 bytes",
+                "    Variance         +1.34000 e+4 ",
+                "    Skewness         -2.61784 e-8 ",
+                "    Kurtosis         -1.19992 e+0 ",
+                "  Log Histogram",
+                "  -----------------------",
+                "    0:                 0                 1                 1                 2",
+                "    4:                 4                 8                16                32",
+                "    8:                64                72                 0                 0",
+                "",
+                "Option Title ==> Printing Subset 1 ==> Subset 1 Rustics",
+                "    Count                 200 ",
+                "    Minumum                 5 bytes",
+                "    Maximum             1,000 bytes",
+                "    Log Mode               10 ",
+                "    Mode Value          1,024 bytes",
+                "    Mean             +5.02500 e+2 bytes",
+                "    Std Dev          +2.89395 e+2 bytes",
+                "    Variance         +8.37500 e+4 ",
+                "    Skewness         -2.61784 e-8 ",
+                "    Kurtosis         -1.19992 e+0 ",
+                "  Log Histogram",
+                "  -----------------------",
+                "    0:                 0                 0                 0                 1",
+                "    4:                 2                 3                 6                13",
+                "    8:                26                51                98                 0",
+                "",
+                "Option Title ==> Printing Subset 2 ==> Subset 2 Rustics",
+                "    Count                 200 ",
+                "    Minumum                 7 bytes",
+                "    Maximum             1,400 bytes",
+                "    Log Mode               10 ",
+                "    Mode Value          1,024 bytes",
+                "    Mean             +7.03500 e+2 bytes",
+                "    Std Dev          +4.05154 e+2 bytes",
+                "    Variance         +1.64150 e+5 ",
+                "    Skewness         -2.61784 e-8 ",
+                "    Kurtosis         -1.19992 e+0 ",
+                "  Log Histogram",
+                "  -----------------------",
+                "    0:                 0                 0                 0                 1",
+                "    4:                 1                 2                 5                 9",
+                "    8:                18                37                73                54",
+                ""
+            ];
+
+        let printer = check_printer_box(&expected, true, false);
+
+        set.print_opts(Some(printer), None);
+
+        println!("test_printing:  End second print test");
+
+        let expected =
+            [
+                "Option Title ==> Set Rustics 1",
+                "    Count                 200 ",
+                "    Minumum                 1 byte",
+                "    Maximum               200 bytes",
+                "    Log Mode                8 ",
+                "    Mode Value            256 bytes",
+                "    Mean             +1.00500 e+2 bytes",
+                "    Std Dev          +5.78791 e+1 bytes",
+                "    Variance         +3.35000 e+3 ",
+                "    Skewness         -2.61784 e-8 ",
+                "    Kurtosis         -1.19992 e+0 ",
+                "  Log Histogram",
+                "  -----------------------",
+                "    0:                 1                 1                 2                 4",
+                "    4:                 8                16                32                64",
+                "    8:                72                 0                 0                 0",
+                "",
+                "Option Title ==> Set Rustics 2",
+                "    Count                 200 ",
+                "    Minumum                 2 bytes",
+                "    Maximum               400 bytes",
+                "    Log Mode                9 ",
+                "    Mode Value            512 bytes",
+                "    Mean             +2.01000 e+2 bytes",
+                "    Std Dev          +1.15758 e+2 bytes",
+                "    Variance         +1.34000 e+4 ",
+                "    Skewness         -2.61784 e-8 ",
+                "    Kurtosis         -1.19992 e+0 ",
+                "  Log Histogram",
+                "  -----------------------",
+                "    0:                 0                 1                 1                 2",
+                "    4:                 4                 8                16                32",
+                "    8:                64                72                 0                 0",
+                "",
+                "Option Title ==> Printing Subset 1 ==> Subset 1 Rustics",
+                "    Count                 200 ",
+                "    Minumum                 5 bytes",
+                "    Maximum             1,000 bytes",
+                "    Log Mode               10 ",
+                "    Mode Value          1,024 bytes",
+                "    Mean             +5.02500 e+2 bytes",
+                "    Std Dev          +2.89395 e+2 bytes",
+                "    Variance         +8.37500 e+4 ",
+                "    Skewness         -2.61784 e-8 ",
+                "    Kurtosis         -1.19992 e+0 ",
+                "  Log Histogram",
+                "  -----------------------",
+                "    0:                 0                 0                 0                 1",
+                "    4:                 2                 3                 6                13",
+                "    8:                26                51                98                 0",
+                "",
+                "Option Title ==> Printing Subset 2 ==> Subset 2 Rustics",
+                "    Count                 200 ",
+                "    Minumum                 7 bytes",
+                "    Maximum             1,400 bytes",
+                "    Log Mode               10 ",
+                "    Mode Value          1,024 bytes",
+                "    Mean             +7.03500 e+2 bytes",
+                "    Std Dev          +4.05154 e+2 bytes",
+                "    Variance         +1.64150 e+5 ",
+                "    Skewness         -2.61784 e-8 ",
+                "    Kurtosis         -1.19992 e+0 ",
+                "  Log Histogram",
+                "  -----------------------",
+                "    0:                 0                 0                 0                 1",
+                "    4:                 1                 2                 5                 9",
+                "    8:                18                37                73                54",
+                ""
+            ];
+
+        let title    = "Option Title";
+        let printer  = check_printer_box(&expected, true, false);
+
+        set.print_opts(Some(printer), Some(title));
+    }
+
     #[test]
     pub fn run_tests() {
         simple_test();
         sample_usage();
         documentation();
         test_hier();
+        test_arc_printing();
     }
 }

@@ -407,10 +407,37 @@ mod tests {
         }
     }
 
+    fn test_log_equals() {
+        let mut histo_1 = LogHistogram::new();
+        let mut histo_2 = LogHistogram::new();
+
+        for i in 0..1000 {
+            let sample = i as i64;
+
+            histo_1.record( sample);
+            histo_1.record(-sample);
+            histo_2.record( sample);
+            histo_2.record(-sample);
+        }
+
+        assert!(histo_1.equals(&histo_2));
+
+        histo_1.positive[1] += 1;
+        assert!(!histo_1.equals(&histo_2));
+        histo_1.positive[1] -= 1;
+        assert!(histo_1.equals(&histo_2));
+
+        histo_1.negative[1] += 1;
+        assert!(!histo_1.equals(&histo_2));
+        histo_1.negative[1] -= 1;
+        assert!(histo_1.equals(&histo_2));
+    }
+
     #[test]
     fn run_tests() {
         test_log_histogram();
         test_pseudo_log();
         test_default();
+        test_log_equals();
     }
 }

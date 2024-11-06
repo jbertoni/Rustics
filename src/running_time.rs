@@ -594,7 +594,7 @@ pub mod tests {
             ];
 
         let     timer      = continuing_box();
-        let     printer    = Some(check_printer_box(&expected, true));
+        let     printer    = Some(check_printer_box(&expected, true, false));
         let     title      = None;
         let     units      = None;
         let     histo_opts = None;

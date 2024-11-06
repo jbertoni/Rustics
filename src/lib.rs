@@ -564,6 +564,9 @@ pub trait Printer {
     /// the newline.
 
     fn print(&mut self, output: &str);
+
+    fn as_any        (&self    ) -> &dyn Any;
+    fn as_any_mut    (&mut self) -> &mut dyn Any;
 }
 
 /// The printer macro converts a PrinterBox into borrowed or locked
@@ -714,6 +717,14 @@ impl Printer for StdioPrinter {
             StreamKind::Stdout => println! ("{}", output),
             StreamKind::Stderr => eprintln!("{}", output),
         }
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
     }
 }
 
@@ -946,6 +957,14 @@ mod tests {
         fn print(&mut self, output: &str) {
             println!("{}:  {}", self.prefix, output);
         }
+
+        fn as_any(&self) -> &dyn Any {
+            self
+        }
+
+        fn as_any_mut(&mut self) -> &mut dyn Any {
+            self
+        }
     }
 
     pub struct CheckPrinter {
@@ -962,12 +981,45 @@ mod tests {
 
             CheckPrinter { expected, current, fail_on_overage, verbose }
         }
+
+        // Check whether the line count was an exact match.
+
+        fn count_match(&self) -> bool {
+            self.current == self.expected.len()
+        }
+
+        // Get the current count of lines seen and the total expected.
+
+        fn counters(&self) -> (usize, usize) {
+            (self.current, self.expected.len())
+        }
     }
+
+    // Create a CheckPrinter and put it into a PrinterBox.
 
     pub fn check_printer_box(expected: &[&str], fail_on_overage: bool, verbose: bool) -> PrinterBox {
         let printer = CheckPrinter::new(expected, fail_on_overage, verbose);
 
         printer_box!(printer)
+    }
+
+    // Check that the number of lines seen and the number of lines
+    // expected are a match.
+
+    pub fn check_printer_count_match(printer_box: PrinterBox) -> bool {
+        let printer      = printer_box.borrow();
+        let printer_any  = printer.as_any();
+        let printer_impl = printer_any.downcast_ref::<CheckPrinter>().unwrap();
+
+        printer_impl.count_match()
+    }
+
+    pub fn check_printer_counters(printer_box: PrinterBox) -> (usize, usize) {
+        let printer      = printer_box.borrow();
+        let printer_any  = printer.as_any();
+        let printer_impl = printer_any.downcast_ref::<CheckPrinter>().unwrap();
+
+        printer_impl.counters()
     }
 
     impl Printer for CheckPrinter {
@@ -983,7 +1035,6 @@ mod tests {
                 }
 
                 assert!(pass);
-                self.current += 1;
             } else if self.fail_on_overage {
                 panic!("CheckPrinter:  too many lines");
             } else {
@@ -992,7 +1043,19 @@ mod tests {
                 }
             }
 
+            // Count all lines seen, including the excess.
+
+            self.current += 1;
+
             println!("{}", output);
+        }
+
+        fn as_any(&self) -> &dyn Any {
+            self
+        }
+
+        fn as_any_mut(&mut self) -> &mut dyn Any {
+            self
         }
     }
 

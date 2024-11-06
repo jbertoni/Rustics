@@ -635,21 +635,19 @@ pub mod tests {
     use std::time::Instant;
 
     use super::*;
-    use std::rc::Rc;
-    use std::cell::RefCell;
     use crate::tests::TestTimer;
     use crate::tests::ConverterTrait;
     use crate::tests::continuing_box;
     use crate::tests::check_printer_box;
+    use crate::tests::check_printer_count_match;
+    use crate::tests::check_printer_counters;
     use crate::tests::bytes;
     use crate::hier::Hier;
-    use crate::Printer;
     use crate::time::Timer;
     use crate::time::DurationTimer;
     use crate::hier::HierDescriptor;
     use crate::hier::HierDimension;
     use crate::stdout_printer;
-    use crate::printer_box;
 
     struct TestTraverser {
         pub members:  i64,
@@ -920,16 +918,6 @@ pub mod tests {
         assert!(!found);
     }
 
-    //  Define a custom printer to check user-supplied printing.
-
-    struct CustomPrinter {
-    }
-
-    impl Printer for CustomPrinter {
-        fn print(&mut self, output: &str) {
-            println!("CustomPrinter:  {}", output);
-        }
-    }
 
     fn new_hier() -> Hier {
         crate::hier::tests::make_hier(4, 8)
@@ -955,9 +943,7 @@ pub mod tests {
         drop(running);
         drop(subset);
 
-        // Try a custom printer.
-
-        let printer = printer_box!(CustomPrinter { });
+        let printer = stdout_printer();
 
         set.print_opts(Some(printer.clone()), None);
 
@@ -1376,15 +1362,20 @@ pub mod tests {
                 ""
             ];
 
-        println!("test_arc_printing:  Start first print test");
+        println!("test_arc_printing:  start print 1");
 
         let printer = check_printer_box(&expected, true, false);
 
-        set.print_opts(Some(printer), None);
+        set.print_opts(Some(printer.clone()), None);
 
-        println!("test_arc_printing:  End first print test");
+        // Check that the output length was an exact match.
 
-        subset_2.lock().unwrap().set_title("New Subset 2");
+        let (current, total) = check_printer_counters(printer.clone());
+
+        println!("test_arc_printing:  end print 1");
+        println!("test_arc_printing:  print 1:  {} vs {}", current, total);
+
+        assert!(check_printer_count_match(printer.clone()));
 
         let expected =
             [
@@ -1455,82 +1446,24 @@ pub mod tests {
                 "    0:                 0                 0                 0                 1",
                 "    4:                 1                 2                 5                 9",
                 "    8:                18                37                73                54",
-                "",
-                "Option Title ==> Set Rustics 1",
-                "    Count                 200 ",
-                "    Minumum                 1 byte",
-                "    Maximum               200 bytes",
-                "    Log Mode                8 ",
-                "    Mode Value            256 bytes",
-                "    Mean             +1.00500 e+2 bytes",
-                "    Std Dev          +5.78791 e+1 bytes",
-                "    Variance         +3.35000 e+3 ",
-                "    Skewness         -2.61784 e-8 ",
-                "    Kurtosis         -1.19992 e+0 ",
-                "  Log Histogram",
-                "  -----------------------",
-                "    0:                 1                 1                 2                 4",
-                "    4:                 8                16                32                64",
-                "    8:                72                 0                 0                 0",
-                "",
-                "Option Title ==> Set Rustics 2",
-                "    Count                 200 ",
-                "    Minumum                 2 bytes",
-                "    Maximum               400 bytes",
-                "    Log Mode                9 ",
-                "    Mode Value            512 bytes",
-                "    Mean             +2.01000 e+2 bytes",
-                "    Std Dev          +1.15758 e+2 bytes",
-                "    Variance         +1.34000 e+4 ",
-                "    Skewness         -2.61784 e-8 ",
-                "    Kurtosis         -1.19992 e+0 ",
-                "  Log Histogram",
-                "  -----------------------",
-                "    0:                 0                 1                 1                 2",
-                "    4:                 4                 8                16                32",
-                "    8:                64                72                 0                 0",
-                "",
-                "Option Title ==> Printing Subset 1 ==> Subset 1 Rustics",
-                "    Count                 200 ",
-                "    Minumum                 5 bytes",
-                "    Maximum             1,000 bytes",
-                "    Log Mode               10 ",
-                "    Mode Value          1,024 bytes",
-                "    Mean             +5.02500 e+2 bytes",
-                "    Std Dev          +2.89395 e+2 bytes",
-                "    Variance         +8.37500 e+4 ",
-                "    Skewness         -2.61784 e-8 ",
-                "    Kurtosis         -1.19992 e+0 ",
-                "  Log Histogram",
-                "  -----------------------",
-                "    0:                 0                 0                 0                 1",
-                "    4:                 2                 3                 6                13",
-                "    8:                26                51                98                 0",
-                "",
-                "Option Title ==> Printing Subset 2 ==> Subset 2 Rustics",
-                "    Count                 200 ",
-                "    Minumum                 7 bytes",
-                "    Maximum             1,400 bytes",
-                "    Log Mode               10 ",
-                "    Mode Value          1,024 bytes",
-                "    Mean             +7.03500 e+2 bytes",
-                "    Std Dev          +4.05154 e+2 bytes",
-                "    Variance         +1.64150 e+5 ",
-                "    Skewness         -2.61784 e-8 ",
-                "    Kurtosis         -1.19992 e+0 ",
-                "  Log Histogram",
-                "  -----------------------",
-                "    0:                 0                 0                 0                 1",
-                "    4:                 1                 2                 5                 9",
-                "    8:                18                37                73                54",
                 ""
             ];
 
+        // Set a new title for a subset and check the output.
+
         let printer = check_printer_box(&expected, true, false);
 
-        set.print_opts(Some(printer), None);
+        subset_2.lock().unwrap().set_title("New Subset 2");
+        println!("test_arc_printing:  start print 2");
 
-        println!("test_arc_printing:  End second print test");
+        set.print_opts(Some(printer.clone()), None);
+
+        let (current, total) = check_printer_counters(printer.clone());
+
+        println!("test_arc_printing:  end print 2");
+        println!("test_arc_printing:  print 2:  {} vs {}", current, total);
+
+        assert! (check_printer_count_match(printer.clone()));
 
         let expected =
             [
@@ -1607,7 +1540,16 @@ pub mod tests {
         let title    = "Option Title";
         let printer  = check_printer_box(&expected, true, false);
 
-        set.print_opts(Some(printer), Some(title));
+        println!("test_arc_printing:  start print 3");
+
+        set.print_opts(Some(printer.clone()), Some(title));
+
+        let (current, total) = check_printer_counters(printer.clone());
+
+        println!("test_arc_printing:  end print 3");
+        println!("test_arc_printing:  print 3:  {} vs {}", current, total);
+
+        assert!(check_printer_count_match(printer.clone()));
     }
 
     #[test]

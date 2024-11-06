@@ -939,34 +939,6 @@ mod tests {
         sum as i64
     }
 
-    // This struct is used by other modules.
-
-    pub struct TestPrinter {
-        prefix: String,
-    }
-
-    impl TestPrinter {
-        pub fn new(prefix: &str) -> TestPrinter {
-            let prefix = prefix.to_string();
-
-            TestPrinter { prefix }
-        }
-    }
-
-    impl Printer for TestPrinter {
-        fn print(&mut self, output: &str) {
-            println!("{}:  {}", self.prefix, output);
-        }
-
-        fn as_any(&self) -> &dyn Any {
-            self
-        }
-
-        fn as_any_mut(&mut self) -> &mut dyn Any {
-            self
-        }
-    }
-
     pub struct CheckPrinter {
         expected:         Vec<String>,
         current:          usize,
@@ -1292,7 +1264,8 @@ mod tests {
         let mut time_stat = RunningTime::new("Time => Scale", stat_timer.clone(), &None);
 
         let mut time    = 1;
-        let mut printer = TestPrinter::new("Time Scale Test");
+        let     printer = stdout_printer();
+        let     printer = printer!(printer);
 
 
         for i in 1..16 {
@@ -1309,7 +1282,7 @@ mod tests {
             assert!(time_stat.max_i64() == elapsed);
 
             let header = format!("{}", Printable::commas_i64(time));
-            Printable::print_time(&header, time as f64, hz as i64, &mut printer);
+            Printable::print_time(&header, time as f64, hz as i64, printer);
 
             time *= 10;
         }
@@ -1742,6 +1715,51 @@ mod tests {
         assert!(compute_skewness(4, -1.0, 0.0) == 0.0);
     }
 
+    #[test] // TODO
+    fn test_printers() {
+        let stdout_box = stdout_printer();
+        let stdout     = printer!(stdout_box);
+
+        {
+            let stdout_any = stdout.as_any();
+            let _          = stdout_any.downcast_ref::<StdioPrinter>().unwrap();
+        }
+
+        {
+            let stdout_any_mut = stdout.as_any_mut();
+            let _              = stdout_any_mut.downcast_mut::<StdioPrinter>().unwrap();
+        }
+
+        let expect = [ ];
+
+        let check_box = check_printer_box(&expect, true, true);
+        let check     = printer!(check_box);
+
+        {
+            let check_any = check.as_any();
+            let _          = check_any.downcast_ref::<CheckPrinter>().unwrap();
+        }
+
+        {
+            let check_any_mut = check.as_any_mut();
+            let _             = check_any_mut.downcast_mut::<CheckPrinter>().unwrap();
+        }
+
+        let check_box = check_printer_box(&expect, true, true);
+        let check     = printer!(check_box);
+
+        {
+            let check_any = check.as_any();
+            let _          = check_any.downcast_ref::<CheckPrinter>().unwrap();
+        }
+
+        {
+            let check_any_mut = check.as_any_mut();
+            let _             = check_any_mut.downcast_mut::<CheckPrinter>().unwrap();
+        }
+
+    }
+
     #[test]
     pub fn run_lib_tests() {
         test_time_printing();
@@ -1758,5 +1776,6 @@ mod tests {
         test_check_printer_forgive();
         test_math();
         test_verbose_check_printer();
+        test_printers();
     }
 }

@@ -543,11 +543,10 @@ impl Histogram for RunningInteger {
 mod tests {
     use super::*;
     use crate::PrintOpts;
-    use crate::printer_box;
+    use crate::stdout_printer;
     use crate::counter::Counter;
     use crate::hier::HierMember;
     use crate::tests::continuing_box;
-    use crate::tests::TestPrinter;
     use crate::tests::bytes;
     use crate::tests::check_printer_box;
 
@@ -596,8 +595,7 @@ mod tests {
         assert!(stats.count()   == events   );
         assert!(stats.class()   == "integer");
 
-        let printer = TestPrinter::new("test header ======");
-        let printer = printer_box!(printer);
+        let printer = stdout_printer();
 
         stats.print_opts(Some(printer), None);
 

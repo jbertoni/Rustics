@@ -231,7 +231,7 @@ impl FloatWindow {
         }
 
         // Use kbk_sum to try to get more precision.  The samples vector
-        // was sorted by kbk_sum, so these vectors are sorted already.
+        // was sorted by kbk_sum_sort, so these vectors are sorted already.
 
         let moment_2 = kbk_sum(&vec_2);
         let moment_3 = kbk_sum(&vec_3);

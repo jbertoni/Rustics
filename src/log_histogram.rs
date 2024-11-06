@@ -305,13 +305,13 @@ impl Histogram for LogHistogram {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tests::TestPrinter;
     use crate::stdout_printer;
     use crate::printer;
 
     pub fn test_log_histogram() {
         let mut histogram = LogHistogram::new();
-        let     printer   = &mut TestPrinter::new(&"Test Output");
+        let     printer   = stdout_printer();
+        let     printer   = printer!(printer);
         let     test      = [ 1, -1, 4, 25, 4109, -4108, -8, -9, -16, -17, 3, 8, 16 ];
 
         for i in test.iter() {

@@ -546,6 +546,7 @@ mod tests {
     use crate::arc_sets::tests::make_time_config;
     use crate::arc_sets::tests::make_float_config;
     use crate::tests::check_printer_box;
+    use crate::tests::check_printer_counters;
     use crate::tests::check_printer_count_match;
     use crate::tests::bytes;
     use crate::arc_sets::tests::title_to_print_option;
@@ -1203,6 +1204,92 @@ mod tests {
 
         println!("test_rc_printing:  end print 3");
         assert! (check_printer_count_match(printer.clone()));
+
+        let expected =
+            [
+                "Set Rustics 1",
+                "    Count                 200 ",
+                "    Minumum                 1 byte",
+                "    Maximum               200 bytes",
+                "    Log Mode                8 ",
+                "    Mode Value            256 bytes",
+                "    Mean             +1.00500 e+2 bytes",
+                "    Std Dev          +5.78791 e+1 bytes",
+                "    Variance         +3.35000 e+3 ",
+                "    Skewness         -2.61784 e-8 ",
+                "    Kurtosis         -1.19992 e+0 ",
+                "  Log Histogram",
+                "  -----------------------",
+                "    0:                 1                 1                 2                 4",
+                "    4:                 8                16                32                64",
+                "    8:                72                 0                 0                 0",
+                "",
+                "Set Rustics 2",
+                "    Count                 200 ",
+                "    Minumum                 2 bytes",
+                "    Maximum               400 bytes",
+                "    Log Mode                9 ",
+                "    Mode Value            512 bytes",
+                "    Mean             +2.01000 e+2 bytes",
+                "    Std Dev          +1.15758 e+2 bytes",
+                "    Variance         +1.34000 e+4 ",
+                "    Skewness         -2.61784 e-8 ",
+                "    Kurtosis         -1.19992 e+0 ",
+                "  Log Histogram",
+                "  -----------------------",
+                "    0:                 0                 1                 1                 2",
+                "    4:                 4                 8                16                32",
+                "    8:                64                72                 0                 0",
+                "",
+                "Printing Subset 1 ==> Subset 1 Rustics",
+                "    Count                 200 ",
+                "    Minumum                 5 bytes",
+                "    Maximum             1,000 bytes",
+                "    Log Mode               10 ",
+                "    Mode Value          1,024 bytes",
+                "    Mean             +5.02500 e+2 bytes",
+                "    Std Dev          +2.89395 e+2 bytes",
+                "    Variance         +8.37500 e+4 ",
+                "    Skewness         -2.61784 e-8 ",
+                "    Kurtosis         -1.19992 e+0 ",
+                "  Log Histogram",
+                "  -----------------------",
+                "    0:                 0                 0                 0                 1",
+                "    4:                 2                 3                 6                13",
+                "    8:                26                51                98                 0",
+                "",
+                "Printing Subset 2 ==> Subset 2 Rustics",
+                "    Count                 200 ",
+                "    Minumum                 7 bytes",
+                "    Maximum             1,400 bytes",
+                "    Log Mode               10 ",
+                "    Mode Value          1,024 bytes",
+                "    Mean             +7.03500 e+2 bytes",
+                "    Std Dev          +4.05154 e+2 bytes",
+                "    Variance         +1.64150 e+5 ",
+                "    Skewness         -2.61784 e-8 ",
+                "    Kurtosis         -1.19992 e+0 ",
+                "  Log Histogram",
+                "  -----------------------",
+                "    0:                 0                 0                 0                 1",
+                "    4:                 1                 2                 5                 9",
+                "    8:                18                37                73                54",
+                ""
+            ];
+
+        println!("test_arc_printing:  start print 4");
+
+        let printer  = check_printer_box(&expected, true, false);
+
+        set.set_title("");
+        set.print_opts(Some(printer.clone()), None);
+
+        let (current, total) = check_printer_counters(printer.clone());
+
+        println!("test_arc_printing:  end print 4");
+        println!("test_arc_printing:  print 4:  {} vs {}", current, total);
+
+        assert!(check_printer_count_match(printer.clone()));
     }
 
     #[test]

@@ -259,7 +259,7 @@ pub struct HierDimension {
 impl HierDimension {
     pub fn new(period: usize, retention: usize) -> HierDimension {
         if retention < period {
-            panic!("HierDimension::new:  The retention count must be at the period length.");
+            panic!("HierDimension::new:  The retention count is too small.");
         }
 
         HierDimension { period, retention }

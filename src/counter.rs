@@ -94,7 +94,7 @@ pub struct Counter {
 }
 
 impl Counter {
-    /// Constructs an instance with a given name and optional Printer
+    /// Constructs an instance with the given name and optional Printer
     /// instance
 
     pub fn new(name: &str, print_opts: &PrintOption) -> Counter {
@@ -228,6 +228,8 @@ impl Rustics for Counter {
         self.print_opts(None, None);
     }
 
+    /// Prints the counter with a substitute printer or title.
+
     fn print_opts(&self, printer: PrinterOption, title: Option<&str>) {
         let printer_box =
             if let Some(printer) = printer {
@@ -251,6 +253,7 @@ impl Rustics for Counter {
     }
 
     // For internal use only.
+
     fn set_title(&mut self, title: &str) {
         self.title = String::from(title);
     }

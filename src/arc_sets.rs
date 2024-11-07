@@ -9,7 +9,7 @@
 //! ## Type
 //!
 //! * ArcSet
-//!     * ArcSet implements a collection that can contain Rustics instances and
+//!     * ArcSet implements collections that can contain Rustics instances and
 //!       other ArcSet instances.
 //!
 //!     * Members of an ArcSet are kept as Arc<Mutex<...>> instances to support
@@ -28,7 +28,7 @@
 //!    // 8 statistics instances but no subsets, and set those hints
 //!    // appropriately.  The default print output goes to stdout, and
 //!    // that's fine for an example, so just give "None" to accept the
-//!    // default.
+//!    // default output settings.
 //!
 //!    let     set = ArcSet::new_box("Main Statistics", 8, 0, &None);
 //!    let mut set = set.lock().unwrap();
@@ -205,8 +205,7 @@ impl ArcSet {
     ///
     /// The "members_hint" and "subsets_hint" parameters are hints as to the number
     /// of elements to be expected.  "members_hint" refers to the number of Rustics
-    /// instances in the set.  These hints can improve performance a bit.  They
-    /// might be especially useful in embedded environments.
+    /// instances in the set.
 
     /// Creates a new ArcSet.
 
@@ -330,6 +329,8 @@ impl ArcSet {
             }
         }
     }
+
+    /// Returns the current title.
 
     pub fn title(&self) -> String {
         self.title.clone()
@@ -1283,7 +1284,7 @@ pub mod tests {
 
         for i in 1..=samples {
             let sample = i as i64;
-            
+
             set_stat_1   .lock().unwrap().record_i64(sample    );
             set_stat_2   .lock().unwrap().record_i64(sample * 2);
             subset_1_stat.lock().unwrap().record_i64(sample * 5);

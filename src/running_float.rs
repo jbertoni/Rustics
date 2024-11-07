@@ -316,6 +316,9 @@ impl Rustics for RunningFloat {
         panic!("RunningFloat::record_i64: not supported");
     }
 
+    /// Record an f64 sample.  NaN and infinite values are counted
+    /// but otherwise ignored.
+
     fn record_f64(&mut self, sample: f64) {
         // Ignore NaNs for now.
 
@@ -503,6 +506,8 @@ impl Rustics for RunningFloat {
     fn float_histogram(&self) -> Option<FloatHistogramBox> {
         Some(self.histogram.clone())
     }
+
+    // Methods for or internal use.
 
     fn set_id(&mut self, id: usize) {
         self.id = id;

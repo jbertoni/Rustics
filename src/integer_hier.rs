@@ -692,10 +692,10 @@ pub mod tests {
         // sums drift a bit.
 
         let cubes_error        = (export.cubes - expected.cubes).abs();
-        let cubes_tolerance    = cubes_error / expected.cubes; 
+        let cubes_tolerance    = cubes_error / expected.cubes;
 
         let moment_4_error     = (export.moment_4 - expected.moment_4).abs();
-        let moment_4_tolerance = moment_4_error / expected.moment_4; 
+        let moment_4_tolerance = moment_4_error / expected.moment_4;
 
         println!("test_integer_sum:  export cubes    {}, expected {}, error {}",
             export.cubes, expected.cubes, cubes_tolerance);

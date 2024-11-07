@@ -9,7 +9,7 @@
 //! ## Type
 //! * FloatHistogram
 //!   * FloatHistogram provides a very coarse log histogram that is similar to
-//!     the LogHistogram type.
+//!     the LogHistogram type with its pseudo-log function.
 //!   * Each count in the histogram corresponds to 16 exponents from samples.
 //!     The mantissa is ignored.
 //!   * NaNs are counted separately, but otherwise are ignored.

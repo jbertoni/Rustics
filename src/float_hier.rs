@@ -10,7 +10,7 @@
 //! * FloatHier
 //!     * This type implements hierarchical statistics using the
 //!       RunningFloat type, q.v.  It is substantially identical
-//!       to IntegerHier.
+//!       to IntegerHier except it accepts f64 samples.
 //!
 //!     * Each level uses a Window instance containing a configurable
 //!       number of RunningFloat instances.  See the window module
@@ -50,19 +50,18 @@
 //!     // Make a descriptor of the first level.  We have chosen to sum
 //!     // 1000 level 0 RunningFloat instances into one level 1
 //!     // RunningFloat instance.  This level is large, so we will keep
-//!     // only 1000 level 0 instances in the window.
+//!     // only 1000 level 0 (the minimum) instances in the window.
 //!
 //!     let dimension_0 = HierDimension::new(1000, 1000);
 //!
 //!     // At level 1, we want to sum 100 level 1 instances into one level
-//!     // 2 instance.  This level is smaller, so let's retain 200
-//!     // RunningFloat instances here.
+//!     // 2 instance.   Let's retain 200 RunningFloat instances here.
 //!
 //!     let dimension_1 = HierDimension::new(100, 200);
 //!
 //!     // Level two isn't summed, so the period isn't used.  Set the
-//!     // value to one one event to keep the contructor happy.  Let's
-//!     // pretend this level isn't used much, so retain only 100
+//!     // value to one one to keep the contructor happy.  Let's
+//!     // pretend this level isn't used much, so we cn retain only 100
 //!     // instances in it.
 //!
 //!     let dimension_2 = HierDimension::new(1, 100);
@@ -78,9 +77,9 @@
 //!     let auto_advance = Some(2000);
 //!     let descriptor   = HierDescriptor::new(dimensions, auto_advance);
 //!
-//!     // Now specify some parameters used by Hier to do printing.  The
-//!     // defaults for the title and printer are fine, so just pass None.
-//!     // The title defaults to the name and output will go to stdout.
+//!     // Now specify some more parameters used by Hier.  The defaults
+//!     // for the title and printer are fine, so just pass None.  The
+//!     // title defaults to the name and output will go to stdout.
 //!     // Don't configure a window for this example.
 //!
 //!     let name        = "hierarchical float".to_string();
@@ -635,9 +634,9 @@ mod tests {
             -> bool {
         let export   = export.  borrow();
         let expected = expected.borrow();
-    
+
         export.equals(&expected)
-    }   
+    }
 
     // Test that the sum functions give reasonable results.
     // IntegerWindow keeps the samples and can do very
@@ -704,10 +703,10 @@ mod tests {
         assert!(export.max_f64  == expected.max_i64 as f64);
 
         let cubes_error        = (export.cubes - expected.cubes).abs();
-        let cubes_tolerance    = cubes_error / expected.cubes; 
+        let cubes_tolerance    = cubes_error / expected.cubes;
 
         let moment_4_error     = (export.moment_4 - expected.moment_4).abs();
-        let moment_4_tolerance = moment_4_error / expected.moment_4; 
+        let moment_4_tolerance = moment_4_error / expected.moment_4;
 
         println!("test_float_sum:  export cubes    {}, expected {}, error {}",
             export.cubes, expected.cubes, cubes_tolerance);

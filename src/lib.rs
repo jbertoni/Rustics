@@ -361,7 +361,7 @@ pub fn compute_statistics(data: StatisticsData) -> Statistics {
       + 6.0 * mean_2 * squares
       - 4.0 * mean_3 * sum
       +       mean_4 * n;
-    
+
     Statistics { mean, moment_2, moment_4 }
 }
 
@@ -373,14 +373,14 @@ pub struct RecoverData {
     pub moment_4:   f64,
 }
 
-/// This routine converts the data in RecoverData
-/// into estimators of the sum of the squares and
-/// 4th power of each sample.  This is used when
-/// merging Rustics instances for a Hier instance.
+/// This routine converts the data in RecoverData into
+/// estimators of the sum of the squares and 4th power
+/// of each sample.  This is used when merging Rustics
+/// instances for use in a Hier instance.
 ///
-/// The formulae are derived by appllying the binomial
+/// The formulae are derived by applying the binomial
 /// theorem to the definition of the various moments
-/// about the mean
+/// about the mean.
 
 pub fn recover(data: RecoverData) -> (f64, f64) {
     let n        = data.n;
@@ -397,8 +397,8 @@ pub fn recover(data: RecoverData) -> (f64, f64) {
     let mean_3   = mean.powi(3);
     let mean_4   = mean.powi(4);
 
-    let quads = 
-                   moment_4              
+    let quads =
+                   moment_4
           + (4.0 * cubes    * mean_1)
           - (6.0 * squares  * mean_2)
           + (4.0 * sum      * mean_3)
@@ -432,7 +432,7 @@ pub fn estimate_moment_3(data: EstimateData) -> f64 {
 
     // Estimate the sums of the squares of each sample.
 
-    let squares = 
+    let squares =
         moment_2
       + 2.0 * sum * mean
       -       n   * mean.powi(2);
@@ -448,7 +448,6 @@ pub fn compute_skewness(count: u64, moment_2: f64, moment_3: f64) -> f64 {
     if count < 3 || moment_2 == 0.0 {
         return 0.0;
     }
-
 
     // Deal with floating point non-finite values.
 
@@ -1116,7 +1115,7 @@ mod tests {
         let setup = ConverterTrait::as_test_timer(both.clone());
         let value = ConverterTrait::as_timer(both.clone());
 
-        for i in 1..100 {
+        for i in 1..=100 {
             setup.borrow_mut().setup(i);
             assert!(value.borrow_mut().finish() == i);
         }
@@ -1201,7 +1200,7 @@ mod tests {
 
         let mut random: i32 = 0; // make sure that we test zero.
 
-        for _i in 1..100 {
+        for _i in 1..=100 {
 
             let interval =
                 if random > 0 {
@@ -1250,7 +1249,7 @@ mod tests {
 
         let mut time_stat = RunningTime::new("Test Time => 1..100", stat_timer.clone(), &None);
 
-        for i in 1..101 {
+        for i in 1..=100 {
             test_timer.borrow_mut().setup(i);
             time_stat.record_event();
 
@@ -1268,7 +1267,7 @@ mod tests {
         let     printer = printer!(printer);
 
 
-        for i in 1..16 {
+        for i in 1..=16 {
             let elapsed = i * 100;
 
             test_timer.borrow_mut().setup(elapsed);
@@ -1421,9 +1420,11 @@ mod tests {
 
         // Get a sample with easily calculated summary statistics.
 
-        let mut time_stat = RunningTime::new("Time Window => 1..100", stat_timer.clone(), &None);
+        let mut time_stat = RunningTime::new("Time Window => 1..=count", stat_timer.clone(), &None);
 
-        for i in 1..101 {
+        let count = 100;
+
+        for i in 1..=count {
             test_timer.borrow_mut().setup(i);
             time_stat.record_event();
 
@@ -1431,10 +1432,11 @@ mod tests {
         }
 
         let float_count = time_stat.count() as f64;
-        let sum         = (100 * (100 + 1) / 2) as f64;
+        let sum         = float_count * (float_count + 1.0) / 2.0;
         let mean        = sum / float_count;
 
-        assert!(time_stat.mean() == mean);
+        assert!(time_stat.count() == count as u64);
+        assert!(time_stat.mean () == mean        );
 
         time_stat.print();
 

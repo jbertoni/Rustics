@@ -958,7 +958,7 @@ mod tests {
 
         for i in 1..=samples {
             let sample = i as i64;
-            
+
             set_stat_1   .borrow_mut().record_i64(sample    );
             set_stat_2   .borrow_mut().record_i64(sample * 2);
             subset_1_stat.borrow_mut().record_i64(sample * 5);

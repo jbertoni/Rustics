@@ -365,9 +365,9 @@ impl Printable {
         // Concatenate the new mantissa and the original exponent.
 
         let mantissa: String = mantissa.into_iter().collect();
-        let exponent         = value.split(' ').last().unwrap();
+        let exponent         = value.split(' ').last().unwrap().to_string();
 
-        (mantissa, exponent.to_string())
+        (mantissa, exponent)
     }
 
     /// Prints a time value in human-usable form.

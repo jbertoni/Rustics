@@ -8,29 +8,30 @@
 //! ## Type
 //!
 //! * IntegerHier
-//!     * This type implements hierarchical statistics using the
+//!     * This type implements multi-level statistics using the
 //!       RunningInteger type, q.v.
 //!
-//!     * Each level uses a Window instance containing a configurable
-//!       number of RunningInteger instances.  See the window module
-//!       documentation for more information on how the windows work.
-//!
-//!     * Level 0 RunningInteger instances are used to collect data.
-//!       Each instance collects a configurable number of samples.
-//!       After that number of samples are gathered, a new
-//!       RunningInteger instance is pushed into the window.
+//!     * The newest member of the lowest level of RunningInteger
+//!       instances is used to record data.  After a configurable
+//!       number of samples have been recorded, a new instance is
+//!       added to the level.
 //!
 //!     * When a configurable number of level 0 instances have been
 //!       collected into the window, they are summed into one level 1
 //!       RunningInteger instance.
 //!
+//!     * When a configurable size limit is reached, the oldest 
+//!       RunningInteger instance is discarded.  This limit must be
+//!       at least the number of instances to be summed.
+//!
+//!     * Higher levels contain sums of a configurable number of
+//!       lower-level instances.
+//!
 //!     * In general, a Rustics intance at level j is a sum of of i
 //!       instances from level j - 1, where i is configured per level.
 //!
-//!     * Each window retains RunningInteger instances that have
+//!     * Each window retains some RunningInteger instances that have
 //!       already been summed, in case they are wanted for queries.
-//!       The total window size is configured per level, and limits
-//!       the number of retained RunningInteger instances.
 //!
 //! ## Example
 //!```
@@ -49,7 +50,7 @@
 //!     // Make a descriptor of the first level.  We have chosen to sum
 //!     // 1000 level 0 RunningInteger instances into one level 1
 //!     // RunningInteger instance.  This level is large, so we will keep
-//!     // only 1000 level 0 instances in the window.
+//!     // the minimum of 1000 level 0 instances in the window.
 //!
 //!     let dimension_0 = HierDimension::new(1000, 1000);
 //!
@@ -94,8 +95,7 @@
 //!
 //!     // Now make the Hier instance and lock it.
 //!
-//!     let     integer_hier = IntegerHier::new_hier_box(configuration);
-//!     let mut integer_hier = integer_hier.lock().unwrap();
+//!     let mut integer_hier = IntegerHier::new_hier(configuration);
 //!
 //!     // Now record some events with boring data.
 //!
@@ -185,8 +185,6 @@
 use std::any::Any;
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::sync::Arc;
-use std::sync::Mutex;
 
 use super::Rustics;
 use super::Histogram;
@@ -196,7 +194,6 @@ use crate::running_integer::IntegerExporter;
 use super::integer_window::IntegerWindow;
 
 use crate::Hier;
-use crate::HierBox;
 use crate::HierDescriptor;
 use crate::HierConfig;
 use crate::HierGenerator;
@@ -233,9 +230,8 @@ impl HierMember for RunningInteger {
 /// IntegerHier provides an interface from the Hier code to the
 /// RunningInteger impl code that is not in methods.  Most users
 /// should construct a Hier instance via functions like new_hier()
-/// and new_hier_box() that do the type-specific initialization.
-///
-/// See the module comments for a sample program.
+/// do the type-specific initialization.  See the module comments
+/// for a sample program.
 
 #[derive(Default)]
 pub struct IntegerHier {
@@ -255,6 +251,9 @@ pub struct IntegerHierConfig {
 }
 
 impl IntegerHier {
+    /// Make a plain IntegerHier structure.  Most users should call
+    /// new_hier() create a complete Hier instance.
+
     pub fn new() -> IntegerHier  {
         IntegerHier { }
     }
@@ -276,16 +275,6 @@ impl IntegerHier {
         let config = HierConfig { descriptor, generator, name, window_size, class, print_opts };
 
         Hier::new(config)
-    }
-
-    /// new_hier_box() uses new_hier() to create a Hier instance and
-    /// returns it as an Arc<Mutex<Hier>> for multi-threaded
-    /// use.
-
-    pub fn new_hier_box(configuration: IntegerHierConfig) -> HierBox {
-        let hier = IntegerHier::new_hier(configuration);
-
-        Arc::from(Mutex::new(hier))
     }
 }
 

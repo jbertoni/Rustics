@@ -96,8 +96,7 @@
 //!
 //!     // Now make the Hier instance and lock it.
 //!
-//!     let     float_hier = FloatHier::new_hier_box(configuration);
-//!     let mut float_hier = float_hier.lock().unwrap();
+//!     let mut float_hier = FloatHier::new_hier(configuration);
 //!
 //!     // Now record some events with boring data.
 //!
@@ -187,8 +186,6 @@
 use std::any::Any;
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::sync::Arc;
-use std::sync::Mutex;
 
 use super::Rustics;
 use super::Histogram;
@@ -198,7 +195,6 @@ use crate::running_float::FloatExporter;
 use super::float_window::FloatWindow;
 
 use crate::Hier;
-use crate::HierBox;
 use crate::HierDescriptor;
 use crate::HierConfig;
 use crate::HierGenerator;
@@ -235,7 +231,7 @@ impl HierMember for RunningFloat {
 /// FloatHier provides an interface from the Hier code to the
 /// RunningFloat impl code that is not in methods.  Most users
 /// should construct a Hier instance via functions like new_hier()
-/// and new_hier_box() that do the type-specific initialization.
+/// that do the type-specific initialization.
 ///
 /// See the module comments for a sample program.
 
@@ -281,16 +277,6 @@ impl FloatHier {
             };
 
         Hier::new(config)
-    }
-
-    /// new_hier_box() uses new_hier() to create a Hier instance and
-    /// returns it as an Arc<Mutex<Hier>> for multi-threaded
-    /// use.
-
-    pub fn new_hier_box(configuration: FloatHierConfig) -> HierBox {
-        let hier = FloatHier::new_hier(configuration);
-
-        Arc::from(Mutex::new(hier))
     }
 }
 
@@ -352,6 +338,8 @@ impl HierGenerator for FloatHier {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+    use std::sync::Mutex;
     use super::*;
     use crate::PrintOpts;
     use crate::FloatHistogram;
@@ -372,7 +360,7 @@ mod tests {
         3 * level_0_period()
     }
 
-    fn make_test_hier(auto_next: i64, window_size: Option<usize>) -> HierBox {
+    fn make_test_hier(auto_next: i64, window_size: Option<usize>) -> Arc<Mutex<Hier>> {
         let     levels         = 4;
         let     level_0_period = level_0_period();
         let     dimension      = HierDimension::new(level_0_period, level_0_retain());
@@ -404,7 +392,8 @@ mod tests {
         let configuration =
             FloatHierConfig { descriptor, name, window_size, print_opts };
 
-        FloatHier::new_hier_box(configuration)
+        let hier = FloatHier::new_hier(configuration);
+        Arc::from(Mutex::new(hier))
     }
 
     // Do a minimal liveness test of the generic hier implementation.

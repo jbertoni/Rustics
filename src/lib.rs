@@ -150,8 +150,6 @@
 //!           implementations.
 //!
 
-use std::sync::Mutex;
-use std::sync::Arc;
 use std::any::Any;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -197,7 +195,6 @@ use float_histogram::FloatHistogram;
 use float_histogram::HistoOpts;
 use printable::Printable;
 
-pub type HierBox            = Arc<Mutex<Hier>>;
 pub type PrinterBox         = Rc<RefCell<dyn Printer>>;
 // pub type PrinterBox         = Arc<Mutex<dyn Printer>>;
 pub type PrinterOption      = Option<PrinterBox>;

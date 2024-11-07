@@ -29,6 +29,8 @@
 //!
 //! ## Example
 //!```
+//!     use std::sync::Arc;
+//!     use std::sync::Mutex;
 //!     use rustics::Rustics;
 //!     use rustics::hier::Hier;
 //!     use rustics::hier::HierDescriptor;
@@ -88,8 +90,7 @@
 //!
 //!     // Now make the Hier instance and lock it.
 //!
-//!     let     integer_hier_box = IntegerHier::new_hier_box(configuration);
-//!     let mut integer_hier     = integer_hier_box.lock().unwrap();
+//!     let mut integer_hier = IntegerHier::new_hier(configuration);
 //!
 //!     // Now record some events with test data samples.
 //!
@@ -193,8 +194,9 @@
 //!     // Add the Hier instance and call print().  We need to drop the
 //!     // drop the lock on the Hier instance.
 //!
-//!     drop(integer_hier);
-//!     set.add_member(integer_hier_box.clone());
+//!     let integer_hier = Arc::from(Mutex::new(integer_hier));
+//!
+//!     set.add_member(integer_hier.clone());
 //!     set.print();
 //!```
 
@@ -409,7 +411,7 @@ pub struct Hier {
 
 /// HierConfig defines the configuration parameters for a Hier
 /// instance.  Most users should use the prepackaged Hier constructors
-/// like IntegerHier::new_hier and TimeHier::new_heir.
+/// like IntegerHier::new_hier and TimeHier::new_hier.
 
 pub struct HierConfig {
     pub name:        String,
@@ -1848,8 +1850,7 @@ pub mod tests {
 
         // Now make the Hier instance.
 
-        let     integer_hier = IntegerHier::new_hier_box(configuration);
-        let mut integer_hier = integer_hier.lock().unwrap();
+        let mut integer_hier = IntegerHier::new_hier(configuration);
 
         // Now record some events with boring data.
 
@@ -1925,7 +1926,7 @@ pub mod tests {
 
         // Test the histograms while we have a Hier.
 
-        run_histogram_tests(&mut (*integer_hier) as &mut dyn Rustics);
+        run_histogram_tests(&mut integer_hier as &mut dyn Rustics);
 
 
         // Test clear_all with a window.

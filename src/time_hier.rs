@@ -12,13 +12,12 @@
 //!   * This type implements hierarchical statistics using the RunningTime
 //!     type.  See the running_time module for details on that type.
 //!
-//!   * The functions TimeHier::new_hier and TimeHier::new_hier_box are
-//!     wrappers for the Hier constructor and do the initialization
-//!     specific to the TimeHier type.  They are the preferred interface
-//!     for creating a Hier instance that use RunningTime instances.
+//!   * The function TimeHier::new_hier is a wrapper for the Hier constructor
+//!     and does the initialization specific to the TimeHier type.  It is
+//!     the preferred interface for creating a Hier instance that use RunningTime
+//!     instances.
 //!
-//!   * See the integer_hier module for more details on hierarchical
-//!     statistics.
+//!   * See the integer_hier module for more details on hierarchical statistics.
 //!
 //!```
 //!     // This example is based on the code in IntegerHier.
@@ -87,8 +86,7 @@
 //!
 //!     // Now make the Hier instance and lock it.
 //!
-//!     let     time_hier = TimeHier::new_hier_box(configuration);
-//!     let mut time_hier = time_hier.lock().unwrap();
+//!     let mut time_hier = TimeHier::new_hier(configuration);
 //!
 //!     // Now record some events with boring data.
 //!
@@ -184,12 +182,9 @@
 use std::any::Any;
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::sync::Arc;
-use std::sync::Mutex;
 
 use super::Rustics;
 use super::Histogram;
-use super::HierBox;
 use super::TimerBox;
 use super::PrintOption;
 use super::running_time::RunningTime;
@@ -255,8 +250,8 @@ pub struct TimeHierConfig {
 
 impl TimeHier {
     /// The new() function constructs a TimeHier instance, which is an
-    /// implementation of HierGenerator for the RunningTime type.  Most users
-    /// should just invoke new_hier() or new_hier_box().
+    /// implementation of HierGenerator for the RunningTime type.  Most
+    /// users should just invoke new_hier() or use one of the set interfaces.
 
     pub fn new(timer: TimerBox) -> TimeHier  {
         TimeHier { timer }
@@ -280,15 +275,6 @@ impl TimeHier {
             HierConfig { descriptor, generator, name, window_size, class, print_opts };
 
         Hier::new(config)
-    }
-
-    /// new_hier_box() returns a Hier instance as an Arc<Mutex<Hier>>
-    /// for multithreaded access.
-
-    pub fn new_hier_box(configuration: TimeHierConfig) -> HierBox {
-        let hier = TimeHier::new_hier(configuration);
-
-        Arc::from(Mutex::new(hier))
     }
 }
 
@@ -354,6 +340,8 @@ impl HierGenerator for TimeHier {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+    use std::sync::Mutex;
     use super::*;
     use crate::PrintOpts;
     use crate::hier::HierDescriptor;
@@ -408,7 +396,7 @@ mod tests {
         Hier::new(configuration)
     }
 
-    fn test_new_hier_box() {
+    fn test_new_hier_arc() {
         let     auto_next     = 200;
         let     descriptor    = make_descriptor(auto_next);
         let     name          = "test hier".to_string();
@@ -417,7 +405,8 @@ mod tests {
         let     window_size   = None;
         let     configuration = TimeHierConfig { descriptor, name, window_size, timer, print_opts };
 
-        let     hier          = TimeHier::new_hier_box(configuration);
+        let     hier          = TimeHier::new_hier(configuration);
+        let     hier          = Arc::from(Mutex::new(hier));
         let mut hier_impl     = hier.lock().unwrap();
 
         // Now just record a few events.
@@ -676,7 +665,7 @@ mod tests {
     #[test]
     fn run_tests() {
         test_simple_running_generator();
-        test_new_hier_box();
+        test_new_hier_arc();
         test_window();
         test_print_output();
     }

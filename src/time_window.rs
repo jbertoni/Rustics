@@ -8,8 +8,11 @@
 //! ## Type
 //!
 //! * TimerWindow
-//!     * TimerWindow maintains a set consisting of the last n samples
+//!     * TimerWindow maintains a set consisting of the last n items
 //!       recorded into it.
+//!
+//!     * It also supports the concept of marking a subset of the
+//!       newest N items as "live".
 //!
 //! ## Example
 //!```

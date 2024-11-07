@@ -190,7 +190,7 @@ use std::rc::Rc;
 use super::Rustics;
 use super::Histogram;
 use super::PrintOption;
-use super::member_box;
+use super::hier_box;
 use super::running_float::RunningFloat;
 use crate::running_float::FloatExporter;
 use super::float_window::FloatWindow;
@@ -290,7 +290,7 @@ impl HierGenerator for FloatHier {
     fn make_member(&self, name: &str, print_opts: &PrintOption) -> MemberRc {
         let member = RunningFloat::new(name, print_opts);
 
-        member_box!(member)
+        hier_box!(member)
     }
 
     fn make_window(&self, name: &str, window_size: usize, print_opts: &PrintOption)
@@ -309,7 +309,7 @@ impl HierGenerator for FloatHier {
         let     exporter_impl   = exporter_any.downcast_mut::<FloatExporter>().unwrap();
         let     member          = exporter_impl.make_member(name, print_opts);
 
-        member_box!(member)
+        hier_box!(member)
     }
 
     fn make_exporter(&self) -> ExporterRc {

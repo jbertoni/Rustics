@@ -189,7 +189,7 @@ use std::rc::Rc;
 use super::Rustics;
 use super::Histogram;
 use super::PrintOption;
-use super::member_box;
+use super::hier_box;
 use super::running_integer::RunningInteger;
 use crate::running_integer::IntegerExporter;
 use super::integer_window::IntegerWindow;
@@ -288,7 +288,7 @@ impl HierGenerator for IntegerHier {
     fn make_member(&self, name: &str, print_opts: &PrintOption) -> MemberRc {
         let member = RunningInteger::new(name, print_opts);
 
-        member_box!(member)
+        hier_box!(member)
     }
 
     fn make_window(&self, name: &str, window_size: usize, print_opts: &PrintOption)
@@ -307,7 +307,7 @@ impl HierGenerator for IntegerHier {
         let     exporter_impl   = exporter_any.downcast_mut::<IntegerExporter>().unwrap();
         let     member          = exporter_impl.make_member(name, print_opts);
 
-        member_box!(member)
+        hier_box!(member)
     }
 
     fn make_exporter(&self) -> ExporterRc {

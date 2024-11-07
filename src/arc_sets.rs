@@ -20,6 +20,7 @@
 //!    use std::rc::Rc;
 //!    use std::cell::RefCell;
 //!    use std::time::Instant;
+//!    use rustics::arc_item_mut;
 //!    use rustics::time::Timer;
 //!    use rustics::time::DurationTimer;
 //!    use rustics::arc_sets::ArcSet;
@@ -32,8 +33,8 @@
 //!    // that's fine for an example, so just give "None" to accept the
 //!    // default output settings.
 //!
-//!    let     set = ArcSet::new_box("Main Statistics", 8, 0, &None);
-//!    let mut set = set.lock().unwrap();
+//!    let set = ArcSet::new_box("Main Statistics", 8, 0, &None);
+//!    let set = arc_item_mut!(set);
 //!
 //!    // Add an instance to record query latencies.  It's a time
 //!    // statistic, so we need a timer.  Here we use an adapter for the
@@ -57,7 +58,7 @@
 //!
 //!    timer_mut!(timer).start();  // Show how to restart a timer.
 //!
-//!    query_latency.lock().unwrap().record_event();
+//!    arc_item_mut!(query_latency).record_event();
 //!
 //!    // Do more work, then record another time sample.
 //!
@@ -66,7 +67,7 @@
 //!    // The record_event() code restarted the timer, so we can just
 //!    // invoke that routine again.
 //!
-//!    query_latency.lock().unwrap().record_event();
+//!    arc_item_mut!(query_latency).record_event();
 //!
 //!    // For the multithreaded case, you can use DurationTimer manually.
 //!
@@ -76,7 +77,7 @@
 //!
 //!    // do_work();
 //!
-//!    let mut lock = query_latency.lock().unwrap();
+//!    let lock = arc_item_mut!(query_latency);
 //!
 //!    lock.record_time(local_timer.finish() as i64);
 //!
@@ -108,12 +109,12 @@
 //!    assert!(timer!(timer).hz() == 1_000_000_000);
 //!    let time_spent = start.elapsed().as_nanos();
 //!
-//!    query_latency.lock().unwrap().record_time(time_spent as i64);
+//!    arc_item_mut!(query_latency).record_time(time_spent as i64);
 //!
 //!    // Print our statistics.  This example has only one event
 //!    // recorded.
 //!
-//!    let query_lock = query_latency.lock().unwrap();
+//!    let query_lock = arc_item_mut!(query_latency);
 //!
 //!    query_lock.print();
 //!
@@ -159,6 +160,18 @@ use super::make_title;
 
 pub type RusticsArc = Arc<Mutex<dyn Rustics>>;
 pub type ArcSetBox  = Arc<Mutex<ArcSet>>;
+
+/// The arc_item_mut macro converts an ArcSet item into a mutable Rustics
+/// or subset reference.
+
+#[macro_export]
+macro_rules! arc_item_mut { ($x:expr) => { &mut *$x.lock().unwrap() } }
+
+/// The arc macro converts an ArcSet item into a Rustics reference or
+/// a subset reference.
+
+#[macro_export]
+macro_rules! arc_item { ($x:expr) => { &*$x.lock().unwrap() } }
 
 /// arc_box! is used to create an instance for an ArcSet item.
 
@@ -281,13 +294,13 @@ impl ArcSet {
         traverser.visit_set(self);
 
         for mutex in self.members.iter() {
-            let mut member = mutex.lock().unwrap();
+            let member = arc_item_mut!(mutex);
 
             traverser.visit_member(&mut *member);
         }
 
         for mutex in self.subsets.iter() {
-            let mut subset = mutex.lock().unwrap();
+            let subset = arc_item_mut!(mutex);
 
             subset.traverse(traverser);
         }

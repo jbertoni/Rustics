@@ -223,10 +223,11 @@ pub type MemberRc    = Rc<RefCell<dyn HierMember   >>;
 pub type GeneratorRc = Rc<RefCell<dyn HierGenerator>>;
 pub type ExporterRc  = Rc<RefCell<dyn HierExporter >>;
 
-/// member_box! is used to create an instance for an ArcSet item.
+/// hier_box! is used to create an instance for an element in
+/// a Hier instance
 
 #[macro_export]
-macro_rules! member_box { ($x:expr) => { Rc::from(RefCell::new($x)) } }
+macro_rules! hier_box { ($x:expr) => { Rc::from(RefCell::new($x)) } }
 
 /// HierDescriptor is used to describe the configuration of
 /// a hierarchy to a constructor like new().

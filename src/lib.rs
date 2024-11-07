@@ -565,11 +565,12 @@ pub trait Printer {
     fn as_any_mut    (&mut self) -> &mut dyn Any;
 }
 
-/// The printer macro converts a PrinterBox into borrowed or locked
-/// object for printing.
+/// The printer_mut macro converts a PrinterBox into a mutable Printer.
 
 #[macro_export]
 macro_rules! printer_mut { ($x:expr) => { &mut *$x.borrow_mut() } }
+
+/// The printer macro converts a PrinterBox into a Printer.
 
 #[macro_export]
 macro_rules! printer { ($x:expr) => { &*$x.borrow_mut() } }

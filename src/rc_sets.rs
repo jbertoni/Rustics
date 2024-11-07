@@ -24,6 +24,8 @@
 //!    use std::cell::RefCell;
 //!    use std::time::Instant;
 //!    use rustics::timer;
+//!    use rustics::rc_item;
+//!    use rustics::rc_item_mut;
 //!    use rustics::time::Timer;
 //!    use rustics::time::DurationTimer;
 //!    use rustics::rc_sets::RcSet;
@@ -54,7 +56,7 @@
 //!    // So record one event time for the single-threaded case.  The
 //!    // record_event code uses the timer we passed at construction.
 //!
-//!    query_latency.borrow_mut().record_event();
+//!    rc_item_mut!(query_latency).record_event();
 //!
 //!    // For the multithreaded case, you can use DurationTimer manually.
 //!    // Usually, ArcSet instances are more convenient for multithreaded
@@ -66,7 +68,7 @@
 //!    // ...
 //!    // Apply a lock to get to query_latency...
 //!
-//!    let mut lock = query_latency.borrow_mut();
+//!    let lock = rc_item_mut!(query_latency);
 //!
 //!    lock.record_time(local_timer.finish() as i64);
 //!
@@ -94,11 +96,11 @@
 //!    assert!(timer!(timer).hz() == 1_000_000_000);
 //!    let time_spent = start.elapsed().as_nanos();
 //!
-//!    query_latency.borrow_mut().record_time(time_spent as i64);
+//!    rc_item_mut!(query_latency).record_time(time_spent as i64);
 //!
 //!    // Print our statistics.  This example has only one event recorded.
 //!
-//!    let query_borrow = query_latency.borrow();
+//!    let query_borrow = rc_item!(query_latency);
 //!
 //!    query_borrow.print();
 //!
@@ -141,7 +143,19 @@ use super::float_hier::FloatHierConfig;
 pub type RusticsRc = Rc<RefCell<dyn Rustics>>;
 pub type RcSetBox  = Rc<RefCell<RcSet>>;
 
-/// rc_box! is used to create an instance for an ArcSet item.
+/// The rc_item_mut macro converts an RcSet member into a mutable
+/// Rustics or subset reference.
+
+#[macro_export]
+macro_rules! rc_item_mut { ($x:expr) => { &mut *$x.borrow_mut() } }
+
+/// The rc_item macro converts an RcSet member into a Rustics or subset
+/// instance.
+
+#[macro_export]
+macro_rules! rc_item { ($x:expr) => { &*$x.borrow() } }
+
+/// rc_box! is used to create an instance for an RcSet item.
 
 #[macro_export]
 macro_rules! rc_box { ($x:expr) => { Rc::from(RefCell::new($x)) } }

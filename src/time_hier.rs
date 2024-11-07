@@ -189,7 +189,7 @@ use super::Histogram;
 use super::TimerBox;
 use super::PrintOption;
 use super::timer;
-use super::member_box;
+use super::hier_box;
 use super::running_time::RunningTime;
 use super::time_window::TimeWindow;
 use crate::running_integer::IntegerExporter;
@@ -291,7 +291,7 @@ impl HierGenerator for TimeHier {
     fn make_member(&self, name: &str, print_opts: &PrintOption) -> MemberRc {
         let member = RunningTime::new(name, self.timer.clone(), print_opts);
 
-        member_box!(member)
+        hier_box!(member)
     }
 
     fn make_window(&self, name: &str, window_size: usize, print_opts: &PrintOption)
@@ -311,7 +311,7 @@ impl HierGenerator for TimeHier {
         let     timer           = self.timer.clone();
         let     member          = RunningTime::from_integer(timer, print_opts, member);
 
-        member_box!(member)
+        hier_box!(member)
     }
 
     // Makes a new exporter so the Hier code can sum some RunningTime

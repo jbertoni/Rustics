@@ -23,6 +23,7 @@
 //!     // This example is based on the code in IntegerHier.
 //!
 //!     use rustics::Rustics;
+//!     use rustics::timer_mut;
 //!     use rustics::hier::Hier;
 //!     use rustics::hier::HierDescriptor;
 //!     use rustics::hier::HierDimension;
@@ -139,7 +140,7 @@
 //!     let timer = DurationTimer::new_box();
 //!
 //!     for _i in events..events_per_level_1 {
-//!         time_hier.record_time(timer.borrow_mut().finish());
+//!         time_hier.record_time(timer_mut!(timer).finish());
 //!         events += 1;
 //!     }
 //!
@@ -187,6 +188,8 @@ use super::Rustics;
 use super::Histogram;
 use super::TimerBox;
 use super::PrintOption;
+use super::timer;
+use super::rc_box;
 use super::running_time::RunningTime;
 use super::time_window::TimeWindow;
 use crate::running_integer::IntegerExporter;
@@ -288,7 +291,7 @@ impl HierGenerator for TimeHier {
     fn make_member(&self, name: &str, print_opts: &PrintOption) -> MemberRc {
         let member = RunningTime::new(name, self.timer.clone(), print_opts);
 
-        Rc::from(RefCell::new(member))
+        rc_box!(member)
     }
 
     fn make_window(&self, name: &str, window_size: usize, print_opts: &PrintOption)
@@ -308,7 +311,7 @@ impl HierGenerator for TimeHier {
         let     timer           = self.timer.clone();
         let     member          = RunningTime::from_integer(timer, print_opts, member);
 
-        Rc::from(RefCell::new(member))
+        rc_box!(member)
     }
 
     // Makes a new exporter so the Hier code can sum some RunningTime
@@ -334,7 +337,7 @@ impl HierGenerator for TimeHier {
     }
 
     fn hz(&self) -> u128 {
-        self.timer.borrow().hz()
+        timer!(self.timer).hz()
     }
 }
 
@@ -344,6 +347,7 @@ mod tests {
     use std::sync::Mutex;
     use super::*;
     use crate::PrintOpts;
+    use crate::arc_box;
     use crate::hier::HierDescriptor;
     use crate::hier::HierDimension;
     use crate::hier::GeneratorRc;
@@ -406,7 +410,7 @@ mod tests {
         let     configuration = TimeHierConfig { descriptor, name, window_size, timer, print_opts };
 
         let     hier          = TimeHier::new_hier(configuration);
-        let     hier          = Arc::from(Mutex::new(hier));
+        let     hier          = arc_box!(hier);
         let mut hier_impl     = hier.lock().unwrap();
 
         // Now just record a few events.
@@ -575,7 +579,7 @@ mod tests {
             let timer     = continuing_box();
             let generator = TimeHier::new(timer);
             let timer     = continuing_box();
-            let timer     = timer.borrow();
+            let timer     = timer!(timer);
 
             assert!(generator.hz() == timer.hz());
         }

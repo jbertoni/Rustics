@@ -23,6 +23,8 @@
 //!    use rustics::time::Timer;
 //!    use rustics::time::DurationTimer;
 //!    use rustics::arc_sets::ArcSet;
+//!    use rustics::timer;
+//!    use rustics::timer_mut;
 //!
 //!    // Create a set.  By way of example, assume that we're expecting
 //!    // 8 statistics instances but no subsets, and set those hints
@@ -53,7 +55,7 @@
 //!    // The clock started running when we created the DurationTimer.
 //!    // Applications can reset the start() method as needed.
 //!
-//!    timer.borrow_mut().start();  // Show how to restart a timer.
+//!    timer_mut!(timer).start();  // Show how to restart a timer.
 //!
 //!    query_latency.lock().unwrap().record_event();
 //!
@@ -103,7 +105,7 @@
 //!    // Now get the elapsed time.  DurationTimer works in nanoseconds,
 //!    // so use the as_nanos() method.
 //!
-//!    assert!(timer.borrow().hz() == 1_000_000_000);
+//!    assert!(timer!(timer).hz() == 1_000_000_000);
 //!    let time_spent = start.elapsed().as_nanos();
 //!
 //!    query_latency.lock().unwrap().record_time(time_spent as i64);
@@ -157,6 +159,11 @@ use super::make_title;
 
 pub type RusticsArc = Arc<Mutex<dyn Rustics>>;
 pub type ArcSetBox  = Arc<Mutex<ArcSet>>;
+
+/// arc_box! is used to create an instance for an ArcSet item.
+
+#[macro_export]
+macro_rules! arc_box { ($x:expr) => { Arc::from(Mutex::new($x)) } }
 
 /// The ArcTraverser trait is used by the traverse() method to
 /// call a user-defined function at each element in an ArcSet
@@ -228,7 +235,7 @@ impl ArcSet {
             -> ArcSetBox {
         let arc_set = ArcSet::new(name, members_hint, subsets_hint, print_opts);
 
-        Arc::from(Mutex::new(arc_set))
+        arc_box!(arc_set)
     }
 
     /// Creates a new ArcSet given a configuration.
@@ -258,7 +265,7 @@ impl ArcSet {
     pub fn new_box_from_config(configuration: ArcSetConfig) -> ArcSetBox {
         let subset = ArcSet::new_from_config(configuration);
 
-        Arc::from(Mutex::new(subset))
+        arc_box!(subset)
     }
 
     /// Returns the name of the set.
@@ -354,8 +361,8 @@ impl ArcSet {
         }
     }
 
-    /// Does a recursive clear of all instances in the set and its
-    /// entire subset hierarachy.
+    /// Does a recursive clear of all Rustics instances in the set
+    /// and its entire subset hierarachy.
 
     pub fn clear(&mut self) {
         for mutex in self.subsets.iter() {
@@ -396,7 +403,7 @@ impl ArcSet {
             member.set_units(units);
         }
 
-        let member = Arc::from(Mutex::new(member));
+        let member = arc_box!(member);
 
         self.add_member(member.clone());
         member
@@ -412,7 +419,7 @@ impl ArcSet {
             member.set_units(units);
         }
 
-        let member  = Arc::from(Mutex::new(member));
+        let member  = arc_box!(member);
 
         self.add_member(member.clone());
         member
@@ -427,7 +434,7 @@ impl ArcSet {
         configuration.print_opts = print_opts;
 
         let member = IntegerHier::new_hier(configuration);
-        let member = Arc::from(Mutex::new(member));
+        let member = arc_box!(member);
 
         self.add_member(member.clone());
         member
@@ -440,7 +447,7 @@ impl ArcSet {
 
     pub fn add_running_time(&mut self, name: &str, timer: TimerBox) -> RusticsArc {
         let member  = RunningTime::new(name, timer, &self.print_opts);
-        let member  = Arc::from(Mutex::new(member));
+        let member  = arc_box!(member);
 
         self.add_member(member.clone());
         member
@@ -451,7 +458,7 @@ impl ArcSet {
     pub fn add_time_window(&mut self, name: &str, window_size: usize, timer: TimerBox)
             -> RusticsArc {
         let member  = TimeWindow::new(name, window_size, timer, &self.print_opts);
-        let member  = Arc::from(Mutex::new(member));
+        let member  = arc_box!(member);
 
         self.add_member(member.clone());
         member
@@ -466,7 +473,7 @@ impl ArcSet {
         configuration.print_opts = print_opts;
 
         let member = TimeHier::new_hier(configuration);
-        let member = Arc::from(Mutex::new(member));
+        let member = arc_box!(member);
 
         self.add_member(member.clone());
         member
@@ -481,7 +488,7 @@ impl ArcSet {
             member.set_units(units);
         }
 
-        let member = Arc::from(Mutex::new(member));
+        let member = arc_box!(member);
 
         self.add_member(member.clone());
         member
@@ -497,7 +504,7 @@ impl ArcSet {
             member.set_units(units);
         }
 
-        let member  = Arc::from(Mutex::new(member));
+        let member  = arc_box!(member);
 
         self.add_member(member.clone());
         member
@@ -512,7 +519,7 @@ impl ArcSet {
         configuration.print_opts = print_opts;
 
         let member = FloatHier::new_hier(configuration);
-        let member = Arc::from(Mutex::new(member));
+        let member = arc_box!(member);
 
         self.add_member(member.clone());
         member
@@ -528,7 +535,7 @@ impl ArcSet {
         let print_opts = Some(PrintOpts { printer, title, units, histo_opts });
 
         let member  = Counter::new(name, &print_opts);
-        let member  = Arc::from(Mutex::new(member));
+        let member  = arc_box!(member);
 
         self.add_member(member.clone());
         member
@@ -970,7 +977,7 @@ pub mod tests {
         //  print should still work.
 
         let member = RunningInteger::new("added as member", &None);
-        let member = Arc::from(Mutex::new(member));
+        let member = arc_box!(member);
 
         set.add_member(member);
 
@@ -979,7 +986,7 @@ pub mod tests {
         // Try adding a hierarchical statistics instance.
 
         let hier_integer = new_hier();
-        let member       = Arc::from(Mutex::new(hier_integer));
+        let member       = arc_box!(hier_integer);
 
         set.add_member(member);
 

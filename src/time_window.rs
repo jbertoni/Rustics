@@ -19,6 +19,7 @@
 //!    use std::rc::Rc;
 //!    use std::cell::RefCell;
 //!    use rustics::Rustics;
+//!    use rustics::timer_mut;
 //!    use rustics::time_window::TimeWindow;
 //!    use rustics::time::Timer;
 //!    use rustics::time::DurationTimer;
@@ -46,7 +47,7 @@
 //!    // running when we created the timer.  Use the start() method to
 //!    // set a new start time.
 //!
-//!    timer.borrow_mut().start();
+//!    timer_mut!(timer).start();
 //!
 //!    for i in 1..=window_size {
 //!       // Do work...
@@ -84,7 +85,8 @@ use super::LogHistogramBox;
 use super::FloatHistogramBox;
 use super::timer_box_hz;
 use super::parse_print_opts;
-use super::printer;
+use super::printer_mut;
+use super::timer_mut;
 use super::integer_window::IntegerWindow;
 
 /// TimeWindow implements a statistics type that retains a
@@ -148,7 +150,7 @@ impl Rustics for TimeWindow {
     }
 
     fn record_event_report(&mut self) -> i64 {
-        let interval = (*self.timer).borrow_mut().finish();
+        let interval = timer_mut!(*self.timer).finish();
 
         self.integer_window.record_i64(interval);
         interval
@@ -164,7 +166,7 @@ impl Rustics for TimeWindow {
     /// Records an interval by reading the timer provided.
 
     fn record_interval(&mut self, timer: &mut TimerBox) {
-        let mut timer = (*timer).borrow_mut();
+        let timer    = timer_mut!(*timer);
         let interval = timer.finish();
 
         self.integer_window.record_i64(interval);
@@ -266,7 +268,7 @@ impl Rustics for TimeWindow {
             };
 
         let printable = self.integer_window.get_printable();
-        let printer   = printer!(printer_box);
+        let printer   = printer_mut!(printer_box);
 
         printer.print(title);
         printable.print_common_integer_times(self.hz, printer);
@@ -340,6 +342,8 @@ mod tests {
     use crate::PrintOpts;
     use crate::counter::Counter;
     use crate::stdout_printer;
+    use crate::timer;
+    use crate::timer_box;
     use crate::running_time::tests::LargeTimer;
     use crate::tests::compute_sum;
     use crate::tests::continuing_box;
@@ -351,7 +355,7 @@ mod tests {
         let mut stat  = TimeWindow::new("Test Time Window", size, timer, &None);
 
         let     timer = continuing_box();
-        let     timer = timer.borrow();
+        let     timer = timer!(timer);
         let     hz    = timer.hz();
 
         assert!(stat.hz() == hz as i64);
@@ -452,7 +456,7 @@ mod tests {
 
     fn test_histogram() {
         let     printer = stdout_printer();
-        let     printer = printer!(printer);
+        let     printer = printer_mut!(printer);
         let     size    = 200;
         let     timer   = continuing_box();
         let mut stat    = TimeWindow::new("Test Time Window", size, timer, &None);
@@ -496,8 +500,7 @@ mod tests {
     #[should_panic]
     fn test_large_clock() {
         let size    = 200;
-        let timer   = LargeTimer { };
-        let timer   = Rc::from(RefCell::new(timer));
+        let timer   = timer_box!(LargeTimer { });
         let _       = TimeWindow::new("Test Time Window", size, timer, &None);
     }
 

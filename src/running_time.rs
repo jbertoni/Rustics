@@ -16,6 +16,7 @@
 //!    use std::cell::RefCell;
 //!    use std::time::Instant;
 //!    use rustics::Rustics;
+//!    use rustics::timer;
 //!    use rustics::time::Timer;
 //!    use rustics::time::DurationTimer;
 //!    use rustics::running_time::RunningTime;
@@ -75,7 +76,7 @@
 //!    // so use as_nanos() to get the tick count.
 //!
 //!    let time_spent = start.elapsed().as_nanos();
-//!    assert!(timer.borrow().hz() == 1_000_000_000);
+//!    assert!(timer!(timer).hz() == 1_000_000_000);
 //!
 //!    query_latency.record_time(time_spent as i64);
 //!
@@ -102,7 +103,8 @@ use super::LogHistogramBox;
 use super::FloatHistogramBox;
 use super::parse_print_opts;
 use super::TimerBox;
-use super::printer;
+use super::printer_mut;
+use super::timer_mut;
 use super::timer_box_hz;
 use super::running_integer::RunningInteger;
 use super::merge::Export;
@@ -181,8 +183,8 @@ impl Rustics for RunningTime {
     }
 
     fn record_event_report(&mut self) -> i64 {
-        let mut timer    = (*self.timer).borrow_mut();
-        let     interval = timer.finish();  // read and restart the timer
+        let timer    = timer_mut!(*self.timer);
+        let interval = timer.finish();  // read and restart the timer
 
         self.running_integer.record_i64(interval);
         interval
@@ -194,7 +196,7 @@ impl Rustics for RunningTime {
     }
 
     fn record_interval(&mut self, timer: &mut TimerBox) {
-        let mut timer = (*timer).borrow_mut();
+        let timer    = timer_mut!(*timer);
         let interval = timer.finish();
 
         self.running_integer.record_i64(interval);
@@ -294,7 +296,7 @@ impl Rustics for RunningTime {
             };
 
         let printable = self.running_integer.get_printable();
-        let printer   = printer!(printer_box);
+        let printer   = printer_mut!(printer_box);
 
         printer.print(title);
         printable.print_common_integer_times(self.hz, printer);
@@ -364,6 +366,7 @@ pub mod tests {
     use super::*;
     use crate::PrintOpts;
     use crate::stdout_printer;
+    use crate::timer_box;
     use crate::tests::continuing_box;
     use crate::tests::compute_sum;
     use crate::tests::check_printer_box;
@@ -379,7 +382,7 @@ pub mod tests {
         let     timer        = continuing_box();
         let mut stat         = RunningTime::new("Query Latency", timer, &None);
         let     printer      = stdout_printer();
-        let     printer      = printer!(printer);
+        let     printer      = printer_mut!(printer);
         let     sample_count = 200;
 
         for i in 1..=sample_count {
@@ -565,7 +568,7 @@ pub mod tests {
     #[should_panic]
     fn test_large_clock() {
         let timer = LargeTimer { };
-        let timer = Rc::from(RefCell::new(timer));
+        let timer = timer_box!(timer);
         let _     = RunningTime::new("Panic Test", timer, &None);
     }
 

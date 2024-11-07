@@ -32,6 +32,7 @@
 //!     use std::sync::Arc;
 //!     use std::sync::Mutex;
 //!     use rustics::Rustics;
+//!     use rustics::arc_box;
 //!     use rustics::hier::Hier;
 //!     use rustics::hier::HierDescriptor;
 //!     use rustics::hier::HierDimension;
@@ -194,7 +195,7 @@
 //!     // Add the Hier instance and call print().  We need to drop the
 //!     // drop the lock on the Hier instance.
 //!
-//!     let integer_hier = Arc::from(Mutex::new(integer_hier));
+//!     let integer_hier = arc_box!(integer_hier);
 //!
 //!     set.add_member(integer_hier.clone());
 //!     set.print();
@@ -212,7 +213,8 @@ use super::FloatHistogramBox;
 use super::parse_print_opts;
 use super::TimerBox;
 use super::window::Window;
-use super::printer;
+use super::printer_mut;
+use super::timer_mut;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::any::Any;
@@ -714,7 +716,7 @@ impl Hier {
             };
 
         if level >= self.stats.len() {
-            let printer = printer!(printer_box);
+            let printer = printer_mut!(printer_box);
             printer.print(&title);
             printer.print(&format!("  This configuration has only {} levels.", self.stats.len()));
             return;
@@ -726,7 +728,7 @@ impl Hier {
             if let Some(target) = target {
                 target
             } else {
-                let printer = printer!(printer_box);
+                let printer = printer_mut!(printer_box);
                 printer.print(&title);
                 printer.print(&format!("  That index ({}) is out of bounds.", which));
                 return;
@@ -870,9 +872,7 @@ impl Rustics for Hier {
         let     current      = self.current();
         let mut borrow       = current.borrow_mut();
         let     rustics      = borrow.to_rustics_mut();
-
-        let mut timer_borrow = timer.borrow_mut();
-        let     time         = timer_borrow.finish();
+        let     time         = timer_mut!(timer).finish();
 
         rustics.record_time(time);
 
@@ -1718,7 +1718,7 @@ pub mod tests {
 
     fn test_time_hier_sanity() {
         let     printer    = stdout_printer();
-        let     printer    = printer!(printer);
+        let     printer    = printer_mut!(printer);
         let     name       = "time_hier sanity test".to_string();
         let     timer      = continuing_box();
         let     print_opts = None;
@@ -1950,7 +1950,7 @@ pub mod tests {
 
     fn test_sum() {
         let     printer      = stdout_printer();
-        let     printer      = printer!(printer);
+        let     printer      = printer_mut!(printer);
         let     window_size  = 200;
         let mut integer_hier = make_test_hier(100, Some(200), None);
 

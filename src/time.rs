@@ -77,6 +77,8 @@ use std::time::Instant;
 use std::rc::Rc;
 use std::cell::RefCell;
 
+use crate::timer_box;
+
 ///  A Timer is an abstraction of a clock to be used for performance
 ///  monitoring.  It is intended to allow for many implementations.
 ///  The underlying clock implementation determines the meaning of an
@@ -106,6 +108,7 @@ pub trait Timer {
 }
 
 pub type DurationTimerBox = Rc<RefCell<DurationTimer>>;
+pub type ClockTimerBox    = Rc<RefCell<ClockTimer>>;
 
 ///  DurationTimer uses the Rust standard time struct Duration to
 ///  measure time intervals.  This timer thus returns wall-clock time.
@@ -154,7 +157,7 @@ impl DurationTimer {
     pub fn new_box() -> DurationTimerBox {
         let timer = DurationTimer::new();
 
-        Rc::from(RefCell::new(timer))
+        timer_box!(timer)
     }
 }
 
@@ -215,7 +218,28 @@ impl ClockTimer {
 
         ClockTimer { start, clock, hz }
     }
+
+    pub fn new_box(clock: Rc<RefCell<dyn SimpleClock>>) -> ClockTimerBox {
+        let timer = ClockTimer::new(clock);
+
+        timer_box!(timer)
+    }
 }
+
+// The timer and timer_mut macros convert a DurationBoxTimer or a
+// ClockTimerBox into a borrowed or locked object for printing.
+
+#[macro_export]
+macro_rules! timer { ($x:expr) => { &*$x.borrow() } }
+
+#[macro_export]
+macro_rules! timer_mut { ($x:expr) => { &mut *$x.borrow_mut() } }
+
+/// The timer_box macro converts a DurationBoxTimer or a ClockTimerBox
+// instance into the shareable form, currently Rc<RefCell<_>>.
+
+#[macro_export]
+macro_rules! timer_box { ($x:expr) => { Rc::from(RefCell::new($x)) } }
 
 #[cfg(test)]
 mod tests {
@@ -262,8 +286,9 @@ mod tests {
     pub fn simple_test_clock() {
         let     current      = 0;
         let mut increment    = 1500;
-        let     simple_clock = Rc::from(RefCell::new(TestSimpleClock { current, increment }));
-        let mut clock        = ClockTimer::new(simple_clock);
+        let     simple_clock = timer_box!(TestSimpleClock { current, increment });
+        let     clock        = ClockTimer::new_box(simple_clock);
+        let     clock        = timer_mut!(clock);
 
         // Creating the clock invokes get_time, so the increment in the
         // test clock increases.  Keep ours in sync with it.

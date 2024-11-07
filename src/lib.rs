@@ -287,7 +287,7 @@ pub fn max_f64(a: f64, b: f64) -> f64 {
 /// of a timer in a box.  It just saves a bit of typing.
 
 pub fn timer_box_hz(timer:  &TimerBox) -> u128 {
-    (**timer).borrow().hz()
+    timer!(*timer).hz()
 }
 
 /// stdout_printer() creates a Printer instance that sends output
@@ -297,18 +297,6 @@ pub fn stdout_printer() -> PrinterBox {
     let printer = StdioPrinter::new(StreamKind::Stdout);
 
     printer_box!(printer)
-}
-
-/// Computes a variance estimator.
-
-pub fn compute_variance(count: u64, moment_2: f64) -> f64 {
-    if count < 2 {
-        return 0.0;
-    }
-
-    let n = count as f64;
-
-    moment_2 / (n - 1.0)
 }
 
 pub struct StatisticsData {
@@ -435,6 +423,18 @@ pub fn estimate_moment_3(data: EstimateData) -> f64 {
       -       n   * mean.powi(2);
 
     cubes - (3.0 * squares * mean) + 3.0 * (sum * mean.powi(2)) - n * mean.powi(3)
+}
+
+/// Computes a variance estimator.
+
+pub fn compute_variance(count: u64, moment_2: f64) -> f64 {
+    if count < 2 {
+        return 0.0;
+    }
+
+    let n = count as f64;
+
+    moment_2 / (n - 1.0)
 }
 
 /// Computes the sample skewness.
@@ -569,7 +569,10 @@ pub trait Printer {
 /// object for printing.
 
 #[macro_export]
-macro_rules! printer { ($x:expr) => { &mut *$x.borrow_mut() } }
+macro_rules! printer_mut { ($x:expr) => { &mut *$x.borrow_mut() } }
+
+#[macro_export]
+macro_rules! printer { ($x:expr) => { &*$x.borrow_mut() } }
 
 /// The printer_box macro converts a Printer instance into the
 /// shareable form, currently Rc<RefCell<Printer>>.
@@ -975,7 +978,7 @@ mod tests {
     // expected are a match.
 
     pub fn check_printer_count_match(printer_box: PrinterBox) -> bool {
-        let printer      = printer_box.borrow();
+        let printer      = printer!(printer_box);
         let printer_any  = printer.as_any();
         let printer_impl = printer_any.downcast_ref::<CheckPrinter>().unwrap();
 
@@ -983,7 +986,7 @@ mod tests {
     }
 
     pub fn check_printer_counters(printer_box: PrinterBox) -> (usize, usize) {
-        let printer      = printer_box.borrow();
+        let printer      = printer!(printer_box);
         let printer_any  = printer.as_any();
         let printer_impl = printer_any.downcast_ref::<CheckPrinter>().unwrap();
 
@@ -1050,7 +1053,7 @@ mod tests {
         pub fn new_box(hz: u128) -> Rc<RefCell<TestTimer>> {
             let timer = TestTimer::new(hz);
 
-            Rc::from(RefCell::new(timer))
+            timer_box!(timer)
         }
 
         pub fn setup_elapsed_time(&mut self, ticks: i64) {
@@ -1113,8 +1116,8 @@ mod tests {
         let value = ConverterTrait::as_timer(both.clone());
 
         for i in 1..=100 {
-            setup.borrow_mut().setup(i);
-            assert!(value.borrow_mut().finish() == i);
+            timer_mut!(setup).setup(i);
+            assert!(timer_mut!(value).finish() == i);
         }
     }
 
@@ -1163,7 +1166,7 @@ mod tests {
     }
 
     pub fn setup_elapsed_time(timer: &mut Rc<RefCell<TestTimer>>, ticks: i64) {
-        let mut timer = timer.borrow_mut();
+        let timer = timer_mut!(timer);
 
         timer.setup_elapsed_time(ticks);
     }
@@ -1179,13 +1182,13 @@ mod tests {
         let mut stat_timer = ConverterTrait::as_timer(both.clone());
         let mut time_stat  = RunningTime::new("Test Running Time 1", stat_timer.clone(), &None);
 
-        test_timer.borrow_mut().setup(i64::MAX);
+        timer_mut!(test_timer).setup(i64::MAX);
         time_stat.record_event();
 
         assert!(time_stat.min_i64() == i64::MAX);
         assert!(time_stat.max_i64() == i64::MAX);
 
-        test_timer.borrow_mut().setup(0);
+        timer_mut!(test_timer).setup(0);
         time_stat.record_event();
 
         assert!(time_stat.min_i64() == 0);
@@ -1208,7 +1211,7 @@ mod tests {
                     -(random + 1) as i64
                 };
 
-            test_timer.borrow_mut().setup(interval);
+            timer_mut!(test_timer).setup(interval);
             time_stat.record_event();
             random = rng.gen();
         }
@@ -1226,7 +1229,7 @@ mod tests {
 
         for i in 0..=limit {
             let interval = i * i * i;
-            test_timer.borrow_mut().setup(interval);
+            timer_mut!(test_timer).setup(interval);
 
             // Test both record_event and record_interval.
 
@@ -1247,7 +1250,7 @@ mod tests {
         let mut time_stat = RunningTime::new("Test Time => 1..100", stat_timer.clone(), &None);
 
         for i in 1..=100 {
-            test_timer.borrow_mut().setup(i);
+            timer_mut!(test_timer).setup(i);
             time_stat.record_event();
 
             assert!(time_stat.max_i64() == i);
@@ -1261,13 +1264,13 @@ mod tests {
 
         let mut time    = 1;
         let     printer = stdout_printer();
-        let     printer = printer!(printer);
+        let     printer = printer_mut!(printer);
 
 
         for i in 1..=16 {
             let elapsed = i * 100;
 
-            test_timer.borrow_mut().setup(elapsed);
+            timer_mut!(test_timer).setup(elapsed);
 
             if i & 1 != 0 {
                 time_stat.record_event();
@@ -1363,13 +1366,13 @@ mod tests {
 
         assert!(time_stat.class() == "time");
 
-        test_timer.borrow_mut().setup(i64::MAX);
+        timer_mut!(test_timer).setup(i64::MAX);
         time_stat.record_event();
 
         assert!(time_stat.min_i64() == i64::MAX);
         assert!(time_stat.max_i64() == i64::MAX);
 
-        test_timer.borrow_mut().setup(0);
+        timer_mut!(test_timer).setup(0);
         time_stat.record_event();
 
         assert!(time_stat.min_i64() == 0);
@@ -1389,7 +1392,7 @@ mod tests {
                     -(random + 1) as i64
                 };
 
-            test_timer.borrow_mut().setup(interval);
+            timer_mut!(test_timer).setup(interval);
             time_stat.record_event();
         }
 
@@ -1406,7 +1409,7 @@ mod tests {
         for i in 0..=limit {
             let interval = i * i * i;
 
-            test_timer.borrow_mut().setup(interval);
+            timer_mut!(test_timer).setup(interval);
             time_stat.record_event();
         }
 
@@ -1422,7 +1425,7 @@ mod tests {
         let count = 100;
 
         for i in 1..=count {
-            test_timer.borrow_mut().setup(i);
+            timer_mut!(test_timer).setup(i);
             time_stat.record_event();
 
             assert!(time_stat.max_i64() == i);
@@ -1684,7 +1687,7 @@ mod tests {
         let hz    = 1_000;
         let timer = TestTimer::new_box(hz);
 
-        timer.borrow_mut().start();
+        timer_mut!(timer).start();
     }
 
     fn test_verbose_check_printer() {
@@ -1700,10 +1703,10 @@ mod tests {
         let hz    = 1_000;
         let timer = TestTimer::new_box(hz);
 
-        timer.borrow_mut().setup_elapsed_time(hz as i64);
-        timer.borrow_mut().start();
+        timer_mut!(timer).setup_elapsed_time(hz as i64);
+        timer_mut!(timer).start();
 
-        assert!(timer.borrow_mut().finish() == hz as i64);
+        assert!(timer_mut!(timer).finish() == hz as i64);
     }
 
     fn test_math() {
@@ -1714,10 +1717,9 @@ mod tests {
         assert!(compute_skewness(4, -1.0, 0.0) == 0.0);
     }
 
-    #[test] // TODO
     fn test_printers() {
         let stdout_box = stdout_printer();
-        let stdout     = printer!(stdout_box);
+        let stdout     = printer_mut!(stdout_box);
 
         {
             let stdout_any = stdout.as_any();
@@ -1732,7 +1734,7 @@ mod tests {
         let expect = [ ];
 
         let check_box = check_printer_box(&expect, true, true);
-        let check     = printer!(check_box);
+        let check     = printer_mut!(check_box);
 
         {
             let check_any = check.as_any();
@@ -1745,7 +1747,7 @@ mod tests {
         }
 
         let check_box = check_printer_box(&expect, true, true);
-        let check     = printer!(check_box);
+        let check     = printer_mut!(check_box);
 
         {
             let check_any = check.as_any();

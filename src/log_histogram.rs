@@ -28,14 +28,14 @@
 //!     use rustics::log_histogram::pseudo_log_index;
 //!     use rustics::Printer;
 //!     use rustics::stdout_printer;
-//!     use rustics::printer;
+//!     use rustics::printer_mut;
 //!
 //!     // This is a simple sanity test of the LogHistogram code.  It
 //!     // provides an example of what you should expect from its data.
 //!
 //!     let mut histogram = LogHistogram::new();
 //!     let     printer   = stdout_printer();
-//!     let     printer   = printer!(printer);
+//!     let     printer   = printer_mut!(printer);
 //!
 //!     let test =
 //!        [ 1, -1, 4, 25, 4109, -4108, -8, -9, -16, -17, 3, 8, 16 ];
@@ -306,12 +306,12 @@ impl Histogram for LogHistogram {
 mod tests {
     use super::*;
     use crate::stdout_printer;
-    use crate::printer;
+    use crate::printer_mut;
 
     pub fn test_log_histogram() {
         let mut histogram = LogHistogram::new();
         let     printer   = stdout_printer();
-        let     printer   = printer!(printer);
+        let     printer   = printer_mut!(printer);
         let     test      = [ 1, -1, 4, 25, 4109, -4108, -8, -9, -16, -17, 3, 8, 16 ];
 
         for i in test.iter() {
@@ -355,7 +355,7 @@ mod tests {
 
     fn test_default() {
         let     printer   = stdout_printer();
-        let     printer   = printer!(printer);
+        let     printer   = printer_mut!(printer);
         let mut histogram = LogHistogram::default();
         let     values    = 1000;
         let     samples   = values * 2;

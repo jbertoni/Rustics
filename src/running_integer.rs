@@ -17,7 +17,7 @@
 //!    use std::cell::RefCell;
 //!    use rustics::Rustics;
 //!    use rustics::Histogram;
-//!    use rustics::printer;
+//!    use rustics::printer_mut;
 //!    use rustics::stdout_printer;
 //!    use rustics::running_integer::RunningInteger;
 //!
@@ -44,7 +44,7 @@
 //!    // the printer code work.
 //!
 //!    let printer = stdout_printer();  // create a shareable printer
-//!    let printer = printer!(printer); // get the printer out of the cell
+//!    let printer = printer_mut!(printer); // get the printer out of the cell
 //!
 //!    packet_sizes.print_histogram(printer);
 //!
@@ -90,7 +90,7 @@ use super::PrintOption;
 use super::LogHistogramBox;
 use super::FloatHistogramBox;
 use super::Units;
-use super::printer;
+use super::printer_mut;
 use super::printable::Printable;
 use super::EstimateData;
 use super::estimate_moment_3;
@@ -491,7 +491,7 @@ impl Rustics for RunningInteger {
             };
 
         let printable = self.get_printable();
-        let printer   = printer!(printer_box);
+        let printer   = printer_mut!(printer_box);
 
         printer.print(title);
         printable.print_common_i64(printer);

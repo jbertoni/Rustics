@@ -95,7 +95,7 @@ use super::float_histogram::FloatHistogram;
 use super::FloatHistogramBox;
 use super::integer_window::Crunched;
 use super::TimerBox;
-use super::printer;
+use super::printer_mut;
 use super::printable::Printable;
 use super::compute_variance;
 use super::compute_skewness;
@@ -200,7 +200,7 @@ impl FloatWindow {
 
     pub fn crunch(&self) -> Crunched {
         if self.vector.is_empty() {
-            return Crunched::new();
+            return Crunched::zero();
         }
 
         let mut samples = Vec::new();
@@ -475,7 +475,7 @@ impl Rustics for FloatWindow {
             };
 
         let printable = self.get_printable();
-        let printer   = printer!(printer_box);
+        let printer   = printer_mut!(printer_box);
 
         printer.print(title);
         printable.print_common_f64(printer);
@@ -547,7 +547,7 @@ impl Histogram for FloatWindow {
 mod tests {
     use super::*;
     use crate::PrintOpts;
-    use crate::printer;
+    use crate::printer_mut;
     use crate::stdout_printer;
     use crate::running_float::RunningFloat;
     use crate::tests::continuing_box;
@@ -557,7 +557,7 @@ mod tests {
     pub fn test_simple_float_window() {
         let window_size = 100;
         let printer     = stdout_printer();
-        let printer     = printer!(printer);
+        let printer     = printer_mut!(printer);
 
         let mut stats =
             FloatWindow::new(&"Test Statistics", window_size, &None);

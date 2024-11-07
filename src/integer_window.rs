@@ -86,7 +86,7 @@ use super::LogHistogramBox;
 use super::FloatHistogramBox;
 use crate::printable::Printable;
 use crate::log_histogram::LogHistogram;
-use super::printer;
+use super::printer_mut;
 use super::compute_variance;
 use super::compute_skewness;
 use super::compute_kurtosis;
@@ -145,7 +145,7 @@ pub struct Crunched {
 }
 
 impl Crunched {
-    pub fn new() -> Crunched {
+    pub fn zero() -> Crunched {
         let mean     = 0.0;
         let sum      = 0.0;
         let moment_2 = 0.0;
@@ -215,7 +215,7 @@ impl IntegerWindow {
 
     pub fn crunch(&self) -> Crunched {
         if self.vector.is_empty() {
-            return Crunched::new();
+            return Crunched::zero();
         }
 
         let mut samples = Vec::new();
@@ -553,7 +553,7 @@ impl Rustics for IntegerWindow {
             };
 
         let printable = self.get_printable();
-        let printer   = printer!(printer_box);
+        let printer   = printer_mut!(printer_box);
 
         printer.print(title);
         printable.print_common_i64(printer);

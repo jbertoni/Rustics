@@ -23,6 +23,7 @@
 //!    use std::rc::Rc;
 //!    use std::cell::RefCell;
 //!    use std::time::Instant;
+//!    use rustics::timer;
 //!    use rustics::time::Timer;
 //!    use rustics::time::DurationTimer;
 //!    use rustics::rc_sets::RcSet;
@@ -90,7 +91,7 @@
 //!    // Now get the elapsed time.  DurationTimer works in nanoseconds,
 //!    // so use as_nanos() to get the tick count.
 //!
-//!    assert!(timer.borrow().hz() == 1_000_000_000);
+//!    assert!(timer!(timer).hz() == 1_000_000_000);
 //!    let time_spent = start.elapsed().as_nanos();
 //!
 //!    query_latency.borrow_mut().record_time(time_spent as i64);
@@ -140,6 +141,11 @@ use super::float_hier::FloatHierConfig;
 pub type RusticsRc = Rc<RefCell<dyn Rustics>>;
 pub type RcSetBox  = Rc<RefCell<RcSet>>;
 
+/// rc_box! is used to create an instance for an ArcSet item.
+
+#[macro_export]
+macro_rules! rc_box { ($x:expr) => { Rc::from(RefCell::new($x)) } }
+
 /// The RcTraverser trait defines an interface the user can implement
 /// to traverse the elements in an Rc set hierarchy.
 
@@ -188,6 +194,13 @@ impl RcSet {
         let print_opts = print_opts.clone();
 
         RcSet { name, title, id, next_id, members, subsets, printer, print_opts }
+    }
+
+    pub fn new_box(name_in: &str, members: usize, subsets: usize, print_opts: &PrintOption)
+            -> RcSetBox {
+        let rc_set = RcSet::new(name_in, members, subsets, print_opts);
+
+        rc_box!(rc_set)
     }
 
     /// Returns the name of the set.
@@ -311,7 +324,7 @@ impl RcSet {
             member.set_units(units);
         }
 
-        let member = Rc::from(RefCell::new(member));
+        let member = rc_box!(member);
 
         self.add_member(member.clone());
         member
@@ -327,7 +340,7 @@ impl RcSet {
             member.set_units(units);
         }
 
-        let member = Rc::from(RefCell::new(member));
+        let member = rc_box!(member);
 
         self.add_member(member.clone());
         member
@@ -342,7 +355,7 @@ impl RcSet {
         configuration.print_opts = print_opts;
 
         let member = IntegerHier::new_hier(configuration);
-        let member = Rc::from(RefCell::new(member));
+        let member = rc_box!(member);
 
         self.add_member(member.clone());
         member
@@ -352,7 +365,7 @@ impl RcSet {
 
     pub fn add_running_time(&mut self, name: &str, timer: TimerBox) -> RusticsRc {
         let member  = RunningTime::new(name, timer, &self.print_opts);
-        let member  = Rc::from(RefCell::new(member));
+        let member  = rc_box!(member);
 
         self.add_member(member.clone());
         member
@@ -362,7 +375,7 @@ impl RcSet {
 
     pub fn add_time_window(&mut self, name: &str, window_size: usize, timer: TimerBox) -> RusticsRc {
         let member  = TimeWindow::new(name, window_size, timer, &self.print_opts);
-        let member  = Rc::from(RefCell::new(member));
+        let member  = rc_box!(member);
 
         self.add_member(member.clone());
         member
@@ -377,7 +390,7 @@ impl RcSet {
         configuration.print_opts = print_opts;
 
         let member = TimeHier::new_hier(configuration);
-        let member = Rc::from(RefCell::new(member));
+        let member = rc_box!(member);
 
         self.add_member(member.clone());
         member
@@ -392,7 +405,7 @@ impl RcSet {
             member.set_units(units);
         }
 
-        let member = Rc::from(RefCell::new(member));
+        let member = rc_box!(member);
 
         self.add_member(member.clone());
         member
@@ -408,7 +421,7 @@ impl RcSet {
             member.set_units(units);
         }
 
-        let member = Rc::from(RefCell::new(member));
+        let member = rc_box!(member);
 
         self.add_member(member.clone());
         member
@@ -423,7 +436,7 @@ impl RcSet {
         configuration.print_opts = print_opts;
 
         let member = FloatHier::new_hier(configuration);
-        let member = Rc::from(RefCell::new(member));
+        let member = rc_box!(member);
 
         self.add_member(member.clone());
         member
@@ -433,7 +446,7 @@ impl RcSet {
 
     pub fn add_counter(&mut self, name: &str, units: Option<Units>) -> RusticsRc {
         let member     = Counter::new(name, &self.print_opts);
-        let member     = Rc::from(RefCell::new(member));
+        let member     = rc_box!(member);
 
         if let Some(units) = units {
             member.borrow_mut().set_units(units);
@@ -482,7 +495,7 @@ impl RcSet {
         subset.set_id(self.next_id);
         self.next_id += 1;
 
-        let subset = Rc::from(RefCell::new(subset));
+        let subset = rc_box!(subset);
 
         self.subsets.push(subset.clone());
         subset
@@ -542,6 +555,7 @@ mod tests {
     use super::*;
     use crate::tests::continuing_box;
     use crate::hier::Hier;
+    use crate::timer_mut;
     use crate::arc_sets::tests::make_integer_config;
     use crate::arc_sets::tests::make_time_config;
     use crate::arc_sets::tests::make_float_config;
@@ -611,7 +625,8 @@ mod tests {
 
         // Create the parent set for all the Rustics instances.
 
-        let mut set = RcSet::new("parent set", 4, 4, &None);
+        let     set = RcSet::new_box("parent set", 4, 4, &None);
+        let mut set = set.borrow_mut();
 
         // Add integer statistics instances, both a running total and a window.
 
@@ -631,13 +646,13 @@ mod tests {
 
         // Now test recording data.
 
-        let mut window_stat        = (*window).borrow_mut();
+        let mut window_stat        = (*window) .borrow_mut();
         let mut running_stat       = (*running).borrow_mut();
 
-        let mut time_window_stat   = (*time_window).borrow_mut();
+        let mut time_window_stat   = (*time_window) .borrow_mut();
         let mut running_time_stat  = (*running_time).borrow_mut();
 
-        let mut float_window_stat  = (*float_window).borrow_mut();
+        let mut float_window_stat  = (*float_window) .borrow_mut();
         let mut running_float_stat = (*running_float).borrow_mut();
 
         for i in lower..upper {
@@ -778,7 +793,7 @@ mod tests {
 
         assert!(time_window.class() == "time");
 
-        (*timer).borrow_mut().start();
+        timer_mut!(*timer).start();
 
         //  Record some data.
 
@@ -797,13 +812,13 @@ mod tests {
         // Do a minimal test of "add".
 
         let member = RunningInteger::new("added as member", &None);
-        let member = Rc::from(RefCell::new(member));
+        let member = rc_box!(member);
         set.add_member(member);
 
         set.print();
 
         let hier_integer = new_hier_integer();
-        let member       = Rc::from(RefCell::new(hier_integer));
+        let member       = rc_box!(hier_integer);
 
         set.add_member(member);
 

@@ -190,6 +190,7 @@ use std::rc::Rc;
 use super::Rustics;
 use super::Histogram;
 use super::PrintOption;
+use super::rc_box;
 use super::running_float::RunningFloat;
 use crate::running_float::FloatExporter;
 use super::float_window::FloatWindow;
@@ -289,7 +290,7 @@ impl HierGenerator for FloatHier {
     fn make_member(&self, name: &str, print_opts: &PrintOption) -> MemberRc {
         let member = RunningFloat::new(name, print_opts);
 
-        Rc::from(RefCell::new(member))
+        rc_box!(member)
     }
 
     fn make_window(&self, name: &str, window_size: usize, print_opts: &PrintOption)
@@ -308,7 +309,7 @@ impl HierGenerator for FloatHier {
         let     exporter_impl   = exporter_any.downcast_mut::<FloatExporter>().unwrap();
         let     member          = exporter_impl.make_member(name, print_opts);
 
-        Rc::from(RefCell::new(member))
+        rc_box!(member)
     }
 
     fn make_exporter(&self) -> ExporterRc {
@@ -344,7 +345,8 @@ mod tests {
     use crate::PrintOpts;
     use crate::FloatHistogram;
     use crate::FloatHistogramBox;
-    use crate::printer;
+    use crate::printer_mut;
+    use crate::arc_box;
     use crate::stdout_printer;
     use crate::hier::HierDescriptor;
     use crate::hier::HierDimension;
@@ -393,7 +395,7 @@ mod tests {
             FloatHierConfig { descriptor, name, window_size, print_opts };
 
         let hier = FloatHier::new_hier(configuration);
-        Arc::from(Mutex::new(hier))
+        arc_box!(hier)
     }
 
     // Do a minimal liveness test of the generic hier implementation.
@@ -478,7 +480,7 @@ mod tests {
 
     fn test_window() {
         let     printer     = stdout_printer();
-        let     printer     = printer!(printer);
+        let     printer     = printer_mut!(printer);
         let     auto_next   = 100;
         let     window_size = Some(1000);
         let     hier        = make_test_hier(auto_next, window_size);

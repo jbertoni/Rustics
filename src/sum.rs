@@ -64,7 +64,7 @@ mod tests {
     use super::*;
 
     #[test]
-    pub fn run_tests() {
+    fn run_tests() {
         let     limit  = 16;
         let mut inputs = Vec::<f64>::new();
 

@@ -104,7 +104,7 @@ use super::compute_skewness;
 use super::compute_kurtosis;
 use super::FloatHistogram;
 use super::FloatHistogramBox;
-use super::printer;
+use super::printer_mut;
 use super::min_f64;
 use super::max_f64;
 use super::merge::Export;
@@ -486,7 +486,7 @@ impl Rustics for RunningFloat {
             };
 
         let printable = self.get_printable();
-        let printer   = printer!(printer);
+        let printer   = printer_mut!(printer);
 
         printer.print(title);
         printable.print_common_f64(printer);
@@ -635,7 +635,7 @@ mod tests {
         let histogram = stats.float_histogram.unwrap();
 
         let     printer = stdout_printer();
-        let     printer = printer!(printer);
+        let     printer = printer_mut!(printer);
 
         histogram.borrow().print(printer);
 

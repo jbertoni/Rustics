@@ -17,13 +17,22 @@
 //!    use std::cell::RefCell;
 //!    use rustics::Rustics;
 //!    use rustics::Histogram;
+//!    use rustics::PrintOpts;
+//!    use rustics::Units;
 //!    use rustics::printer_mut;
 //!    use rustics::stdout_printer;
 //!    use rustics::running_integer::RunningInteger;
 //!
-//!    // Create an instance to record packet sizes.  The default for
-//!    // printing output is stdout, which we'll assume is fine for this
-//!    // example, so None works for the printer.
+//!    // Create an instance to record packet sizes. Set some print
+//!    // options as an example.  Only float histograms have options,
+//!    // so that option can be None.
+//!
+//!    let printer    = Some(stdout_printer());
+//!    let title      = Some("Network Packet Size".to_string());
+//!    let units      = Some(Units::new("byte", "bytes"));
+//!    let histo_opts = None;
+//!
+//!    let print_opts = PrintOpts { printer, title, units, histo_opts };
 //!
 //!    let mut packet_sizes = RunningInteger::new("Packet Sizes", &None);
 //!
@@ -43,7 +52,7 @@
 //!    // Print just the histogram.  This example shows how PrinterBox
 //!    // the printer code work.
 //!
-//!    let printer = stdout_printer();  // create a shareable printer
+//!    let printer = stdout_printer();      // create a shareable printer
 //!    let printer = printer_mut!(printer); // get the printer out of the cell
 //!
 //!    packet_sizes.print_histogram(printer);

@@ -8,7 +8,8 @@
 //!
 //! ## Type
 //! * RunningFloat
-//!   * RunningFloat provides statistical summaries of samples of type f64.
+//!   * RunningFloat provides statistical summaries of samples of type
+//!     f64.
 //!
 //!   * This includes a very coarse log histogram very similar to the one
 //!     that supports i64 data.
@@ -19,6 +20,9 @@
 //!     use rustics::ExportStats;
 //!     use rustics::printable::Printable;
 //!     use rustics::running_float::RunningFloat;
+//!
+//!     // Accept the default print options.  See the RunningInteger
+//!     // comments for an example of how to set print options.
 //!
 //!     let mut float = RunningFloat::new("Test Statistic", &None);
 //!     let     end   = 1000;

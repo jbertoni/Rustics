@@ -962,7 +962,7 @@ mod tests {
 
         set.clear();
 
-        let member = member_rc.borrow();
+        let member = rc_item!(member_rc);
         assert!(member.count() == 0);
     }
 
@@ -1076,7 +1076,7 @@ mod tests {
         println!("test_rc_printing:  end print 1");
         assert! (check_printer_count_match(printer.clone()));
 
-        subset_2.borrow_mut().set_title("New Subset 2");
+        rc_item_mut!(subset_2).set_title("New Subset 2");
 
         let expected =
             [

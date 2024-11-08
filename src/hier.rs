@@ -25,7 +25,7 @@
 //!       window_size parameter in HierConfig.  This window is implemented using a TimeWindow
 //!       or an IntegerWindow made using the HierGenerator instance.
 //!
-//!     * See the inter_hier module comments for more details.
+//!     * See the integer_hier module comments for more details.
 //!
 //! ## Example
 //!```

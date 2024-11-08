@@ -21,9 +21,9 @@
 //!    use rustics::Rustics;
 //!    use rustics::float_window::FloatWindow;
 //!
-//!    // Create an instance to record packet sizes in kbytes.  The
-//!    // default for printing output is stdout, which we'll assume
-//!    // is fine for this example, so None works for the printer.
+//!    // Create an instance to record packet sizes in kbytes.  Use the
+//!    // default options for for printing. See the RunningInteger
+//!    // comments for an example of how to set print options.
 //!    //
 //!    // Assume that retaining 1000 samples is fine for our hypothetical
 //!    // application.

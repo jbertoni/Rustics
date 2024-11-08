@@ -11,8 +11,11 @@
 //!     * TimerWindow maintains a set consisting of the last n items
 //!       recorded into it.
 //!
-//!     * It also supports the concept of marking a subset of the
-//!       newest N items as "live".
+//!     * It also supports the concept of marking a subset of the newest
+//!       N items as "live".
+//!
+//!     * This type uses IntegerWindow internally to record the time
+//!       samples.
 //!
 //! ## Example
 //!```
@@ -25,9 +28,7 @@
 //!    use rustics::time::DurationTimer;
 //!    use rustics::running_time::RunningTime;
 //!
-//!    // Create  an instance to record packet latencies.  The default
-//!    // for printing output is stdout, which we'll assume is fine for
-//!    // this example, so None works for the printer.
+//!    // Create an instance to record packet latencies.
 //!    //
 //!    // Assume that retaining 1000 samples is fine, and use the
 //!    // DurationTimer to measure time.  DurationTimer is a wrapper for
@@ -39,6 +40,10 @@
 //!
 //!    let window_size = 1000;
 //!    let mut timer = DurationTimer::new_box();
+//!
+//!    // Assume that the default print options are fine, so None works
+//!    // for that parameter.  See the RunningInteger comments for an
+//!    // example of how to set print options.
 //!
 //!    let mut packet_latency =
 //!        TimeWindow::new("Packet Latency", window_size, timer.clone(), &None);

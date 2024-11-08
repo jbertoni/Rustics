@@ -12,26 +12,8 @@
 //!       RunningFloat type, q.v.  It is substantially identical
 //!       to IntegerHier except it accepts f64 samples.
 //!
-//!     * Each level uses a Window instance containing a configurable
-//!       number of RunningFloat instances.  See the window module
-//!       documentation for more information on how the windows work.
-//!
-//!     * Level 0 RunningFloat instances are used to collect data.
-//!       Each instance collects a configurable number of samples.
-//!       After that number of samples are gathered, a new
-//!       RunningFloat instance is pushed into the window.
-//!
-//!     * When a configurable number of level 0 instances have been
-//!       collected into the window, they are summed into one level 1
-//!       RunningFloat instance.
-//!
-//!     * In general, a Rustics intance at level j is a sum of of i
-//!       instances from level j - 1, where i is configured per level.
-//!
-//!     * Each window retains RunningFloat instances that have
-//!       already been summed, in case they are wanted for queries.
-//!       The total window size is configured per level, and limits
-//!       the number of retained RunningFloat instances.
+//!     * See the IntegerHier module comments for a description of
+//!       how the Hier code uses Rustics instance.
 //!
 //! ## Example
 //!```
@@ -50,7 +32,7 @@
 //!     // Make a descriptor of the first level.  We have chosen to sum
 //!     // 1000 level 0 RunningFloat instances into one level 1
 //!     // RunningFloat instance.  This level is large, so we will keep
-//!     // only 1000 level 0 (the minimum) instances in the window.
+//!     // only 1000 level 0 instances (the minimum) in the window.
 //!
 //!     let dimension_0 = HierDimension::new(1000, 1000);
 //!
@@ -61,7 +43,7 @@
 //!
 //!     // Level two isn't summed, so the period isn't used.  Set the
 //!     // value to one one to keep the contructor happy.  Let's
-//!     // pretend this level isn't used much, so we cn retain only 100
+//!     // pretend this level isn't used much, so we can retain only 100
 //!     // instances in it.
 //!
 //!     let dimension_2 = HierDimension::new(1, 100);
@@ -79,7 +61,10 @@
 //!
 //!     // Now specify some more parameters used by Hier.  The defaults
 //!     // for the title and printer are fine, so just pass None.  The
-//!     // title defaults to the name and output will go to stdout.
+//!     // title defaults to the name and output will go to stdout.  See
+//!     // the RunningInteger comments for an example of how to set print
+//!     // options.
+//!     //
 //!     // Don't configure a window for this example.
 //!
 //!     let name        = "hierarchical float".to_string();
@@ -98,7 +83,7 @@
 //!
 //!     let mut float_hier = FloatHier::new_hier(configuration);
 //!
-//!     // Now record some events with boring data.
+//!     // Now record some events with hypothetical data.
 //!
 //!     let mut events   = 0;
 //!     let auto_advance = auto_advance.unwrap();

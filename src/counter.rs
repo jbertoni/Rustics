@@ -24,7 +24,8 @@
 //!
 //!     // Create a count and pretend that it's counting bytes.  The title
 //!     // defaults to the name, and the output is to stdout, and those
-//!     // are fine for this example.
+//!     // are fine for this example.  See the RunningInteger comments
+//!     // for an example of how to set print options.
 //!
 //!     let test_limit  = 20;
 //!     let singular    = "byte".to_string();

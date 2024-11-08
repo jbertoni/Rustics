@@ -17,15 +17,13 @@
 //!       added to the level.
 //!
 //!     * When a configurable number of level 0 instances have been
-//!       collected into the window, they are summed into one level 1
-//!       RunningInteger instance.
+//!       collected into the window, they are summed into one level
+//!       1 RunningInteger instance.
 //!
-//!     * When a configurable size limit is reached, the oldest 
-//!       RunningInteger instance is discarded.  This limit must be
-//!       at least the number of instances to be summed.
-//!
-//!     * Higher levels contain sums of a configurable number of
-//!       lower-level instances.
+//!     * When a configurable size limit is reached, the oldest
+//!       level 0 RunningInteger instance is discarded.  This limit
+//!       must be at least the number of instances to be summed.
+//!       Each level has a similar configurable size limit.
 //!
 //!     * In general, a Rustics intance at level j is a sum of of i
 //!       instances from level j - 1, where i is configured per level.
@@ -78,9 +76,10 @@
 //!     let auto_advance = Some(2000);
 //!     let descriptor   = HierDescriptor::new(dimensions, auto_advance);
 //!
-//!     // Now specify some parameters used by Hier to do printing.  The
-//!     // defaults for the title and printer are fine, so just pass None.
-//!     // The title defaults to the name and output will go to stdout.
+//!     // Use the defaults for printing, so None works for that
+//!     // parameter.  See the RunningInteger comments for an example of
+//!     // how to set print options.
+//!     //
 //!     // Don't configure a window for this example.
 //!
 //!     let name        = "test hierarchical integer".to_string();

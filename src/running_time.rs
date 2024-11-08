@@ -10,6 +10,9 @@
 //! * RunningTime
 //!     * RunningTime accumulates statistics on a stream of event times.
 //!
+//!     * Internally, it uses RunningInteger instances.  See that code
+//!       for more information
+//!
 //! ## Example
 //!```
 //!    use std::rc::Rc;
@@ -25,12 +28,10 @@
 //!    // time statistic, so we need a timer.  Use an adapter for the
 //!    // Rust standard Duration timer.
 //!
-//!    // The default for printing output is stdout, which we'll assume
-//!    // is fine, so None will work for the printer option.  See the
-//!    // Printer trait in lib.rs for information on writing a custom
-//!    // Printer.
-//!
 //!    let timer = DurationTimer::new_box();
+//!
+//!    // Accept the default print options. See the RunningInteger
+//!    // comments for an example of how to set print options.
 //!
 //!    let mut query_latency =
 //!        RunningTime::new("Query Latency", timer, &None);

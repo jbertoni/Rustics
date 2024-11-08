@@ -143,6 +143,11 @@ use super::float_hier::FloatHierConfig;
 pub type RusticsRc = Rc<RefCell<dyn Rustics>>;
 pub type RcSetBox  = Rc<RefCell<RcSet>>;
 
+/// rc_box! is used to create an instance for an RcSet item.
+
+#[macro_export]
+macro_rules! rc_box { ($x:expr) => { Rc::from(RefCell::new($x)) } }
+
 /// The rc_item_mut macro converts an RcSet member into a mutable
 /// Rustics or subset reference.
 
@@ -154,11 +159,6 @@ macro_rules! rc_item_mut { ($x:expr) => { &mut *$x.borrow_mut() } }
 
 #[macro_export]
 macro_rules! rc_item { ($x:expr) => { &*$x.borrow() } }
-
-/// rc_box! is used to create an instance for an RcSet item.
-
-#[macro_export]
-macro_rules! rc_box { ($x:expr) => { Rc::from(RefCell::new($x)) } }
 
 /// The RcTraverser trait defines an interface the user can implement
 /// to traverse the elements in an Rc set hierarchy.

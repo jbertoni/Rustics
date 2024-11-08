@@ -226,6 +226,12 @@ impl ClockTimer {
     }
 }
 
+/// The timer_box macro converts a DurationBoxTimer or a ClockTimerBox
+// instance into the shareable form, currently Rc<RefCell<_>>.
+
+#[macro_export]
+macro_rules! timer_box { ($x:expr) => { Rc::from(RefCell::new($x)) } }
+
 // The timer and timer_mut macros convert a DurationBoxTimer or a
 // ClockTimerBox into a borrowed or locked object for printing.
 
@@ -234,12 +240,6 @@ macro_rules! timer { ($x:expr) => { &*$x.borrow() } }
 
 #[macro_export]
 macro_rules! timer_mut { ($x:expr) => { &mut *$x.borrow_mut() } }
-
-/// The timer_box macro converts a DurationBoxTimer or a ClockTimerBox
-// instance into the shareable form, currently Rc<RefCell<_>>.
-
-#[macro_export]
-macro_rules! timer_box { ($x:expr) => { Rc::from(RefCell::new($x)) } }
 
 #[cfg(test)]
 mod tests {

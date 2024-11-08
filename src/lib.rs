@@ -565,6 +565,12 @@ pub trait Printer {
     fn as_any_mut    (&mut self) -> &mut dyn Any;
 }
 
+/// The printer_box macro converts a Printer instance into the
+/// shareable form, currently Rc<RefCell<Printer>>.
+
+#[macro_export]
+macro_rules! printer_box { ($x:expr) => { Rc::from(RefCell::new($x)) } }
+
 /// The printer_mut macro converts a PrinterBox into a mutable Printer.
 
 #[macro_export]
@@ -573,13 +579,7 @@ macro_rules! printer_mut { ($x:expr) => { &mut *$x.borrow_mut() } }
 /// The printer macro converts a PrinterBox into a Printer.
 
 #[macro_export]
-macro_rules! printer { ($x:expr) => { &*$x.borrow_mut() } }
-
-/// The printer_box macro converts a Printer instance into the
-/// shareable form, currently Rc<RefCell<Printer>>.
-
-#[macro_export]
-macro_rules! printer_box { ($x:expr) => { Rc::from(RefCell::new($x)) } }
+macro_rules! printer { ($x:expr) => { &*$x.borrow() } }
 
 // These macros work with Arc and Mutex
 //

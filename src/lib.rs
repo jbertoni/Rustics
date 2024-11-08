@@ -566,7 +566,7 @@ pub trait Printer {
 }
 
 /// The printer_box macro converts a Printer instance into the
-/// shareable form, currently Rc<RefCell<Printer>>.
+/// shareable form.
 
 #[macro_export]
 macro_rules! printer_box { ($x:expr) => { Rc::from(RefCell::new($x)) } }

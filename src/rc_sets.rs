@@ -143,7 +143,7 @@ use super::float_hier::FloatHierConfig;
 pub type RusticsRc = Rc<RefCell<dyn Rustics>>;
 pub type RcSetBox  = Rc<RefCell<RcSet>>;
 
-/// rc_box! is used to create an instance for an RcSet item.
+/// rc_box! is used to create a shareable instance for an RcSet item.
 
 #[macro_export]
 macro_rules! rc_box { ($x:expr) => { Rc::from(RefCell::new($x)) } }

@@ -224,7 +224,7 @@ pub type MemberRc    = Rc<RefCell<dyn HierMember   >>;
 pub type GeneratorRc = Rc<RefCell<dyn HierGenerator>>;
 pub type ExporterRc  = Rc<RefCell<dyn HierExporter >>;
 
-/// hier_box! is used to create an instance for an element in
+/// hier_box! is used to create a shareable instance for an element in
 /// a Hier instance
 
 #[macro_export]

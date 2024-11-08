@@ -161,7 +161,7 @@ use super::make_title;
 pub type RusticsArc = Arc<Mutex<dyn Rustics>>;
 pub type ArcSetBox  = Arc<Mutex<ArcSet>>;
 
-/// arc_box! is used to create an instance for an ArcSet item.
+/// arc_box! is used to create a shareable instance for an ArcSet item.
 
 #[macro_export]
 macro_rules! arc_box { ($x:expr) => { Arc::from(Mutex::new($x)) } }

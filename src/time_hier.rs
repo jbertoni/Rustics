@@ -190,6 +190,7 @@ use super::TimerBox;
 use super::PrintOption;
 use super::timer;
 use super::hier_box;
+use super::hier_item;
 use super::running_time::RunningTime;
 use super::time_window::TimeWindow;
 use crate::running_integer::IntegerExporter;
@@ -327,11 +328,11 @@ impl HierGenerator for TimeHier {
     // them at some point.
 
     fn push(&self, exporter: &mut dyn HierExporter, member_rc: MemberRc) {
-        let     exporter_any  = exporter.as_any_mut();
-        let     exporter_impl = exporter_any.downcast_mut::<IntegerExporter>().unwrap();
+        let exporter_any  = exporter.as_any_mut();
+        let exporter_impl = exporter_any.downcast_mut::<IntegerExporter>().unwrap();
 
-        let     member_borrow = member_rc.borrow();
-        let     member_impl   = member_borrow.as_any().downcast_ref::<RunningTime>().unwrap();
+        let member_borrow = hier_item!(member_rc);
+        let member_impl   = member_borrow.as_any().downcast_ref::<RunningTime>().unwrap();
 
         exporter_impl.push(member_impl.export());
     }
@@ -482,7 +483,7 @@ mod tests {
 
         // See that the new member matches expectations.
 
-        let new_member = new_member_rc.borrow();
+        let new_member = hier_item!(new_member_rc);
 
         assert!(new_member.to_rustics().count() == 1);
         assert!(new_member.to_rustics().mean()  == value as f64);

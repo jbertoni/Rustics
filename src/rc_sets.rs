@@ -529,6 +529,7 @@ impl RcSet {
 
         for subset in self.subsets.iter() {
             let subset = rc_item_mut!(**subset);
+
             found = subset.id() == target_id;
 
             if found {

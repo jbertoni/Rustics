@@ -497,7 +497,7 @@ impl Hier {
 
         let member = generator.borrow_mut().make_member(&name, &print_opts);
 
-        assert!(member.borrow().to_rustics().class() == class);
+        assert!(hier_item!(member).to_rustics().class() == class);
 
         stats[0].push(member);
 
@@ -564,8 +564,8 @@ impl Hier {
     pub fn traverse_all(&mut self, traverser: &mut dyn HierTraverser) {
         for level in &mut self.stats {
             for member in level.iter_all() {
-                let mut borrow  = member.borrow_mut();
-                let     rustics = borrow.to_rustics_mut();
+                let borrow  = hier_item_mut!(member);
+                let rustics = borrow.to_rustics_mut();
 
                 traverser.visit(rustics);
             }
@@ -577,8 +577,8 @@ impl Hier {
     pub fn traverse_live(&mut self, traverser: &mut dyn HierTraverser) {
         for level in &mut self.stats {
             for member in level.iter_live() {
-                let mut borrow  = member.borrow_mut();
-                let     rustics = borrow.to_rustics_mut();
+                let borrow  = hier_item_mut!(member);
+                let rustics = borrow.to_rustics_mut();
 
                 traverser.visit(rustics);
             }
@@ -823,9 +823,9 @@ impl Rustics for Hier {
     fn record_i64(&mut self, value: i64) {
         self.check_and_advance();
 
-        let     member  = self.stats[0].newest_mut().unwrap();
-        let mut borrow  = member.borrow_mut();
-        let     rustics = borrow.to_rustics_mut();
+        let member  = self.stats[0].newest_mut().unwrap();
+        let borrow  = hier_item_mut!(member);
+        let rustics = borrow.to_rustics_mut();
 
         rustics.record_i64(value);
 
@@ -837,9 +837,9 @@ impl Rustics for Hier {
     fn record_f64(&mut self, sample: f64) {
         self.check_and_advance();
 
-        let     current = self.current();
-        let mut borrow  = current.borrow_mut();
-        let     rustics = borrow.to_rustics_mut();
+        let current = self.current();
+        let borrow  = hier_item_mut!(current);
+        let rustics = borrow.to_rustics_mut();
 
         rustics.record_f64(sample);
 
@@ -855,9 +855,9 @@ impl Rustics for Hier {
     fn record_event_report(&mut self) -> i64 {
         self.check_and_advance();
 
-        let     member  = self.stats[0].newest_mut().unwrap();
-        let mut borrow  = member.borrow_mut();
-        let     rustics = borrow.to_rustics_mut();
+        let member  = self.stats[0].newest_mut().unwrap();
+        let borrow  = hier_item_mut!(member);
+        let rustics = borrow.to_rustics_mut();
 
         // Now record the event twice, as needed.
 
@@ -874,9 +874,9 @@ impl Rustics for Hier {
     fn record_time(&mut self, sample: i64) {
         self.check_and_advance();
 
-        let     current = self.current();
-        let mut borrow  = current.borrow_mut();
-        let     rustics = borrow.to_rustics_mut();
+        let current = self.current();
+        let borrow  = hier_item_mut!(current);
+        let rustics = borrow.to_rustics_mut();
 
         rustics.record_time(sample);
 
@@ -888,10 +888,10 @@ impl Rustics for Hier {
     fn record_interval(&mut self, timer: &mut TimerBox) {
         self.check_and_advance();
 
-        let     current      = self.current();
-        let mut borrow       = current.borrow_mut();
-        let     rustics      = borrow.to_rustics_mut();
-        let     time         = timer_mut!(timer).finish();
+        let current      = self.current();
+        let borrow       = hier_item_mut!(current);
+        let rustics      = borrow.to_rustics_mut();
+        let time         = timer_mut!(timer).finish();
 
         rustics.record_time(time);
 
@@ -1074,9 +1074,9 @@ impl Rustics for Hier {
         if let Some(window) = &mut self.window {
             window.precompute();
         } else {
-            let     current = self.current();
-            let mut borrow  = current.borrow_mut();
-            let     rustics = borrow.to_rustics_mut();
+            let current = self.current();
+            let borrow  = hier_item_mut!(current);
+            let rustics = borrow.to_rustics_mut();
 
             rustics.precompute();
         }
@@ -1715,7 +1715,7 @@ pub mod tests {
         // Do a sanity test on the members.
 
         let member_opt    = hier_integer.stats[1].newest().unwrap();
-        let member_borrow = member_opt.borrow();
+        let member_borrow = hier_item!(member_opt);
         let member        = member_borrow.as_any().downcast_ref::<RunningInteger>();
 
         // For test debugging.
@@ -1790,7 +1790,7 @@ pub mod tests {
         // Do a sanity test on the members.
 
         let member_opt    = hier.stats[1].newest().unwrap();
-        let member_borrow = member_opt.borrow();
+        let member_borrow = hier_item!(member_opt);
         let member        = member_borrow.as_any().downcast_ref::<RunningTime>();
 
         // For test debugging.

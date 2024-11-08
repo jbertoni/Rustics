@@ -202,6 +202,7 @@ use crate::HierMember;
 use crate::HierExporter;
 use crate::ExporterRc;
 use crate::MemberRc;
+use crate::hier_item;
 
 // Provide for downcasting from a Hier member to a Rustics
 // type or "dn Any" to get to the RunningInteger code.
@@ -320,12 +321,12 @@ impl HierGenerator for IntegerHier {
     // them at some point.
 
     fn push(&self, exporter: &mut dyn HierExporter, member_rc: MemberRc) {
-        let     exporter_any    = exporter.as_any_mut();
-        let     exporter_impl   = exporter_any.downcast_mut::<IntegerExporter>().unwrap();
+        let exporter_any    = exporter.as_any_mut();
+        let exporter_impl   = exporter_any.downcast_mut::<IntegerExporter>().unwrap();
 
-        let     member_borrow   = member_rc.borrow();
-        let     member_any      = member_borrow.as_any();
-        let     member_impl     = member_any.downcast_ref::<RunningInteger>().unwrap();
+        let member_borrow   = hier_item!(member_rc);
+        let member_any      = member_borrow.as_any();
+        let member_impl     = member_any.downcast_ref::<RunningInteger>().unwrap();
 
         exporter_impl.push(member_impl.export_data());
     }
@@ -339,6 +340,7 @@ impl HierGenerator for IntegerHier {
 pub mod tests {
     use super::*;
     use crate::LogHistogramBox;
+    use crate::hier_item_mut;
     use crate::hier::HierDescriptor;
     use crate::hier::HierDimension;
     use crate::PrintOpts;
@@ -424,7 +426,7 @@ pub mod tests {
 
         // See that the new member matches expectations.
 
-        let new_member = new_member_rc.borrow();
+        let new_member = hier_item!(new_member_rc);
 
         assert!(new_member.to_rustics().count() == 1);
         assert!(new_member.to_rustics().mean()  == value as f64);
@@ -503,7 +505,7 @@ pub mod tests {
 
         {
             let current_rc = hier.current();
-            let current    = current_rc.borrow();
+            let current    = hier_item!(current_rc);
             let histogram  = current.to_histogram();
             let histogram  = histogram.to_log_histogram().unwrap();
             let histogram  = histogram.borrow();
@@ -605,7 +607,7 @@ pub mod tests {
 
     pub fn verify_log_histogram(export: &LogHistogramBox, expected: &LogHistogramBox)
             -> bool {
-        let export   = export.borrow();
+        let export   = export  .borrow();
         let expected = expected.borrow();
 
         export.equals(&expected)
@@ -640,10 +642,10 @@ pub mod tests {
         for i in 0..samples {
             let sample = i as i64 + 1;
 
-            stats_1.borrow_mut().to_rustics_mut().record_i64(sample              );
-            stats_2.borrow_mut().to_rustics_mut().record_i64(sample +     samples);
-            stats_3.borrow_mut().to_rustics_mut().record_i64(sample + 2 * samples);
-            stats_4.borrow_mut().to_rustics_mut().record_i64(sample + 3 * samples);
+            hier_item_mut!(stats_1).to_rustics_mut().record_i64(sample              );
+            hier_item_mut!(stats_2).to_rustics_mut().record_i64(sample +     samples);
+            hier_item_mut!(stats_3).to_rustics_mut().record_i64(sample + 2 * samples);
+            hier_item_mut!(stats_4).to_rustics_mut().record_i64(sample + 3 * samples);
         }
 
         generator.push(&mut exporter, stats_1);
@@ -660,7 +662,7 @@ pub mod tests {
         // comparison RunningInteger and then get the export data
         // from both and compare.
 
-        let borrow   = sum.borrow();
+        let borrow   = hier_item!(sum);
         let borrow   = borrow.to_rustics();
         let running  = borrow.generic().downcast_ref::<RunningInteger>().unwrap();
 

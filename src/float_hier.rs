@@ -203,6 +203,7 @@ use crate::HierMember;
 use crate::HierExporter;
 use crate::ExporterRc;
 use crate::MemberRc;
+use crate::hier_item;
 
 // Provide for downcasting from a Hier member to a Rustics
 // type or "dn Any" to get to the RunningFloat code.
@@ -325,7 +326,7 @@ impl HierGenerator for FloatHier {
         let exporter_any   = exporter.as_any_mut();
         let exporter_impl  = exporter_any.downcast_mut::<FloatExporter>().unwrap();
 
-        let member_borrow  = member_rc.borrow();
+        let member_borrow  = hier_item!(member_rc);
         let member_any     = member_borrow.as_any();
         let member_impl    = member_any.downcast_ref::<RunningFloat>().unwrap();
 
@@ -348,6 +349,7 @@ mod tests {
     use crate::printer_mut;
     use crate::arc_box;
     use crate::stdout_printer;
+    use crate::hier_item_mut;
     use crate::hier::HierDescriptor;
     use crate::hier::HierDimension;
     use crate::integer_hier::tests::get_analyze_data;
@@ -441,7 +443,7 @@ mod tests {
 
         // See that the new member matches expectations.
 
-        let new_member = new_member_rc.borrow();
+        let new_member = hier_item!(new_member_rc);
 
         assert!(new_member.to_rustics().count() == 1);
         assert!(new_member.to_rustics().mean()  == value as f64);
@@ -549,9 +551,9 @@ mod tests {
 
         // See whether we can get back to a member.
 
-        let     member_rc = hier.current();
-        let     member    = &mut *member_rc.borrow_mut();
-        let     histogram = member.to_histogram();
+        let member_rc = hier.current();
+        let member    = hier_item_mut!(*member_rc);
+        let histogram = member.to_histogram();
 
         member.to_rustics().print();
         histogram.print_histogram(printer);
@@ -654,10 +656,10 @@ mod tests {
             let sample_3 = sample_1 + 2.0 * samples_f;
             let sample_4 = sample_1 + 3.0 * samples_f;
 
-            stats_1.borrow_mut().to_rustics_mut().record_f64(sample_1);
-            stats_2.borrow_mut().to_rustics_mut().record_f64(sample_2);
-            stats_3.borrow_mut().to_rustics_mut().record_f64(sample_3);
-            stats_4.borrow_mut().to_rustics_mut().record_f64(sample_4);
+            hier_item_mut!(stats_1).to_rustics_mut().record_f64(sample_1);
+            hier_item_mut!(stats_2).to_rustics_mut().record_f64(sample_2);
+            hier_item_mut!(stats_3).to_rustics_mut().record_f64(sample_3);
+            hier_item_mut!(stats_4).to_rustics_mut().record_f64(sample_4);
 
             expected_histo.record(sample_1);
             expected_histo.record(sample_2);

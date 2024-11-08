@@ -161,6 +161,11 @@ use super::make_title;
 pub type RusticsArc = Arc<Mutex<dyn Rustics>>;
 pub type ArcSetBox  = Arc<Mutex<ArcSet>>;
 
+/// arc_box! is used to create an instance for an ArcSet item.
+
+#[macro_export]
+macro_rules! arc_box { ($x:expr) => { Arc::from(Mutex::new($x)) } }
+
 /// The arc_item_mut macro converts an ArcSet item into a mutable Rustics
 /// or subset reference.
 
@@ -172,11 +177,6 @@ macro_rules! arc_item_mut { ($x:expr) => { &mut *$x.lock().unwrap() } }
 
 #[macro_export]
 macro_rules! arc_item { ($x:expr) => { &*$x.lock().unwrap() } }
-
-/// arc_box! is used to create an instance for an ArcSet item.
-
-#[macro_export]
-macro_rules! arc_box { ($x:expr) => { Arc::from(Mutex::new($x)) } }
 
 /// The ArcTraverser trait is used by the traverse() method to
 /// call a user-defined function at each element in an ArcSet
@@ -320,7 +320,7 @@ impl ArcSet {
         // Iterate through the Rustics instances.
 
         for mutex in self.members.iter() {
-            let member  = mutex.lock().unwrap();
+            let member  = arc_item_mut!(mutex);
             let printer = printer.clone();
 
             if let Some(title) = title {
@@ -336,7 +336,7 @@ impl ArcSet {
         // Iterate through the subsets.
 
         for mutex in self.subsets.iter() {
-            let subset  = mutex.lock().unwrap();
+            let subset  = arc_item_mut!(mutex);
             let printer = printer.clone();
 
             if let Some(title) = title {
@@ -360,15 +360,15 @@ impl ArcSet {
         self.title = String::from(title);
 
         for mutex in self.subsets.iter() {
-            let mut subset  = mutex.lock().unwrap();
-            let     title   = make_title(title, &subset.name());
+            let subset  = arc_item_mut!(mutex);
+            let title   = make_title(title, &subset.name());
 
             subset.set_title(&title);
         }
 
         for mutex in self.members.iter() {
-            let mut member = mutex.lock().unwrap();
-            let     title  = make_title(title, &member.name());
+            let member = arc_item_mut!(mutex);
+            let title  = make_title(title, &member.name());
 
             member.set_title(&title);
         }
@@ -379,13 +379,13 @@ impl ArcSet {
 
     pub fn clear(&mut self) {
         for mutex in self.subsets.iter() {
-            let mut subset = mutex.lock().unwrap();
+            let subset = arc_item_mut!(mutex);
 
             subset.clear();
         }
 
         for mutex in self.members.iter() {
-            let mut member = mutex.lock().unwrap();
+            let member = arc_item_mut!(mutex);
 
             member.clear();
         }
@@ -396,13 +396,13 @@ impl ArcSet {
     /// add_running_integer() and similar methods.
 
     pub fn add_member(&mut self, member: RusticsArc) {
-        let mut stat  = member.lock().unwrap();
-        let     title = make_title(&self.title, &stat.name());
+        let work  = member.clone();
+        let stat  = arc_item_mut!(work);
+        let title = make_title(&self.title, &stat.name());
 
         stat.set_title(&title);
         stat.set_id(self.next_id);
         self.next_id += 1;
-        drop(stat);
 
         self.members.push(member);
     }
@@ -572,14 +572,16 @@ impl ArcSet {
     pub fn remove_stat(&mut self, target_box: RusticsArc) -> bool {
         let mut found       = false;
         let mut i           = 0;
-        let     target_stat = target_box.lock().unwrap();
+        let     target_stat = target_box.lock().unwrap(); // can't use arc_item!
         let     target_id   = target_stat.id();
 
         // We have to unlock the target_box or we'll hang in the loop.
+
         drop(target_stat);
 
         for mutex in self.members.iter() {
-            let stat = mutex.lock().unwrap();
+            let stat = arc_item!(mutex);
+
             found = stat.id() == target_id;
 
             if found {
@@ -624,10 +626,11 @@ impl ArcSet {
         let     target_id     = target_subset.id();
 
         // We have to unlock the target_box or we'll hang in the loop.
+
         drop(target_subset);
 
         for mutex in self.subsets.iter() {
-            let subset = mutex.lock().unwrap();
+            let subset = arc_item!(mutex);
             found = subset.id() == target_id;
 
             if found {
@@ -698,22 +701,22 @@ pub mod tests {
 
     fn add_stats(parent: &Mutex<ArcSet>) {
         for i in 0..4 {
-            let     lower         = -64;    // Just define the range for the test samples.
-            let     upper         =  64;
-            let     events_limit  = 2 * (upper - lower) as usize;
+            let lower         = -64;    // Just define the range for the test samples.
+            let upper         =  64;
+            let events_limit  = 2 * (upper - lower) as usize;
 
-            let     parent        = &mut parent.lock().unwrap();
-            let     subset_name   = format!("generated subset {}", i);
-            let     subset        = parent.add_subset(&subset_name, 4, 4);
-            let mut subset        = subset.lock().unwrap();
+            let parent        = &mut arc_item_mut!(parent);
+            let subset_name   = format!("generated subset {}", i);
+            let subset        = parent.add_subset(&subset_name, 4, 4);
+            let subset        = &mut arc_item_mut!(subset);
 
-            let     window_name   = format!("generated window {}", i);
-            let     running_name  = format!("generated running {}", i);
-            let     window_mutex  = subset.add_integer_window(&window_name, events_limit, bytes());
-            let     running_mutex = subset.add_running_integer(&running_name, None);
+            let window_name   = format!("generated window {}", i);
+            let running_name  = format!("generated running {}", i);
+            let window_mutex  = subset.add_integer_window(&window_name, events_limit, bytes());
+            let running_mutex = subset.add_running_integer(&running_name, None);
 
-            let mut window        = window_mutex.lock().unwrap();
-            let mut running       = running_mutex.lock().unwrap();
+            let window        = arc_item_mut!(window_mutex);
+            let running       = arc_item_mut!(running_mutex);
 
             let subset_expected   = make_title(&parent.title(),  &subset_name );
             let window_expected   = make_title(&subset_expected, &window_name );
@@ -753,8 +756,8 @@ pub mod tests {
 
         //  Create the parent set for our test Rustics instances.
 
-        let     set = ArcSet::new_box(&parent_name, 4, 4, &None);
-        let mut set = set.lock().unwrap();
+        let set = ArcSet::new_box(&parent_name, 4, 4, &None);
+        let set = arc_item_mut!(set);
 
         //  Create timers for time statistics.
 
@@ -772,7 +775,8 @@ pub mod tests {
         let float_window_mutex  = set.add_float_window   ("float window",  window_size, bytes()      );
         let running_float_mutex = set.add_running_float  ("running float",              bytes()      );
 
-        //  Lock the instances for manipulation.
+        // Lock the instances for manipulation.  arc_item_mut doesn't
+        // interact well with drop...
 
         let mut window          = window_mutex       .lock().unwrap();
         let mut running         = running_mutex      .lock().unwrap();

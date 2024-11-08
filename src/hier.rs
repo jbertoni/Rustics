@@ -33,6 +33,7 @@
 //!     use std::sync::Mutex;
 //!     use rustics::Rustics;
 //!     use rustics::arc_box;
+//!     use rustics::hier_item;
 //!     use rustics::hier::Hier;
 //!     use rustics::hier::HierDescriptor;
 //!     use rustics::hier::HierDimension;
@@ -181,7 +182,7 @@
 //!                 { panic!("The sum wasn't created"); }
 //!         };
 //!
-//!     let borrow  = sum.borrow();
+//!     let borrow  = hier_item!(sum);
 //!     let rustics = borrow.to_rustics();
 //!
 //!     rustics.print();
@@ -228,6 +229,18 @@ pub type ExporterRc  = Rc<RefCell<dyn HierExporter >>;
 
 #[macro_export]
 macro_rules! hier_box { ($x:expr) => { Rc::from(RefCell::new($x)) } }
+
+/// The hier_item_mut macro converts an RcSet member into a mutable
+/// Rustics or subset reference.
+
+#[macro_export]
+macro_rules! hier_item_mut { ($x:expr) => { &mut *$x.borrow_mut() } }
+
+/// The hier_item macro converts an RcSet member into a Rustics or subset
+/// instance.
+
+#[macro_export]
+macro_rules! hier_item { ($x:expr) => { &*$x.borrow() } }
 
 /// HierDescriptor is used to describe the configuration of
 /// a hierarchy to a constructor like new().

@@ -230,13 +230,13 @@ impl RcSet {
         traverser.visit_set(self);
 
         for member in self.members.iter() {
-            let member = &mut *((**member).borrow_mut());
+            let member = rc_item_mut!(**member);
 
             traverser.visit_member(member);
         }
 
         for subset in self.subsets.iter() {
-            let mut subset = (**subset).borrow_mut();
+            let subset = rc_item_mut!(**subset);
 
             subset.traverse(traverser);
         }
@@ -250,7 +250,7 @@ impl RcSet {
 
     pub fn print_opts(&self, printer: PrinterOption, title: Option<&str>) {
         for member in self.members.iter() {
-            let member  = (**member).borrow();
+            let member  = rc_item!(**member);
             let printer = printer.clone();
 
             if let Some(title) = title {
@@ -264,7 +264,7 @@ impl RcSet {
         }
 
         for subset in self.subsets.iter() {
-            let subset  = (**subset).borrow();
+            let subset  = rc_item!(**subset);
             let printer = printer.clone();
 
             if let Some(title) = title {
@@ -286,15 +286,15 @@ impl RcSet {
         self.title = String::from(title);
 
         for subset in self.subsets.iter() {
-            let mut subset = (**subset).borrow_mut();
-            let     title  = make_title(title, &subset.name);
+            let subset = rc_item_mut!(**subset);
+            let title  = make_title(title, &subset.name);
 
             subset.set_title(&title);
         }
 
         for member in self.members.iter() {
-            let mut member = (**member).borrow_mut();
-            let     title  = make_title(title, &member.name());
+            let member = rc_item_mut!(**member);
+            let title  = make_title(title, &member.name());
 
             member.set_title(&title);
         }
@@ -305,12 +305,14 @@ impl RcSet {
 
     pub fn clear(&mut self) {
         for subset in self.subsets.iter() {
-            let mut subset = (**subset).borrow_mut();
+            let subset = rc_item_mut!(**subset);
+
             subset.clear();
         }
 
         for member in self.members.iter() {
-            let mut member = (**member).borrow_mut();
+            let member = rc_item_mut!(**member);
+
             member.clear();
         }
     }
@@ -318,13 +320,13 @@ impl RcSet {
     /// Adds a the Rustics instance to the set.
 
     pub fn add_member(&mut self, member: RusticsRc) {
-        let mut stat   = member.borrow_mut();
-        let     title  = make_title(&self.title, &stat.name());
+        let work   = member.clone();
+        let stat   = rc_item_mut!(work);
+        let title  = make_title(&self.title, &stat.name());
 
         stat.set_title(&title);
         stat.set_id(self.next_id);
         self.next_id += 1;
-        drop(stat);
 
         self.members.push(member);
     }
@@ -463,7 +465,7 @@ impl RcSet {
         let member     = rc_box!(member);
 
         if let Some(units) = units {
-            member.borrow_mut().set_units(units);
+            rc_item_mut!(member).set_units(units);
         }
 
         self.add_member(member.clone());
@@ -481,7 +483,8 @@ impl RcSet {
         drop(member);
 
         for rc in self.members.iter() {
-            let member = (**rc).borrow_mut();
+            let member = rc_item_mut!(**rc);
+
             found = member.id() == target_id;
 
             if found {
@@ -489,7 +492,6 @@ impl RcSet {
             }
 
             i += 1;
-            drop(member);
         }
 
         if found {
@@ -526,7 +528,7 @@ impl RcSet {
         drop(subset);
 
         for subset in self.subsets.iter() {
-            let subset = (**subset).borrow_mut();
+            let subset = rc_item_mut!(**subset);
             found = subset.id() == target_id;
 
             if found {
@@ -610,23 +612,23 @@ mod tests {
         let parent_set = parent;
 
         for _i in 0..4 {
-            let     subset  = parent_set.add_subset("generated subset", 4, 4);
-            let mut subset  = (*subset).borrow_mut();
+            let subset  = parent_set.add_subset("generated subset", 4, 4);
+            let subset  = rc_item_mut!(*subset);
 
-            let window      = subset.add_integer_window("generated subset window", 32, bytes());
-            let running     = subset.add_running_integer("generated subset running", None);
+            let window  = subset.add_integer_window("generated subset window", 32, bytes());
+            let running = subset.add_running_integer("generated subset running", None);
 
-            let mut window  = (*window).borrow_mut();
-            let mut running = (*running).borrow_mut();
+            let window  = rc_item_mut!(*window);
+            let running = rc_item_mut!(*running);
 
             for i in lower..upper {
-                window.record_i64(i);
+                window .record_i64(i);
                 running.record_i64(i);
             }
         }
 
-        let     counter = parent_set.add_counter("generated counter", bytes());
-        let mut counter = (*counter).borrow_mut();
+        let counter = parent_set.add_counter("generated counter", bytes());
+        let counter = rc_item_mut!(*counter);
 
         for i in 0..upper {
             counter.record_i64(i);
@@ -741,8 +743,8 @@ mod tests {
         let subset_1 = set.add_subset("subset 1", 4, 4);
         let subset_2 = set.add_subset("subset 2", 4, 4);
 
-        add_stats(&mut (*subset_1).borrow_mut());
-        add_stats(&mut (*subset_2).borrow_mut());
+        add_stats(&mut rc_item_mut!(*subset_1));
+        add_stats(&mut rc_item_mut!(*subset_2));
 
         println!("=========== Hierarchical Print");
         set.print();

@@ -13,8 +13,6 @@
 //!
 //! ## Example
 //!```
-//!    use std::rc::Rc;
-//!    use std::cell::RefCell;
 //!    use rustics::Rustics;
 //!    use rustics::Histogram;
 //!    use rustics::PrintOpts;
@@ -28,20 +26,21 @@
 //!    // so that option can be None.
 //!
 //!    let printer    = Some(stdout_printer());
-//!    let title      = Some("Network Packet Size".to_string());
+//!    let title      = Some("Network Packet Sizes".to_string());
 //!    let units      = Some(Units::new("byte", "bytes"));
 //!    let histo_opts = None;
 //!
 //!    let print_opts = PrintOpts { printer, title, units, histo_opts };
 //!
-//!    let mut packet_sizes = RunningInteger::new("Packet Sizes", &None);
+//!    let mut packet_sizes =
+//!        RunningInteger::new("Packet Sizes", &Some(print_opts));
 //!
 //!    // Record some hypothetical packet sizes.
 //!
 //!    let sample_count = 1000;
 //!
 //!    for i in 1..=sample_count {
-//!       packet_sizes.record_i64(i as i64);
+//!       packet_sizes.record_i64(i);
 //!       assert!(packet_sizes.count() == i as u64);
 //!    }
 //!
@@ -77,10 +76,34 @@
 //!    let next_sample_count = 100;
 //!
 //!    for i in 1..=next_sample_count {
-//!       packet_sizes.record_i64(i + sample_count as i64);
+//!       packet_sizes.record_i64(i + sample_count);
 //!       assert!(packet_sizes.count() == (sample_count + i) as u64);
 //!    }
+//!
+//!    // Sample Output
+//!
+//!    //        Network Packet Sizes
+//!    //            Count               1,000 
+//!    //            Minumum                 1 byte
+//!    //            Maximum             1,000 bytes
+//!    //            Log Mode               10 
+//!    //            Mode Value          1,024 bytes
+//!    //            Mean             +5.00500 e+2 bytes
+//!    //            Std Dev          +2.88819 e+2 bytes
+//!    //            Variance         +8.34166 e+4 
+//!    //            Skewness         -4.16317 e-11 
+//!    //            Kurtosis         -1.19999 e+0 
+//!    //          Log Histogram
+//!    //          -----------------------
+//!    //            0:                 1                 1                 2                 4
+//!    //            4:                 8                16                32                64
+//!    //            8:               128               256               488                 0
+//!
+//!    // The mode value and histogram both show the most commoe bucket
+//!    // is the range from 513 to 1,024 bytes, which is consistent with
+//!    // the samples recorded.
 //!```
+
 
 use std::any::Any;
 use std::rc::Rc;

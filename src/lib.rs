@@ -887,7 +887,8 @@ pub struct ExportStats {
     pub float_histogram:    Option<FloatHistogramBox>,
 }
 
-/// Histogram defines the trait for using a LogHistogram instance.
+/// Histogram defines the trait for using a LogHistogram or
+/// FloatHistogram instance.
 
 pub trait Histogram {
 

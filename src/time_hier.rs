@@ -282,9 +282,9 @@ impl TimeHier {
     }
 }
 
-// This impl provides the thus bridge between "impl RunningTime"
-// and the Hier code.  This cdoe is of interest mainly to developers
-// who are creating a custom type and need examples.
+// This trait provides the thus bridge between "impl RunningTime"
+// and the Hier implementation.  This code is of interest mainly to
+// developers who are creating a custom type and need examples.
 
 impl HierGenerator for TimeHier {
     // Creates a member with the given name and printer.
@@ -305,10 +305,10 @@ impl HierGenerator for TimeHier {
     // Makes a member from a complete list of exported instances.
 
     fn make_from_exporter(&self, name: &str, print_opts: &PrintOption, exporter: ExporterRc) -> MemberRc {
-        let mut exporter_borrow = exporter.borrow_mut();
-        let     exporter_any    = exporter_borrow.as_any_mut();
-        let     exporter_impl   = exporter_any.downcast_mut::<IntegerExporter>().unwrap();
-        let     member          = exporter_impl.make_member(name, print_opts);
+        let mut exporter_borrow = exporter        .borrow_mut();
+        let     exporter_any    = exporter_borrow .as_any_mut();
+        let     exporter_impl   = exporter_any    .downcast_mut::<IntegerExporter>().unwrap();
+        let     member          = exporter_impl   .make_member(name, print_opts);
         let     timer           = self.timer.clone();
         let     member          = RunningTime::from_integer(timer, print_opts, member);
 
@@ -328,11 +328,12 @@ impl HierGenerator for TimeHier {
     // them at some point.
 
     fn push(&self, exporter: &mut dyn HierExporter, member_rc: MemberRc) {
-        let exporter_any  = exporter.as_any_mut();
-        let exporter_impl = exporter_any.downcast_mut::<IntegerExporter>().unwrap();
+        let exporter_any  = exporter     .as_any_mut();
+        let exporter_impl = exporter_any .downcast_mut::<IntegerExporter>().unwrap();
 
         let member_borrow = hier_item!(member_rc);
-        let member_impl   = member_borrow.as_any().downcast_ref::<RunningTime>().unwrap();
+        let member_any    = member_borrow .as_any();
+        let member_impl   = member_any    .downcast_ref::<RunningTime>().unwrap();
 
         exporter_impl.push(member_impl.export());
     }

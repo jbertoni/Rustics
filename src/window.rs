@@ -9,6 +9,9 @@
 //! ## Type
 //!
 //! * Window<T>
+//!   * This struct is used internally.  Most users will not use
+//!     it directly.
+//!
 //!   * The Window type implements a set of instances of type T.
 //!
 //!   * The set has a configurable size limit.

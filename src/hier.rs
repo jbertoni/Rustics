@@ -252,7 +252,7 @@ pub struct HierDescriptor {
 
 impl HierDescriptor {
     pub fn new(dimensions: Vec<HierDimension>, auto_next: Option<i64>) -> HierDescriptor {
-        let auto_next  = auto_next.unwrap_or(0);
+        let auto_next = auto_next.unwrap_or(0);
 
         if auto_next < 0 {
             panic!("HierDescriptor::new:  The auto_next value can't be negative.");

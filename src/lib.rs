@@ -91,9 +91,9 @@
 //!
 //!     * IntegerHier
 //!         * This struct wraps the RunningInteger type to support the Hier code.  See
-//!           "Integer::new_hier" for a simple interface to create a Hier instance using
-//!           RunningInteger for statistics collection.  The integer_hier and hier.rs test module
-//!           also contains sample_usage() and make_hier() functions as examples.
+//!           "IntegerHier::new_hier" for a simple interface to create a Hier instance using
+//!           RunningInteger instances for statistics collection.  The integer_hier and hier.rs
+//!           test module also contains sample_usage() and make_hier() functions as examples.
 //!
 //!     * TimeHier
 //!         * TimeHier implements Hier for the RunningTime type. As with IntegerHier, see
@@ -140,7 +140,7 @@
 //!         * This trait provides a method to use custom printers.  By default, output from the
 //!           printing function goes to stdout.
 //!
-//!         * See StdioPrinter for a very simple sample implementation.  This trait is used
+//!         * See StdioPrinter for a very simple sample implementation.  This type is used
 //!           as the default printer by the Rustics code.
 //!
 //!     *  Printable
@@ -205,6 +205,8 @@ pub type TimerBox           = Rc<RefCell<dyn Timer>>;
 pub type PrintOption        = Option<PrintOpts>;
 pub type LogHistogramBox    = Rc<RefCell<LogHistogram>>;
 pub type FloatHistogramBox  = Rc<RefCell<FloatHistogram>>;
+
+/// Extract the mantissa from an f64.
 
 pub fn to_mantissa(input: f64) -> i64 {
     let mantissa_size = 52;
@@ -290,8 +292,8 @@ pub fn timer_box_hz(timer:  &TimerBox) -> u128 {
     timer!(*timer).hz()
 }
 
-/// stdout_printer() creates a Printer instance that sends output
-/// to stdout.  This is the default type for all statistics types.
+/// stdout_printer() creates a PrinterBox instance that sends output
+/// to stdout.  This is the default printer for all statistics types.
 
 pub fn stdout_printer() -> PrinterBox {
     let printer = StdioPrinter::new(StreamKind::Stdout);

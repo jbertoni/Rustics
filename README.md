@@ -9,7 +9,7 @@ variance.  The trait Rustics defines the common interface for all
 statistical types.
 
 Most modules have sample code in their documentation, and many testing
-modules contain example functions called "sample_usage",
+modules contain example functions called "sample_usage".
 
 At this time, statistics can be gathered for i64 values, time periods (also
 of type i64), and f64 samples.  Statistics can gathered collected as a running
@@ -24,9 +24,9 @@ useful for counting events, for example.
 
 This library also implements a form of hierarchical statistics.  The
 hierarchical statistics combine a set of Rustics instances into a single
-Rustics instance.  This summation can allow keeping historical data at a lower
-storage cost, and can reduce floating-point loss of precision.  See the
-hier.rs file and documentation for more information.
+Rustics instance.  This summation can allow keeping historical data with
+a lower memory footprint, and can reduce floating-point loss of precision.
+See the hier.rs file and documentation for more information.
 
 Rustics also implements sets that contain Rustics instances.  All the
 instances in a set can be printed via the print() method of the set, and

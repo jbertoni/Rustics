@@ -528,7 +528,7 @@ impl Rustics for RunningFloat {
         Some(self.histogram.clone())
     }
 
-    // Methods for or internal use.
+    // Methods for internal use.
 
     fn set_id(&mut self, id: usize) {
         self.id = id;

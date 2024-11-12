@@ -253,6 +253,14 @@ impl Rustics for Counter {
         printer.print("");
     }
 
+    fn log_histogram(&self) -> Option<LogHistogramBox> {
+        None
+    }
+
+    fn float_histogram(&self) -> Option<FloatHistogramBox> {
+        None
+    }
+
     // For internal use only.
 
     fn set_title(&mut self, title: &str) {
@@ -277,14 +285,6 @@ impl Rustics for Counter {
 
     fn generic(&self) -> &dyn Any {
         self as &dyn Any
-    }
-
-    fn log_histogram(&self) -> Option<LogHistogramBox> {
-        None
-    }
-
-    fn float_histogram(&self) -> Option<FloatHistogramBox> {
-        None
     }
 
     fn export_stats(&self) -> ExportStats {

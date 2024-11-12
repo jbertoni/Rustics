@@ -48,8 +48,8 @@
 //!
 //!    packet_sizes.print();
 //!
-//!    // Print just the histogram.  This example shows how PrinterBox
-//!    // the printer code work.
+//!    // Print just the histogram.  This example shows how the printer
+//!    // code works.
 //!
 //!    let printer = stdout_printer();      // create a shareable printer
 //!    let printer = printer_mut!(printer); // get the printer out of the cell
@@ -483,18 +483,6 @@ impl Rustics for RunningInteger {
         self.log_histogram.borrow_mut().clear();
     }
 
-    fn equals(&self, other: &dyn Rustics) -> bool {
-        if let Some(other) = <dyn Any>::downcast_ref::<RunningInteger>(other.generic()) {
-            std::ptr::eq(self, other)
-        } else {
-            false
-        }
-    }
-
-    fn generic(&self) -> &dyn Any {
-        self as &dyn Any
-    }
-
     fn log_histogram(&self) -> Option<LogHistogramBox> {
         Some(self.log_histogram.clone())
     }
@@ -534,6 +522,20 @@ impl Rustics for RunningInteger {
 
     fn set_title(&mut self, title: &str) {
         self.title = String::from(title)
+    }
+
+    // For internal use
+
+    fn equals(&self, other: &dyn Rustics) -> bool {
+        if let Some(other) = <dyn Any>::downcast_ref::<RunningInteger>(other.generic()) {
+            std::ptr::eq(self, other)
+        } else {
+            false
+        }
+    }
+
+    fn generic(&self) -> &dyn Any {
+        self as &dyn Any
     }
 
     fn set_id(&mut self, id: usize) {

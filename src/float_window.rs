@@ -484,18 +484,6 @@ impl Rustics for FloatWindow {
         printer.print("");
     }
 
-    fn equals(&self, other: &dyn Rustics) -> bool {
-        if let Some(other) = <dyn Any>::downcast_ref::<FloatWindow>(other.generic()) {
-            std::ptr::eq(self, other)
-        } else {
-            false
-        }
-    }
-
-    fn generic(&self) -> &dyn Any {
-        self as &dyn Any
-    }
-
     fn log_histogram(&self) -> Option<LogHistogramBox> {
         None
     }
@@ -506,6 +494,20 @@ impl Rustics for FloatWindow {
 
     fn set_title(&mut self, title: &str) {
         self.title = String::from(title)
+    }
+
+    // For internal use
+
+    fn equals(&self, other: &dyn Rustics) -> bool {
+        if let Some(other) = <dyn Any>::downcast_ref::<FloatWindow>(other.generic()) {
+            std::ptr::eq(self, other)
+        } else {
+            false
+        }
+    }
+
+    fn generic(&self) -> &dyn Any {
+        self as &dyn Any
     }
 
     fn set_id(&mut self, id: usize) {

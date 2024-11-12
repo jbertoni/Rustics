@@ -282,11 +282,19 @@ impl Rustics for TimeWindow {
         printer.print("");
     }
 
-    // For internal use only.
-
     fn set_title(&mut self, title: &str) {
         self.integer_window.set_title(title)
     }
+
+    fn log_histogram(&self) -> Option<LogHistogramBox> {
+        self.integer_window.log_histogram()
+    }
+
+    fn float_histogram(&self) -> Option<FloatHistogramBox> {
+        None
+    }
+
+    // For internal use only.
 
     fn set_id(&mut self, id: usize) {
         self.integer_window.set_id(id)
@@ -306,14 +314,6 @@ impl Rustics for TimeWindow {
 
     fn generic(&self) -> &dyn Any {
         self as &dyn Any
-    }
-
-    fn log_histogram(&self) -> Option<LogHistogramBox> {
-        self.integer_window.log_histogram()
-    }
-
-    fn float_histogram(&self) -> Option<FloatHistogramBox> {
-        None
     }
 
     fn export_stats(&self) -> ExportStats {

@@ -40,8 +40,8 @@ fn main() {
 
     packet_sizes.print();
 
-    // Print just the histogram.  This example shows how PrinterBox
-    // the printer code work.
+    // Print just the histogram.  This example shows how the printer code
+    // works.
 
     let printer = stdout_printer();      // create a shareable printer
     let printer = printer_mut!(printer); // get the printer out of the cell

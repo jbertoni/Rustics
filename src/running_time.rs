@@ -306,10 +306,19 @@ impl Rustics for RunningTime {
         printer.print("");
     }
 
-    // For internal use only.
     fn set_title(&mut self, title: &str) {
         self.running_integer.set_title(title);
     }
+
+    fn log_histogram(&self) -> Option<LogHistogramBox> {
+        self.running_integer.log_histogram()
+    }
+
+    fn float_histogram(&self) -> Option<FloatHistogramBox> {
+        self.running_integer.float_histogram()
+    }
+
+    // For internal use only.
 
     fn set_id(&mut self, id: usize) {
         self.running_integer.set_id(id)
@@ -329,14 +338,6 @@ impl Rustics for RunningTime {
 
     fn generic(&self) -> &dyn Any {
         self as &dyn Any
-    }
-
-    fn log_histogram(&self) -> Option<LogHistogramBox> {
-        self.running_integer.log_histogram()
-    }
-
-    fn float_histogram(&self) -> Option<FloatHistogramBox> {
-        self.running_integer.float_histogram()
     }
 
     fn export_stats(&self) -> ExportStats {

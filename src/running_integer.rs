@@ -23,7 +23,7 @@
 //!
 //!    // Create an instance to record packet sizes. Set some print
 //!    // options as an example.  Only float histograms have options,
-//!    // so that option can be None.
+//!    // so that field can be None.
 //!
 //!    let printer    = Some(stdout_printer());
 //!    let title      = Some("Network Packet Sizes".to_string());

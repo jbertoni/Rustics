@@ -17,14 +17,31 @@
 //! ## Example
 //!```
 //!     use rustics::Rustics;
+//!     use rustics::PrintOpts;
+//!     use rustics::float_histogram::HistoOpts;
 //!     use rustics::ExportStats;
 //!     use rustics::printable::Printable;
 //!     use rustics::running_float::RunningFloat;
 //!
-//!     // Accept the default print options.  See the RunningInteger
-//!     // comments for an example of how to set print options.
+//!     // Accept the default print options except for the histogram
+//!     // option.  See the RunningInteger comments for an example of how to
+//!     // set the other print options.
 //!
-//!     let mut float = RunningFloat::new("Test Statistic", &None);
+//!     // Create a HistOp for new().
+//!
+//!     let merge_min    = 0;  // not implemented yet
+//!     let merge_max    = 0;  // not implemented yet
+//!     let no_zero_rows = true;
+//!
+//!     let histo_opts = HistoOpts { merge_min, merge_max, no_zero_rows };
+//!     let histo_opts = Some(histo_opts);
+//!     let printer    = None;
+//!     let title      = None;
+//!     let units      = None;
+//!     let print_opts = PrintOpts { printer, title, units, histo_opts };
+//!     let print_opts = Some(print_opts);
+//!
+//!     let mut float = RunningFloat::new("Test Statistic", &print_opts);
 //!     let     end   = 1000;
 //!
 //!     // Record the integers from 1 to "end".

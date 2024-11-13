@@ -304,7 +304,8 @@ impl HierGenerator for TimeHier {
 
     // Makes a member from a complete list of exported instances.
 
-    fn make_from_exporter(&self, name: &str, print_opts: &PrintOption, exporter: ExporterRc) -> MemberRc {
+    fn make_from_exporter(&self, name: &str, print_opts: &PrintOption, exporter: ExporterRc)
+            -> MemberRc {
         let mut exporter_borrow = exporter        .borrow_mut();
         let     exporter_any    = exporter_borrow .as_any_mut();
         let     exporter_impl   = exporter_any    .downcast_mut::<IntegerExporter>().unwrap();
@@ -390,7 +391,8 @@ mod tests {
         HierDescriptor::new(dimensions, Some(auto_next))
     }
 
-    fn make_time_hier(generator:  GeneratorRc, auto_next: i64, window_size: Option<usize>) -> Hier {
+    fn make_time_hier(generator:  GeneratorRc, auto_next: i64, window_size: Option<usize>)
+            -> Hier {
         let descriptor    = make_descriptor(auto_next);
         let class         = "time".to_string();
         let name          = "test hier".to_string();

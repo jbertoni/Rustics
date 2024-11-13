@@ -783,8 +783,8 @@ pub trait Rustics {
 
     fn title(&self)-> String;
 
-    /// Returns the "class" of the statistic.  Currently, "integer" and
-    /// "time" classes exist.
+    /// Returns the class of the statistic.  Currently, "integer", "counter",
+    /// "float", and "time" classes exist.
 
     fn class(&self) -> &str;
 

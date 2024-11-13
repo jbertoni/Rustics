@@ -356,7 +356,7 @@ impl Rustics for FloatWindow {
     }
 
     fn class(&self) -> &str {
-        "integer"
+        "float"
     }
 
     fn count(&self) -> u64 {
@@ -564,7 +564,7 @@ mod tests {
         let mut stats =
             FloatWindow::new(&"Test Statistics", window_size, &None);
 
-        assert!(stats.class() == "integer");
+        assert!(stats.class() == "float");
         assert!(!stats.int_extremes  ());
         assert!( stats.float_extremes());
 

@@ -1117,37 +1117,6 @@ impl Rustics for Hier {
         }
     }
 
-    // The title is kept in the Hier instance.
-
-    /// Sets the title used when printing.  The Hier implemenation always
-    /// appends the set indices to the title when printing a member.
-
-    fn set_title(&mut self, title: &str) {
-        self.title = title.to_string();
-
-        self.title_all();
-    }
-
-    fn set_id(&mut self, id: usize) {
-        self.id = id;
-    }
-
-    fn id(&self) -> usize {
-        self.id
-    }
-
-    fn equals(&self, other: &dyn Rustics) -> bool {
-        if let Some(other) = <dyn Any>::downcast_ref::<Hier>(other.generic()) {
-            std::ptr::eq(self, other)
-        } else {
-            false
-        }
-    }
-
-    fn generic(&self) -> &dyn Any {
-        self as &dyn Any
-    }
-
     fn log_histogram(&self) -> Option<LogHistogramBox> {
         if let Some(window) = &self.window {
             window.log_histogram()
@@ -1170,6 +1139,39 @@ impl Rustics for Hier {
 
             rustics.float_histogram()
         }
+    }
+
+    // The title is kept in the Hier instance.
+
+    /// Sets the title used when printing.  The Hier implemenation always
+    /// appends the set indices to the title when printing a member.
+
+    fn set_title(&mut self, title: &str) {
+        self.title = title.to_string();
+
+        self.title_all();
+    }
+
+    // For internal use.
+
+    fn set_id(&mut self, id: usize) {
+        self.id = id;
+    }
+
+    fn id(&self) -> usize {
+        self.id
+    }
+
+    fn equals(&self, other: &dyn Rustics) -> bool {
+        if let Some(other) = <dyn Any>::downcast_ref::<Hier>(other.generic()) {
+            std::ptr::eq(self, other)
+        } else {
+            false
+        }
+    }
+
+    fn generic(&self) -> &dyn Any {
+        self as &dyn Any
     }
 
     fn export_stats(&self) -> ExportStats {

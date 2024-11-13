@@ -161,7 +161,7 @@ impl Rustics for Counter {
     }
 
     fn class(&self) -> &str {
-        "integer"
+        "counter"
     }
 
     fn count(&self) -> u64 {
@@ -253,6 +253,10 @@ impl Rustics for Counter {
         printer.print("");
     }
 
+    fn set_title(&mut self, title: &str) {
+        self.title = String::from(title);
+    }
+
     fn log_histogram(&self) -> Option<LogHistogramBox> {
         None
     }
@@ -262,10 +266,6 @@ impl Rustics for Counter {
     }
 
     // For internal use only.
-
-    fn set_title(&mut self, title: &str) {
-        self.title = String::from(title);
-    }
 
     fn set_id(&mut self, id: usize) {
         self.id = id;
@@ -332,7 +332,7 @@ mod tests {
         let mut counter = Counter::new(test_title, &None);
 
         assert!(counter.title() == test_title);
-        assert!(counter.class() == "integer");
+        assert!(counter.class() == "counter");
 
         for i in 1..=test_limit {
             counter.record_event();

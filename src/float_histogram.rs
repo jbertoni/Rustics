@@ -179,7 +179,7 @@ impl FloatHistogram {
         }
     }
 
-    ///  Records one f64 sample into its bucket.
+    /// Records one f64 sample into its bucket.
 
     pub fn record(&mut self, sample: f64) {
         //  NaN values are counted but otherwise ignored.

@@ -115,7 +115,7 @@
 //!     float_hier.record_f64(10.0);
 //!
 //!     // The new level 0 instance should have only one event recorded.
-//!     // The Rustics implementatio for Hier returns the data in the
+//!     // The Rustics implementation for Hier returns the data in the
 //!     // current level 0 instance, so check it.
 //!
 //!     assert!(float_hier.event_count() == events);

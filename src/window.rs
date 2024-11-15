@@ -142,7 +142,7 @@ impl<T> Window<T> {
         Window { size_limit, live_limit, current_index, data }
     }
 
-    ///  Adds a new entry to the window.
+    /// Adds a new entry to the window.
 
     pub fn push(&mut self, data:  T) {
         // If this is the first entry, set the "current_index"
@@ -359,8 +359,8 @@ impl<T> Window<T> {
         (&self.data, oldest, oldest_live)
     }
 
-    ///  Deletes all data from the window.  This puts it back into
-    ///  its initial state.
+    /// Deletes all data from the window.  This puts it back into
+    /// its initial state.
 
     pub fn clear(&mut self) {
         self.current_index = 0;

@@ -23,8 +23,8 @@ pub fn kbk_sum_sort(input: &mut [f64]) -> f64 {
 }
 
 /// The kbk_sum() function performs a Kahan-Babushka-Klein summation.  It does
-/// not sort its inputs.  Currently, it is used by IntegerWindow code because
-/// it sums vectors that are presorted.
+/// not sort its inputs.  Currently, it is used by code that has presorted
+/// vectors.
 
 pub fn kbk_sum(input: &[f64]) -> f64 {
     let mut sum = 0.0;

@@ -210,6 +210,8 @@ impl RcSet {
         RcSet { name, title, id, next_id, members, subsets, printer, print_opts }
     }
 
+    /// Creates a new RcSet in a box.
+
     pub fn new_box(name_in: &str, members: usize, subsets: usize, print_opts: &PrintOption)
             -> RcSetBox {
         let rc_set = RcSet::new(name_in, members, subsets, print_opts);
@@ -248,6 +250,8 @@ impl RcSet {
         self.print_opts(None, None);
     }
 
+    /// Prints the set with the given optional printer and title.
+
     pub fn print_opts(&self, printer: PrinterOption, title: Option<&str>) {
         for member in self.members.iter() {
             let member  = rc_item!(**member);
@@ -278,9 +282,13 @@ impl RcSet {
         }
     }
 
+    /// Returns the current title for the set.
+
     pub fn title(&self) -> String {
         self.title.clone()
     }
+
+    /// Sets the title for the set.
 
     pub fn set_title(&mut self, title: &str) {
         self.title = String::from(title);

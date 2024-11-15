@@ -37,10 +37,10 @@
 //!     let print_opts  = Some(PrintOpts { printer, title, units, histo_opts });
 //!     let mut counter = Counter::new("test counter", &print_opts);
 //!
-//!     // Add some counts to the counter.  record_event() adds one, to
-//!     // implement an event counter.  record_i64() adds any i64 value
-//!     // to the counter, for keeping a sum when statistics like the
-//!     // mean aren't useful.
+//!     // Add some byte counts to the counter.  record_event() adds one,
+//!     // to implement an event counter.  record_i64() adds any i64 value
+//!     // to the counter, for keeping a sum when statistics like the mean
+//!     // aren't useful.
 //!
 //!     for i in 1..=test_limit {
 //!         counter.record_event();
@@ -96,7 +96,7 @@ pub struct Counter {
 
 impl Counter {
     /// Constructs an instance with the given name and optional Printer
-    /// instance
+    /// instance.
 
     pub fn new(name: &str, print_opts: &PrintOption) -> Counter {
         let (printer, title, units, _histo_opts) = parse_print_opts(print_opts, name);
@@ -252,6 +252,8 @@ impl Rustics for Counter {
         Printable::print_integer_units("Count", self.count, printer, &self.units);
         printer.print("");
     }
+
+    /// Sets the title for the counter.
 
     fn set_title(&mut self, title: &str) {
         self.title = String::from(title);

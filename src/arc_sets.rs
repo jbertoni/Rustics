@@ -111,8 +111,8 @@
 //!
 //!    arc_item_mut!(query_latency).record_time(time_spent as i64);
 //!
-//!    // Print our statistics.  This example has only one event
-//!    // recorded.
+//!    // Print our statistics.  This example has very little
+//!    // recorded in it.
 //!
 //!    let query_lock = arc_item_mut!(query_latency);
 //!
@@ -172,7 +172,7 @@ macro_rules! arc_box { ($x:expr) => { Arc::from(Mutex::new($x)) } }
 #[macro_export]
 macro_rules! arc_item_mut { ($x:expr) => { &mut *$x.lock().unwrap() } }
 
-/// The arc macro converts an ArcSet item into a Rustics reference or
+/// The arc_item macro converts an ArcSet item into a Rustics reference or
 /// a subset reference.
 
 #[macro_export]
@@ -222,12 +222,12 @@ pub struct ArcSetConfig {
 
 impl ArcSet {
     /// ArcSet Constructors
+
+    /// Creates a new ArcSet.
     ///
     /// The "members_hint" and "subsets_hint" parameters are hints as to the number
     /// of elements to be expected.  "members_hint" refers to the number of Rustics
     /// instances in the set.
-
-    /// Creates a new ArcSet.
 
     pub fn new(name: &str, members_hint: usize, subsets_hint: usize, print_opts: &PrintOption)
             -> ArcSet {
@@ -355,6 +355,8 @@ impl ArcSet {
     pub fn title(&self) -> String {
         self.title.clone()
     }
+
+    /// Sets the title for the ArcSet.
 
     pub fn set_title(&mut self, title: &str) {
         self.title = String::from(title);
@@ -492,7 +494,7 @@ impl ArcSet {
         member
     }
 
-    // Creates a RunningFloat instance and adds it to the set.
+    /// Creates a RunningFloat instance and adds it to the set.
 
     pub fn add_running_float(&mut self, name: &str, units: UnitsOption) -> RusticsArc {
         let mut member = RunningFloat::new(name, &self.print_opts);
@@ -647,7 +649,7 @@ impl ArcSet {
         found
     }
 
-    /// The following method is for internal use only.
+    // The following method is for internal use only.
 
     fn id(&self) -> usize {
         self.id

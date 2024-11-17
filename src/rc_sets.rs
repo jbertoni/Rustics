@@ -130,15 +130,15 @@ use super::running_time   ::RunningTime;
 use super::running_float  ::RunningFloat;
 
 use super::integer_window::IntegerWindow;
-use super::time_window::TimeWindow;
-use super::float_window::FloatWindow;
+use super::time_window   ::TimeWindow;
+use super::float_window  ::FloatWindow;
 
 use super::integer_hier::IntegerHier;
 use super::integer_hier::IntegerHierConfig;
-use super::time_hier::TimeHier;
-use super::time_hier::TimeHierConfig;
-use super::float_hier::FloatHier;
-use super::float_hier::FloatHierConfig;
+use super::time_hier   ::TimeHier;
+use super::time_hier   ::TimeHierConfig;
+use super::float_hier  ::FloatHier;
+use super::float_hier  ::FloatHierConfig;
 
 pub type RusticsRc = Rc<RefCell<dyn Rustics>>;
 pub type RcSetBox  = Rc<RefCell<RcSet>>;
@@ -164,8 +164,8 @@ macro_rules! rc_item { ($x:expr) => { &*$x.borrow() } }
 /// to traverse the elements in an Rc set hierarchy.
 
 pub trait RcTraverser {
-    /// This method is invoked on each set in the set, including
-    /// the top-level set.
+    /// This method is invoked on each subset in the set and
+    /// on the top-level set itself.
 
     fn visit_set(&mut self, set: &mut RcSet);
 

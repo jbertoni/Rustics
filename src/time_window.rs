@@ -112,7 +112,8 @@ pub struct TimeWindow {
 impl TimeWindow {
     /// Make a new TimeWindow instance.
 
-    pub fn new(name: &str, window_size: usize, timer: TimerBox, print_opts: &PrintOption) -> TimeWindow {
+    pub fn new(name: &str, window_size: usize, timer: TimerBox, print_opts: &PrintOption)
+            -> TimeWindow {
         let (printer, _title, _units, _histo_opts) = parse_print_opts(print_opts, name);
 
         let hz = timer_box_hz(&timer);

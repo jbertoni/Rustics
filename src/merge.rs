@@ -243,8 +243,8 @@ mod tests {
 
         for i in 1..=samples {
             let sample_1 = i as i64;
-            let sample_2 = i as i64 +   10_000;
-            let sample_3 = i as i64 +  100_000;
+            let sample_2 = i as i64 +    10_000;
+            let sample_3 = i as i64 +   100_000;
             let sample_4 = i as i64 + 1_000_000;
 
             stat_1.record_i64(sample_1);
@@ -296,8 +296,8 @@ mod tests {
 
         for i in 1..=samples {
             let sample_1 = i as f64;
-            let sample_2 = i as f64 +   10_000.0;
-            let sample_3 = i as f64 +  100_000.0;
+            let sample_2 = i as f64 +    10_000.0;
+            let sample_3 = i as f64 +   100_000.0;
             let sample_4 = i as f64 + 1_000_000.0;
 
             stat_1.record_f64(sample_1);

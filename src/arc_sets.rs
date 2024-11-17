@@ -38,13 +38,13 @@
 //!
 //!    // Add an instance to record query latencies.  It's a time
 //!    // statistic, so we need a timer.  Here we use an adapter for the
-//!    // rust standard Duration timer.  Clone a copy so that we can
-//!    // use the timer here.
+//!    // rust standard Duration timer.
 //!
 //!    let timer = DurationTimer::new_box();
 //!
 //!    // The add_running_timer() method is a helper method for creating
-//!    // RunningTime instances.
+//!    // RunningTime instances.  Clone the timer so that we have a copy
+//!    // to use.
 //!
 //!    let mut query_latency =
 //!        set.add_running_time("Query Latency", timer.clone());
@@ -183,8 +183,8 @@ macro_rules! arc_item { ($x:expr) => { &*$x.lock().unwrap() } }
 /// and its subsets.
 
 pub trait ArcTraverser {
-    /// This method is invoked for each element in the set,
-    /// including the top-level set.
+    /// This method is invoked for each subset in the set and
+    /// for the top-level set itself.
 
     fn visit_set(&mut self, set: &mut ArcSet);
 
@@ -362,8 +362,8 @@ impl ArcSet {
         self.title = String::from(title);
 
         for mutex in self.subsets.iter() {
-            let subset  = arc_item_mut!(mutex);
-            let title   = make_title(title, &subset.name());
+            let subset = arc_item_mut!(mutex);
+            let title  = make_title(title, &subset.name());
 
             subset.set_title(&title);
         }
@@ -412,7 +412,7 @@ impl ArcSet {
     /// Creates a RunningInteger instance and adds it to the set.
 
     pub fn add_running_integer(&mut self, name: &str, units: UnitsOption) -> RusticsArc {
-        let mut member  = RunningInteger::new(name, &self.print_opts);
+        let mut member = RunningInteger::new(name, &self.print_opts);
 
         if let Some(units) = units {
             member.set_units(units);
@@ -434,7 +434,7 @@ impl ArcSet {
             member.set_units(units);
         }
 
-        let member  = arc_box!(member);
+        let member = arc_box!(member);
 
         self.add_member(member.clone());
         member
@@ -461,8 +461,8 @@ impl ArcSet {
     /// for the samples.
 
     pub fn add_running_time(&mut self, name: &str, timer: TimerBox) -> RusticsArc {
-        let member  = RunningTime::new(name, timer, &self.print_opts);
-        let member  = arc_box!(member);
+        let member = RunningTime::new(name, timer, &self.print_opts);
+        let member = arc_box!(member);
 
         self.add_member(member.clone());
         member
@@ -472,8 +472,8 @@ impl ArcSet {
 
     pub fn add_time_window(&mut self, name: &str, window_size: usize, timer: TimerBox)
             -> RusticsArc {
-        let member  = TimeWindow::new(name, window_size, timer, &self.print_opts);
-        let member  = arc_box!(member);
+        let member = TimeWindow::new(name, window_size, timer, &self.print_opts);
+        let member = arc_box!(member);
 
         self.add_member(member.clone());
         member
@@ -519,7 +519,7 @@ impl ArcSet {
             member.set_units(units);
         }
 
-        let member  = arc_box!(member);
+        let member = arc_box!(member);
 
         self.add_member(member.clone());
         member
@@ -549,8 +549,8 @@ impl ArcSet {
 
         let print_opts = Some(PrintOpts { printer, title, units, histo_opts });
 
-        let member  = Counter::new(name, &print_opts);
-        let member  = arc_box!(member);
+        let member = Counter::new(name, &print_opts);
+        let member = arc_box!(member);
 
         self.add_member(member.clone());
         member
@@ -633,6 +633,7 @@ impl ArcSet {
 
         for mutex in self.subsets.iter() {
             let subset = arc_item!(mutex);
+
             found = subset.id() == target_id;
 
             if found {
@@ -703,22 +704,22 @@ pub mod tests {
 
     fn add_stats(parent: &Mutex<ArcSet>) {
         for i in 0..4 {
-            let lower         = -64;    // Just define the range for the test samples.
-            let upper         =  64;
-            let events_limit  = 2 * (upper - lower) as usize;
+            let lower             = -64;    // Just define the range for the test samples.
+            let upper             =  64;
+            let events_limit      = 2 * (upper - lower) as usize;
 
-            let parent        = &mut arc_item_mut!(parent);
-            let subset_name   = format!("generated subset {}", i);
-            let subset        = parent.add_subset(&subset_name, 4, 4);
-            let subset        = &mut arc_item_mut!(subset);
+            let parent            = &mut arc_item_mut!(parent);
+            let subset_name       = format!("generated subset {}", i);
+            let subset            = parent.add_subset(&subset_name, 4, 4);
+            let subset            = &mut arc_item_mut!(subset);
 
-            let window_name   = format!("generated window {}", i);
-            let running_name  = format!("generated running {}", i);
-            let window_mutex  = subset.add_integer_window(&window_name, events_limit, bytes());
-            let running_mutex = subset.add_running_integer(&running_name, None);
+            let window_name       = format!("generated window {}", i);
+            let running_name      = format!("generated running {}", i);
+            let window_mutex      = subset.add_integer_window(&window_name, events_limit, bytes());
+            let running_mutex     = subset.add_running_integer(&running_name, None);
 
-            let window        = arc_item_mut!(window_mutex);
-            let running       = arc_item_mut!(running_mutex);
+            let window            = arc_item_mut!(window_mutex);
+            let running           = arc_item_mut!(running_mutex);
 
             let subset_expected   = make_title(&parent.title(),  &subset_name );
             let window_expected   = make_title(&subset_expected, &window_name );
@@ -789,15 +790,15 @@ pub mod tests {
 
         //  Create some simple timers to be started manually.
 
-        let     running_both  = TestTimer::new_box(test_hz);
+        let     running_both    = TestTimer::new_box(test_hz);
 
-        let     running_test  = ConverterTrait::as_test_timer(running_both.clone());
-        let mut running_stat  = ConverterTrait::as_timer     (running_both.clone());
+        let     running_test    = ConverterTrait::as_test_timer(running_both.clone());
+        let mut running_stat    = ConverterTrait::as_timer     (running_both.clone());
 
-        let     window_both   = TestTimer::new_box(test_hz);
+        let     window_both     = TestTimer::new_box(test_hz);
 
-        let     window_test   = ConverterTrait::as_test_timer(window_both.clone());
-        let mut window_stat   = ConverterTrait::as_timer     (window_both.clone());
+        let     window_test     = ConverterTrait::as_test_timer(window_both.clone());
+        let mut window_stat     = ConverterTrait::as_timer     (window_both.clone());
 
         //  Now record some data in all the instances.
 
@@ -885,13 +886,13 @@ pub mod tests {
 
         //  Now test removing Rustics instances.
 
-        let subset_1_name  = "subset 1";
-        let subset_2_name  = "subset 2";
-        let subset_1       = set.add_subset(subset_1_name, 4, 4);
-        let subset_2       = set.add_subset(subset_2_name, 4, 4);
+        let subset_1_name = "subset 1";
+        let subset_2_name = "subset 2";
+        let subset_1      = set.add_subset(subset_1_name, 4, 4);
+        let subset_2      = set.add_subset(subset_2_name, 4, 4);
 
-        let subset_1_impl  = subset_1.lock().unwrap();
-        let subset_2_impl  = subset_2.lock().unwrap();
+        let subset_1_impl = subset_1.lock().unwrap();
+        let subset_2_impl = subset_2.lock().unwrap();
 
         assert!(subset_1_impl.title() == make_title(parent_name, &subset_1_name));
         assert!(subset_2_impl.title() == make_title(parent_name, &subset_2_name));
@@ -1564,8 +1565,8 @@ pub mod tests {
                 ""
             ];
 
-        let title    = "Option Title";
-        let printer  = check_printer_box(&expected, true, false);
+        let title   = "Option Title";
+        let printer = check_printer_box(&expected, true, false);
 
         println!("test_arc_printing:  start print 3");
 
@@ -1652,7 +1653,7 @@ pub mod tests {
 
         println!("test_arc_printing:  start print 4");
 
-        let printer  = check_printer_box(&expected, true, false);
+        let printer = check_printer_box(&expected, true, false);
 
         set.set_title("");
         set.print_opts(Some(printer.clone()), None);

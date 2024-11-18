@@ -1,7 +1,6 @@
 # Rustics
 A minimal statistics library for performance monitoring
 
-
 Rustics implements a simple set of statistics structs intended primarily
 for measuring performance parameters.  The struct implementations compute
 various statistical characterizations of the data, such as the mean and
@@ -15,7 +14,7 @@ main.rs.
 
 At this time, statistics can be gathered for i64 values, time periods (also
 of type i64), and f64 samples.  Statistics can gathered collected as a running
-total of all samples recorded, or as a window covering the last N events.
+total of all samples recorded, or as a window covering the last N samples.
 
 The structs for time samples require a timer implementation.  See the time
 module for information on timers and to see some sample implementations.
@@ -25,8 +24,8 @@ simple counter for which no other statistics are generated.  This can be
 useful for counting events, for example.
 
 This library also implements a form of hierarchical statistics.  The
-hierarchical statistics combine a set of Rustics instances into a single
-Rustics instance.  This summation can allow keeping historical data with
+hierarchical statistics combine sets of Rustics instances into single
+Rustics instances.  This summation can allow keeping historical data with
 a lower memory footprint, and can reduce floating-point loss of precision.
 See the hier.rs file and documentation for more information.
 

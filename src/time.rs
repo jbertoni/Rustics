@@ -239,7 +239,7 @@ macro_rules! timer { ($x:expr) => { &*$x.borrow() } }
 macro_rules! timer_mut { ($x:expr) => { &mut *$x.borrow_mut() } }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::*;
     use std::thread::sleep;
     use std::time::Duration;
@@ -261,7 +261,7 @@ mod tests {
         }
     }
 
-    struct TestSimpleClock {
+    pub struct TestSimpleClock {
         pub current:    u128,
         pub increment:  u128,
     }
@@ -271,7 +271,6 @@ mod tests {
             let result = self.current;
 
             self.current   = self.current + self.increment;
-            self.increment = self.increment * 2;
             result
         }
 
@@ -281,16 +280,14 @@ mod tests {
     }
 
     pub fn simple_test_clock() {
-        let     current      = 0;
-        let mut increment    = 1500;
-        let     simple_clock = timer_box!(TestSimpleClock { current, increment });
-        let     clock        = ClockTimer::new_box(simple_clock);
-        let     clock        = timer_mut!(clock);
+        let current      = 0;
+        let increment    = 1500;
+        let simple_clock = timer_box!(TestSimpleClock { current, increment });
+        let clock        = ClockTimer::new_box(simple_clock);
+        let clock        = timer_mut!(clock);
 
         // Creating the clock invokes get_time, so the increment in the
         // test clock increases.  Keep ours in sync with it.
-
-        increment = increment * 2;
 
         assert!(clock.hz() == 1_000_000_000);
 
@@ -299,9 +296,6 @@ mod tests {
         for _i in 1..5 {
             let interval = clock.finish();
             assert!(interval == increment as i64);
-
-            // Keep our increment in sync with the test clock.
-            increment = increment * 2;
         }
     }
 

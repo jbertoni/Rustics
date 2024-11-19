@@ -350,10 +350,13 @@ mod tests {
     use crate::stdout_printer;
     use crate::timer;
     use crate::timer_box;
+    use crate::time::ClockTimer;
+    use crate::time::DurationTimer;
     use crate::running_time::tests::LargeTimer;
     use crate::tests::compute_sum;
     use crate::tests::continuing_box;
     use crate::tests::check_printer_box;
+    use crate::time::tests::TestSimpleClock;
 
     fn simple_test() {
         let     size  = 200;
@@ -552,11 +555,40 @@ mod tests {
         stats.print();
     }
 
+    fn test_timer_boxes() {
+        let     current      = 1000;
+        let     increment    = 2;
+        let     window_size  = 1000;
+        let     tests        = window_size / 10;
+        let     simple_clock = TestSimpleClock { current, increment };
+        let     simple_clock = timer_box!(simple_clock);
+        let mut clock_timer  = ClockTimer::new_box(simple_clock);
+        let mut time_window  = TimeWindow::new("Simple", window_size, clock_timer.clone(), &None);
+
+        for _i in 0..tests {
+            time_window.record_event();
+            time_window.record_interval(&mut clock_timer);
+        }
+
+        assert!(time_window.count() == tests as u64 * 2);
+
+        let mut duration     = DurationTimer::new_box();
+        let mut time_window  = TimeWindow::new("Duration", window_size, duration.clone(), &None);
+
+        for _i in 0..tests {
+            time_window.record_event();
+            time_window.record_interval(&mut duration);
+        }
+
+        assert!(time_window.count() == tests as u64 * 2);
+    }
+
     #[test]
     fn run_tests() {
         simple_test();
         test_equality();
         test_histogram();
         test_print_output();
+        test_timer_boxes();
     }
 }

@@ -308,6 +308,8 @@ impl Printable {
         printer.print(&output);
     }
 
+    /// Converts an f64 value into a mantissa and exponent string.
+
     pub fn format_float(value: f64) -> (String, String) {
         // Print the value in scientific notation, then
         // force a sign onto the exponent to make things

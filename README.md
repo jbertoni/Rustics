@@ -32,8 +32,8 @@ See the hier.rs file and documentation for more information.
 Rustics also implements sets that contain Rustics instances.  All the
 instances in a set can be printed via the print() method of the set, and
 other functions are provided, as well.  Rustics provides one set type that
-contains Rustics instances as Arc<Mutex<dyn Rustics>> structures and 
-another set type that uses structures of type Rc<RefCell<dyn Rustics>>.
+contains Rustics instances as Arc\<Mutex\<dyn Rustics\>\> structures and 
+another set type that uses structures of type Rc\<RefCell\<dyn Rustics\>\>.
 The two set modules are otherwise largely identical.
 
 Sets are recursive:  a set can have a set as a member.  All the Rustics
@@ -44,5 +44,5 @@ well.
 The set implementation automatically creates hierarchical titles for
 Rustics instances.  For example, if a user has a set named "Network
 Statistics" and that set contains a Rustics instance named "Packet Latency",
-the title printed for that instance will be "Network Statistics ==> Packet
+the title printed for that instance will be "Network Statistics ==\> Packet
 Latency".

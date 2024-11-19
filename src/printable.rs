@@ -276,12 +276,6 @@ impl Printable {
         printer.print(&output);
     }
 
-    pub fn print_string(name: &str, string: &str, printer: &mut dyn Printer) {
-        let output = format!("    {:<12} {:>12}", name, string);
-
-        printer.print(&output);
-    }
-
     /// Prints an integer statistic and its name in the standard format.
 
     pub fn print_float(name: &str, value: f64, printer: &mut dyn Printer) {
@@ -342,7 +336,8 @@ impl Printable {
 
             mantissa.push(char);
 
-            // XXX Add "|| mantissa.len == 6 && !got_decimal"?
+            // Add "|| mantissa.len == 6 && !got_decimal"?  Not currently
+            // possible.
 
             if mantissa.len() == 8 {
                 break;
@@ -691,14 +686,6 @@ mod tests {
         }
     }
 
-    fn test_print_string() {
-        let expected = [ "    >                   hello" ];
-
-        let mut check_printer = CheckPrinter::new(&expected, false, false);
-
-        Printable::print_string(">", "hello", &mut check_printer);
-    }
-
     fn test_print_time() {
         let expected          = [ "    >                +1.00000 e+6 days" ];
         let mut check_printer = CheckPrinter::new(&expected, false, false);
@@ -716,7 +703,6 @@ mod tests {
         test_commas();
         test_log_mode_to_time();
         test_format_float();
-        test_print_string();
         test_print_time();
         documentation();
     }

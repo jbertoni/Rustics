@@ -17,7 +17,7 @@
 //!   * The set has a configurable size limit.
 //!
 //!   * When a new element of type T is pushed into the window,
-//!     the oldest element is deleted once the size limit has been
+//!     the oldest element is deleted if the size limit has been
 //!     reached.
 //!
 //!   * The windows code provides the concept of "live" entries,

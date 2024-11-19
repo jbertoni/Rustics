@@ -163,7 +163,7 @@
 //!     assert!(time_hier.event_count() == events);
 //!
 //!     // Now print an element from the hierarchy.  In this case, we
-//!     // will index into level 2, and print the third element of the
+//!     // will index into level 1, and print the third element of the
 //!     // vector (index 2).  We use the set All to look at all the
 //!     // elements in the window, not just the live elements.
 //!

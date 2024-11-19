@@ -121,7 +121,7 @@ use super::merge::Export;
 
 /// A RunningTime instance accumulates statistics on a stream
 /// of integer data samples representing time intervals.
-/// Underneath, it uses a RunningTime instance, but most
+/// Underneath, it uses a RunningInteger instance, but most
 /// output is printed as time periods.
 ///
 /// See the module comments for a sample program.

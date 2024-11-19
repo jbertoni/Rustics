@@ -22,10 +22,8 @@
 //!     cycle counter would be an example.
 //!
 //! * ClockTimer
-//!   * Clock timer is an implementation of Timer for a SimpleClock.
-//!
-//!   * ClockTimer uses a Rc<RefCell<dyn SimpleClock>> provided
-//!     to ClockTimer::new to read time.
+//!   * Clock timer is an implementation of Timer that uses a
+//!     SimpleClock underneath.
 //!
 //!```
 //!     use rustics::time::SimpleClock;

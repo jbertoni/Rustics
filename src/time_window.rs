@@ -110,7 +110,7 @@ pub struct TimeWindow {
 }
 
 impl TimeWindow {
-    /// Make a new TimeWindow instance.
+    /// Makes a new TimeWindow instance.
 
     pub fn new(name: &str, window_size: usize, timer: TimerBox, print_opts: &PrintOption)
             -> TimeWindow {

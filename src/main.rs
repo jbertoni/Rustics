@@ -5,6 +5,7 @@ use rustics::Units;
 use rustics::printer_mut;
 use rustics::stdout_printer;
 use rustics::running_integer::RunningInteger;
+use rustics::running_float::RunningFloat;
 
 //
 // This program is a very minimal example of how to use the
@@ -71,4 +72,16 @@ fn main() {
        packet_sizes.record_i64(i + sample_count);
        assert!(packet_sizes.count() == (sample_count + i) as u64);
     }
+
+    let mut samples = RunningFloat::new("f64 Samples", &None);
+
+    for i in 1..=sample_count {
+       samples.record_f64(i as f64);
+       assert!(samples.count() == i as u64);
+    }
+
+    assert!(samples.count() == sample_count as u64);
+    assert!(samples.mean()  == mean               );
+
+    samples.print();
 }

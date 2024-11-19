@@ -582,12 +582,14 @@ mod tests {
 
         // This depends on the loop limits.
 
-        let mode_value = 2.0;
+        let mode_value = 384.0;
 
         {
             let histogram = stats.float_histogram().unwrap();
             let histogram = histogram.borrow();
 
+            println!("run_tests:  got {}, expected {}",
+                histogram.mode_value(), mode_value);
             assert!(histogram.mode_value() == mode_value);
         }
 
@@ -837,7 +839,7 @@ mod tests {
                 "    Infinities              0 bytes",
                 "    Minumum          +1.00000 e+0 byte",
                 "    Maximum          +1.00000 e+3 bytes",
-                "    Mode Bucket      +2.00000 e+0 bytes",
+                "    Mode Value       +3.84000 e+2 bytes",
                 "    Mean             +5.00500 e+2 bytes",
                 "    Std Dev          +2.88819 e+2 bytes",
                 "    Variance         +8.34166 e+4 ",

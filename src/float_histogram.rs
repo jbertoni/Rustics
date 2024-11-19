@@ -234,7 +234,7 @@ impl FloatHistogram {
     /// used as a sign for the result.
     ///
 
-    pub fn log_mode(&self) -> (isize, isize) {
+    pub fn convert_log_mode(&self) -> (isize, isize) {
         let mut mode = 0;
         let mut sign = -1;
         let mut max  = self.negative[0];
@@ -255,15 +255,17 @@ impl FloatHistogram {
         }
 
         let biased_exponent = mode * bucket_divisor();
+        let biased_exponent = biased_exponent + bucket_divisor() / 2;
 
         (sign, biased_exponent - exponent_bias())
     }
 
     pub fn mode_value(&self) -> f64 {
-        let (sign, exponent) = self.log_mode();
+        let (sign, exponent) = self.convert_log_mode();
 
         let result   = 2.0_f64;
         let result   = result.powi(exponent as i32);
+        let result   = result - result / 4.0;
 
         sign as f64 * result
     }
@@ -672,10 +674,12 @@ mod tests {
              histogram.record(-(i as f64));
         }
 
-        let (sign, exponent) = histogram.log_mode();
+        let (sign, exponent) = histogram.convert_log_mode();
 
         let sign     = sign as f64;
-        let expected = sign * 2_f64.powi(exponent as i32);
+        let value    = 2_f64.powi(exponent as i32);
+        let value    = value - value / 4.0;
+        let expected = sign * value;
 
         let log_mode = histogram.mode_value();
 

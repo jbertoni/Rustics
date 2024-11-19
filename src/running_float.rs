@@ -24,8 +24,8 @@
 //!     use rustics::running_float::RunningFloat;
 //!
 //!     // Accept the default print options except for the histogram
-//!     // option.  See the RunningInteger comments for an example of how to
-//!     // set the other print options.
+//!     // option.  See the RunningInteger comments for an example of
+//!     // how to set the other print options.
 //!
 //!     // Create a HistOp for new().
 //!
@@ -818,7 +818,7 @@ mod tests {
                 "    Infinities              0 bytes",
                 "    Minumum          +1.00000 e+0 byte",
                 "    Maximum          +1.00000 e+3 bytes",
-                "    Mode Bucket      +2.00000 e+0 bytes",
+                "    Mode Value       +3.84000 e+2 bytes",
                 "    Mean             +5.00500 e+2 bytes",
                 "    Std Dev          +2.88819 e+2 bytes",
                 "    Variance         +8.34166 e+4 ",

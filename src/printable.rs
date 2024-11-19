@@ -393,6 +393,7 @@ impl Printable {
 
         if self.n > 0 {
             let mode_value = 1_i64 << self.log_mode.abs();
+            let mode_value = mode_value - (mode_value / 4);
 
             let mode_value =
                 if self.log_mode < 0 {
@@ -419,7 +420,7 @@ impl Printable {
         if self.n > 0 {
             Self::print_float_units("Minumum",     self.min_f64,    printer, &self.units);
             Self::print_float_units("Maximum",     self.max_f64,    printer, &self.units);
-            Self::print_float_units("Mode Bucket", self.mode_value, printer, &self.units);
+            Self::print_float_units("Mode Value",  self.mode_value, printer, &self.units);
         }
     }
 
@@ -451,6 +452,7 @@ impl Printable {
         let log   = self.log_mode.abs();
         let base  = 2_u64;
         let ticks = base.pow(log as u32);
+        let ticks = ticks - (ticks / 4);
 
         // Compute the approximate time interval for this number of ticks.
 
@@ -466,9 +468,10 @@ impl Printable {
         if self.n > 0 {
             let approximation = self.log_mode_to_time();
 
-            Self::print_time("Minumum",  self.min_i64 as f64, hz, printer);
-            Self::print_time("Maximum",  self.max_i64 as f64, hz, printer);
-            Self::print_time("Log Mode", approximation,       hz, printer);
+            Self::print_time   ("Minumum",    self.min_i64 as f64, hz, printer);
+            Self::print_time   ("Maximum",    self.max_i64 as f64, hz, printer);
+            Self::print_integer("Log Mode",   self.log_mode,           printer);
+            Self::print_time   ("Mode Value", approximation,       hz, printer);
         }
     }
 
@@ -532,6 +535,7 @@ mod tests {
 
         let base       = 2 as u64;
         let expected   = base.pow(log_mode as u32) as f64;
+        let expected   = expected - expected / 4.0;
         let units      = Units::default();
 
         let mut printable =
@@ -540,6 +544,9 @@ mod tests {
                 max_f64,     log_mode,  mean,        variance,  skewness,  kurtosis,
                 mode_value,  units
             };
+
+        println!("test_log_mode_to_time:  got {}, expected {}",
+             printable.log_mode_to_time(), expected);
 
         assert!(printable.log_mode_to_time() == expected);
 
@@ -553,6 +560,7 @@ mod tests {
 
         let base     = 2 as u64;
         let expected = base.pow(63) as f64;
+        let expected   = expected - expected / 4.0;
 
         assert!(printable.log_mode_to_time() == expected);
     }

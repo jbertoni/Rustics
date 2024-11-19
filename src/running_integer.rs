@@ -87,7 +87,7 @@
 //!    //            Minumum                 1 byte
 //!    //            Maximum             1,000 bytes
 //!    //            Log Mode               10
-//!    //            Mode Value          1,024 bytes
+//!    //            Mode Value            768 bytes
 //!    //            Mean             +5.00500 e+2 bytes
 //!    //            Std Dev          +2.88819 e+2 bytes
 //!    //            Variance         +8.34166 e+4
@@ -767,7 +767,7 @@ mod tests {
                 "    Minumum                 1 byte",
                 "    Maximum             1,000 bytes",
                 "    Log Mode               10 ",
-                "    Mode Value          1,024 bytes",
+                "    Mode Value            768 bytes",
                 "    Mean             +5.00500 e+2 bytes",
                 "    Std Dev          +2.88819 e+2 bytes",
                 "    Variance         +8.34166 e+4 ",

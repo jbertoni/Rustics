@@ -10,11 +10,16 @@
 //! * FloatHistogram
 //!   * FloatHistogram provides a very coarse log histogram that is similar to
 //!     the LogHistogram type with its pseudo-log function.
-//!   * Each count in the histogram corresponds to 16 exponents from samples.
-//!     The mantissa is ignored.
-//!   * NaNs are counted separately, but otherwise are ignored.
+//!
+//!   * Samples are divided into buckets based on their sign and exponent.
+//!     There is one bucket per 16 exponents, and separate buckets for positive
+//!     and negative samples with the same exponent.
+//!
+//!   * NaNs are counted separately, and otherwise are ignored.
+//!
 //!   * f64::INFINITY samples go into the largest bucket, and into a count of
 //!     infinite values.
+//!
 //!   * f64::NEG_INFINITY samples go into the smallest bucket, and into a count
 //!     of infinite values.
 //!
@@ -390,7 +395,7 @@ impl FloatHistogram {
         self.print_positive(printer, histo_opts);
     }
 
-    /// Deletes all data from the histogram.
+    /// Resets the histogram to its initial state.
 
     pub fn clear(&mut self) {
         self.negative   = vec![0; self.buckets];

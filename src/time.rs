@@ -77,6 +77,7 @@ use std::time::Instant;
 use std::rc::Rc;
 use std::cell::RefCell;
 
+use crate::TimerBox;
 use crate::timer_box;
 
 /// A Timer is an abstraction of a clock to be used for performance
@@ -106,9 +107,6 @@ pub trait Timer {
 
     fn hz(&self) -> u128;           // get the clock hz
 }
-
-pub type DurationTimerBox = Rc<RefCell<DurationTimer>>;
-pub type ClockTimerBox    = Rc<RefCell<ClockTimer>>;
 
 /// DurationTimer uses the Rust standard time struct Duration to
 /// measure time intervals.  This timer thus returns wall-clock time.
@@ -154,7 +152,7 @@ impl DurationTimer {
         DurationTimer { start, previous }
     }
 
-    pub fn new_box() -> DurationTimerBox {
+    pub fn new_box() -> TimerBox {
         let timer = DurationTimer::new();
 
         timer_box!(timer)
@@ -219,27 +217,25 @@ impl ClockTimer {
         ClockTimer { start, clock, hz }
     }
 
-    pub fn new_box(clock: Rc<RefCell<dyn SimpleClock>>) -> ClockTimerBox {
+    pub fn new_box(clock: Rc<RefCell<dyn SimpleClock>>) -> TimerBox {
         let timer = ClockTimer::new(clock);
 
         timer_box!(timer)
     }
 }
 
-/// The timer_box macro converts a DurationTimerBox or a ClockTimerBox
-/// instance into the shareable form, currently Rc<RefCell<_>>.
+/// The timer_box macro converts a TimerBox instance into the shareable
+/// form, currently Rc<RefCell<_>>.
 
 #[macro_export]
 macro_rules! timer_box { ($x:expr) => { Rc::from(RefCell::new($x)) } }
 
-/// The timer macro converts a DurationTimerBox or a ClockTimerBox into
-/// a Timer instance.
+/// The timer macro converts a TimerBox into a Timer instance.
 
 #[macro_export]
 macro_rules! timer { ($x:expr) => { &*$x.borrow() } }
 
-/// The timer macro converts a DurationTimerBox or a ClockTimerBox into
-/// a mutable Timer instance.
+/// The timer macro converts a TimerBox into a mutable Timer instance.
 
 #[macro_export]
 macro_rules! timer_mut { ($x:expr) => { &mut *$x.borrow_mut() } }

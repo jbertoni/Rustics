@@ -261,7 +261,7 @@ impl Printable {
         Printable::print_integer_units(name, value, printer, &Units::empty());
     }
 
-    /// Prints an integer statistics with its name and units.
+    /// Prints an integer statistic with its name and units.
 
     pub fn print_integer_units(name: &str, value: i64, printer: &mut dyn Printer, units: &Units) {
         let unit_string =
@@ -341,6 +341,8 @@ impl Printable {
             }
 
             mantissa.push(char);
+
+            // XXX Add "|| mantissa.len == 6 && !got_decimal"?
 
             if mantissa.len() == 8 {
                 break;
@@ -422,8 +424,7 @@ impl Printable {
     }
 
     /// Prints the common float statistics as passed in a Printable instance.
-    /// This includes values like the mean, which should be limited to an integer
-    /// value.
+    /// This includes values like the mean.
 
     pub fn print_common_float(&self, printer: &mut dyn Printer) {
         if self.n > 0 {

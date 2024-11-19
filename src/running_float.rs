@@ -11,8 +11,8 @@
 //!   * RunningFloat provides statistical summaries of samples of type
 //!     f64.
 //!
-//!   * This includes a very coarse log histogram very similar to the one
-//!     that supports i64 data.
+//!   * This includes a very coarse log histogram similar to the one
+//!     that is provided for i64 data.
 //!
 //! ## Example
 //!```
@@ -215,9 +215,9 @@ pub struct RunningFloat {
 }
 
 impl RunningFloat {
-    /// Constructs a new statistics type.  print_opts and histo_opts affect how
-    /// the output of print functions looks.  "None" will accept the defaults,
-    /// which sends the output to stdout.
+    /// Constructs a new statistics instance.  print_opts and histo_opts affect
+    /// the output of print functions.  "None" will accept the defaults, which
+    /// sends the output to stdout.
 
     pub fn new(name: &str, print_opts: &PrintOption) -> RunningFloat {
         let (printer, title, units, _histo_opts) = parse_print_opts(print_opts, name);

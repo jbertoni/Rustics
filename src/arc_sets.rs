@@ -54,7 +54,7 @@
 //!    // record_event() method to query the timer and restart it.
 //!    //
 //!    // The clock started running when we created the DurationTimer.
-//!    // Applications can reset the start() method as needed.
+//!    // Applications also can restart the timer using the start() method.
 //!
 //!    timer_mut!(timer).start();  // Show how to restart a timer.
 //!

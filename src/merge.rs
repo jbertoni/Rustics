@@ -12,7 +12,7 @@
 //!     * This type is used internally to sum a vector of Rustics instances
 //!       into a merged statistic.
 //!
-//!     * The Hier support code, q.v., uses this module to create instance
+//!     * The Hier support code, q.v., uses this module to create instances
 //!       for the upper layers.
 //!
 //!     * RunningInteger and RunningFloat code use this structure and the

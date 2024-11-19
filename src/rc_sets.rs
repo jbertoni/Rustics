@@ -98,7 +98,7 @@
 //!
 //!    rc_item_mut!(query_latency).record_time(time_spent as i64);
 //!
-//!    // Print our statistics.  This example has only one event recorded.
+//!    // Print our statistics.
 //!
 //!    let query_borrow = rc_item!(query_latency);
 //!

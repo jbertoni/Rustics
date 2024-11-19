@@ -83,16 +83,16 @@
 //!    // Sample Output
 //!
 //!    //        Network Packet Sizes
-//!    //            Count               1,000 
+//!    //            Count               1,000
 //!    //            Minumum                 1 byte
 //!    //            Maximum             1,000 bytes
-//!    //            Log Mode               10 
+//!    //            Log Mode               10
 //!    //            Mode Value          1,024 bytes
 //!    //            Mean             +5.00500 e+2 bytes
 //!    //            Std Dev          +2.88819 e+2 bytes
-//!    //            Variance         +8.34166 e+4 
-//!    //            Skewness         -4.16317 e-11 
-//!    //            Kurtosis         -1.19999 e+0 
+//!    //            Variance         +8.34166 e+4
+//!    //            Skewness         -4.16317 e-11
+//!    //            Kurtosis         -1.19999 e+0
 //!    //          Log Histogram
 //!    //          -----------------------
 //!    //            0:                 1                 1                 2                 4
@@ -183,7 +183,7 @@ pub struct IntegerExporter {
 /// It is used to sum a list of RunningInteger statistics instances.
 
 impl IntegerExporter {
-    /// Creates a new IntegerExporter instance
+    /// Creates a new IntegerExporter instance.
 
     pub fn new() -> IntegerExporter {
         let addends = Vec::new();

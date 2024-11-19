@@ -103,7 +103,7 @@
 //! * Creating Sets
 //!     * The "arc_sets" and "rc_sets" modules implement a simple feature allowing the creation
 //!       of sets that accept Rustics instances and other sets as members.  Sets can be printed and
-//!       cleared recursiely by invoking a method on the topmost set.
+//!       cleared recursively by invoking a method on the topmost set.
 //!
 //!     * ArcSet
 //!         * This type provides an Arc-based implementation that is thread-safe.
@@ -285,8 +285,8 @@ pub fn max_f64(a: f64, b: f64) -> f64 {
     }
 }
 
-/// timer_box_hz() is a helper function just returns the hertz
-/// of a timer in a box.  It just saves a bit of typing.
+/// timer_box_hz() is a helper function that returns the hertz
+/// of a timer in a box.
 
 pub fn timer_box_hz(timer:  &TimerBox) -> u128 {
     timer!(*timer).hz()
@@ -551,7 +551,7 @@ pub struct PrintOpts {
     pub histo_opts:  HistoOption,
 }
 
-/// The Printer trait allows users to create custom output types to
+/// The Printer trait allows users to create custom output functions to
 /// match their I/O needs.
 ///
 /// An instance of this type is invoked for each line to be printed.
@@ -751,7 +751,7 @@ pub trait Rustics {
     ///
     /// For time statistics, it reads the internal timer (provided by the user
     /// to the constructer) for the instance to determine the time interval in
-    /// ticks.  The timer is then restarted for the next record_event call.
+    /// ticks.  The timer is restarted for the next record_event call.
     ///
     /// The record_event_report is the same as record_event, but it
     /// returns the value that is recorded.  This is used by the Hier
@@ -833,8 +833,7 @@ pub trait Rustics {
 
     fn min_i64(&self) -> i64;
 
-    /// Returns the minimum of the sample space for an f64 type,
-    /// although no implementations currently exist.
+    /// Returns the minimum of the sample space for an f64 type.
 
     fn min_f64(&self) -> f64;
 
@@ -843,8 +842,7 @@ pub trait Rustics {
 
     fn max_i64(&self) -> i64;
 
-    /// Returns the maximum of the sample space for an f64 type,
-    /// although no implementations currently exist.
+    /// Returns the maximum of the sample space for an f64 type.
 
     fn max_f64(&self) -> f64;
 

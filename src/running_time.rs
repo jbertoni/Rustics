@@ -57,6 +57,15 @@
 //!
 //!    query_latency.record_time(local_timer.finish() as i64);
 //!
+//!    // record_interval() works, as well.  Create (and start) a timer,
+//!    // then record the interval.
+//!
+//!    let mut timer_box = DurationTimer::new_box();
+//!
+//!    // do_work();
+//!
+//!    query_latency.record_interval(&mut timer_box);
+//!
 //!    // If you want to use your own timer, you'll need to implement the
 //!    // Timer trait to initialize the RunningTime instance, but you can
 //!    // use it directly to get data. Let's use Duration timer directly

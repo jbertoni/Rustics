@@ -8,9 +8,9 @@ variance.  The trait Rustics defines the common interface for all
 statistical types.
 
 Most modules have sample code in their documentation, and many testing
-modules contain example functions called "sample_usage".  The RunningInteger
-type is probably the most likely to be of interest, so it also has a sample
-main.rs.
+modules contain example functions called "sample_usage".  The "main.rs"
+program contains a simple example of using RunningInteger and RunningTime
+instances in a set.
 
 At this time, statistics can be gathered for i64 values, time periods (also
 of type i64), and f64 samples.  Statistics can gathered collected as a running

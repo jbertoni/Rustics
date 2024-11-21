@@ -8,7 +8,7 @@
 //!
 //! ## Type
 //!
-//! * Window<T>
+//! * Window\<T\>
 //!   * This struct is used internally.  Most users will not use
 //!     it directly.
 //!

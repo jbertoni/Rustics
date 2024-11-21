@@ -95,6 +95,11 @@
 //!           RunningInteger instances for statistics collection.  The integer_hier and hier.rs
 //!           test module also contains sample_usage() and make_hier() functions as examples.
 //!
+//!     * FloatHier
+//!         * This struct wraps the RunningFloat type to support the Hier code.  See
+//!           "FloatHier::new_hier" for a simple interface to create a Hier instance.  This
+//!           type is very similar to IntegerHier.
+//!
 //!     * TimeHier
 //!         * TimeHier implements Hier for the RunningTime type. As with IntegerHier, see
 //!           "TimeHier::new_hier" for an easy way to make a Hier instance that uses RunningTime
@@ -746,7 +751,7 @@ pub trait Rustics {
     /// in meaning.  For the Counter type, it is is equivalent to
     /// record_i64(1).
     ///
-    /// The other integer types, e.g., RunningInteger do not support this call.
+    /// The other integer types, e.g., RunningInteger, do not support this call.
     ///
     /// For time statistics, it reads the internal timer (provided by the user
     /// to the constructer) for the instance to determine the time interval in

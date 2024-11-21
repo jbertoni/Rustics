@@ -663,6 +663,15 @@ mod tests {
         let samples = compute_sum(&histogram.borrow());
 
         assert!(samples == stats.printable.n as i64);
+
+        float.clear();
+
+        assert!(float.mean()       == 0.0);
+        assert!(float.skewness()   == 0.0);
+        assert!(float.kurtosis()   == 0.0);
+        assert!(float.count()      == 0  );
+        assert!(float.nans()       == 1  );
+        assert!(float.infinities() == 2  );
     }
 
     fn test_standard_deviation() {

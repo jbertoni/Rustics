@@ -10,7 +10,7 @@ use rustics::time::DurationTimer;
 fn main() {
     // Create a set, and create two Rustics instances in the set.
 
-    let mut set          = RcSet::new("Network Statistics", 3, 0, &None);
+    let mut set          = RcSet::new("Network Statistics", 2, 0, &None);
 
     let     units        = Some(Units::new("byte", "bytes"));
     let     packet_sizes = set.add_running_integer("Packet Size", units);
@@ -35,6 +35,7 @@ fn main() {
 
     // Print our statistics.
 
+    println!(" === First print\n");
     set.print();
 
     // We should have seen "sample_count" events.
@@ -54,8 +55,8 @@ fn main() {
     assert!(packet_sizes.borrow().mean() == mean);
 
     // Demo the record_interval() interface.  Note that
-    // record_interval queries the timer, which also
-    // restarts that timer.
+    // record_interval queries the timer, which also restarts
+    // that timer.
 
     let mut timer = DurationTimer::new_box();
 
@@ -63,5 +64,6 @@ fn main() {
         latencies.borrow_mut().record_interval(&mut timer);
     }
 
+    println!("\n\n\n\n === Second print\n");
     set.print();
 }

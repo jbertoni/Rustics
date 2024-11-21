@@ -47,9 +47,9 @@ fn main() {
     // which is
     //     n * (n + 1) / 2.
 
-    let float_count = sample_count as f64;
-    let float_sum   = float_count * (float_count + 1.0) / 2.0;
-    let mean        = float_sum / float_count;
+    let count = sample_count as f64;
+    let sum   = count * (count + 1.0) / 2.0;
+    let mean  = sum / count;
 
     assert!(packet_sizes.borrow().mean() == mean);
 

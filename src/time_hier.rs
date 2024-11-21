@@ -436,11 +436,11 @@ mod tests {
 
             hier_impl.record_time(i);
 
-            sum += i;
+            sum    += i;
             events += 2;
         }
 
-        let mean  = sum as f64 / events as f64;
+        let mean = sum as f64 / events as f64;
 
         // Check that the event count and mean match our
         // expectations.

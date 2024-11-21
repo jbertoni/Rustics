@@ -551,9 +551,18 @@ impl Hier {
         self.advance_count = 0;
         self.event_count   = 0;
 
-        let mut traverser = ClearAll::new();
+        // Clear all the windows.
 
-        self.traverse_all(&mut traverser);
+        for level in &mut self.stats {
+            level.clear();
+        }
+
+        // Create that first level 0 instance.
+
+        let generator = self.generator.borrow_mut();
+        let member    = generator.make_member(&self.name, &self.print_opts);
+
+        self.stats[0].push(member);
 
         if let Some(window) = &mut self.window {
             window.clear();
@@ -1203,21 +1212,6 @@ impl TitleAll {
 impl HierTraverser for TitleAll {
     fn visit(&mut self, member: &mut dyn Rustics) {
         member.set_title(&self.title);
-    }
-}
-
-struct ClearAll {
-}
-
-impl ClearAll {
-    fn new() -> ClearAll {
-        ClearAll { }
-    }
-}
-
-impl HierTraverser for ClearAll {
-    fn visit(&mut self, member: &mut dyn Rustics) {
-        member.clear();
     }
 }
 
@@ -1950,14 +1944,36 @@ pub mod tests {
 
         run_histogram_tests(&mut integer_hier as &mut dyn Rustics);
 
-
         // Test clear_all with a window.
 
         integer_hier.clear_all();
 
         assert!(integer_hier.count() == 0);
 
-        // Test printing with bad indices.
+        // Record some events and check sizes.
+
+        for i in 1..=auto_advance {
+            integer_hier.record_i64(i as i64);
+        }
+
+        assert!(integer_hier.count()            == auto_advance as u64);
+        assert!(integer_hier.event_count()      == auto_advance as i64);
+        assert!(integer_hier.stats[0].all_len() == 1);
+        assert!(integer_hier.stats[1].all_len() == 0);
+
+        // Create one more level 0 Rustics instance.
+
+        for i in 1..=auto_advance {
+            integer_hier.record_i64(i as i64);
+        }
+
+        assert!(integer_hier.count()            == auto_advance as u64);
+        assert!(integer_hier.event_count()      == 2 * auto_advance as i64);
+        assert!(integer_hier.stats[0].all_len() == 2);
+        assert!(integer_hier.stats[1].all_len() == 0);
+
+        // Test printing with bad indices.  They just need to avoid
+        // panicking for now.  XXX Check the output.
 
         let printer = stdout_printer();
         let index   = HierIndex::new(HierSet::Live, 5000, 0);

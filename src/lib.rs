@@ -11,7 +11,7 @@
 //!
 //! ## Types
 //!
-//! * Statistics for Integer Samples
+//! * Basic Statistics for Integer Samples
 //!     * Integer statistics provide basic parameters, like the mean, and a pseudo-log histogram.
 //!
 //!     * For the pseudo-log histogram, the pseudo-log of a negative number n is defines as
@@ -21,7 +21,7 @@
 //!
 //!     * The time-based statistics work on time samples measured in integer ticks.
 //!
-//! * Integer statistics types
+//! * Basic Integer Statistics Types
 //!     * RunningInteger
 //!         * RunningInteger implements running statistics for a series of i64 sample values.
 //!         * It also provides a pseudo-log histogram of the samples.
@@ -36,7 +36,7 @@
 //!         * This type implements a simple counter that generates no further statistics.  It can be
 //!           used for counting events, for example.
 //!
-//! * Time statistics types
+//! * Basic Time Statistics Types
 //!     * RunningTime
 //!         * This type uses the RunningInteger code to handle time intervals.  Values are printed
 //!           using units of time.
@@ -44,7 +44,7 @@
 //!     * TimeWindow
 //!         * This type uses the IntegerWindow code to handle time intervals.  As with the
 //!           RunningTime type, values are printed in units of time.
-//! * Floating point statistics type
+//! * Basic Floating Point Statistics Types
 //!     * RunningFloat
 //!         * This type uses samples of type f64.  It is otherwise similar to
 //!           RunningInteger.  It uses a coarser pseudo-log function than the
@@ -54,31 +54,40 @@
 //!         * This type uses samples of type f64.  It is otherwise similar to
 //!           IntegerWindow.  It creates a histogram using FloatHistogram.
 //!
-//! * Hierarchial Statistics
-//!     * The Hier struct implements an ordered set of vectors of Rustics instances.
+//! * Hierarchial Statistics - The Hier Type
+//!     * A Hier instance uses multiple Rustics instances to maintain statistical information.  This
+//!       approach can reduce accuracy loss over long sample periods.
 //!
-//!     * Each element of the set is implemented using a Window instance, which holds an ordered
-//!       set of Rustics instances.  As new instances are added to a level, older ones are
-//!       deleted as necessary to obey a configurable size limit.  Each window repesents a level
-//!       of the hierarchical statistics.
+//!     * Samples are collected into a single Rustics instance.  When this instance has collected
+//!       a configurable number of samples, it is pushed onto a list of historical data, and a
+//!       new Rustics instance is created to collect the next batch of samples.  This process
+//!       repeats indefinitely.
 //!
-//!     * Level 0 contains Rustics instances that have been used to recorded data samples, and the
-//!       upper levels are sums of Rustics instances from lower levels.
+//!     * When this list has reached a configurable size limit, the oldest entry is discarded every
+//!       time a new entry is pushed onto it.
 //!
-//!     * New samples are recorded into the newest Rustics instance at level 0.
+//!     * This list forms level 0 of the hierarchy.
 //!
-//!     * When a given number of Rustics instances have been pushed into a window, these instances
-//!       are summed and the sum placed in the next higher level window.
+//!     * When a configurable number of level 0 instances have been collected, a summary instance
+//!       of those instances is created and pushed onto level 1.  Like level 0, level 1 forms a
+//!       list with a configurable size limit.
 //!
-//!     * Level 0 can be configured to push the current Rustics instance and start a new one
-//!       after a given number of samples have been recorded, or the user can invoke the advance()
-//!       method to push a new Rustics instance into the level 0 window.
+//!     * This process is performed recursively for a user-specified number of levels.  The summed
+//!       instances thus form a hierarchy somewhat like a tree or a forest of trees.
 //!
-//!     * Each level also has retention limt and will retained a set of the last n instances
-//!       pushed onto this level, even if those instances have been summed into a higher-level
-//!       instance.
+//!     * Each level of the hierarchy is implemented using a Window instance.
 //!
-//! * Hierarchical statistics types
+//!     * Users can query any member of the hierarchy to look into the past.
+//!
+//!     * A Hier instance also can maintain an optional window of the last N samples collected to
+//!       serve as the values for Rustics queries of the hierarchy as a whole.  If the user does not
+//!       configure a window, the current level 0 instance (the one receiving samples) is used.
+//!
+//!     * In addition to pushing a new level 0 instances after a fixed number of samples, the user
+//!       can choose to push a new level zero instance by calling the advance() method, allowing for
+//!       more application-specific control.
+//!
+//! * Hierarchical Statistics Types
 //!     * Hier
 //!         * The Hier struct provies framework code for hierarchical statistics.  After creating
 //!           a Hier instance, most users will use this interface or the Rustics interface to
@@ -870,7 +879,7 @@ pub trait Rustics {
 
     fn set_title (&mut self, title: &str);
 
-    /// Returns an Rc<...> for the histogram if possible.
+    /// Returns an `Rc<RefCell<...>>` for the histogram if possible.
 
     fn log_histogram  (&self) -> Option<LogHistogramBox  >;
     fn float_histogram(&self) -> Option<FloatHistogramBox>;

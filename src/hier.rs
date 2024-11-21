@@ -665,13 +665,13 @@ impl Hier {
         let     generator     = self.generator.borrow();
 
         // Check whether we have enough new instances at a given level
-        // to push a new sum of the statistics to a higher level.
+        // to push a new sum of statistics to a higher level.
 
         for i in 0..self.dimensions.len() - 1 {
             advance_point *= self.dimensions[i].period as i64;
 
             if self.advance_count % advance_point == 0 {
-                let exporter = self.make_exporter(i);
+                let exporter = self.make_and_fill_exporter(i);
                 let name     = &self.name;
                 let new_stat = generator.make_from_exporter(name, &self.print_opts, exporter);
 
@@ -681,7 +681,7 @@ impl Hier {
             }
         }
 
-        // Create the new statistic instance to collect data and push it into
+        // Create the new Rustics instance to collect data and push it into
         // the level zero window.
 
         let member = generator.make_member(&self.name, &self.print_opts);
@@ -773,7 +773,7 @@ impl Hier {
     // instances.  The exporter accumulates the sums of all
     // the data necessary for the actual Rustics implementation.
 
-    fn make_exporter(&self, level: usize) -> ExporterRc {
+    fn make_and_fill_exporter(&self, level: usize) -> ExporterRc {
         let     generator    = self.generator.borrow();
         let     exporter_rc  = generator.make_exporter();
         let mut exporter     = exporter_rc.borrow_mut();
@@ -1948,7 +1948,14 @@ pub mod tests {
 
         integer_hier.clear_all();
 
-        assert!(integer_hier.count() == 0);
+        assert!(integer_hier.count()            == 0);
+        assert!(integer_hier.event_count()      == 0);
+        assert!(integer_hier.stats[0].all_len() == 1);
+        assert!(integer_hier.advance_count      == 0);
+
+        for level in 1..integer_hier.stats.len() {
+            assert!(integer_hier.stats[level].all_len() == 0);
+        }
 
         // Record some events and check sizes.
 

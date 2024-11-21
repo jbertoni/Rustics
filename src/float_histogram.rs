@@ -86,7 +86,6 @@
 //!     assert!(histogram.samples    == sample_count as usize + 2);
 //!
 //!     histogram.print(printer);
-//!```
 
 use super::Histogram;
 use super::Printable;

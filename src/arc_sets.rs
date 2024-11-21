@@ -12,7 +12,7 @@
 //!     * ArcSet implements collections that can contain Rustics instances and
 //!       other ArcSet instances.
 //!
-//!     * Members of an ArcSet are kept as Arc<Mutex<...>> instances to support
+//!     * Members of an ArcSet are kept as `Arc<Mutex<...>>` instances to support
 //!       multithreaded applications.
 //!
 //! ## Example
@@ -196,7 +196,7 @@ pub trait ArcTraverser {
 }
 
 /// ArcSet is the implementation type for a set of Rustics instances
-/// wrapped as Arc<Mutex<dyn Rustics>>.
+/// wrapped as `Arc<Mutex<dyn Rustics>>`.
 
 #[derive(Clone)]
 pub struct ArcSet {
@@ -243,7 +243,7 @@ impl ArcSet {
         ArcSet::new_from_config(configuration)
     }
 
-    /// Creates a new ArcSetBox (an Arc<Mutex<ArcSet>>).
+    /// Creates a new ArcSetBox (an `Arc<Mutex<ArcSet>>`).
 
     pub fn new_box(name: &str, members_hint: usize, subsets_hint: usize, print_opts: &PrintOption)
             -> ArcSetBox {

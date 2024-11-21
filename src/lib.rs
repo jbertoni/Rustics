@@ -155,8 +155,6 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::default::Default;
 
-use time::Timer;
-
 pub mod running_integer;
 pub mod integer_window;
 pub mod integer_hier;
@@ -194,6 +192,7 @@ use log_histogram::LogHistogram;
 use float_histogram::FloatHistogram;
 use float_histogram::HistoOpts;
 use printable::Printable;
+use time::Timer;
 
 pub type PrinterBox         = Rc<RefCell<dyn Printer>>;
 // pub type PrinterBox         = Arc<Mutex<dyn Printer>>;

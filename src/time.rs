@@ -327,7 +327,7 @@ pub mod tests {
         }
     }
 
-    fn example_clock() {
+    fn sample_usage() {
         let     start_time  = 1;
         let     hz          = 1_000_000_000;
         let mut clock       = ExampleClock::new(start_time, hz);
@@ -357,6 +357,6 @@ pub mod tests {
         simple_duration_test();
         simple_default_test();
         simple_test_clock();
-        example_clock();
+        sample_usage();
     }
 }

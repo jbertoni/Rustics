@@ -330,10 +330,10 @@ impl HierIndex {
 // The exporter needs to be downcast to be used, so
 // provide that interface.
 
-/// The HierExporter trait is used internally to create a sum
-/// statistics instance.  It can be used in applications, as well,
-/// although the predefined functions probably cover  most use
-/// cases.
+/// The HierExporter trait is used internally to create a statistics
+/// instance that is a sum of other instances.  It can be used in
+/// applications, as well, although the predefined functions probably
+/// cover  most use cases.
 
 pub trait HierExporter {
     fn as_any    (&self)     -> &dyn Any;
@@ -377,10 +377,10 @@ pub trait HierGenerator {
     fn make_window(&self, name: &str, window_size: usize, print_opts: &PrintOption)
             -> Box<dyn Rustics>;
 
-    fn make_member       (&self, name: &str, print_opts: &PrintOption) -> MemberRc;
-    fn make_exporter     (&self) -> ExporterRc;
-    fn push              (&self, exports: &mut dyn HierExporter, member: MemberRc);
-    fn hz                (&self) -> u128;
+    fn make_member   (&self, name: &str, print_opts: &PrintOption) -> MemberRc;
+    fn make_exporter (&self) -> ExporterRc;
+    fn push          (&self, exports: &mut dyn HierExporter, member: MemberRc);
+    fn hz            (&self) -> u128;
 }
 
 //
@@ -444,10 +444,11 @@ pub struct HierConfig {
 }
 
 impl Hier {
-    /// The new() function creates a new hier instance. It generally
+    /// The new() function creates a hier instance. It generally
     /// should be called from the constructor for the specific type
-    /// in the hierarchy.  For example, the IntegerHier impl provides
-    /// constructors like new_hier() that will invoke this function.
+    /// for the hierarchy.  For example, the IntegerHier impl provides
+    /// constructors like new_hier() that will invoke this function
+    /// to create a RunningInteger hierarchy.
 
     pub fn new(configuration: HierConfig) -> Hier {
         let     descriptor    = configuration.descriptor;

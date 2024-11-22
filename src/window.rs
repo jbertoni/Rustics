@@ -157,30 +157,24 @@ impl<T> Window<T> {
         // and increment current.
         //
         // In all cases, "current_index" wraps back to zero when
-        // it reaches the size_limit of the queue.
-        //
-        // If the array is not yet full, we have to "push" the
-        // data onto the Vec.  Otherwise, we overwrite.
+        // it reaches the size limit of the queue.
 
         if self.data.is_empty() {
-            self.current_index = 1;
-
             self.data.push(data);
+
+            self.current_index = 1;
         } else if self.data.len() < self.size_limit {
             self.data.push(data);
 
             self.current_index += 1;
-
-            if self.current_index >= self.size_limit {
-                self.current_index = 0;
-            }
         } else {
             self.data[self.current_index] = data;
-            self.current_index += 1;
 
-            if self.current_index >= self.data.len() {
-                self.current_index = 0;
-            }
+            self.current_index += 1;
+        }
+
+        if self.current_index >= self.size_limit {
+            self.current_index = 0;
         }
     }
 
@@ -913,9 +907,24 @@ mod tests {
         let _ = iter.find_next_index();
     }
 
+    fn test_small_window() {
+        let mut window = Window::<usize>::new(1,1);
+        let     limit  = 20;
+
+        for i in 1..=limit {
+            window.push(i);
+
+            let newest = window.newest().unwrap();
+            assert!(*newest == i);
+            assert!(window.all_len() == 1);
+            assert!(window.data.len() == 1);
+        }
+    }
+
     #[test]
     fn run_tests() {
         simple_window_test(true);
         sample_usage(true);
+        test_small_window();
     }
 }

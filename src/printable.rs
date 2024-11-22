@@ -31,17 +31,17 @@
 //!
 //!     let examples =
 //!         [
-//!             (         100.0,   100.0,  "ns"     ),
-//!             (         102.4,   102.4,  "ns"     ),
-//!             (       1_000.0,     1.0,  "us"     ),
-//!             (       1_200.0,     1.2,  "us"     ),
-//!             (      29_000.0,    29.0,  "us"     ),
-//!             (   1_000_000.0,     1.0,  "ms"     ),
-//!             (  29_000_000.0,    29.0,  "ms"     ),
+//!             (         100.0,   100.0,  "nanoseconds" ),
+//!             (         102.4,   102.4,  "nanoseconds" ),
+//!             (       1_000.0,     1.0,  "microsecond" ),
+//!             (       1_200.0,     1.2,  "microseconds"),
+//!             (      29_000.0,    29.0,  "microseconds"),
+//!             (   1_000_000.0,     1.0,  "millisecond" ),
+//!             (  29_000_000.0,    29.0,  "milliseconds"),
 //!
-//!             (       us - ns,   999.0,  "ns"     ),
-//!             (       ms - us,   999.0,  "us"     ),
-//!             (   second - ms,   999.0,  "ms"     ),
+//!             (       us - ns,   999.0,  "nanoseconds" ),
+//!             (       ms - us,   999.0,  "microseconds"),
+//!             (   second - ms,   999.0,  "milliseconds"),
 //!
 //!             (        second,     1.0,  "second" ),
 //!             (  1.5 * second,     1.5,  "seconds"),
@@ -225,17 +225,17 @@ impl Printable {
             scale      = second;
             has_plural = true;
         } else if time >= millisecond {
-            unit       = "ms";
+            unit       = "millisecond";
             scale      = millisecond;
-            has_plural = false;
+            has_plural = true;
         } else if time >= microsecond {
-            unit       = "us";
+            unit       = "microsecond";
             scale      = microsecond;
-            has_plural = false;
+            has_plural = true;
         } else {
-            unit       = "ns";
+            unit       = "nanosecond";
             scale      = 1.0;
-            has_plural = false;
+            has_plural = true;
         }
 
         let plural = time != scale;
@@ -600,38 +600,38 @@ mod tests {
 
         let examples =
             [
-                (            1.0,     1.0,  "ns"     ),
-                (          100.0,   100.0,  "ns"     ),
-                (          102.4,   102.4,  "ns"     ),
-                (        1_000.0,     1.0,  "us"     ),
-                (        1_200.0,     1.2,  "us"     ),
-                (       29_000.0,    29.0,  "us"     ),
-                (    1_000_000.0,     1.0,  "ms"     ),
-                (   29_000_000.0,    29.0,  "ms"     ),
+                (            1.0,     1.0,  "nanosecond"  ),
+                (          100.0,   100.0,  "nanoseconds" ),
+                (          102.4,   102.4,  "nanoseconds" ),
+                (        1_000.0,     1.0,  "microsecond" ),
+                (        1_200.0,     1.2,  "microseconds"),
+                (       29_000.0,    29.0,  "microseconds"),
+                (    1_000_000.0,     1.0,  "millisecond" ),
+                (   29_000_000.0,    29.0,  "milliseconds"),
 
-                (        us - ns,   999.0,  "ns"     ),
-                (        ms - us,   999.0,  "us"     ),
-                (    second - ms,   999.0,  "ms"     ),
-                (minute - second,    59.0,  "seconds"),
-                (  hour - minute,    59.0,  "minutes"),
-                (     day - hour,    23.0,  "hours"  ),
+                (        us - ns,   999.0,  "nanoseconds" ),
+                (        ms - us,   999.0,  "microseconds"),
+                (    second - ms,   999.0,  "milliseconds"),
+                (minute - second,    59.0,  "seconds"     ),
+                (  hour - minute,    59.0,  "minutes"     ),
+                (     day - hour,    23.0,  "hours"       ),
 
-                (   3.0 * second,     3.0,  "seconds"),
-                (   3.0 * second,     3.0,  "seconds"),
-                (   1.5 * second,     1.5,  "seconds"),
-                (  42.0 * second,    42.0,  "seconds"),
-                (    999.0 * day,   999.0,  "days"   ),
-                (    12.6 * hour,    12.6,  "hours"  ),
-                (           week,     7.0,  "days"   ),
+                (   3.0 * second,     3.0,  "seconds"     ),
+                (   3.0 * second,     3.0,  "seconds"     ),
+                (   1.5 * second,     1.5,  "seconds"     ),
+                (  42.0 * second,    42.0,  "seconds"     ),
+                (    999.0 * day,   999.0,  "days"        ),
+                (    12.6 * hour,    12.6,  "hours"       ),
+                (           week,     7.0,  "days"        ),
 
-                (         second,     1.0,  "second" ),
-                (   2.0 * second,     2.0,  "seconds"),
-                (         minute,     1.0,  "minute" ),
-                (   2.0 * minute,     2.0,  "minutes"),
-                (           hour,     1.0,  "hour"   ),
-                (     2.0 * hour,     2.0,  "hours"  ),
-                (            day,     1.0,  "day"    ),
-                (      2.0 * day,     2.0,  "days"   ),
+                (         second,     1.0,  "second"      ),
+                (   2.0 * second,     2.0,  "seconds"     ),
+                (         minute,     1.0,  "minute"      ),
+                (   2.0 * minute,     2.0,  "minutes"     ),
+                (           hour,     1.0,  "hour"        ),
+                (     2.0 * hour,     2.0,  "hours"       ),
+                (            day,     1.0,  "day"         ),
+                (      2.0 * day,     2.0,  "days"        ),
             ];
 
         for example in examples {

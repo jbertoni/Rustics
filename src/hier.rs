@@ -747,7 +747,8 @@ impl Hier {
         if level >= self.stats.len() {
             let printer = printer_mut!(printer_box);
             printer.print(&title);
-            printer.print(&format!("  This configuration has only {} levels.", self.stats.len()));
+            printer.print(&format!("  That level ({}) is invalid ({} levels configured).",
+                level, self.stats.len()));
             return;
         }
 
@@ -1270,6 +1271,8 @@ pub mod tests {
     use crate::stdout_printer;
     use crate::integer_hier::tests::make_test_hier;
     use crate::tests::continuing_box;
+    use crate::tests::check_printer_box;
+    use crate::tests::check_printer_count_match;
 
     // Make a Hier instance for testing.  The tests use the RunningInteger
     // implementation via IntegerHier.
@@ -1979,18 +1982,27 @@ pub mod tests {
         assert!(integer_hier.stats[0].all_len() == 2);
         assert!(integer_hier.stats[1].all_len() == 0);
 
-        // Test printing with bad indices.  They just need to avoid
-        // panicking for now.  XXX Check the output.
+        // Test printing with bad indices.
 
-        let printer = stdout_printer();
-        let index   = HierIndex::new(HierSet::Live, 5000, 0);
+        let expected =
+            [
+                "test hierarchical integer[5000].live[0]",
+                "  That level (5000) is invalid (3 levels configured).",
+                "test hierarchical integer[0].live[10000]",
+                "  That index (10000) is out of bounds."
+            ];
 
-        integer_hier.print_index_opts(index, Some(printer), None);
+        let check_printer = check_printer_box(&expected, true, false);
 
-        let printer = stdout_printer();
-        let index   = HierIndex::new(HierSet::Live, 0, 10000);
+        let index = HierIndex::new(HierSet::Live, 5000, 0);
 
-        integer_hier.print_index_opts(index, Some(printer), None);
+        integer_hier.print_index_opts(index, Some(check_printer.clone()), None);
+
+        let index = HierIndex::new(HierSet::Live, 0, 10000);
+
+        integer_hier.print_index_opts(index, Some(check_printer.clone()), None);
+
+        assert!(check_printer_count_match(check_printer));
     }
 
     fn test_sum() {

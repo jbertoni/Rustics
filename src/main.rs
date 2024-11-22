@@ -30,6 +30,8 @@ fn main() {
     // record_event restarts the timer.
 
     for _i in 1..=sample_count {
+        // receive_packet();
+
         latencies.borrow_mut().record_event();
     }
 

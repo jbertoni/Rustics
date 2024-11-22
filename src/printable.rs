@@ -492,6 +492,7 @@ mod tests {
 
     pub fn test_commas() {
         let test   = [ 123456, 12, -1, -1234, 4000000, -200, -2000, -20000 ];
+
         let expect =
             [ "123,456", "12", "-1", "-1,234", "4,000,000", "-200", "-2,000", "-20,000" ];
 
@@ -507,11 +508,35 @@ mod tests {
         assert_eq!(Printable::commas( "+21234"),  "+21,234");
         assert_eq!(Printable::commas("+212345"), "+212,345");
 
+        assert_eq!(Printable::commas(     "12"),       "12");
+        assert_eq!(Printable::commas(    "123"),      "123");
+        assert_eq!(Printable::commas(   "2345"),    "2,345");
+        assert_eq!(Printable::commas(  "23456"),   "23,456");
+        assert_eq!(Printable::commas( "345678"),  "345,678");
+
+        assert_eq!(Printable::commas(    "+12"),      "+12");
+        assert_eq!(Printable::commas(   "+123"),     "+123");
+        assert_eq!(Printable::commas(  "+2345"),   "+2,345");
+        assert_eq!(Printable::commas( "+23456"),  "+23,456");
+        assert_eq!(Printable::commas("+345678"), "+345,678");
+
+        assert_eq!(Printable::commas(    "-12"),      "-12");
+        assert_eq!(Printable::commas(   "-123"),     "-123");
+        assert_eq!(Printable::commas(  "-2345"),   "-2,345");
+        assert_eq!(Printable::commas( "-23456"),  "-23,456");
+        assert_eq!(Printable::commas("-345678"), "-345,678");
+
         assert_eq!(Printable::commas(    "+20"),      "+20");
         assert_eq!(Printable::commas(   "+200"),     "+200");
         assert_eq!(Printable::commas(  "+2000"),   "+2,000");
         assert_eq!(Printable::commas( "+20000"),  "+20,000");
         assert_eq!(Printable::commas("+200000"), "+200,000");
+
+        assert_eq!(Printable::commas(    "-20"),      "-20");
+        assert_eq!(Printable::commas(   "-200"),     "-200");
+        assert_eq!(Printable::commas(  "-2000"),   "-2,000");
+        assert_eq!(Printable::commas( "-20000"),  "-20,000");
+        assert_eq!(Printable::commas("-200000"), "-200,000");
     }
 
     fn test_log_mode_to_time() {

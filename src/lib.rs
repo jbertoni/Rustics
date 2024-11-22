@@ -922,7 +922,6 @@ pub trait Histogram {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rand::Rng;
     use crate::running_time::RunningTime;
     use crate::running_integer::RunningInteger;
     use crate::integer_window::IntegerWindow;
@@ -1209,26 +1208,14 @@ mod tests {
         assert!(time_stat.min_i64() == 0);
         assert!(time_stat.max_i64() == i64::MAX);
 
-        let mut rng = rand::thread_rng();
+        // Try some small integers.
 
-        // Let the random number generator run wild.
+        time_stat.clear();
 
-        let mut random: i32 = 0; // make sure that we test zero.
-
-        for _i in 1..=100 {
-
-            let interval =
-                if random > 0 {
-                    random as i64
-                } else if random == 0 {
-                    1 as i64
-                } else {
-                    -(random + 1) as i64
-                };
-
-            timer_mut!(test_timer).setup(interval);
+        for i in 0..=100 {
+            timer_mut!(test_timer).setup(i);
             time_stat.record_event();
-            random = rng.gen();
+            assert!(time_stat.max_i64() == i as i64);
         }
 
         println!("test_running_time:  first stats added.");
@@ -1393,22 +1380,16 @@ mod tests {
         assert!(time_stat.min_i64() == 0);
         assert!(time_stat.max_i64() == i64::MAX);
 
-        let mut rng = rand::thread_rng();
+        // Try some fairly small integers.
 
-        // Let the random number generator run wild.
+        let multiplier = 100;
 
-        for _i in 1..100 {
-            let random: i32 = rng.gen();
+        time_stat.clear();
 
-            let interval =
-                if random >= 0 {
-                    random as i64
-                } else {
-                    -(random + 1) as i64
-                };
-
-            timer_mut!(test_timer).setup(interval);
+        for i in 1..100 {
+            timer_mut!(test_timer).setup(i as i64 * multiplier);
             time_stat.record_event();
+            assert!(time_stat.max_i64() == i * multiplier);
         }
 
         time_stat.print();

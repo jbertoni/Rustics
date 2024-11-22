@@ -11,6 +11,3 @@ description = "simple statistic library for performance analysis"
 repository = "https://github.com/jbertoni/Rustics"
 
 [dependencies]
-
-# rand is used only for testing
-rand = "0.8"

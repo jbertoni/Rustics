@@ -399,7 +399,7 @@ impl Printable {
                     mode_value
                 };
 
-            Self::print_integer_units("Minumum",    self.min_i64,  printer, &self.units);
+            Self::print_integer_units("Minimum",    self.min_i64,  printer, &self.units);
             Self::print_integer_units("Maximum",    self.max_i64,  printer, &self.units);
             Self::print_integer      ("Log Mode",   self.log_mode, printer             );
             Self::print_integer_units("Mode Value", mode_value,    printer, &self.units);
@@ -415,7 +415,7 @@ impl Printable {
         Self::print_integer_units("Infinities", self.infinities as i64, printer, &self.units);
 
         if self.n > 0 {
-            Self::print_float_units("Minumum",     self.min_f64,    printer, &self.units);
+            Self::print_float_units("Minimum",     self.min_f64,    printer, &self.units);
             Self::print_float_units("Maximum",     self.max_f64,    printer, &self.units);
             Self::print_float_units("Mode Value",  self.mode_value, printer, &self.units);
         }
@@ -465,7 +465,7 @@ impl Printable {
         if self.n > 0 {
             let approximation = self.log_mode_to_time();
 
-            Self::print_time   ("Minumum",    self.min_i64 as f64, hz, printer);
+            Self::print_time   ("Minimum",    self.min_i64 as f64, hz, printer);
             Self::print_time   ("Maximum",    self.max_i64 as f64, hz, printer);
             Self::print_integer("Log Mode",   self.log_mode,           printer);
             Self::print_time   ("Mode Value", approximation,       hz, printer);

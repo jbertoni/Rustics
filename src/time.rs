@@ -30,7 +30,7 @@
 //!```
 //!     use rustics::time::SimpleClock;
 //!
-//!     // This is a example implementation of the SimpleClock trait.  It
+//!     // This is an example implementation of the SimpleClock trait.  It
 //!     // simple returns a series of time values incrementing by one in
 //!     // size per invocation.
 //!
@@ -301,7 +301,7 @@ pub mod tests {
         }
     }
 
-    // This is a example implementation of the SimpleClock
+    // This is an example implementation of the SimpleClock
     // trait.  It simple returns a series of time values
     // incrementing by one in size per invocation.
 

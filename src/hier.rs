@@ -1159,7 +1159,7 @@ impl Rustics for Hier {
 
     // The title is kept in the Hier instance.
 
-    /// Sets the title used when printing.  The Hier implemenation always
+    /// Sets the title used when printing.  The Hier implementation always
     /// appends the set indices to the title when printing a member.
 
     fn set_title(&mut self, title: &str) {

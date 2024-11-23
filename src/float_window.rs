@@ -837,7 +837,7 @@ mod tests {
                 "    Count               1,000 bytes",
                 "    NaNs                    0 bytes",
                 "    Infinities              0 bytes",
-                "    Minumum          +1.00000 e+0 byte",
+                "    Minimum          +1.00000 e+0 byte",
                 "    Maximum          +1.00000 e+3 bytes",
                 "    Mode Value       +3.84000 e+2 bytes",
                 "    Mean             +5.00500 e+2 bytes",

@@ -30,7 +30,7 @@
 //!     * RunningWindow
 //!         * IntegerWindow implements a fixed-size window of the last n samples recorded.  Summary
 //!           statistics of the window samples are computed on demand.
-//!         * It also provides a pseudo-log historgram.  The histogram counts all samples seen,
+//!         * It also provides a pseudo-log histogram.  The histogram counts all samples seen,
 //!           not just the current window.
 //!
 //!     * Counter
@@ -55,7 +55,7 @@
 //!         * This type uses samples of type f64.  It is otherwise similar to
 //!           IntegerWindow.  It creates a histogram using FloatHistogram.
 //!
-//! * Hierarchial Statistics - The Hier Type
+//! * Hierarchical Statistics - The Hier Type
 //!     * A Hier instance uses multiple Rustics instances to maintain statistical information.  This
 //!       approach can reduce accuracy loss over long sample periods.
 //!
@@ -90,7 +90,7 @@
 //!
 //! * Hierarchical Statistics Types
 //!     * Hier
-//!         * The Hier struct provies framework code for hierarchical statistics.  After creating
+//!         * The Hier struct provides framework code for hierarchical statistics.  After creating
 //!           a Hier instance, most users will use this interface or the Rustics interface to
 //!           interact with this type.  For example, data is recorded into a Hier instance
 //!           by invoking Rustics methods directly on the Hier instance itself.
@@ -160,7 +160,7 @@
 //!
 //!     *  Printable
 //!         * Printable provides standard formatting for printing data and some support functions
-//!           for nicer output, like time values scaled to human-understanble forms and integers
+//!           for nicer output, like time values scaled to human-understandable forms and integers
 //!           with commas.  It is of interest mostly to developers creating new Rustics
 //!           implementations.
 //!

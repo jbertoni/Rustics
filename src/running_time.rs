@@ -591,7 +591,7 @@ pub mod tests {
             [
                 "Test Statistics",
                 "    Count               1,000 ",
-                "    Minumum             1.000 microsecond",
+                "    Minimum             1.000 microsecond",
                 "    Maximum             1.000 millisecond",
                 "    Log Mode               20 ",
                 "    Mode Value        786.432 microseconds",

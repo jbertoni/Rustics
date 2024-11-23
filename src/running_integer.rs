@@ -87,7 +87,7 @@
 //!
 //!    //        Network Packet Sizes
 //!    //            Count               1,000
-//!    //            Minumum                 1 byte
+//!    //            Minimum                 1 byte
 //!    //            Maximum             1,000 bytes
 //!    //            Log Mode               10
 //!    //            Mode Value            768 bytes
@@ -767,7 +767,7 @@ mod tests {
             [
                 "Test Statistics",
                 "    Count               1,000 ",
-                "    Minumum                 1 byte",
+                "    Minimum                 1 byte",
                 "    Maximum             1,000 bytes",
                 "    Log Mode               10 ",
                 "    Mode Value            768 bytes",

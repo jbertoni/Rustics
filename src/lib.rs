@@ -5,15 +5,18 @@
 //  and MIT licenses.
 //
 
-//! 'Rustics' provides a very simple interface for recording events and printing statistics.
+//! 'Rustics' provides a simple interface for recording sample and event streams and printing
+//! statistics.
 //!
 //! Many of the module comments contain examples of usage.  The main.rs program contains
-//! a very simple example of how to use two of the statistics types.
+//! a small example of how to use two of the statistics types.
 //!
 //! ## Types
 //!
 //! * Basic Statistics for Integer Samples
 //!     * Integer statistics provide basic parameters, like the mean, and a pseudo-log histogram.
+//!
+//!     * Samples are of type i64.
 //!
 //!     * For the pseudo-log histogram, the pseudo-log of a negative number n is defines as
 //!       -log(-n).  The pseudo-log of 0 is defined as 0.  Logs of positive values are computed by
@@ -24,12 +27,14 @@
 //!
 //! * Basic Integer Statistics Types
 //!     * RunningInteger
-//!         * RunningInteger implements running statistics for a series of i64 sample values.
+//!         * RunningInteger implements running statistics for a series of sample values.
+//!
 //!         * It also provides a pseudo-log histogram of the samples.
 //!
 //!     * RunningWindow
 //!         * IntegerWindow implements a fixed-size window of the last n samples recorded.  Summary
 //!           statistics of the window samples are computed on demand.
+//!
 //!         * It also provides a pseudo-log histogram.  The histogram counts all samples seen,
 //!           not just the current window.
 //!
@@ -40,20 +45,23 @@
 //! * Basic Time Statistics Types
 //!     * RunningTime
 //!         * This type uses the RunningInteger code to handle time intervals.  Values are printed
-//!           using units of time.
+//!           using units of time when appropriate.
 //!
 //!     * TimeWindow
 //!         * This type uses the IntegerWindow code to handle time intervals.  As with the
 //!           RunningTime type, values are printed in units of time.
+//!
 //! * Basic Floating Point Statistics Types
+//!     * Floating point samples currently are supported only for machines that use IEEE f64 format.
+//!
 //!     * RunningFloat
-//!         * This type uses samples of type f64.  It is otherwise similar to
-//!           RunningInteger.  It uses a coarser pseudo-log function than the
-//!           integer statistics.  See FloatHistogram for details.
+//!         * This type records samples of type f64.  It is otherwise similar to RunningInteger.
+//!           It uses a coarser pseudo-log function than the integer statistics.  See FloatHistogram
+//!           for details.
 //!
 //!     * FloatWindow
-//!         * This type uses samples of type f64.  It is otherwise similar to
-//!           IntegerWindow.  It creates a histogram using FloatHistogram.
+//!         * This type records samples of type f64.  It is otherwise similar to IntegerWindow.  It
+//!           creates a histogram using FloatHistogram.
 //!
 //! * Hierarchical Statistics - The Hier Type
 //!     * A Hier instance uses multiple Rustics instances to maintain statistical information.  This
@@ -76,8 +84,6 @@
 //!     * This process is performed recursively for a user-specified number of levels.  The summed
 //!       instances thus form a hierarchy somewhat like a tree or a forest of trees.
 //!
-//!     * Each level of the hierarchy is implemented using a Window instance.
-//!
 //!     * Users can query any member of the hierarchy to look into the past.
 //!
 //!     * A Hier instance also can maintain an optional window of the last N samples collected to
@@ -85,8 +91,8 @@
 //!       configure a window, the current level 0 instance (the one receiving samples) is used.
 //!
 //!     * In addition to pushing a new level 0 instances after a fixed number of samples, the user
-//!       can choose to push a new level zero instance by calling the advance() method, allowing for
-//!       more application-specific control.
+//!       instead can choose to push a new level zero instance by calling the advance() method,
+//!       allowing for more application-specific control.
 //!
 //! * Hierarchical Statistics Types
 //!     * Hier
@@ -95,15 +101,14 @@
 //!           interact with this type.  For example, data is recorded into a Hier instance
 //!           by invoking Rustics methods directly on the Hier instance itself.
 //!
-//!         * The HierGenerator trait is implemented to allow the Hier implementation to use a
-//!           specific Rustics implementation, like RunningInteger or RunningTime.  Most users
-//!           will not use this type directly.
+//!         * The HierGenerator trait provides an interface for Hier to use a basic statistics type
+//!           like RunningInteger or RunningTime.  Most users will not use this type directly.
 //!
 //!     * IntegerHier
 //!         * This struct wraps the RunningInteger type to support the Hier code.  See
 //!           "IntegerHier::new_hier" for a simple interface to create a Hier instance using
-//!           RunningInteger instances for statistics collection.  The integer_hier and hier.rs
-//!           test module also contains sample_usage() and make_hier() functions as examples.
+//!           RunningInteger instances for statistics collection.  The integer_hier and hier
+//!           test modules also contains sample_usage() and make_hier() functions as examples.
 //!
 //!     * FloatHier
 //!         * This struct wraps the RunningFloat type to support the Hier code.  See
@@ -147,8 +152,8 @@
 //!
 //!         * Clock values are returned as an integer tick count.
 //!
-//!         * A SimpleClock implementation provides a hz() member to return the hertz to the
-//!           ClockTimer layer.
+//!         * A SimpleClock implementation provides a hz() member to provide the clock frequency
+//!           to the ClockTimer layer.
 //!
 //! * Printing
 //!     *  Printer
@@ -160,8 +165,8 @@
 //!
 //!     *  Printable
 //!         * Printable provides standard formatting for printing data and some support functions
-//!           for nicer output, like time values scaled to human-understandable forms and integers
-//!           with commas.  It is of interest mostly to developers creating new Rustics
+//!           for more readable output, like time values scaled to human-understandable forms and
+//!           integers with commas.  It is of interest mostly to developers creating new Rustics
 //!           implementations.
 //!
 
@@ -268,6 +273,10 @@ pub fn biased_exponent(input: f64) -> isize {
 
     if input.is_infinite() {
         return max_exponent();
+    }
+
+    if input.is_subnormal() {
+        return min_exponent() + exponent_bias();
     }
 
     let mantissa_size = 52;
@@ -1609,6 +1618,10 @@ mod tests {
 
         let value = f64::INFINITY;
         assert!(biased_exponent(value) == max_exponent());
+
+        let value = f64::from_bits(56 as u64);
+        assert!(value.is_subnormal());
+        assert!(biased_exponent(value) == min_exponent() + exponent_bias());
     }
 
     fn test_make_title() {

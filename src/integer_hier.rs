@@ -8,14 +8,12 @@
 //! ## Type
 //!
 //! * IntegerHier
-//!     * This type implements multi-level statistics using the
-//!       RunningInteger type, q.v.
+//!     * This type implements multi-level statistics using the RunningInteger type, q.v.
 //!
-//!     * See the library comments (lib.rs) for an overview of how
-//!       hierarchical types work.
+//!     * See the library comments (lib.rs) for an overview of how hierarchical types work.
 //!
-//!     * This module provides support to bridge from the Hier code
-//!       to RunningInteger-specific functions.
+//!     * This module provides support to bridge from the Hier code to RunningInteger-specific
+//!       functions.
 //!
 //! ## Example
 //!```

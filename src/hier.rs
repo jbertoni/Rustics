@@ -22,7 +22,7 @@
 //!       either the current level 0 Rustics instance, i.e., statistics on the newest samples,
 //!       or from an optionally configured window of the last n events, as specified by the
 //!       window_size parameter in HierConfig.  This window is implemented using a TimeWindow,
-//!       FloatWindow, or an IntegerWindow made using the HierGenerator instance.
+//!       FloatWindow, or an IntegerWindow created through the HierGenerator instance.
 //!
 //! ## Example
 //!```

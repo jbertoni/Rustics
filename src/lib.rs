@@ -142,18 +142,19 @@
 //!         * This implementation of Timer uses the Rust "Duration" struct, which measures
 //!           wall clock time.
 //!
-//!     *  ClockTimer
-//!         * This Timer implementation is a wrapper for a simple time counter (trait SimpleClock)
-//!           that returns an integer corresponding to the current "time" value.  For example, a
-//!           cycle counter like rdtsc on Intel could be wrapped to implement a ClockTimer.
-//!
 //!     *  SimpleClock
-//!         * This trait defines the interface used by ClockTimer to query a user-defined clock.
+//!         * This trait defines the interface used to query a user-defined clock, which can be
+//!           wrapped using the ClockTimer type, q.v.
 //!
-//!         * Clock values are returned as an integer tick count.
+//!         * Clock values must be returned as a monotonically non-decreasing integer tick count.
 //!
-//!         * A SimpleClock implementation provides a hz() member to provide the clock frequency
-//!           to the ClockTimer layer.
+//!         * The interface requires a hz() member to provide the clock frequency to the ClockTimer
+//!           layer.
+//!
+//!     *  ClockTimer
+//!         * This Timer implementation is a wrapper for instances of trait SimpleClock.  For
+//!           example, a cycle counter like rdtsc on Intel could be wrapped to implement a
+//!           ClockTimer.
 //!
 //! * Printing
 //!     *  Printer
@@ -289,6 +290,8 @@ pub fn biased_exponent(input: f64) -> isize {
 
     exponent as isize
 }
+/// Compute the min of two f64 values, being careful
+/// about NaNs.
 
 pub fn min_f64(a: f64, b: f64) -> f64 {
     if a.is_nan() || b.is_nan() {
@@ -299,6 +302,9 @@ pub fn min_f64(a: f64, b: f64) -> f64 {
         b
     }
 }
+
+/// Compute the max of two f64 values, being careful
+/// about NaNs.
 
 pub fn max_f64(a: f64, b: f64) -> f64 {
     if a.is_nan() || b.is_nan() {
@@ -326,6 +332,10 @@ pub fn stdout_printer() -> PrinterBox {
     printer_box!(printer)
 }
 
+/// Provides the data for estimating the second and
+/// fourth moments about the mean, as well as the
+/// mean itself.
+
 pub struct StatisticsData {
     pub n:        f64,
     pub sum:      f64,
@@ -333,6 +343,8 @@ pub struct StatisticsData {
     pub cubes:    f64,
     pub quads:    f64,
 }
+
+/// Contains the return data for compute_statistics.
 
 pub struct Statistics {
     pub mean:       f64,
@@ -377,6 +389,10 @@ pub fn compute_statistics(data: StatisticsData) -> Statistics {
     Statistics { mean, moment_2, moment_4 }
 }
 
+/// This struct provides the data required to
+/// try to recover the sum of the squares and the
+/// sum of the fourth power of the data samples.
+
 pub struct RecoverData {
     pub n:          f64,
     pub mean:       f64,
@@ -419,6 +435,9 @@ pub fn recover(data: RecoverData) -> (f64, f64) {
     (squares, quads)
 }
 
+/// Provides the data required to try to estimate the
+/// third moment about the mean.
+
 pub struct EstimateData {
     pub n:          f64,
     pub mean:       f64,
@@ -448,6 +467,8 @@ pub fn estimate_moment_3(data: EstimateData) -> f64 {
         moment_2
       + 2.0 * sum * mean
       -       n   * mean.powi(2);
+
+    // Now estimate the third moment about the mean.
 
     cubes - (3.0 * squares * mean) + 3.0 * (sum * mean.powi(2)) - n * mean.powi(3)
 }
@@ -483,11 +504,11 @@ pub fn compute_skewness(count: u64, moment_2: f64, moment_3: f64) -> f64 {
         return 0.0;
     }
 
-    let n               = count as f64;
-    let m3              = moment_3 / n;
-    let m2              = moment_2 / n;
-    let skewness        = m3 / m2.powf(1.5);
-    let correction      = (n * (n - 1.0)).sqrt() / (n - 2.0);
+    let n          = count as f64;
+    let m3         = moment_3 / n;
+    let m2         = moment_2 / n;
+    let skewness   = m3 / m2.powf(1.5);
+    let correction = (n * (n - 1.0)).sqrt() / (n - 2.0);
 
     skewness * correction
 }
@@ -567,6 +588,8 @@ impl Default for Units {
         Units::empty()
     }
 }
+
+/// Defines the options available for printing.
 
 #[derive(Clone)]
 pub struct PrintOpts {
@@ -923,6 +946,10 @@ pub trait Rustics {
 
     fn export_stats(&self) -> ExportStats;
 }
+
+/// Defines the data available from the Rustics
+/// export_stats() member, which returns bulk
+/// data.
 
 pub struct ExportStats {
     pub printable:          Printable,

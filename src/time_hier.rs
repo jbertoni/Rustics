@@ -13,8 +13,8 @@
 //!     type.  See the running_time module for details on that type.
 //!
 //!   * The function TimeHier::new_hier is a wrapper for the Hier constructor
-//!     and does the initialization specific to the TimeHier type.  It is
-//!     the preferred interface for creating a Hier instance that use RunningTime
+//!     and does the initialization specific to the TimeHier type.  It is the
+//!     preferred interface for creating a Hier instance that uses RunningTime
 //!     instances.
 //!
 //!   * See the library comments (lib.rs) for an overview of how hierarchical
@@ -167,10 +167,10 @@
 //!     assert!(time_hier.live_len(1)   == 1     );
 //!     assert!(time_hier.event_count() == events);
 //!
-//!     // Now print an element from the hierarchy.  In this case, we
-//!     // will index into level 1, and print the third element of the
+//!     // Now print an instance from the hierarchy.  In this case, we
+//!     // will index into level 1, and print the third instance of the
 //!     // vector (index 2).  We use the set All to look at all the
-//!     // elements in the window, not just the live elements.
+//!     // instances in the window, not just the live instances.
 //!
 //!     let index = HierIndex::new(HierSet::All, 1, 2);
 //!
@@ -480,14 +480,13 @@ mod tests {
 
         // Now try try making an exporter and check basic sanity of as_any_mut.
 
-        let exporter_rc     = generator.make_exporter();
+        let exporter_rc = generator.make_exporter();
 
         // Push the member's numbers onto the exporter.
 
         generator.push(&mut *exporter_rc.borrow_mut(), member_rc);
 
         let new_member_rc = generator.make_from_exporter("member export", &None, exporter_rc);
-
 
         // See that the new member matches expectations.
 
@@ -549,7 +548,7 @@ mod tests {
                 assert!(hier.all_len(1) > 0);
             }
 
-            assert!(hier.count()       == events as u64);
+            assert!(hier.count() == events as u64);
         }
 
         // Compute the expected mean of the window.

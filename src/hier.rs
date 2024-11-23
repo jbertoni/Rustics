@@ -228,7 +228,7 @@ pub type MemberRc    = Rc<RefCell<dyn HierMember   >>;
 pub type GeneratorRc = Rc<RefCell<dyn HierGenerator>>;
 pub type ExporterRc  = Rc<RefCell<dyn HierExporter >>;
 
-/// hier_box! is used to create a shareable instance for an element in
+/// hier_box! is used to create a shareable instance for an instance in
 /// a Hier instance
 
 #[macro_export]
@@ -272,7 +272,7 @@ impl HierDescriptor {
 // level.
 //
 // "retention" specifies the total number of instances to keep
-// around for queries.  It must be at least "period" elements, but
+// around for queries.  It must be at least "period" instances, but
 // can be more to keep more history.
 
 /// HierDimensions is used to define one level in a Hier instance.
@@ -525,7 +525,7 @@ impl Hier {
         member.clone()
     }
 
-    /// Prints the given element in the instance matrix.
+    /// Prints the given instance in the instance matrix.
 
     pub fn print_index_opts(&self, index: HierIndex, printer: PrinterOption, title: Option<&str>) {
         self.local_print(index, printer, title);

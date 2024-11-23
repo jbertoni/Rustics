@@ -145,7 +145,7 @@ use super::float_hier  ::FloatHierConfig;
 pub type RusticsRc = Rc<RefCell<dyn Rustics>>;
 pub type RcSetBox  = Rc<RefCell<RcSet>>;
 
-/// rc_box! is used to create a shareable instance for an RcSet item.
+/// rc_box! is used to create a shareable instance of an RcSet item.
 
 #[macro_export]
 macro_rules! rc_box { ($x:expr) => { Rc::from(RefCell::new($x)) } }
@@ -163,7 +163,7 @@ macro_rules! rc_item_mut { ($x:expr) => { &mut *$x.borrow_mut() } }
 macro_rules! rc_item { ($x:expr) => { &*$x.borrow() } }
 
 /// The RcTraverser trait defines an interface the user can implement
-/// to traverse the elements in an Rc set hierarchy.
+/// to traverse the members of an Rc set hierarchy.
 
 pub trait RcTraverser {
     /// This method is invoked on each subset in the set and
@@ -328,7 +328,7 @@ impl RcSet {
         }
     }
 
-    /// Adds a the Rustics instance to the set.
+    /// Adds a RusticsRc instance to the set.
 
     pub fn add_member(&mut self, member: RusticsRc) {
         let work   = member.clone();
@@ -483,7 +483,7 @@ impl RcSet {
         member
     }
 
-    /// Removes a Rustics element from the set.
+    /// Removes a Rustics instance from the set.
 
     pub fn remove_stat(&mut self, target: RusticsRc) -> bool {
         let mut found     = false;

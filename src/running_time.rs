@@ -8,7 +8,7 @@
 //! ## Type
 //!
 //! * RunningTime
-//!     * RunningTime accumulates statistics on a stream of event times.
+//!     * RunningTime accumulates statistics on a stream of time intervals.
 //!
 //!     * Internally, it uses RunningInteger instances.  See that code
 //!       for more information

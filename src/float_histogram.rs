@@ -143,7 +143,7 @@ pub fn bucket_divisor() -> isize {
     16
 }
 
-// Define the number of elements printed per row.  This actually
+// Define the number of counts printed per row.  This actually
 // is hard-coded in the actual format statement.
 
 fn print_roundup() -> usize {

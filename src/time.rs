@@ -93,8 +93,8 @@ pub trait Timer {
 
     fn start(&mut self);            // start or restart a timer
 
-    /// The finish() function is used at the end of a sample interval.  It
-    /// returns the interval time in ticks and also starts a new
+    /// The finish() function is used at the end of a sample interval.
+    /// It returns the interval time in ticks and also starts a new
     /// interval, since the restart cost is nearly zero.  Thus, finish()
     /// can be called multiple times after a start() invocation to return
     /// the times for a sequence of events.  If a more precise timing is

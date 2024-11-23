@@ -151,10 +151,10 @@
 //!     assert!(integer_hier.live_len(1)   == 1     );
 //!     assert!(integer_hier.event_count() == events);
 //!
-//!     // Now print an element from the hierarchy.  In this case, we
-//!     // will index into level 1, and print the third element of the
+//!     // Now print an instance from the hierarchy.  In this case, we
+//!     // will index into level 1, and print the third instance of the
 //!     // vector (index 2).  We use the set All to look at all the
-//!     // elements in the window, not just the live elements.
+//!     // instances in the window, not just the live instances.
 //!
 //!     let index = HierIndex::new(HierSet::All, 1, 2);
 //!

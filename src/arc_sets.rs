@@ -188,7 +188,7 @@ macro_rules! arc_item_mut { ($x:expr) => { &mut *$x.lock().unwrap() } }
 macro_rules! arc_item { ($x:expr) => { &*$x.lock().unwrap() } }
 
 /// The ArcTraverser trait is used by the traverse() method to
-/// call a user-defined function at each element in an ArcSet
+/// call a user-defined function for each member of an ArcSet
 /// and its subsets.
 
 pub trait ArcTraverser {
@@ -198,7 +198,7 @@ pub trait ArcTraverser {
     fn visit_set(&mut self, set: &mut ArcSet);
 
     /// This method is invoked on every statistics instance
-    /// in the set.
+    /// in the set and its subsets.
 
     fn visit_member(&mut self, member: &mut dyn Rustics);
 }
@@ -231,8 +231,6 @@ pub struct ArcSetConfig {
 }
 
 impl ArcSet {
-    /// ArcSet Constructors
-
     /// Creates a new ArcSet.
     ///
     /// The "members_hint" and "subsets_hint" parameters are hints as to the number
@@ -298,7 +296,7 @@ impl ArcSet {
     }
 
     /// Traverses the Rustics instances and subsets in the set invoking a
-    /// user-supplied callback for each element.
+    /// user-supplied callback for each member.
 
     pub fn traverse(&mut self, traverser: &mut dyn ArcTraverser) {
         traverser.visit_set(self);
@@ -403,9 +401,10 @@ impl ArcSet {
         }
     }
 
-    /// Adds a Rustics member.  The user creates the statistics instance
-    /// and passes it in an Arc.  This is a bit more manual than
-    /// add_running_integer() and similar methods.
+    /// Adds a RusticsArc instance to a set.  The user creates the
+    /// statistics instance and passes it in an Arc.  This is
+    /// a bit more manual than add_running_integer() and similar
+    /// methods.
 
     pub fn add_member(&mut self, member: RusticsArc) {
         let work  = member.clone();
@@ -434,7 +433,7 @@ impl ArcSet {
         member
     }
 
-    /// Creates a IntegerWindow instance and adds it to the set.
+    /// Creates an IntegerWindow instance and adds it to the set.
 
     pub fn add_integer_window(&mut self, name: &str, window_size: usize, units: UnitsOption)
             -> RusticsArc {
@@ -550,7 +549,7 @@ impl ArcSet {
         member
     }
 
-    /// Creates a Counter and adds it to the set.
+    /// Creates a Counter instance and adds it to the set.
 
     pub fn add_counter(&mut self, name: &str, units: UnitsOption) -> RusticsArc {
         let printer    = Some(self.printer.clone());
@@ -579,7 +578,7 @@ impl ArcSet {
         Some(print_opts)
     }
 
-    /// Removes a Rustics element from the set.
+    /// Removes a Rustics instance from the set.
 
     pub fn remove_stat(&mut self, target_box: RusticsArc) -> bool {
         let mut found       = false;

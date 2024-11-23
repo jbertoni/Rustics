@@ -218,7 +218,8 @@ pub struct ArcSet {
     print_opts: PrintOption,
 }
 
-/// This struct is passed to new_from_config to create an ArcSetBox.
+/// This struct is passed to some constructors that create
+/// ArcSet instances.
 
 pub struct ArcSetConfig {
     name:          String,

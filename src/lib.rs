@@ -259,6 +259,8 @@ pub fn is_zero(input: f64) -> bool {
     input == 0.0    // -0.0 == 0 per IEEE definition
 }
 
+/// Extracts the raw exponent from an IEEE f64 value.
+
 pub fn biased_exponent(input: f64) -> isize {
     if input.is_nan() {
         return 0;
@@ -415,7 +417,7 @@ pub struct EstimateData {
     pub cubes:      f64,
 }
 
-/// Estimate moment 3 about the mean given the data in
+/// Estimates moment 3 about the mean given the data in
 /// EstimateData.
 ///
 /// I know of no good way to keep a running estimate of
@@ -605,6 +607,9 @@ macro_rules! printer { ($x:expr) => { &*$x.borrow() } }
 // #[macro_export]
 // macro_rules! printer_box { ($x:expr) => { Arc::from(Mutex::new($x)) } }
 
+/// Extracts a printer from a PrintOption instance or provides
+/// a stdout_printer() if no printer was specified.
+
 pub fn parse_printer(print_opts: &PrintOption) -> PrinterBox {
     match print_opts {
         Some(print_opts) => {
@@ -617,6 +622,10 @@ pub fn parse_printer(print_opts: &PrintOption) -> PrinterBox {
         None => { stdout_printer() }
     }
 }
+
+/// Extracts the title in a PrintOption instance, if present, or
+/// creates a default title using the name parameter, if no
+/// title was specified.
 
 pub fn parse_title(print_opts: &PrintOption, name: &str) -> String {
     match print_opts {
@@ -631,6 +640,10 @@ pub fn parse_title(print_opts: &PrintOption, name: &str) -> String {
     }
 }
 
+/// Returns the float histogram options in a PrintOption instance,
+/// if present, or creates a set of defaults if no histogram options
+/// were specified.
+
 pub fn parse_histo_opts(print_opts: &PrintOption) -> HistoOpts {
     match print_opts {
         Some(print_opts) => {
@@ -643,6 +656,9 @@ pub fn parse_histo_opts(print_opts: &PrintOption) -> HistoOpts {
         None => { HistoOpts::default()  }
     }
 }
+
+/// Returns the units in a PrintOption instance, if given, or
+/// returns the defaults if no units were specifed.
 
 pub fn parse_units(print_opts: &PrintOption) -> Units {
     match print_opts {
@@ -657,7 +673,11 @@ pub fn parse_units(print_opts: &PrintOption) -> Units {
     }
 }
 
-pub fn parse_print_opts(print_opts: &PrintOption, name: &str) -> (PrinterBox, String, Units, HistoOpts) {
+/// Extracts the options in a PrintOption instance, providing
+/// defaults for options not specified.
+
+pub fn parse_print_opts(print_opts: &PrintOption, name: &str)
+        -> (PrinterBox, String, Units, HistoOpts) {
     let printer;
     let title;
     let units;
@@ -901,7 +921,7 @@ pub struct ExportStats {
     pub float_histogram:    Option<FloatHistogramBox>,
 }
 
-/// Histogram defines the trait for using a LogHistogram or
+/// Histogram defines a trait for using a LogHistogram or
 /// FloatHistogram instance.
 
 pub trait Histogram {

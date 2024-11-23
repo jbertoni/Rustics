@@ -104,7 +104,7 @@ use super::sum::kbk_sum;
 use super::sum::kbk_sum_sort;
 use super::parse_print_opts;
 
-/// An FloatWindow instance collects integer data samples into
+/// An FloatWindow instance collects f64 data samples into
 /// a fixed-size window. It also maintains a histogram based on
 /// all the samples seen.
 ///

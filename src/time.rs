@@ -84,8 +84,7 @@ use crate::timer_box;
 /// monitoring.  It is intended to allow for many implementations.
 /// The underlying clock implementation determines the meaning of an
 /// interval value.  For example, a DurationTimer uses the standard
-/// Rust Duration type, which returns wall-clock time.  It operates
-/// in nanoseconds.
+/// rust Duration type, which returns wall-clock time.
 
 pub trait Timer {
     /// The start method starts a timing interval.  It may be called

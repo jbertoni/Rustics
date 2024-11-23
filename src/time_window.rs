@@ -95,8 +95,8 @@ use super::timer_mut;
 use super::integer_window::IntegerWindow;
 
 /// TimeWindow implements a statistics type that retains a
-//  window of the last n samples of astream of data samples
-/// and a histogram of all data samples recorded.
+/// window of the last n samples of a stream of data samples.
+/// It also provides a histogram of all data samples recorded.
 ///
 /// See the module comments for a sample program.
 

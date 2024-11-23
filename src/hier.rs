@@ -337,7 +337,7 @@ impl HierIndex {
 /// The HierExporter trait is used internally to create a statistics
 /// instance that is a sum of other instances.  It can be used in
 /// applications, as well, although the predefined functions probably
-/// cover  most use cases.
+/// cover most use cases.
 
 pub trait HierExporter {
     fn as_any    (&self)     -> &dyn Any;

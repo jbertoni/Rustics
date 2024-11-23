@@ -382,8 +382,8 @@ impl FloatHistogram {
         self.print_opts(printer, &self.histo_opts);
     }
 
-    /// Prints the histogram.  The histo_opts option is not fully
-    /// implemented.
+    /// Prints the histogram with the options specified.  The HistoOpts struct
+    //  is not fully implemented.
 
     pub fn print_opts(&self, printer: &mut dyn Printer, histo_opts: &HistoOpts) {
         let header =
@@ -457,12 +457,13 @@ impl Histogram for FloatHistogram {
         self.clear()
     }
 
-    /// Converts the self pointer to specific histogram types if
-    /// possible.
+    /// Returns None since this histogram is not in a box.
 
     fn to_log_histogram  (&self) -> Option<LogHistogramBox> {
         None
     }
+
+    /// Returns None since this histogram is not in a box.
 
     fn to_float_histogram(&self) -> Option<FloatHistogramBox> {
         None

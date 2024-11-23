@@ -535,7 +535,7 @@ pub struct Units {
 }
 
 impl Units {
-    /// Return an Units struct with empty strings.  This is used
+    /// Return a Units struct with empty strings.  This is used
     /// internally when printing without units.
 
     pub fn empty() -> Units {
@@ -930,13 +930,16 @@ pub trait Histogram {
 
     fn print_histogram(&self, printer: &mut dyn Printer);
 
-    /// Clear the histogram data.
+    /// Clears the histogram data.
 
     fn clear_histogram(&mut self);
 
-    /// Convert the pointer to histogram types if possible.
+    /// Returns the corresponding LogHistogramBox if possible.
 
     fn to_log_histogram  (&self) -> Option<LogHistogramBox>;
+
+    /// Returns the corresponding FloatHistogramBox if possible.
+
     fn to_float_histogram(&self) -> Option<FloatHistogramBox>;
 }
 

@@ -193,7 +193,7 @@ pub struct RcSet {
 
 impl RcSet {
 
-    /// Create a new set.
+    /// Creates a new set.
     ///
     /// The "members_hint" and "subsets_hint" parameters are hints as to the number
     /// of elements to be expected.  "members_hint" refers to the number of Rustics
@@ -252,7 +252,8 @@ impl RcSet {
         self.print_opts(None, None);
     }
 
-    /// Prints the set with the given optional printer and title.
+    /// Prints the set and all its constituents (subsets and Rustics instances)
+    /// with the give printer and title.
 
     pub fn print_opts(&self, printer: PrinterOption, title: Option<&str>) {
         for member in self.members.iter() {

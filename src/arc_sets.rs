@@ -204,7 +204,7 @@ pub trait ArcTraverser {
 }
 
 /// ArcSet is the implementation type for a set of Rustics instances
-/// wrapped as `Arc<Mutex<dyn Rustics>>`.
+/// that are wrapped as `Arc<Mutex<dyn Rustics>>`.
 
 #[derive(Clone)]
 pub struct ArcSet {

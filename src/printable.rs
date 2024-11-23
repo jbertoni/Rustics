@@ -282,7 +282,7 @@ impl Printable {
         Self::print_float_unit(name, value, "", printer)
     }
 
-    /// Print a floating point value using a Units descriptor and a given printer.
+    /// Prints a floating point value using a Units descriptor and a given printer.
 
     pub fn print_float_units(name: &str, value: f64, printer: &mut dyn Printer, units: &Units) {
         let unit =

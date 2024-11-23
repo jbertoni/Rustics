@@ -63,11 +63,14 @@
 //!    assert!(packet_sizes.mean() == mean);
 //!
 //!    // Let's record more samples.  The count only includes the last
-//!    // "window_size" samples, so it should be constant now.
+//!    // "window_size" samples, so it should be constant now.  We are
+//!    // overwriting old data with the same value, so the mean shouldn't
+//!    // change.
 //!
 //!    for i in 1..=window_size / 2 {
 //!       packet_sizes.record_i64(i as i64);
 //!       assert!(packet_sizes.count() == window_size as u64);
+//!       assert!(packet_sizes.mean()  == mean              );
 //!    }
 //!```
 

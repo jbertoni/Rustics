@@ -13,6 +13,9 @@
 //!     * Internally, it uses RunningInteger instances.  See that code
 //!       for more information
 //!
+//!     * The main.rs program contains a very simple example of how to
+//!       use this type.
+//!
 //! ## Example
 //!```
 //!    use std::rc::Rc;

@@ -38,9 +38,9 @@
 //!     let mut counter = Counter::new("test counter", &print_opts);
 //!
 //!     // Add some byte counts to the counter.  record_event() adds one,
-//!     // to implement an event counter.  record_i64() adds any i64 value
-//!     // to the counter, for keeping a sum when statistics like the mean
-//!     // aren't useful.
+//!     // which can be used to implement an event counter.  record_i64()
+//!     // adds any i64 value to the counter, for keeping a sum when statistics
+//!     // like the mean aren't useful.
 //!
 //!     for i in 1..=test_limit {
 //!         counter.record_event();

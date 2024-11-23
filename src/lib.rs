@@ -7,7 +7,8 @@
 
 //! 'Rustics' provides a very simple interface for recording events and printing statistics.
 //!
-//! Many of the module comments contain examples of usage.
+//! Many of the module comments contain examples of usage.  The main.rs program contains
+//! a very simple example of how to use two of the statistics types.
 //!
 //! ## Types
 //!
@@ -115,25 +116,25 @@
 //!           as the statistics type.
 //!
 //! * Creating Sets
-//!     * The "arc_sets" and "rc_sets" modules implement a simple feature allowing the creation
-//!       of sets that accept Rustics instances and other sets as members.  Sets can be printed and
-//!       cleared recursively by invoking a method on the topmost set.
+//!     * The "arc_sets" and "rc_sets" modules implement sets that accept Rustics instances and
+//!       other sets as members.  Sets can be printed and cleared recursively by invoking a method
+//!       on the topmost set.
 //!
 //!     * ArcSet
 //!         * This type provides an Arc-based implementation that is thread-safe.
 //!
 //!     * RcSet
-//!         * This type implements an Rc-based implementation of sets.  These sets are
-//!           faster than Arc-based sets, but are not thread-safe.
+//!         * This type implements an Rc-based version of sets.  These sets are faster than
+//!           Arc-based sets, but are not thread-safe.
 //!
 //! * Timers
 //!     *  Timer
-//!         * This trait is the basic abstract timer.  A timer has a frequency and returns
+//!         * This trait defines the basic abstract timer.  A timer has a frequency and returns
 //!           an integer duration in units of that frequency.  The Timer interface provides
 //!           start() and finish() methods to measure clock intervals.
 //!
 //!     *  DurationTimer
-//!         * This implementation of Timer uses the Rust "Duration" implementation, which measures
+//!         * This implementation of Timer uses the Rust "Duration" struct, which measures
 //!           wall clock time.
 //!
 //!     *  ClockTimer
@@ -146,8 +147,8 @@
 //!
 //!         * Clock values are returned as an integer tick count.
 //!
-//!         * SimpleClock implementation provide a hz() member to return the hertz the ClockTimer
-//!           layer.
+//!         * A SimpleClock implementation provides a hz() member to return the hertz to the
+//!           ClockTimer layer.
 //!
 //! * Printing
 //!     *  Printer

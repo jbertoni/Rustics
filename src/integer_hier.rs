@@ -11,25 +11,11 @@
 //!     * This type implements multi-level statistics using the
 //!       RunningInteger type, q.v.
 //!
-//!     * The newest member of the lowest level of RunningInteger
-//!       instances is used to record data.  After a configurable
-//!       number of samples have been recorded, a new instance is
-//!       added to the level.
+//!     * See the library comments (lib.rs) for an overview of how
+//!       hierarchical types work.
 //!
-//!     * When a configurable number of level 0 instances have been
-//!       collected into the window, they are summed into one level
-//!       1 RunningInteger instance.
-//!
-//!     * When a configurable size limit is reached, the oldest
-//!       level 0 RunningInteger instance is discarded.  This limit
-//!       must be at least the number of instances to be summed.
-//!       Each level has a similar configurable size limit.
-//!
-//!     * In general, a Rustics intance at level j is a sum of of i
-//!       instances from level j - 1, where i is configured per level.
-//!
-//!     * Each window retains some RunningInteger instances that have
-//!       already been summed, in case they are wanted for queries.
+//!     * This module provides support to bridge from the Hier code
+//!       to RunningInteger-specific functions.
 //!
 //! ## Example
 //!```
@@ -92,7 +78,7 @@
 //!     let configuration =
 //!         IntegerHierConfig { descriptor, name, window_size, print_opts };
 //!
-//!     // Now make the Hier instance and lock it.
+//!     // Now make the Hier instance.
 //!
 //!     let mut integer_hier = IntegerHier::new_hier(configuration);
 //!
@@ -131,11 +117,15 @@
 //!     // The Rustics implementation for Hier returns the data in the
 //!     // current level 0 instance, so check it.
 //!
-//!     assert!(integer_hier.event_count() == events);
 //!     assert!(integer_hier.count()       == 1     );
+//!     assert!(integer_hier.event_count() == events);
 //!     assert!(integer_hier.live_len(0)   == 2     );
 //!     assert!(integer_hier.live_len(1)   == 0     );
 //!     assert!(integer_hier.live_len(2)   == 0     );
+//!
+//!     // Record enough events to fill a level 1 summary.  It will not
+//!     // be created yet, though.  That occurs when we start the next
+//!     // level 0 batch, i.e., retire the current level 0 instance.
 //!
 //!     let events_per_level_1 =
 //!         auto_advance * dimension_0.period() as i64;

@@ -506,8 +506,12 @@ mod tests {
             assert!(oldest     == oldest_live);
 
             window.push(i);
+
             assert!(window.all_len()  == i + 1);
             assert!(window.live_len() == i + 1);
+            assert!(window.data.len() == i + 1);
+
+            assert!(*window.newest().unwrap() == i);
         }
 
         // Always be verbose here so that the code is tested.

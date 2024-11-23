@@ -28,7 +28,7 @@
 //!    use rustics::timer_mut;
 //!
 //!    // Create a set.  By way of example, assume that we're expecting
-//!    // 8 statistics instances but no subsets, and set those hints
+//!    // 8 Rustics instances but no subsets, and set those hints
 //!    // appropriately.  The default print output goes to stdout, and
 //!    // that's fine for an example, so just give "None" to accept the
 //!    // default output settings.
@@ -54,7 +54,8 @@
 //!    // record_event() method to query the timer and restart it.
 //!    //
 //!    // The clock started running when we created the DurationTimer.
-//!    // Applications also can restart the timer using the start() method.
+//!    // Applications also can restart the timer using the start() method
+//!    // if more precision is needed.
 //!
 //!    timer_mut!(timer).start();  // Show how to restart a timer.
 //!
@@ -69,28 +70,35 @@
 //!
 //!    arc_item_mut!(query_latency).record_event();
 //!
-//!    // For the multithreaded case, you can use DurationTimer manually.
+//!    // For the multithreaded case, you can use DurationTimer more
+//!    // manually.  A timer in a box is required.
 //!
-//!    let mut local_timer = DurationTimer::new();
+//!    let mut local_timer = DurationTimer::new_box();
 //!
 //!    // Do our query.
 //!
 //!    // do_work();
 //!
+//!    // Now record the time spent.  The record_interval() method will
+//!    // read the clock for us.
+//!
 //!    let lock = arc_item_mut!(query_latency);
 //!
-//!    lock.record_time(local_timer.finish() as i64);
+//!    lock.record_interval(&mut local_timer);
 //!
 //!    drop(lock);
 //!
-//!    // If you want to use your own timer, you'll need to implement the
-//!    // Timer trait or SimpleClock and ClockTimer to initialize the
-//!    // RunningTime instance, but you can use that timer directly to get
-//!    // data. Let's use Duration timer directly as an example.  Make a
-//!    // new Timer instance for this example.  This timer is used only to
+//!    // If you want to use a timer that can't fully implement the Timer
+//!    // trait, you'll need to implement a hz method for Timer with
+//!    // dummy functions for the test of the trait.
+//!    //
+//!    // Let's use Duration timer directly as an example.  Make a new
+//!    // Timer instance for this example.  This timer is used only to
 //!    // pass the clock hertz to the RunningTimer code.
 //!
 //!    let timer = DurationTimer::new_box();
+//!
+//!    // Create our new statistic.
 //!
 //!    let mut query_latency =
 //!        set.add_running_time("Custom Timer", timer.clone());
@@ -103,8 +111,8 @@
 //!
 //!    // do_query();
 //!
-//!    // Now get the elapsed time.  DurationTimer works in nanoseconds,
-//!    // so use the as_nanos() method.
+//!    // Now get the elapsed time as integer ticks.  DurationTimer
+//!    // works in nanoseconds, so use the as_nanos() method.
 //!
 //!    assert!(timer!(timer).hz() == 1_000_000_000);
 //!    let time_spent = start.elapsed().as_nanos();

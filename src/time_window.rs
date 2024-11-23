@@ -12,7 +12,7 @@
 //!       recorded into it.
 //!
 //!     * It also supports the concept of marking a subset of the newest
-//!       N items as "live".
+//!       k items as "live".
 //!
 //!     * This type uses IntegerWindow internally to record the time
 //!       samples.

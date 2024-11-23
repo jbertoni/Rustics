@@ -27,7 +27,7 @@ This library also implements a form of hierarchical statistics.  The
 hierarchical statistics combine sets of Rustics instances into single
 Rustics instances.  This summation can allow keeping historical data with
 a lower memory footprint, and can reduce floating-point loss of precision.
-See the hier.rs file and documentation for more information.
+See the lib.rs comments for an overview.
 
 Rustics also implements sets that contain Rustics instances.  All the
 instances in a set can be printed via the print() method of the set, and

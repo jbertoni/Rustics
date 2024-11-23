@@ -11,6 +11,9 @@
 //!     * RunningInteger maintains running statistics on a set of samples
 //!       recorded into it.
 //!
+//!     * The main.rs program contains a very simple example of using this
+//!       type.
+//!
 //! ## Example
 //!```
 //!    use rustics::Rustics;
@@ -99,7 +102,7 @@
 //!    //            4:                 8                16                32                64
 //!    //            8:               128               256               488                 0
 //!
-//!    // The mode value and histogram both show the most commoe bucket
+//!    // The mode value and histogram both show the most common bucket
 //!    // is the range from 513 to 1,024 bytes, which is consistent with
 //!    // the samples recorded.
 //!```

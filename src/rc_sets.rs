@@ -62,7 +62,7 @@
 //!    // Usually, ArcSet instances are more convenient for multithreaded
 //!    // applications.
 //!
-//!    let mut local_timer = DurationTimer::new();
+//!    let mut local_timer = DurationTimer::new_box();
 //!
 //!    // Do our query.
 //!    // ...
@@ -70,7 +70,9 @@
 //!
 //!    let lock = rc_item_mut!(query_latency);
 //!
-//!    lock.record_time(local_timer.finish() as i64);
+//!    // record_interval() will read the timer for us.
+//!
+//!    lock.record_interval(&mut local_timer);
 //!
 //!    drop(lock);
 //!

@@ -15,9 +15,6 @@
 //!     * The Hier support code, q.v., uses this module to create instances
 //!       for the upper layers.
 //!
-//!     * RunningInteger and RunningFloat code use this structure and the
-//!       sum_running() function.
-//!
 //!     * This module is of use only for implementing new Rustics types and
 //!       so most users will never need to use it directly.
 //!

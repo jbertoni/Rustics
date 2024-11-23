@@ -17,13 +17,15 @@
 //!     rust Duration type, which measures wall-clock time.
 //!
 //! * SimpleClock
-//!   * SimpleClock is an abstraction that can be used to implement
-//!     platform-specific Timer instances.  Something like a simple
-//!     cycle counter would be an example.
+//!   * The SimpleClock trait is an abstraction that can be used to
+//!     implement platform-specific Timer instances.  Something like
+//!     a simple cycle counter would be an example of a timer that
+//!     can be used as a SimpleClock.
 //!
 //! * ClockTimer
 //!   * Clock timer is an implementation of Timer that uses a
-//!     SimpleClock underneath.
+//!     SimpleClock underneath.  It is a standard bridge from
+//!     implementation-specific timers to the Rustics types.
 //!
 //!```
 //!     use rustics::time::SimpleClock;

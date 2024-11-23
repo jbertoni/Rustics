@@ -9,23 +9,20 @@
 //! ## Type
 //!
 //! * Hier
-//!     * Hier implements a hierarchy of Rustics instances.  The lowest level of the hierarchy
-//!       receives data and records it into the newest instance at that level.
+//!     * Hier implements a hierarchy of Rustics instances for collecting and analyzing a single
+//!       sample stream.
 //!
-//!     * Upper levels of the hierarchy contains sums of a programmable number of lower-level
-//!       instances.
+//!     * See the library comments (lib.rs) for an overview of how this type works.
 //!
 //!     * Hier is a framework class that should be instantiated for a concrete statistics type
-//!       via functions like IntegerHier::new_hier or TimeHier::new_hier.  This example uses
+//!       via functions like IntegerHier::new_hier or TimeHier::new_hier.  The example uses
 //!       IntegerHier, which uses RunningInteger as the underlying Rustics type.
 //!
 //!     * Hier implements the Rustics interface, and through that provides statistics from the
 //!       either the current level 0 Rustics instance, i.e., statistics on the newest samples,
 //!       or from an optionally configured window of the last n events, as specified by the
-//!       window_size parameter in HierConfig.  This window is implemented using a TimeWindow
-//!       or an IntegerWindow made using the HierGenerator instance.
-//!
-//!     * See the integer_hier module comments for more details.
+//!       window_size parameter in HierConfig.  This window is implemented using a TimeWindow,
+//!       FloatWindow, or an IntegerWindow made using the HierGenerator instance.
 //!
 //! ## Example
 //!```
@@ -90,7 +87,7 @@
 //!     let configuration =
 //!         IntegerHierConfig { descriptor, name, window_size, print_opts };
 //!
-//!     // Now make the Hier instance and lock it.
+//!     // Now make the Hier instance.
 //!
 //!     let mut integer_hier = IntegerHier::new_hier(configuration);
 //!
@@ -114,7 +111,8 @@
 //!     // and nothing at level 1 or level 2.
 //!     //
 //!     // event_count() returns all events seen by the integer_hier
-//!     // instance from creation onward.
+//!     // instance from creation onward.  At this point, it should
+//!     // still match our first level 0 Rustics count.
 //!
 //!     assert!(integer_hier.event_count() == events);
 //!     assert!(integer_hier.count()       == events as u64);
@@ -131,6 +129,12 @@
 //!     // The new level 0 instance should have only one event recorded.
 //!     // The Rustics implementation for Hier returns the data in the
 //!     // current level 0 instance, so check it.
+//!
+//!     assert!(integer_hier.count() == 1);
+//!
+//!     // Record enough events to fill a level 1 summary.  It will not
+//!     // be created yet, though.  That occurs when we start the next
+//!     // level 0 batch, i.e., retire the current level 0 instance.
 //!
 //!     let events_per_level_1 =
 //!         auto_advance * dimension_0.period() as i64;
@@ -650,7 +654,9 @@ impl Hier {
 
     /// The advance() method pushes a new level 0 statistics instance into
     /// the level 0 window.  It also updates the upper levels as needed.
-    /// The user can call this directly, use auto_advance, or do both.
+    /// The user can call this directly or use auto_advance.  The code
+    /// doesn't prevent mixing the two, but the results will be odd if both
+    /// are used.
 
     pub fn advance(&mut self) {
         // Increment the advance op count.  This counts the
@@ -797,10 +803,9 @@ impl Hier {
 
     fn check_and_advance(&mut self) {
         // Push a new instance if we've reached the event limit
-        // for the current one.  Do this before push the next
+        // for the current one.  Do this before we push the next
         // event so that users see an empty current statistic only
         // before recording any events at all.
-        //
 
         if
             self.auto_next != 0

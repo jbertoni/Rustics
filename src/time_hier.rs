@@ -17,7 +17,8 @@
 //!     the preferred interface for creating a Hier instance that use RunningTime
 //!     instances.
 //!
-//!   * See the integer_hier module for more details on hierarchical statistics.
+//!   * See the library comments (lib.rs) for an overview of how hierarchical
+//!     statistics work.
 //!
 //!```
 //!     // This example is based on the code in IntegerHier.
@@ -85,7 +86,7 @@
 //!     let configuration =
 //!         TimeHierConfig { descriptor, name, window_size, timer, print_opts };
 //!
-//!     // Now make the Hier instance and lock it.
+//!     // Now make the Hier instance.
 //!
 //!     let mut time_hier = TimeHier::new_hier(configuration);
 //!
@@ -124,18 +125,22 @@
 //!     // The Rustics implementation for Hier returns the data in the
 //!     // current level 0 instance, so check it.
 //!
-//!     assert!(time_hier.event_count() == events);
 //!     assert!(time_hier.count()       == 1     );
+//!     assert!(time_hier.event_count() == events);
 //!     assert!(time_hier.live_len(0)   == 2     );
 //!     assert!(time_hier.live_len(1)   == 0     );
 //!     assert!(time_hier.live_len(2)   == 0     );
 //!
+//!     // Record enough events to fill a level 1 summary.  It will not
+//!     // be created yet, though.  That occurs when we start the next
+//!     // level 0 batch, i.e., retire the current level 0 instance.
+//!     //
+//!     // Use the finish() method this time.  It uses the clock
+//!     // directly.  This approach works if multiple threads are using
+//!     // the Hier instance.
+//!
 //!     let events_per_level_1 =
 //!         auto_advance * dimension_0.period() as i64;
-//!
-//!     // Use the finish() method this time.  It uses the clock
-//!     // directly.  This approach works if multiple threads
-//!     // are using the Hier instance.
 //!
 //!     let timer = DurationTimer::new_box();
 //!

@@ -12,8 +12,11 @@
 //!       RunningFloat type, q.v.  It is substantially identical
 //!       to IntegerHier except it accepts f64 samples.
 //!
-//!     * See the IntegerHier module comments for a description of
-//!       how the Hier code uses Rustics instance.
+//!     * See the library comments (lib.rs) for an overview of how
+//!       hierarchical types work.
+//!
+//!     * This module provides a bridge between the Hier implementation
+//!       and the RunningFloat implementation.
 //!
 //! ## Example
 //!```
@@ -79,7 +82,7 @@
 //!             descriptor, name, window_size, print_opts
 //!         };
 //!
-//!     // Now make the Hier instance and lock it.
+//!     // Now make the Hier instance.
 //!
 //!     let mut float_hier = FloatHier::new_hier(configuration);
 //!
@@ -118,11 +121,15 @@
 //!     // The Rustics implementation for Hier returns the data in the
 //!     // current level 0 instance, so check it.
 //!
-//!     assert!(float_hier.event_count() == events);
 //!     assert!(float_hier.count()       == 1     );
+//!     assert!(float_hier.event_count() == events);
 //!     assert!(float_hier.live_len(0)   == 2     );
 //!     assert!(float_hier.live_len(1)   == 0     );
 //!     assert!(float_hier.live_len(2)   == 0     );
+//!
+//!     // Record enough events to fill a level 1 summary.  It will not
+//!     // be created yet, though.  That occurs when we start the next
+//!     // level 0 batch, i.e., retire the current level 0 instance.
 //!
 //!     let events_per_level_1 =
 //!         auto_advance * dimension_0.period() as i64;

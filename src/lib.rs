@@ -5,25 +5,23 @@
 //  and MIT licenses.
 //
 
-//! 'Rustics' provides a simple interface for recording sample and event streams and printing
+//! Rustics provides a simple interface for recording sample and event streams and printing
 //! statistics.
 //!
 //! Many of the module comments contain examples of usage.  The main.rs program contains
-//! a small example of how to use two of the statistics types.
+//! a brief example of how to use two of the statistics types.
 //!
 //! ## Types
 //!
 //! * Basic Statistics for Integer Samples
-//!     * Integer statistics provide basic parameters, like the mean, and a pseudo-log histogram.
-//!
 //!     * Samples are of type i64.
+//!
+//!     * Integer statistics provide summary parameters, like the mean, and a pseudo-log histogram.
 //!
 //!     * For the pseudo-log histogram, the pseudo-log of a negative number n is defines as
 //!       -log(-n).  The pseudo-log of 0 is defined as 0.  Logs of positive values are computed by
 //!       rounding up any fractional part, so the pseudo-log of 5 is 3.  From the definition, the
 //!       pseudo-log of -5 is -3.
-//!
-//!     * The time-based statistics work on time samples measured in integer ticks.
 //!
 //! * Basic Integer Statistics Types
 //!     * RunningInteger
@@ -139,8 +137,8 @@
 //!           start() and finish() methods to measure clock intervals.
 //!
 //!     *  DurationTimer
-//!         * This implementation of Timer uses the Rust "Duration" struct, which measures
-//!           wall clock time.
+//!         * This implementation of Timer uses the Rust "Duration" struct, which measures wall
+//!           clock time.
 //!
 //!     *  SimpleClock
 //!         * This trait defines the interface used to query a user-defined clock, which can be
@@ -161,8 +159,8 @@
 //!         * This trait provides a method to use custom printers.  By default, output from the
 //!           printing function goes to stdout.
 //!
-//!         * See StdioPrinter for a very simple sample implementation.  This type is used
-//!           as the default printer by the Rustics code.
+//!         * See StdioPrinter for a simple sample implementation.  This type is used the default
+//!           printer by the Rustics code.
 //!
 //!     *  Printable
 //!         * Printable provides standard formatting for printing data and some support functions
@@ -389,9 +387,9 @@ pub fn compute_statistics(data: StatisticsData) -> Statistics {
     Statistics { mean, moment_2, moment_4 }
 }
 
-/// This struct provides the data required to
-/// try to recover the sum of the squares and the
-/// sum of the fourth power of the data samples.
+/// This struct provides the data required to try
+/// to recover the sum of the squares and the sum
+/// of the fourth power of each of the data samples.
 
 pub struct RecoverData {
     pub n:          f64,
@@ -615,18 +613,18 @@ pub trait Printer {
     fn as_any_mut    (&mut self) -> &mut dyn Any;
 }
 
-/// The printer_box macro converts a Printer instance into the
-/// shareable form.
+/// Converts a Printer instance into the shareable
+/// form.
 
 #[macro_export]
 macro_rules! printer_box { ($x:expr) => { Rc::from(RefCell::new($x)) } }
 
-/// The printer_mut macro converts a PrinterBox into a mutable Printer.
+/// Converts a PrinterBox into a mutable Printer.
 
 #[macro_export]
 macro_rules! printer_mut { ($x:expr) => { &mut *$x.borrow_mut() } }
 
-/// The printer macro converts a PrinterBox into a Printer.
+/// Converts a PrinterBox into a Printer.
 
 #[macro_export]
 macro_rules! printer { ($x:expr) => { &*$x.borrow() } }
@@ -760,7 +758,7 @@ pub fn parse_print_opts(print_opts: &PrintOption, name: &str)
 // configured.
 
 /// The StdioPrinter struct is used as the default printer by Rustics.
-/// It serves as an example of a very simple Printer implementation.
+/// It serves as an example of a simple Printer implementation.
 
 #[derive(Clone)]
 pub struct StdioPrinter {
@@ -925,6 +923,10 @@ pub trait Rustics {
 
     fn clear(&mut self);
 
+    /// Returns the statistics for the sample stream.
+
+    fn export_stats(&self) -> ExportStats;
+
     // Functions for printing
 
     fn print     (&self);
@@ -932,9 +934,12 @@ pub trait Rustics {
 
     fn set_title (&mut self, title: &str);
 
-    /// Returns an `Rc<RefCell<...>>` for the histogram if possible.
+    /// Returns a LogHistogramBox for the histogram if possible.
 
-    fn log_histogram  (&self) -> Option<LogHistogramBox  >;
+    fn log_histogram  (&self) -> Option<LogHistogramBox>;
+
+    /// Returns a FloatHistogramBox for the histogram if possible.
+
     fn float_histogram(&self) -> Option<FloatHistogramBox>;
 
     // For internal use.
@@ -943,8 +948,6 @@ pub trait Rustics {
     fn id     (&self                     ) -> usize;
     fn equals (&self, other: &dyn Rustics) -> bool;
     fn generic(&self                     ) -> &dyn Any;
-
-    fn export_stats(&self) -> ExportStats;
 }
 
 /// Defines the data available from the Rustics

@@ -8,12 +8,13 @@
 //! ## Type
 //!
 //! * IntegerHier
-//!     * This type implements multi-level statistics using the RunningInteger type, q.v.
+//!     * This module provides support to bridge from the Hier code to RunningInteger-specific
+//!       functions.
 //!
 //!     * See the library comments (lib.rs) for an overview of how hierarchical types work.
 //!
-//!     * This module provides support to bridge from the Hier code to RunningInteger-specific
-//!       functions.
+//!     * IntegerHier::new_hier() is the recommended function for creating a Hier instance
+//!       that uses RunningInteger instances.
 //!
 //! ## Example
 //!```
@@ -611,7 +612,7 @@ pub mod tests {
     }
 
     // Test that the sum functions give reasonable results.
-    // IntegerWindow keeps the samples and can do very
+    // IntegerWindow keeps the samples and can do more
     // accurate computations, so use that as the baseline.
 
     fn test_integer_sum() {

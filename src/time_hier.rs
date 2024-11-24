@@ -9,16 +9,16 @@
 //! ## Type
 //!
 //! * TimeHier
-//!   * This type implements hierarchical statistics using the RunningTime
+//!   * This module provides a bridge between the Hier code and the RunningTime
 //!     type.  See the running_time module for details on that type.
+//!
+//!   * See the library comments (lib.rs) for an overview of how hierarchical
+//!     statistics work.
 //!
 //!   * The function TimeHier::new_hier is a wrapper for the Hier constructor
 //!     and does the initialization specific to the TimeHier type.  It is the
 //!     preferred interface for creating a Hier instance that uses RunningTime
 //!     instances.
-//!
-//!   * See the library comments (lib.rs) for an overview of how hierarchical
-//!     statistics work.
 //!
 //!```
 //!     // This example is based on the code in IntegerHier.

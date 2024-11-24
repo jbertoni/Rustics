@@ -8,15 +8,17 @@
 //! ## Type
 //!
 //! * FloatHier
-//!     * This type implements hierarchical statistics using the
-//!       RunningFloat type, q.v.  It is substantially identical
-//!       to IntegerHier except it accepts f64 samples.
+//!     * This module provides a bridge between the Hier implementation
+//!       and the RunningFloat implementation.
+//!
+//!     * This module is largely identical to IntegerHier except it handles
+//!       f64 samples.
 //!
 //!     * See the library comments (lib.rs) for an overview of how
 //!       hierarchical types work.
 //!
-//!     * This module provides a bridge between the Hier implementation
-//!       and the RunningFloat implementation.
+//!     * FloatHier::new_hier() is the recommended way to create a Hier
+//!       instance that uses RunningFloat.
 //!
 //! ## Example
 //!```
@@ -624,7 +626,7 @@ mod tests {
     }
 
     // Test that the sum functions give reasonable results.
-    // IntegerWindow keeps the samples and can do very
+    // IntegerWindow keeps the samples and can do more
     // accurate computations, so use that as the baseline.
 
     fn test_float_sum() {

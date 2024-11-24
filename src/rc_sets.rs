@@ -145,18 +145,18 @@ use super::float_hier  ::FloatHierConfig;
 pub type RusticsRc = Rc<RefCell<dyn Rustics>>;
 pub type RcSetBox  = Rc<RefCell<RcSet>>;
 
-/// rc_box! is used to create a shareable instance of an RcSet item.
+/// Creates a shareable instance of an RcSet item.
 
 #[macro_export]
 macro_rules! rc_box { ($x:expr) => { Rc::from(RefCell::new($x)) } }
 
-/// The rc_item_mut macro converts an RcSet member into a mutable
-/// Rustics or subset reference.
+/// Converts an RcSet member into a mutable Rustics
+/// or subset reference.
 
 #[macro_export]
 macro_rules! rc_item_mut { ($x:expr) => { &mut *$x.borrow_mut() } }
 
-/// The rc_item macro converts an RcSet member into a Rustics or subset
+/// Converts an RcSet member into a Rustics or subset
 /// instance.
 
 #[macro_export]

@@ -11,8 +11,7 @@
 //!     * RunningInteger maintains running statistics on a set of samples
 //!       recorded into it.
 //!
-//!     * The main.rs program contains a very simple example of using this
-//!       type.
+//!     * The main.rs program contains a simple example of using this type.
 //!
 //! ## Example
 //!```
@@ -140,7 +139,7 @@ use crate::LogHistogram;
 
 use super::parse_print_opts;
 
-/// RunningInteger provides very simple statistics on a
+/// RunningInteger provides basic statistics on a
 /// stream of integer data samples.
 ///
 /// See the module comments for a sample program.

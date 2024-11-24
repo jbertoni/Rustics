@@ -625,8 +625,9 @@ mod tests {
 
         assert!(current_push == expect);
 
-        // Push more values into the window to test the case where we overwrite
-        // an existing value.  Check all the values in the array at every iteration.
+        // Push more values into the window to test the case
+        // where we overwrite an existing value.  Check all the
+        // values in the array at every iteration.
 
         for i in 0..2 * window_size {
             let mut current_index = window.current_index;

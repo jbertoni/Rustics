@@ -228,19 +228,19 @@ pub type MemberRc    = Rc<RefCell<dyn HierMember   >>;
 pub type GeneratorRc = Rc<RefCell<dyn HierGenerator>>;
 pub type ExporterRc  = Rc<RefCell<dyn HierExporter >>;
 
-/// hier_box! is used to create a shareable instance for an instance in
+/// Creates a shareable instance for an instance in
 /// a Hier instance
 
 #[macro_export]
 macro_rules! hier_box { ($x:expr) => { Rc::from(RefCell::new($x)) } }
 
-/// The hier_item_mut macro converts a Hier member into a mutable
-/// Rustics or subset reference.
+/// Converts a Hier member into a mutable Rustics or
+/// subset reference.
 
 #[macro_export]
 macro_rules! hier_item_mut { ($x:expr) => { &mut *$x.borrow_mut() } }
 
-/// The hier_item macro converts a Hier member into a Rustics or subset
+/// Converts a Hier member into a Rustics or subset
 /// instance.
 
 #[macro_export]

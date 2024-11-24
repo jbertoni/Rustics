@@ -581,9 +581,9 @@ mod tests {
         let expected =
             [
                 "Test Statistics",
-                "    Count               1,000 bytes",
-                "    NaNs                    0 bytes",
-                "    Infinities              0 bytes",
+                "    Count               1,000 ",
+                "    NaNs                    0 ",
+                "    Infinities              0 ",
                 "    Minimum          +1.00000 e+0  byte",
                 "    Maximum          +1.00000 e+3  bytes",
                 "    Mode Value       +3.84000 e+2  bytes",

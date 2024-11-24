@@ -61,7 +61,7 @@
 //!         * This type records samples of type f64.  It is otherwise similar to IntegerWindow.  It
 //!           creates a histogram using FloatHistogram.
 //!
-//! * Hierarchical Statistics - The Hier Type
+//! * Hierarchical Statistics:  The Hier Type
 //!     * A Hier instance uses multiple Rustics instances to maintain statistical information.  This
 //!       approach can reduce accuracy loss over long sample periods.
 //!

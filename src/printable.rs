@@ -420,9 +420,9 @@ impl Printable {
     /// in a Printable instance.
 
     pub fn print_common_f64(&self, printer: &mut dyn Printer) {
-        Self::print_integer_units("Count",      self.n          as i64, printer, &self.units);
-        Self::print_integer_units("NaNs",       self.nans       as i64, printer, &self.units);
-        Self::print_integer_units("Infinities", self.infinities as i64, printer, &self.units);
+        Self::print_integer("Count",      self.n          as i64, printer);
+        Self::print_integer("NaNs",       self.nans       as i64, printer);
+        Self::print_integer("Infinities", self.infinities as i64, printer);
 
         if self.n > 0 {
             Self::print_float_units("Minimum",     self.min_f64,    printer, &self.units);

@@ -90,8 +90,8 @@
 //!    //            Maximum             1,000 bytes
 //!    //            Log Mode               10
 //!    //            Mode Value            768 bytes
-//!    //            Mean             +5.00500 e+2 bytes
-//!    //            Std Dev          +2.88819 e+2 bytes
+//!    //            Mean             +5.00500 e+2  bytes
+//!    //            Std Dev          +2.88819 e+2  bytes
 //!    //            Variance         +8.34166 e+4
 //!    //            Skewness         -4.16317 e-11
 //!    //            Kurtosis         -1.19999 e+0
@@ -770,11 +770,11 @@ mod tests {
                 "    Maximum             1,000 bytes",
                 "    Log Mode               10 ",
                 "    Mode Value            768 bytes",
-                "    Mean             +5.00500 e+2 bytes",
-                "    Std Dev          +2.88819 e+2 bytes",
-                "    Variance         +8.34166 e+4 ",
+                "    Mean             +5.00500 e+2  bytes",
+                "    Std Dev          +2.88819 e+2  bytes",
+                "    Variance         +8.34166 e+4  ",
                 "    Skewness         -4.16317 e-11 ",
-                "    Kurtosis         -1.19999 e+0 ",
+                "    Kurtosis         -1.19999 e+0  ",
                 "  Log Histogram",
                 "  -----------------------",
                 "    0:                 1                 1                 2                 4",

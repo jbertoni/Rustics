@@ -599,7 +599,7 @@ pub mod tests {
                 "    Std Dev           288.819 microseconds",
                 "    Variance         +8.34166 e+10 ",
                 "    Skewness         -4.16336 e-11 ",
-                "    Kurtosis         -1.19999 e+0 ",
+                "    Kurtosis         -1.19999 e+0  ",
                 "  Log Histogram",
                 "  -----------------------",
                 "    0:                 0                 0                 0                 0",

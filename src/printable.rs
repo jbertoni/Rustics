@@ -361,10 +361,20 @@ impl Printable {
             mantissa.push('0');
         }
 
-        // Concatenate the new mantissa and the original exponent.
+        // Convert the mantissa Vec into a String.
 
         let mantissa: String = mantissa.into_iter().collect();
-        let exponent         = value.split(' ').last().unwrap().to_string();
+
+        // Now extract the exponent and pad to at least 4 bytes.
+
+        let     size     = 4;
+        let mut exponent = value.split(' ').last().unwrap().to_string();
+
+        if exponent.len() < size {
+            for _i in 0..size - exponent.len() {
+                exponent.push(' ');
+            }
+        }
 
         (mantissa, exponent)
     }
@@ -678,24 +688,24 @@ mod tests {
 
         let expected =
             [
-                "+0.00000 e+0",
-                "+1.00000 e+0",
-                "+2.00000 e+0",
-                "+3.00005 e+0",
-                "+3.00000 e+0",
-                "+1.00000 e+3",
-                "+9.99000 e+2",
-                "+1.00000 e+9",
+                "+0.00000 e+0 ",
+                "+1.00000 e+0 ",
+                "+2.00000 e+0 ",
+                "+3.00005 e+0 ",
+                "+3.00000 e+0 ",
+                "+1.00000 e+3 ",
+                "+9.99000 e+2 ",
+                "+1.00000 e+9 ",
                 "+1.00000 e+10",
 
-                "-0.00000 e+0",
-                "-1.00000 e+0",
-                "-2.00000 e+0",
-                "-3.00005 e+0",
-                "-3.00000 e+0",
-                "-1.00000 e+3",
-                "-9.99000 e+2",
-                "-1.00000 e+9",
+                "-0.00000 e+0 ",
+                "-1.00000 e+0 ",
+                "-2.00000 e+0 ",
+                "-3.00005 e+0 ",
+                "-3.00000 e+0 ",
+                "-1.00000 e+3 ",
+                "-9.99000 e+2 ",
+                "-1.00000 e+9 ",
                 "-1.00000 e+10"
             ];
 
@@ -715,7 +725,7 @@ mod tests {
     }
 
     fn test_print_time() {
-        let expected          = [ "    >                +1.00000 e+6 days" ];
+        let expected          = [ "    >                +1.00000 e+6  days" ];
         let mut check_printer = CheckPrinter::new(&expected, false, false);
 
         let     hz     = 1;

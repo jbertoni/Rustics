@@ -15,14 +15,14 @@
 //!     * See the library comments (lib.rs) for an overview of how this type works.
 //!
 //!     * Hier is a framework class that should be instantiated for a concrete statistics type
-//!       via functions like IntegerHier::new_hier or TimeHier::new_hier.  The example uses
-//!       IntegerHier, which uses RunningInteger as the underlying Rustics type.
+//!       via functions like IntegerHier::new_hier, FloatHier::new_hier, or TimeHier::new_hier.
+//!       The example uses IntegerHier, which uses RunningInteger as the underlying Rustics type.
 //!
 //!     * Hier implements the Rustics interface, and through that provides statistics from the
 //!       either the current level 0 Rustics instance, i.e., statistics on the newest samples,
 //!       or from an optionally configured window of the last n events, as specified by the
-//!       window_size parameter in HierConfig.  This window is implemented using a TimeWindow,
-//!       FloatWindow, or an IntegerWindow created through the HierGenerator instance.
+//!       window_size parameter in HierConfig.  This window is implemented using a type such as
+//!       TimeWindow, FloatWindow, or an IntegerWindow created through the HierGenerator instance.
 //!
 //! ## Example
 //!```
@@ -54,11 +54,11 @@
 //!
 //!     let dimension_1 = HierDimension::new(100, 200);
 //!
-//!     // Level two isn't summed, so the period isn't used.  Set a period
-//!     // of one to keep the contructor happy.  Let's pretend this level
-//!     // isn't used much, so retain only 100 instances in it.
+//!     // Level two isn't summed, so the period isn't used.
+//!     // Let's pretend this level isn't used much, so retain
+//!     // only 100 instances in it.
 //!
-//!     let dimension_2 = HierDimension::new(1, 100);
+//!     let dimension_2 = HierDimension::new(0, 100);
 //!
 //!     // Now create the Vec.
 //!
@@ -206,6 +206,9 @@
 //!     set.print();
 //!```
 
+use std::rc::Rc;
+use std::any::Any;
+
 use super::Rustics;
 use super::Histogram;
 use super::ExportStats;
@@ -221,15 +224,13 @@ use super::window::Window;
 use super::printer_mut;
 use super::timer_mut;
 use std::cell::RefCell;
-use std::rc::Rc;
-use std::any::Any;
 
 pub type MemberRc    = Rc<RefCell<dyn HierMember   >>;
 pub type GeneratorRc = Rc<RefCell<dyn HierGenerator>>;
 pub type ExporterRc  = Rc<RefCell<dyn HierExporter >>;
 
 /// Creates a shareable instance for an instance in
-/// a Hier instance
+/// a Hier instance.
 
 #[macro_export]
 macro_rules! hier_box { ($x:expr) => { Rc::from(RefCell::new($x)) } }
@@ -467,6 +468,16 @@ impl Hier {
         let     advance_count = 0;
         let     event_count   = 0;
         let mut stats         = Vec::with_capacity(dimensions.len());
+
+        if dimensions.is_empty() {
+            panic!("Hier::new:  No dimensions were specified.");
+        }
+
+        for i in 0..dimensions.len() - 1 {
+            if dimensions[i].period < 2 {
+                panic!("Hier::new:  The period must be at least 2.");
+            }
+        }
 
         let window_size =
             if let Some(window_size) = &configuration.window_size {
@@ -1841,11 +1852,10 @@ pub mod tests {
 
         let dimension_1 = HierDimension::new(100, 200);
 
-        // Level two isn't summed, so the period isn't used.  Tell it to
-        // sum one event to keep the contructor happy.  Let's pretend this
-        // level isn't used much, so retain only 100 instances in it.
+        // Level two isn't summed, so the period isn't used.  Let's pretend
+        // this level isn't used much, so retain only 100 instances in it.
 
-        let dimension_2 = HierDimension::new(1, 100);
+        let dimension_2 = HierDimension::new(0, 100);
 
         //  Now create the Vec.  Save the dimension instances for future use.
 
@@ -2128,6 +2138,70 @@ pub mod tests {
         let hier = make_test_hier(100, Some(100), None);
 
         let _ = hier.float_histogram().unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_short_dimensions() {
+        let dimensions = Vec::new();
+
+        let auto_advance = Some(2000);
+        let descriptor   = HierDescriptor::new(dimensions, auto_advance);
+
+        let name         = "Test Hier".to_string();
+        let window_size  = None;
+        let print_opts   = None;
+
+        let config =
+            IntegerHierConfig { descriptor, name, window_size, print_opts };
+
+        let _hier = IntegerHier::new_hier(config);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_zero_period() {
+        let dimension_0 = HierDimension::new(1000, 1000);
+        let dimension_1 = HierDimension::new(   0,  200);
+        let dimension_2 = HierDimension::new(   0,  200);
+
+        let dimensions =
+            vec![ dimension_0, dimension_1, dimension_2 ];
+
+        let auto_advance = Some(2000);
+        let descriptor   = HierDescriptor::new(dimensions, auto_advance);
+
+        let name         = "Test Hier".to_string();
+        let window_size  = None;
+        let print_opts   = None;
+
+        let config =
+            IntegerHierConfig { descriptor, name, window_size, print_opts };
+
+        let _hier = IntegerHier::new_hier(config);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_one_period() {
+        let dimension_0 = HierDimension::new(1000, 1000);
+        let dimension_1 = HierDimension::new(   1,  200);
+        let dimension_2 = HierDimension::new(   0,  200);
+
+        let dimensions =
+            vec![ dimension_0, dimension_1, dimension_2 ];
+
+        let auto_advance = Some(2000);
+        let descriptor   = HierDescriptor::new(dimensions, auto_advance);
+
+        let name         = "Test Hier".to_string();
+        let window_size  = None;
+        let print_opts   = None;
+
+        let config =
+            IntegerHierConfig { descriptor, name, window_size, print_opts };
+
+        let _hier = IntegerHier::new_hier(config);
     }
 
     #[test]

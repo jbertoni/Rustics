@@ -195,16 +195,15 @@ impl RcSet {
 
     /// Creates a new set.
     ///
-    /// The "members_hint" and "subsets_hint" parameters are hints as to the number
-    /// of elements to be expected.  "members_hint" refers to the number of Rustics
-    /// statistics in the set.  These hints can improve performance a bit.
+    /// The "rustics_hint" and "subsets_hint" parameters are hints as to the number
+    /// of Rustics instances and subsets to be expected.
 
-    pub fn new(name_in: &str, members: usize, subsets: usize, print_opts: &PrintOption) -> RcSet {
+    pub fn new(name_in: &str, rustics: usize, subsets: usize, print_opts: &PrintOption) -> RcSet {
         let name       = String::from(name_in);
         let title      = parse_title(print_opts, &name);
         let id         = usize::MAX;
         let next_id    = 1;
-        let members    = Vec::with_capacity(members);
+        let members    = Vec::with_capacity(rustics);
         let subsets    = Vec::with_capacity(subsets);
         let printer    = parse_printer(print_opts);
         let print_opts = print_opts.clone();
@@ -214,9 +213,9 @@ impl RcSet {
 
     /// Creates a new RcSet in a box.
 
-    pub fn new_box(name_in: &str, members: usize, subsets: usize, print_opts: &PrintOption)
+    pub fn new_box(name_in: &str, rustics: usize, subsets: usize, print_opts: &PrintOption)
             -> RcSetBox {
-        let rc_set = RcSet::new(name_in, members, subsets, print_opts);
+        let rc_set = RcSet::new(name_in, rustics, subsets, print_opts);
 
         rc_box!(rc_set)
     }

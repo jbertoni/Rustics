@@ -181,8 +181,8 @@ macro_rules! arc_box { ($x:expr) => { Arc::from(Mutex::new($x)) } }
 #[macro_export]
 macro_rules! arc_item_mut { ($x:expr) => { &mut *$x.lock().unwrap() } }
 
-/// Converts an ArcSet item into a Rustics reference or
-/// a subset reference.
+/// Converts an ArcSet item into a Rustics or subset
+/// reference.
 
 #[macro_export]
 macro_rules! arc_item { ($x:expr) => { &*$x.lock().unwrap() } }
@@ -223,7 +223,7 @@ pub struct ArcSet {
 
 pub struct ArcSetConfig {
     name:          String,
-    members_hint:  usize,
+    rustics_hint:  usize,
     subsets_hint:  usize,
     title:         Option<String>,
     id:            usize,
@@ -233,11 +233,10 @@ pub struct ArcSetConfig {
 impl ArcSet {
     /// Creates a new ArcSet.
     ///
-    /// The "members_hint" and "subsets_hint" parameters are hints as to the number
-    /// of elements to be expected.  "members_hint" refers to the number of Rustics
-    /// instances in the set.
+    /// The "rustics_hint" and "subsets_hint" parameters are hints as to the number
+    /// of Rustics instances and subset to be expected.
 
-    pub fn new(name: &str, members_hint: usize, subsets_hint: usize, print_opts: &PrintOption)
+    pub fn new(name: &str, rustics_hint: usize, subsets_hint: usize, print_opts: &PrintOption)
             -> ArcSet {
         let name       = name.to_string();
         let id         = usize::MAX;
@@ -245,16 +244,16 @@ impl ArcSet {
         let title      = None;
 
         let configuration =
-            ArcSetConfig { name, members_hint, subsets_hint, title, id, print_opts };
+            ArcSetConfig { name, rustics_hint, subsets_hint, title, id, print_opts };
 
         ArcSet::new_from_config(configuration)
     }
 
     /// Creates a new ArcSetBox (an `Arc<Mutex<ArcSet>>`).
 
-    pub fn new_box(name: &str, members_hint: usize, subsets_hint: usize, print_opts: &PrintOption)
+    pub fn new_box(name: &str, rustics_hint: usize, subsets_hint: usize, print_opts: &PrintOption)
             -> ArcSetBox {
-        let arc_set = ArcSet::new(name, members_hint, subsets_hint, print_opts);
+        let arc_set = ArcSet::new(name, rustics_hint, subsets_hint, print_opts);
 
         arc_box!(arc_set)
     }
@@ -267,7 +266,7 @@ impl ArcSet {
         let title      = configuration.title;
         let id         = configuration.id;
         let next_id    = 1;
-        let members    = Vec::with_capacity(configuration.members_hint);
+        let members    = Vec::with_capacity(configuration.rustics_hint);
         let subsets    = Vec::with_capacity(configuration.subsets_hint);
         let printer    = parse_printer(&print_opts);
 
@@ -611,7 +610,7 @@ impl ArcSet {
 
     /// Creates a new subset and adds it to the set.
 
-    pub fn add_subset(&mut self, name: &str, members_hint: usize, subsets_hint: usize)
+    pub fn add_subset(&mut self, name: &str, rustics_hint: usize, subsets_hint: usize)
             -> ArcSetBox {
         let name       = name.to_string();
         let title      = Some(make_title(&self.title, &name));
@@ -619,7 +618,7 @@ impl ArcSet {
         let print_opts = self.print_opts.clone();
 
         let configuration =
-            ArcSetConfig { name, members_hint, subsets_hint, title, id, print_opts };
+            ArcSetConfig { name, rustics_hint, subsets_hint, title, id, print_opts };
 
         let subset = ArcSet::new_box_from_config(configuration);
 

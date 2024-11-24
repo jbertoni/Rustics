@@ -46,12 +46,11 @@
 //!
 //!     let dimension_1 = HierDimension::new(100, 200);
 //!
-//!     // Level two isn't summed, so the period isn't used.  Set the
-//!     // value to one one to keep the contructor happy.  Let's
+//!     // Level two isn't summed, so the period isn't used.  Let's
 //!     // pretend this level isn't used much, so we can retain only 100
 //!     // instances in it.
 //!
-//!     let dimension_2 = HierDimension::new(1, 100);
+//!     let dimension_2 = HierDimension::new(0, 100);
 //!
 //!     //  Now create the Vec of the dimensions.
 //!

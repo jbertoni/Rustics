@@ -98,7 +98,7 @@
 //!
 //!    let timer = DurationTimer::new_box();
 //!
-//!    // Create our new statistic.
+//!    // Create a new RunningTime instance.
 //!
 //!    let mut query_latency =
 //!        set.add_running_time("Custom Timer", timer.clone());
@@ -197,7 +197,7 @@ pub trait ArcTraverser {
 
     fn visit_set(&mut self, set: &mut ArcSet);
 
-    /// This method is invoked on every statistics instance
+    /// This method is invoked on every Rustics instance
     /// in the set and its subsets.
 
     fn visit_member(&mut self, member: &mut dyn Rustics);
@@ -401,7 +401,7 @@ impl ArcSet {
     }
 
     /// Adds a RusticsArc instance to a set.  The user creates the
-    /// statistics instance and passes it in an Arc.  This is
+    /// Rustics instance and passes it in an Arc.  This is
     /// a bit more manual than add_running_integer() and similar
     /// methods.
 
@@ -708,7 +708,7 @@ pub mod tests {
         }
     }
 
-    //  Add statistics instances to a set.
+    //  Add Rustics instances to a set.
 
     fn add_stats(parent: &Mutex<ArcSet>) {
         for i in 0..4 {
@@ -1011,7 +1011,7 @@ pub mod tests {
 
         set.print_opts(Some(printer.clone()), None);
 
-        // Try adding a hierarchical statistics instance.
+        // Try adding a hierarchical Rustics instance.
 
         let hier_integer = new_hier();
         let member       = arc_box!(hier_integer);
@@ -1022,7 +1022,7 @@ pub mod tests {
     }
 
     fn documentation() {
-       // Create a set.  We're expecting 8 statistics instances but
+       // Create a set.  We're expecting 8 Rustics instances but
        // no subsets, so we set those hints appropriately.  The
        // default print output goes to stdout, and that's fine for
        // an example, so just give "None" to accept the default.

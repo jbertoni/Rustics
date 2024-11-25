@@ -14,7 +14,7 @@
 //!
 //!     * See the library comments (lib.rs) for an overview of how this type works.
 //!
-//!     * Hier is a framework class that should be instantiated for a concrete statistics type
+//!     * Hier is a framework class that should be instantiated for a concrete Rustics type
 //!       via functions like IntegerHier::new_hier, FloatHier::new_hier, or TimeHier::new_hier.
 //!       The example uses IntegerHier, which uses RunningInteger as the underlying Rustics type.
 //!
@@ -229,8 +229,8 @@ pub type MemberRc    = Rc<RefCell<dyn HierMember   >>;
 pub type GeneratorRc = Rc<RefCell<dyn HierGenerator>>;
 pub type ExporterRc  = Rc<RefCell<dyn HierExporter >>;
 
-/// Creates a shareable instance for an instance in
-/// a Hier instance.
+/// Converts a Rustics instance in the shareable form
+/// for use by the Hier code.
 
 #[macro_export]
 macro_rules! hier_box { ($x:expr) => { Rc::from(RefCell::new($x)) } }
@@ -242,7 +242,7 @@ macro_rules! hier_box { ($x:expr) => { Rc::from(RefCell::new($x)) } }
 macro_rules! hier_item_mut { ($x:expr) => { &mut *$x.borrow_mut() } }
 
 /// Converts a Hier member into a Rustics or subset
-/// instance.
+/// reference.
 
 #[macro_export]
 macro_rules! hier_item { ($x:expr) => { &*$x.borrow() } }
@@ -267,9 +267,9 @@ impl HierDescriptor {
     }
 }
 
-// This type is used to describe one level of the statistics
+// This type is used to describe one level of the Rustics
 // hierarchy.  "period" specifies the number of pushes into this
-// window before a sum statistics instance is pushed to the upper
+// window before a sum Rustics instance is pushed to the upper
 // level.
 //
 // "retention" specifies the total number of instances to keep
@@ -302,8 +302,8 @@ impl HierDimension {
     }
 }
 
-/// HierIndex allows users to index into a hierarchical statistics
-/// instance to look at any statistics instance therein.
+/// HierIndex allows users to index into a Hier
+/// instance to look at any Rustics instance therein.
 
 #[derive(Clone, Copy)]
 pub struct HierIndex {
@@ -323,7 +323,7 @@ pub enum HierSet {
     Live,
 }
 
-/// HierIndex is used to refer to a specific statistics instance in a
+/// HierIndex is used to refer to a specific Rustics instance in a
 /// Hier instance.
 
 impl HierIndex {
@@ -335,7 +335,7 @@ impl HierIndex {
 // The exporter needs to be downcast to be used, so
 // provide that interface.
 
-/// The HierExporter trait defines the interface for creating a statistics
+/// The HierExporter trait defines the interface for creating a Rustics
 /// instance that is a sum of other instances.  It can be used in
 /// applications, as well, although the predefined functions probably
 /// cover most use cases.
@@ -345,12 +345,12 @@ pub trait HierExporter {
     fn as_any_mut(&mut self) -> &mut dyn Any;
 }
 
-/// Users can traverse statistics instances in a Hier
+/// Users can traverse Rustics instances in a Hier
 /// instance by implementing this trait and calling one of
 /// the traverse methods, traverse_live() or traverse_all().
 
 pub trait HierTraverser {
-    /// This method is invoked on each statistics instance in the
+    /// This method is invoked on each Rustics instance in the
     /// matrix.
 
     fn visit(&mut self, member: &mut dyn Rustics);
@@ -410,9 +410,9 @@ pub trait HierMember {
 }
 
 //
-// The Hier type implements an implementation of a hierarchical
-// statistics structure using a HierGenerator instance and
-// HierMember instances.
+// The Hier type implements a type of hierarchical
+// statistics collector using a HierGenerator instance
+// and HierMember instances.
 //
 
 /// Hier instances are the concrete type for a statistics
@@ -501,7 +501,7 @@ impl Hier {
 
         //
         // Create the set of windows that we use to hold all
-        // the actual statistics instances.
+        // the actual Rustics instances.
         //
 
         for dimension in &dimensions {
@@ -509,7 +509,7 @@ impl Hier {
         }
 
         //
-        // Make the first statistics instance so that we are ready to record data.
+        // Make the first Rustics instance so that we are ready to record data.
         //
 
         let member = generator.borrow_mut().make_member(&name, &print_opts);
@@ -527,8 +527,8 @@ impl Hier {
         }
     }
 
-    /// The current() method returns the newest statistics instance
-    /// at the lowest level, which is the only statistics instance
+    /// The current() method returns the newest Rustics instance
+    /// at the lowest level, which is the only Rustics instance
     /// that records data.  The other members are read-only.
 
     pub fn current(&self) -> MemberRc {
@@ -537,7 +537,7 @@ impl Hier {
         member.clone()
     }
 
-    /// Prints the given instance in the instance matrix.
+    /// Prints the given instance.
 
     pub fn print_index_opts(&self, index: HierIndex, printer: PrinterOption, title: Option<&str>) {
         self.local_print(index, printer, title);
@@ -557,9 +557,9 @@ impl Hier {
         }
     }
 
-    /// Deletes all the statistics instances from the windows, as well as any
+    /// Deletes all the Rustics instances from the windows, as well as any
     /// related data.  After clearing the struct, it pushes a new level 0
-    /// statistic instance to receive data.
+    /// Rustics instance to receive data.
     ///
     /// This operation sets the instance back to its initial state.
 
@@ -631,7 +631,7 @@ impl Hier {
     }
 
     /// The sum() method allows the user to sum an arbitrary list of
-    /// members of the hierarchy into a new statistic instance. The
+    /// members of the hierarchy into a new Rustics instance. The
     /// result is not maintained in the hierarchy.
 
     pub fn sum(&self, addends: Vec<HierIndex>, name: &str) -> (Option<MemberRc>, usize) {
@@ -657,22 +657,22 @@ impl Hier {
 
         drop(exporter);
 
-        // Now make the sum statistics instance.
+        // Now make the sum Rustics instance.
 
         let sum = generator.make_from_exporter(name, &self.print_opts, exporter_rc);
 
         (Some(sum), valid)
     }
 
-    /// The advance() method pushes a new level 0 statistics instance into
+    /// The advance() method pushes a new level 0 Rustics instance into
     /// the level 0 window.  It also updates the upper levels as needed.
     /// The user can call this directly or use auto_advance.  The code
     /// doesn't prevent mixing the two, but the results will be odd if both
     /// are used.
 
     pub fn advance(&mut self) {
-        // Increment the advance op count.  This counts the
-        // number of statistics instances pushed, and thus tells
+        // Increment the advance op count.  This counts the number
+        // of level 0 Rustics instances pushed, and thus tells
         // us when we need to push a new higher-level instance.
 
         self.advance_count += 1;
@@ -733,7 +733,7 @@ impl Hier {
         generator.hz()
     }
 
-    // Prints one statistics instance using the Rustics trait.  This method
+    // Prints one Rustics instance using the Rustics trait.  This method
     // always appends the indices to the title.
 
     fn local_print(&self, index: HierIndex, printer_opt: PrinterOption, title_opt: Option<&str>) {
@@ -816,8 +816,8 @@ impl Hier {
     fn check_and_advance(&mut self) {
         // Push a new instance if we've reached the event limit
         // for the current one.  Do this before we push the next
-        // event so that users see an empty current statistic only
-        // before recording any events at all.
+        // event so that users see an empty current Rustics instance
+        // only before recording any events at all.
 
         if
             self.auto_next != 0
@@ -843,9 +843,10 @@ impl Hier {
     }
 }
 
-// Implement the Rustics trait for the Hier instance.  It
-// returns data mostly from the newest level 0 instance,
-// which is the only one receiving data.
+// Implement the Rustics trait for the Hier instance.  Unless
+// a window has been configured, the Rustics code returns data
+// from the newest level 0 instance, which is the only one
+// receiving data.
 
 impl Rustics for Hier {
     fn record_i64(&mut self, value: i64) {
@@ -1322,8 +1323,8 @@ pub mod tests {
         }
 
         // Finish creating the Hier description instance.  This
-        // just describes the windows and how the statistics
-        // instances are advanced.
+        // just describes the windows and when the Rustics
+        // instances are created and pushed.
 
         let auto_next  = Some(auto_next as i64);
         let descriptor = HierDescriptor::new(dimensions, auto_next);
@@ -1692,7 +1693,7 @@ pub mod tests {
         }
 
         // Do a quick test of traverse_live().  It should see each
-        // "live" statistics instance in the matrix.
+        // "live" Rustics instance in the matrix.
 
         let mut traverser = TestTraverser::new();
 

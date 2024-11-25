@@ -138,7 +138,7 @@ use super::merge::sum_running;
 
 /// FloatExport mostly is for internal use.  It is available for
 /// general use, but most commonly, it will be used by a Hier instance
-/// to make summations of statistics instances.
+/// to make summations of Rustics instances.
 
 #[derive(Clone, Default)]
 pub struct FloatExporter {
@@ -146,10 +146,10 @@ pub struct FloatExporter {
 }
 
 /// FloatExporter is intend mostly for internal use by Hier instances.
-/// It is used to sum a list of RunningInteger statistics instances.
+/// It is used to sum a list of RunningInteger instances.
 
 impl FloatExporter {
-    /// Creates a new FloatExporter instance
+    /// Creates a new FloatExporter instance.
 
     pub fn new() -> FloatExporter {
         let addends = Vec::new();
@@ -157,14 +157,14 @@ impl FloatExporter {
         FloatExporter { addends }
     }
 
-    /// Pushes a statistics instance onto the list of instances to
+    /// Pushes a Rustics instance onto the list of instances to
     /// be summed.
 
     pub fn push(&mut self, addend: Export) {
         self.addends.push(addend);
     }
 
-    /// Makes a member statistics instance based on the summed exports.
+    /// Makes a member Rustics instance based on the summed exports.
 
     pub fn make_member(&mut self, name: &str, print_opts: &PrintOption) -> RunningFloat {
         let title   = name;
@@ -215,9 +215,9 @@ pub struct RunningFloat {
 }
 
 impl RunningFloat {
-    /// Constructs a new statistics instance.  print_opts and histo_opts affect
-    /// the output of print functions.  "None" will accept the defaults, which
-    /// sends the output to stdout.
+    /// Constructs a new instance.  print_opts configures the
+    /// output of print functions.  "None" will accept the defaults,
+    /// which sends the output to stdout.
 
     pub fn new(name: &str, print_opts: &PrintOption) -> RunningFloat {
         let (printer, title, units, _histo_opts) = parse_print_opts(print_opts, name);

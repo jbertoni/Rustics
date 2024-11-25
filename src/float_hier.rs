@@ -275,7 +275,7 @@ impl FloatHier {
 }
 
 // These are the methods that the Hier instance needs implemented
-// for a given statistics type that are not specific to an instance
+// for a given Rustics type that are not specific to an instance
 // of that type.  It's thus the bridge between "impl RunningFloat"
 // and the Hier code.
 

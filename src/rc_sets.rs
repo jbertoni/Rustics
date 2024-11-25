@@ -30,7 +30,7 @@
 //!    use rustics::time::DurationTimer;
 //!    use rustics::rc_sets::RcSet;
 //!
-//!    // Create a set.  We're expecting 8 statistics instances but no
+//!    // Create a set.  We're expecting 8 Rustics instances but no
 //!    // subsets, so we set those hints appropriately.  The  default
 //!    // print options are fine for an example, so just give "None"
 //!    // to accept them.
@@ -157,7 +157,7 @@ macro_rules! rc_box { ($x:expr) => { Rc::from(RefCell::new($x)) } }
 macro_rules! rc_item_mut { ($x:expr) => { &mut *$x.borrow_mut() } }
 
 /// Converts an RcSet member into a Rustics or subset
-/// instance.
+/// reference.
 
 #[macro_export]
 macro_rules! rc_item { ($x:expr) => { &*$x.borrow() } }
@@ -171,7 +171,7 @@ pub trait RcTraverser {
 
     fn visit_set(&mut self, set: &mut RcSet);
 
-    /// This method is invoked on each statistics instance in the
+    /// This method is invoked on each Rustics instance in the
     /// set.
 
     fn visit_member(&mut self, member: &mut dyn Rustics);
@@ -356,7 +356,7 @@ impl RcSet {
         member
     }
 
-    /// Creates a IntegerWindow statistics instance and adds it to the set.
+    /// Creates a IntegerWindow instance and adds it to the set.
 
     pub fn add_integer_window(&mut self, name: &str, window_size: usize, units: Option<Units>)
             -> RusticsRc {
@@ -437,7 +437,7 @@ impl RcSet {
         member
     }
 
-    /// Creates a FloatWindow statistics instance and adds it to the set.
+    /// Creates a FloatWindow instance and adds it to the set.
 
     pub fn add_float_window(&mut self, name: &str, window_size: usize, units: Option<Units>)
             -> RusticsRc {
@@ -655,7 +655,7 @@ mod tests {
         let     set = RcSet::new_box("parent set", 4, 4, &None);
         let mut set = set.borrow_mut();
 
-        // Add integer statistics instances, both a running total and a window.
+        // Add integer Rustics instances, both a running total and a window.
 
         let window_size = 32;
 

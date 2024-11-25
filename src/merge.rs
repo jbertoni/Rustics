@@ -10,7 +10,7 @@
 //!
 //! * Export
 //!     * This type is used internally to sum a vector of Rustics instances
-//!       into a merged statistic.
+//!       into a new instance.
 //!
 //!     * The Hier support code, q.v., uses this module to create instances
 //!       for the upper layers.
@@ -35,7 +35,7 @@ use super::log_histogram::LogHistogram;
 use super::float_histogram::FloatHistogram;
 
 /// Export is used by various modules to create sums of
-/// statistics instances of type RunningInteger or
+/// Rustics instances of type RunningInteger or
 /// RunningFloat.
 
 #[derive(Clone)]

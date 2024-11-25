@@ -174,7 +174,7 @@ pub struct RunningInteger {
 
 /// IntegerExport mostly is for internal use.  It is available for
 /// general use, but most commonly, it will be used by a Hier instance
-/// to make summations of statistics instances.
+/// to make summations of Rustics instances.
 
 #[derive(Clone, Default)]
 pub struct IntegerExporter {
@@ -182,7 +182,7 @@ pub struct IntegerExporter {
 }
 
 /// IntegerExporter is intend mostly for internal use by Hier instances.
-/// It is used to sum a list of RunningInteger statistics instances.
+/// It is used to sum a list of RunningInteger instances.
 
 impl IntegerExporter {
     /// Creates a new IntegerExporter instance.
@@ -193,14 +193,14 @@ impl IntegerExporter {
         IntegerExporter { addends }
     }
 
-    /// Pushes a statistics instance onto the list of instances to
+    /// Pushes a Rustics instance onto the list of instances to
     /// be summed.
 
     pub fn push(&mut self, addend: Export) {
         self.addends.push(addend);
     }
 
-    /// Makes a member statistics instance based on the summed exports.
+    /// Makes a Rustics instance based on the summed exports.
 
     pub fn make_member(&mut self, name: &str, print_opts: &PrintOption) -> RunningInteger {
         let title = name;
@@ -260,8 +260,8 @@ impl RunningInteger {
         }
     }
 
-    /// Creates a RunningInteger instance from data from a list of
-    /// instances.
+    /// Creates a RunningInteger instance by summing data
+    /// from a list of instances.
 
     pub fn new_from_exporter(name: &str, title: &str, print_opts: &PrintOption, import: Export)
             -> RunningInteger {

@@ -229,12 +229,12 @@ impl ClockTimer {
 #[macro_export]
 macro_rules! timer_box { ($x:expr) => { Rc::from(RefCell::new($x)) } }
 
-/// Converts a TimerBox into a Timer instance.
+/// Converts a TimerBox into a Timer reference.
 
 #[macro_export]
 macro_rules! timer { ($x:expr) => { &*$x.borrow() } }
 
-/// Converts a TimerBox into a mutable Timer instance.
+/// Converts a TimerBox into a mutable Timer reference.
 
 #[macro_export]
 macro_rules! timer_mut { ($x:expr) => { &mut *$x.borrow_mut() } }

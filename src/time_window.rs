@@ -30,8 +30,8 @@
 //!    // Assume that retaining 1000 samples is fine, and use the
 //!    // DurationTimer to measure time.  DurationTimer is a wrapper for
 //!    // the standard Rust Duration type.  This example is for a single-
-//!    // threaded statistics instances.  See ArcSet for an example of
-//!    // multi-threading for time statistics.
+//!    // threaded instances.  See ArcSet for an example of multi-threading
+//!    // for time statistics.
 //!
 //!    let mut timer = DurationTimer::new_box();
 //!
@@ -94,7 +94,7 @@ use super::printer_mut;
 use super::timer_mut;
 use super::integer_window::IntegerWindow;
 
-/// TimeWindow implements a statistics type that retains a
+/// TimeWindow implements a Rustics type that retains a
 /// window of the last n samples of a stream of data samples.
 /// It also provides a histogram of all data samples recorded.
 ///

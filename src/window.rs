@@ -98,7 +98,7 @@
 //
 
 /// The Window struct is used internally and is of interest primarily
-/// to developers creating a new statistics type.
+/// to developers creating a new Rustics type.
 ///
 /// A Window instance maintains a set of items of type T.  The set size
 /// is limited to a configurable parameter.  The oldest item is dropped

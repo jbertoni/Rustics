@@ -95,10 +95,10 @@
 //!     * Hier
 //!         * The Hier struct provides framework code for hierarchical statistics.  After creating
 //!           a Hier instance, most users will use this interface or the Rustics interface to
-//!           interact with this type.  For example, data is recorded into a Hier instance
-//!           by invoking Rustics methods directly on the Hier instance itself.
+//!           interact with this type.  For example, data is recorded into a Hier instance by
+//!           invoking Rustics methods directly on the Hier instance itself.
 //!
-//!         * The HierGenerator trait provides an interface for Hier to use a basic statistics type
+//!         * The HierGenerator trait provides an interface for Hier to use a basic Rustics type
 //!           like RunningInteger or RunningTime.  Most users will not use this type directly.
 //!
 //!     * IntegerHier
@@ -109,7 +109,7 @@
 //!
 //!     * TimeHier
 //!         * TimeHier implements Hier for the RunningTime type.  TimeHier::new_hier() will make a
-//!           Hier instance that uses RunningTime as the statistics type.
+//!           Hier instance that uses RunningTime as the Rustics type.
 //!
 //!     * FloatHier
 //!         * This struct extends the RunningFloat type to support the Hier code.  See
@@ -321,7 +321,7 @@ pub fn timer_box_hz(timer:  &TimerBox) -> u128 {
 }
 
 /// stdout_printer() creates a PrinterBox instance that sends output
-/// to stdout.  This is the default printer for all statistics types.
+/// to stdout.  This is the default printer for all Rustics types.
 
 pub fn stdout_printer() -> PrinterBox {
     let printer = StdioPrinter::new(StreamKind::Stdout);
@@ -493,7 +493,7 @@ pub fn compute_skewness(count: u64, moment_2: f64, moment_3: f64) -> f64 {
 
     // Deal with floating point non-finite values.
 
-    // For debugging new statistics types.
+    // For debugging new Rustics types.
     //
     //assert!(moment_2 > 0.0);
 
@@ -521,7 +521,7 @@ pub fn compute_kurtosis(count: u64, moment_2: f64, moment_4: f64) -> f64 {
 
     // Deal with floating point non-finite values.
 
-    // For debugging new statistics types.
+    // For debugging new Rustics types.
     //
     // assert!(moment_2 > 0.0 && moment_4 >= 0.0);
 
@@ -539,7 +539,7 @@ pub fn compute_kurtosis(count: u64, moment_2: f64, moment_4: f64) -> f64 {
 
 /// The make_title() function concatenates two strings, inserting the
 /// "=>" marker for set hierarchy specification.  It is probably of
-/// interest only to implementors of new statistics types.  It does
+/// interest only to implementors of new Rustics types.  It does
 /// omit the "=>" if the title prefix is empty.
 
 pub fn make_title(title_prefix: &str, title: &str) -> String {
@@ -618,12 +618,12 @@ pub trait Printer {
 #[macro_export]
 macro_rules! printer_box { ($x:expr) => { Rc::from(RefCell::new($x)) } }
 
-/// Converts a PrinterBox into a mutable Printer.
+/// Converts a PrinterBox into a mutable Printer reference.
 
 #[macro_export]
 macro_rules! printer_mut { ($x:expr) => { &mut *$x.borrow_mut() } }
 
-/// Converts a PrinterBox into a Printer.
+/// Converts a PrinterBox into a Printer reference.
 
 #[macro_export]
 macro_rules! printer { ($x:expr) => { &*$x.borrow() } }
@@ -912,13 +912,13 @@ pub trait Rustics {
     /// Precomputes the summary data of the samples.  This is
     /// useful when implementing custom print functions or querying
     /// multiple summary statistics like the mean or skewness.
-    /// The window statistics will cache the result of data
-    /// analysis so it need not be redone each time a summary
+    /// The window-based Rustics types will cache the result of
+    /// data analysis so it need not be redone each time a summary
     /// statistic is retrieved.
 
     fn precompute(&mut self);
 
-    /// Clears the data in the statistic.
+    /// Clears the data in the instance.
 
     fn clear(&mut self);
 

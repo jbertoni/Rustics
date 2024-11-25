@@ -213,7 +213,7 @@ impl IntegerWindow {
         sum
     }
 
-    /// Gather the statistics and compute summary statistics
+    /// Gather the summary information and compute summary statistics
     /// for the current samples in the window.
 
     pub fn crunch(&self) -> Crunched {

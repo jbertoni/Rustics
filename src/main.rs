@@ -69,3 +69,13 @@ fn main() {
     println!("\n\n\n\n === Second print\n");
     set.print();
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn run_main() {
+        main();
+    }
+}

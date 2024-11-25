@@ -33,10 +33,11 @@
 //!    // threaded statistics instances.  See ArcSet for an example of
 //!    // multi-threading for time statistics.
 //!
+//!    let mut timer = DurationTimer::new_box();
+//!
 //!    // Retain 1000 samples.
 //!
 //!    let window_size = 1000;
-//!    let mut timer = DurationTimer::new_box();
 //!
 //!    // Assume that the default print options are fine, so None works
 //!    // for that parameter.  See the RunningInteger comments for an
@@ -58,13 +59,15 @@
 //!       assert!(packet_latency.count() == i as u64);
 //!    }
 //!
-//!    // Print our statistics.  This example has only one event recorded.
+//!    // Print our statistics.
 //!
 //!    packet_latency.print();
 //!
 //!    // We should have seen "window_size" events.
 //!
 //!    assert!(packet_latency.count() == window_size as u64);
+//!
+//!    // Record more samples, and check that the count is now constant.
 //!
 //!    for i in 1..=window_size / 2 {
 //!       packet_latency.record_event();

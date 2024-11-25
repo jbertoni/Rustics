@@ -276,7 +276,7 @@ impl HierDescriptor {
 // around for queries.  It must be at least "period" instances, but
 // can be more to keep more history.
 
-/// HierDimensions is used to define one level in a Hier instance.
+/// HierDimension is used to define one level in a Hier instance.
 
 #[derive(Clone, Copy)]
 pub struct HierDimension {
@@ -312,8 +312,8 @@ pub struct HierIndex {
     which: usize,
 }
 
-/// HierSet allows the user to refer to a specific subset of a level
-/// in the hierarchy when using a HierIndex instance.  The user can
+/// HierSet is used to refer to the specific subset of a level in the
+/// hierarchy to be indexed when using a HierIndex instance.  The user can
 /// choose to look at all of the instances, or only the newest entries,
 /// the live set.
 
@@ -335,7 +335,7 @@ impl HierIndex {
 // The exporter needs to be downcast to be used, so
 // provide that interface.
 
-/// The HierExporter trait is used internally to create a statistics
+/// The HierExporter trait defines the interface for creating a statistics
 /// instance that is a sum of other instances.  It can be used in
 /// applications, as well, although the predefined functions probably
 /// cover most use cases.
@@ -345,9 +345,9 @@ pub trait HierExporter {
     fn as_any_mut(&mut self) -> &mut dyn Any;
 }
 
-/// Users can traverse all the statistics instances in a Hier
-/// instance using this trait and the traverse methods
-/// traverse_live() and traverse_all().
+/// Users can traverse statistics instances in a Hier
+/// instance by implementing this trait and calling one of
+/// the traverse methods, traverse_live() or traverse_all().
 
 pub trait HierTraverser {
     /// This method is invoked on each statistics instance in the
@@ -357,9 +357,9 @@ pub trait HierTraverser {
 }
 
 //
-// The HierGenerator trait is implement to allow a Rustics type to
-// support hierarchial statistics.  Rustics.  This code connects
-// the Hier impl code with the Rustic types impl code.
+// The HierGenerator trait define the interface that allows a Rustics
+// type to support hierarchial statistics.  This code connects the Hier
+// impl code with the impl code for the underlying Rustics type.
 //
 // HierGenerator is thus an abstraction of the associated functions
 // that are not members (in the impl code, but not taking &self as
@@ -370,10 +370,11 @@ pub trait HierTraverser {
 // this code..
 //
 
-/// HierGenerator is used to create an interface between a statistics
-/// type, like RunningInteger, and the hier code.  It is used only
-/// to add interfaces for types, so users will need it only if they
-/// implement a custom type implementing Rustics.
+/// The HierGenerator trait defines the interface that allows a Rustics
+/// type to support hierarchial statistics.  This code connects the Hier
+/// impl code with the impl code for the underlying Rustics type.  It is
+/// used only to add interfaces for types, so users will need it only if
+/// they implement a custom Rustics type Rustics.
 
 pub trait HierGenerator {
     fn make_from_exporter(&self, name: &str, print_opts: &PrintOption, exports: ExporterRc)

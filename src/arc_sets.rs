@@ -29,7 +29,7 @@
 //!
 //!    // Create a set.  By way of example, assume that we're expecting
 //!    // 8 Rustics instances but no subsets, and set those hints
-//!    // appropriately.  The default print output goes to stdout, and
+//!    // appropriately.  By default, the print output goes to stdout, and
 //!    // that's fine for an example, so just give "None" to accept the
 //!    // default output settings.
 //!

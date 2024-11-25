@@ -13,8 +13,7 @@
 //!     it directly.
 //!
 //!   * The Window type implements a set of instances of type T.
-//!
-//!   * The set has a configurable size limit.
+//!     The set has a configurable size limit.
 //!
 //!   * When a new element of type T is pushed into the window,
 //!     the oldest element is deleted if the size limit has been
@@ -103,7 +102,7 @@
 ///
 /// A Window instance maintains a set of items of type T.  The set size
 /// is limited to a configurable parameter.  The oldest item is dropped
-/// when  a new item is entered and the window is full.
+/// when a new item is entered and the window is full.
 
 #[derive(Clone)]
 pub struct Window<T> {
@@ -178,15 +177,17 @@ impl<T> Window<T> {
         }
     }
 
+    /// Checks whether the window is empty.
+
     pub fn is_empty(&self) -> bool {
         self.data.is_empty()
     }
 
-    // Return the index to the oldest live entry.
-    //
     // Compute the index to the newest entry from "current_index".
     // Just subtract one from "current_index" one unless we're at
     // the start of the array, then we need to wrap.
+
+    /// Returns the index to the oldest live entry.
 
     fn index_newest(&self) -> Option<usize> {
         if self.data.is_empty() {
@@ -270,7 +271,7 @@ impl<T> Window<T> {
         Some(&self.data[internal_index])
     }
 
-    /// Returns a pointer to a live element.  The items are
+    /// Returns a pointer to the specified live element.  The items are
     /// ordered by age wth the oldest at index 0.
 
     pub fn index_live(&self, index: usize) -> Option<&T> {
@@ -303,6 +304,26 @@ impl<T> Window<T> {
         assert!(internal_index < self.data.len());
 
         Some(&self.data[internal_index])
+    }
+
+    /// Deletes all data from the window.  This puts it back into
+    /// its initial state.
+
+    pub fn clear(&mut self) {
+        self.current_index = 0;
+        self.data.clear();
+    }
+
+    /// Iterates over all the items in the window.
+
+    pub fn iter_all(&self) -> WindowIterator<T> {
+        WindowIterator::<T>::new(self, ScanType::All)
+    }
+
+    /// Iterates over all the live items in the window.
+
+    pub fn iter_live(&self) -> WindowIterator<T> {
+        WindowIterator::<T>::new(self, ScanType::Live)
     }
 
     // Returns a read-only reference to the data, the index of the oldest
@@ -351,26 +372,6 @@ impl<T> Window<T> {
         assert!(self.data.len() == 0 || oldest_live < self.data.len());
 
         (&self.data, oldest, oldest_live)
-    }
-
-    /// Deletes all data from the window.  This puts it back into
-    /// its initial state.
-
-    pub fn clear(&mut self) {
-        self.current_index = 0;
-        self.data.clear();
-    }
-
-    /// Iterates over all the items in the window.
-
-    pub fn iter_all(&self) -> WindowIterator<T> {
-        WindowIterator::<T>::new(self, ScanType::All)
-    }
-
-    /// Iterates over all the live items in the window.
-
-    pub fn iter_live(&self) -> WindowIterator<T> {
-        WindowIterator::<T>::new(self, ScanType::Live)
     }
 }
 

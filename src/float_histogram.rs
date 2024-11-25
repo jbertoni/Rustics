@@ -24,6 +24,7 @@
 //!     of infinite values.
 //!
 //! ## Example
+//!```
 //!     use rustics::float_histogram::FloatHistogram;
 //!     use rustics::float_histogram::bucket_divisor;
 //!     use rustics::exponent_bias;
@@ -32,7 +33,7 @@
 //!     use rustics::stdout_printer;
 //!     use rustics::printer_mut;
 //!
-//!     // Create a HistOp for new().
+//!     // Create a HistoOpts for new().
 //!
 //!     let merge_min    = 0;  // not implemented yet
 //!     let merge_max    = 0;  // not implemented yet
@@ -45,7 +46,7 @@
 //!     let units      = None;
 //!     let print_opts = PrintOpts { printer, title, units, histo_opts };
 //!
-//!     // Create a histogram and accept the default output format.
+//!     // Create a histogram.
 //!
 //!     let mut histogram = FloatHistogram::new(&Some(print_opts));
 //!
@@ -572,7 +573,7 @@ mod tests {
     }
 
     fn test_documentation() {
-        // Create a HistOp for new().
+        // Create a HistoOpts for new().
 
         let merge_min    = 10;  // not implemented yet
         let merge_max    = 11;  // not implemented yet
@@ -651,7 +652,7 @@ mod tests {
     }
 
     fn test_log_mode() {
-        // Create a HistOp for new().
+        // Create a HistoOpts for new().
 
         let merge_min    = 0;  // not implemented yet
         let merge_max    = 0;  // not implemented yet

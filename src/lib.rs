@@ -13,15 +13,15 @@
 //!
 //! ## Types
 //!
-//! * Basic Statistics for Integer Samples
-//!     * Samples are of type i64.
-//!
+//! * Statistics for Integer Samples
 //!     * Integer statistics provide summary parameters, like the mean, and a pseudo-log histogram.
 //!
-//!     * For the pseudo-log histogram, the pseudo-log of a negative number n is defines as
-//!       -log(-n).  The pseudo-log of 0 is defined as 0.  Logs of positive values are computed by
-//!       rounding up any fractional part, so the pseudo-log of 5 is 3.  From the definition, the
-//!       pseudo-log of -5 is -3.
+//!     * Samples are of type i64.
+//!
+//!     * For the pseudo-log histogram, the log of a postive number is defined as the logarithm
+//!       to the base 2, rounding up any fractional part.  Therefore, the pseudo-log of 5 is 3.
+//!       The pseudo-log of a negative number n is defines as -pseudo-log(-n), and the pseudo-log
+//!       of 0 is defined as 0.
 //!
 //! * Basic Integer Statistics Types
 //!     * RunningInteger
@@ -29,12 +29,12 @@
 //!
 //!         * It also provides a pseudo-log histogram of the samples.
 //!
-//!     * RunningWindow
+//!     * IntegerWindow
 //!         * IntegerWindow implements a fixed-size window of the last n samples recorded.  Summary
 //!           statistics of the window samples are computed on demand.
 //!
-//!         * It also provides a pseudo-log histogram.  The histogram counts all samples seen,
-//!           not just the current window.
+//!         * Like RunningInteger, it also provides a pseudo-log histogram.  The histogram counts
+//!           all samples seen, not just the current window.
 //!
 //!     * Counter
 //!         * This type implements a simple counter that generates no further statistics.  It can be
@@ -53,17 +53,16 @@
 //!     * Floating point samples currently are supported only for machines that use IEEE f64 format.
 //!
 //!     * RunningFloat
-//!         * This type records samples of type f64.  It is otherwise similar to RunningInteger.
-//!           It uses a coarser pseudo-log function than the integer statistics.  See FloatHistogram
-//!           for details.
+//!         * This type keeps running statistics, like RunningInteger.  It uses a coarser pseudo-log
+//!           function than the integer statistics.  See FloatHistogram for details.
 //!
 //!     * FloatWindow
-//!         * This type records samples of type f64.  It is otherwise similar to IntegerWindow.  It
-//!           creates a histogram using FloatHistogram.
+//!         * FloatWindow keeps a fixed-size window of samples, like IntegerWindow.  It creates a
+//!           histogram using FloatHistogram.
 //!
 //! * Hierarchical Statistics:  The Hier Type
 //!     * A Hier instance uses multiple Rustics instances to maintain statistical information.  This
-//!       approach can reduce accuracy loss over long sample periods.
+//!       approach can reduce accuracy loss over long sample periods and provide historical data.
 //!
 //!     * Samples are collected into a single Rustics instance.  When this instance has collected
 //!       a configurable number of samples, it is pushed onto a list of historical data, and a
@@ -103,20 +102,19 @@
 //!           like RunningInteger or RunningTime.  Most users will not use this type directly.
 //!
 //!     * IntegerHier
-//!         * This struct wraps the RunningInteger type to support the Hier code.  See
-//!           "IntegerHier::new_hier" for a simple interface to create a Hier instance using
+//!         * This struct extends the RunningInteger type to support the Hier code.  See
+//!           IntegerHier::new_hier() for a simple interface to create a Hier instance using
 //!           RunningInteger instances for statistics collection.  The integer_hier and hier
 //!           test modules also contains sample_usage() and make_hier() functions as examples.
 //!
-//!     * FloatHier
-//!         * This struct wraps the RunningFloat type to support the Hier code.  See
-//!           "FloatHier::new_hier" for a simple interface to create a Hier instance.  This
-//!           type is very similar to IntegerHier.
-//!
 //!     * TimeHier
-//!         * TimeHier implements Hier for the RunningTime type. As with IntegerHier, see
-//!           "TimeHier::new_hier" for an easy way to make a Hier instance that uses RunningTime
-//!           as the statistics type.
+//!         * TimeHier implements Hier for the RunningTime type.  TimeHier::new_hier() will make a
+//!           Hier instance that uses RunningTime as the statistics type.
+//!
+//!     * FloatHier
+//!         * This struct extends the RunningFloat type to support the Hier code.  See
+//!           FloatHier::new_hier() for an interface to create a Hier instance.  This type is very
+//!           similar to IntegerHier.
 //!
 //! * Creating Sets
 //!     * The "arc_sets" and "rc_sets" modules implement sets that accept Rustics instances and
@@ -137,8 +135,8 @@
 //!           start() and finish() methods to measure clock intervals.
 //!
 //!     *  DurationTimer
-//!         * This implementation of Timer uses the Rust "Duration" struct, which measures wall
-//!           clock time.
+//!         * This type is an implementation of Timer that uses the Rust "Duration" struct, which
+//!           measures wall clock time.
 //!
 //!     *  SimpleClock
 //!         * This trait defines the interface used to query a user-defined clock, which can be
@@ -156,17 +154,18 @@
 //!
 //! * Printing
 //!     *  Printer
-//!         * This trait provides a method to use custom printers.  By default, output from the
-//!           printing function goes to stdout.
+//!         * This trait define the interface for printing Rustics instances, so it can be used
+//!           to implement custom printers.
 //!
-//!         * See StdioPrinter for a simple sample implementation.  This type is used the default
-//!           printer by the Rustics code.
+//!         * See StdioPrinter for a sample implementation.  This type is used as the default
+//!           printer to send output to stdout.
+//!           
 //!
 //!     *  Printable
-//!         * Printable provides standard formatting for printing data and some support functions
-//!           for more readable output, like time values scaled to human-understandable forms and
-//!           integers with commas.  It is of interest mostly to developers creating new Rustics
-//!           implementations.
+//!         * The Printable type provides standard formatting for printing data and some support
+//!           functions for more readable output, like time values scaled to human-understandable
+//!           forms and integers with commas.  It is of interest mostly to developers creating new
+//!           Rustics implementations.
 //!
 
 use std::any::Any;

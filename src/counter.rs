@@ -23,7 +23,7 @@
 //!     use rustics::Units;
 //!
 //!     // Create a count and pretend that it's counting bytes.  The title
-//!     // defaults to the name, and the output is to stdout, and those
+//!     // defaults to the name, and the output defaults to stdout.  Those
 //!     // are fine for this example.  See the RunningInteger comments
 //!     // for an example of how to set print options.
 //!
@@ -38,7 +38,7 @@
 //!     let mut counter = Counter::new("test counter", &print_opts);
 //!
 //!     // Add some byte counts to the counter.  record_event() adds one,
-//!     // which can be used to implement an event counter.  record_i64()
+//!     // so it can be used to implement an event counter.  record_i64()
 //!     // adds any i64 value to the counter, for keeping a sum when statistics
 //!     // like the mean aren't useful.
 //!

@@ -136,9 +136,7 @@ pub struct IntegerWindow {
 // compute the summary statistics that we need to print.
 
 /// The Crunched struct is used to pass summary data from a
-/// statistics set to printing functions.  It is used internally
-/// and is intended for use by code implementing data types,
-/// not users collecting data.
+/// statistics set to printing functions.  It is used internally.
 
 #[derive(Clone, Copy, Default)]
 pub struct Crunched {

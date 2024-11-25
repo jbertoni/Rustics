@@ -60,7 +60,7 @@
 //!     let auto_advance = Some(2000);
 //!     let descriptor   = HierDescriptor::new(dimensions, auto_advance);
 //!
-//!     // Use the defaults for printing, so None works for that
+//!     // The defaults for printing are fine for an example, so use them.
 //!     // parameter.  See the RunningInteger comments for an example of
 //!     // how to set print options.
 //!     //

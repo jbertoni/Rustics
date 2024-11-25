@@ -10,7 +10,7 @@
 //!
 //! * TimeHier
 //!   * This module provides a bridge between the Hier code and the RunningTime
-//!     type.  See the running_time module for details on that type.
+//!     type.  See the running_time module for details on RunningTime.
 //!
 //!   * See the library comments (lib.rs) for an overview of how hierarchical
 //!     statistics work.
@@ -20,6 +20,7 @@
 //!     preferred interface for creating a Hier instance that uses RunningTime
 //!     instances.
 //!
+//! ## Example
 //!```
 //!     // This example is based on the code in IntegerHier.
 //!

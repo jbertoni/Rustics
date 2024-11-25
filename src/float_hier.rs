@@ -11,8 +11,7 @@
 //!     * This module provides a bridge between the Hier implementation
 //!       and the RunningFloat implementation.
 //!
-//!     * This module is largely identical to IntegerHier except it handles
-//!       f64 samples.
+//!     * This code is very similar to IntegerHier.
 //!
 //!     * See the library comments (lib.rs) for an overview of how
 //!       hierarchical types work.

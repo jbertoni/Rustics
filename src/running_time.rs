@@ -10,8 +10,8 @@
 //! * RunningTime
 //!     * RunningTime accumulates statistics on a stream of time intervals.
 //!
-//!     * Internally, it uses RunningInteger instances.  See that code for
-//!       more information
+//!     * Internally, it uses RunningInteger instances to collect statistics.
+//!       See that code for more information
 //!
 //!     * The main.rs program contains a simple example of how to use this
 //!       type.

@@ -27,7 +27,7 @@
 //!     // option.  See the RunningInteger comments for an example of
 //!     // how to set the other print options.
 //!
-//!     // Create a HistOp for new().
+//!     // Create a HistoOpts for new().
 //!
 //!     let merge_min    = 0;  // not implemented yet
 //!     let merge_max    = 0;  // not implemented yet

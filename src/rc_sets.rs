@@ -32,8 +32,8 @@
 //!
 //!    // Create a set.  We're expecting 8 statistics instances but no
 //!    // subsets, so we set those hints appropriately.  The  default
-//!    // print output goes to stdout, and that's fine for an example, so
-//!    // just give "None" to accept the default.
+//!    // print options are fine for an example, so just give "None"
+//!    // to accept them.
 //!
 //!    let mut set = RcSet::new("Main Statistics", 8, 0, &None);
 //!

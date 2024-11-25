@@ -15,6 +15,7 @@
 //!     * This module provides helper functions for formatting integers
 //!       and time values.
 //!
+//! ## Example
 //!```
 //!     use rustics::printable::Printable;
 //!

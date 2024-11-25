@@ -169,20 +169,18 @@ pub struct RunningInteger {
 // RunningInteger instance so that multiple RunningInteger instances
 // can be summed.  This is used by IntegerHier to allow the Hier
 // code to use RunningInteger instance.  The RunningTime code uses
-// a RunningInteger instance underneath a wrapper, so TimeHier uses this
-// code, as well.
+// a RunningInteger instance underneath a wrapper, so TimeHier uses
+// this code, as well.
 
-/// IntegerExport mostly is for internal use.  It is available for
-/// general use, but most commonly, it will be used by a Hier instance
-/// to make summations of Rustics instances.
+/// IntegerExport is used by a Hier instance to make summations of
+/// multiple RunningInteger instances.
 
 #[derive(Clone, Default)]
 pub struct IntegerExporter {
     addends: Vec<Export>,
 }
 
-/// IntegerExporter is intend mostly for internal use by Hier instances.
-/// It is used to sum a list of RunningInteger instances.
+/// IntegerExporter is used to sum a list of RunningInteger instances.
 
 impl IntegerExporter {
     /// Creates a new IntegerExporter instance.

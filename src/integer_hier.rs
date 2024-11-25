@@ -219,7 +219,7 @@ impl HierMember for RunningInteger {
 /// IntegerHier provides an interface from the Hier code to the
 /// RunningInteger impl code that is not in methods.  Most users
 /// should construct a Hier instance via functions like new_hier()
-/// do the type-specific initialization.  See the module comments
+/// to do the type-specific initialization.  See the module comments
 /// for a sample program.
 
 #[derive(Default)]

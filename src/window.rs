@@ -9,7 +9,7 @@
 //! ## Type
 //!
 //! * Window\<T\>
-//!   * This struct is used internally.  Most users will not use
+//!   * This struct is used internally.  Most developers will not use
 //!     it directly.
 //!
 //!   * The Window type implements a set of instances of type T.
@@ -99,10 +99,6 @@
 
 /// The Window struct is used internally and is of interest primarily
 /// to developers creating a new Rustics type.
-///
-/// A Window instance maintains a set of items of type T.  The set size
-/// is limited to a configurable parameter.  The oldest item is dropped
-/// when a new item is entered and the window is full.
 
 #[derive(Clone)]
 pub struct Window<T> {

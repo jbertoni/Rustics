@@ -185,8 +185,7 @@ pub fn sum_running(exports: &Vec::<Export>) -> Export {
     }
 }
 
-/// sum_log_histogram() is used internally to create sums of
-/// histograms of RunningInteger instances.
+/// sum_log_histogram() creates a sum of LogHistogram  instances.
 
 pub fn sum_log_histogram(sum:  &mut LogHistogram, addend: &LogHistogram) {
     for i in 0..sum.negative.len() {
@@ -198,8 +197,7 @@ pub fn sum_log_histogram(sum:  &mut LogHistogram, addend: &LogHistogram) {
     }
 }
 
-/// sum_float_histogram() is used internally to create sums of
-/// histograms of RunningFloat instances.
+/// sum_float_histogram() creates a sum of FloatHistogram instances.
 
 pub fn sum_float_histogram(sum:  &mut FloatHistogram, addend: &FloatHistogram) {
     assert!(sum.negative.len() == addend.negative.len());

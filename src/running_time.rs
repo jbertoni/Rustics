@@ -172,9 +172,6 @@ impl RunningTime {
         RunningTime { running_integer, timer, hz, printer }
     }
 
-    // This function is used by RunningTime as it is simply
-    // a wrapper for a RunningInteger.
-
     /// Exports the statistics for this instance.
 
     pub fn export(&self) -> Export {

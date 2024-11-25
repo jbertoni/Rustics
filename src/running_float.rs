@@ -136,17 +136,15 @@ use super::merge::sum_running;
 // be summed.  This is used by FloatHier to allow the Hier code to use
 // RunningFloat instances.
 
-/// FloatExport mostly is for internal use.  It is available for
-/// general use, but most commonly, it will be used by a Hier instance
-/// to make summations of Rustics instances.
+/// FloatExport is used by a Hier instance to make summations of
+//  multiple RunningFloat instances.
 
 #[derive(Clone, Default)]
 pub struct FloatExporter {
     addends: Vec<Export>,
 }
 
-/// FloatExporter is intend mostly for internal use by Hier instances.
-/// It is used to sum a list of RunningInteger instances.
+/// FloatExporter creates a sum of RunningFloat instances.
 
 impl FloatExporter {
     /// Creates a new FloatExporter instance.

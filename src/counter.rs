@@ -13,7 +13,7 @@
 //!       with other Rustics instances.
 //!
 //!     * It is intended to be used for counting events or summing values
-//!       for which summary statistics are not wanted.
+//!       for which other statistics are not wanted.
 //!
 //! ## Example
 //!```

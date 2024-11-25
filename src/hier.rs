@@ -276,7 +276,8 @@ impl HierDescriptor {
 // around for queries.  It must be at least "period" instances, but
 // can be more to keep more history.
 
-/// HierDimension is used to define one level in a Hier instance.
+/// HierDimension is used to specify the configuration of one level
+/// in a Hier instance.
 
 #[derive(Clone, Copy)]
 pub struct HierDimension {
@@ -302,8 +303,8 @@ impl HierDimension {
     }
 }
 
-/// HierIndex allows users to index into a Hier
-/// instance to look at any Rustics instance therein.
+/// HierIndex allows users to specify an index into a Hier
+/// instance in order to look at any Rustics instance therein.
 
 #[derive(Clone, Copy)]
 pub struct HierIndex {

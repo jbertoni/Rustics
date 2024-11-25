@@ -300,7 +300,7 @@ pub fn min_f64(a: f64, b: f64) -> f64 {
     }
 }
 
-/// Compute the max of two f64 values, being careful
+/// Computes the max of two f64 values, being careful
 /// about NaNs.
 
 pub fn max_f64(a: f64, b: f64) -> f64 {
@@ -313,8 +313,7 @@ pub fn max_f64(a: f64, b: f64) -> f64 {
     }
 }
 
-/// timer_box_hz() is a helper function that returns the hertz
-/// of a timer in a box.
+/// Returns the hertz of a timer in a box.
 
 pub fn timer_box_hz(timer:  &TimerBox) -> u128 {
     timer!(*timer).hz()
@@ -386,9 +385,9 @@ pub fn compute_statistics(data: StatisticsData) -> Statistics {
     Statistics { mean, moment_2, moment_4 }
 }
 
-/// This struct provides the data required to try
-/// to recover the sum of the squares and the sum
-/// of the fourth power of each of the data samples.
+/// Provides the data required to try to recover the sum of
+/// the squares and the sum of the fourth power of each of
+/// the data samples.
 
 pub struct RecoverData {
     pub n:          f64,
@@ -959,7 +958,7 @@ pub struct ExportStats {
     pub float_histogram:    Option<FloatHistogramBox>,
 }
 
-/// Histogram defines a trait for using a LogHistogram or
+/// Histogram defines an interface for using a LogHistogram or
 /// FloatHistogram instance.
 
 pub trait Histogram {

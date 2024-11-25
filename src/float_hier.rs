@@ -46,7 +46,7 @@
 //!     let dimension_1 = HierDimension::new(100, 200);
 //!
 //!     // Level two isn't summed, so the period isn't used.  Let's
-//!     // pretend this level isn't used much, so we can retain only 100
+//!     // pretend this level isn't used much, so we retain only 100
 //!     // instances in it.
 //!
 //!     let dimension_2 = HierDimension::new(0, 100);

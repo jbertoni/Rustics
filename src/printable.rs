@@ -9,7 +9,7 @@
 //! ## Type
 //!
 //! * Printable
-//!     * Printable implement the output formatting used by all the
+//!     * Printable implements the output formatting used by all the
 //!       Rustics types, like RunningInteger.
 //!
 //!     * This module provides helper functions for formatting integers
@@ -187,8 +187,8 @@ impl Printable {
         Self::commas(&base)
     }
 
-    /// scale_time() converts a time value in clock ticks into a
-    /// human-readable value and unit.  The chosen unit is returned
+    /// Converts a time value in clock ticks into a human-
+    /// readable value and unit.  The chosen unit is returned
     /// as a string for printing.
 
     pub fn scale_time(time: f64, hz: i64) -> (f64, String) {
@@ -297,7 +297,7 @@ impl Printable {
     }
 
     /// Prints a float value and its name along with a string specifying
-    /// the unit.
+    /// the units.
 
     pub fn print_float_unit(name: &str, value: f64, unit: &str, printer: &mut dyn Printer) {
         assert!(!value.is_nan());
@@ -447,8 +447,8 @@ impl Printable {
 
     /// log_mode_to_time converts the log_mode of a time-based histogram
     /// into an approximate time for the bucket.  Note that this
-    /// approximation can be bigger than the record max value since
-    /// the pseudo-log function rounds up.
+    /// approximation can be bigger than the maximum value since the
+    /// pseudo-log function rounds up.
 
     pub fn log_mode_to_time(&self) -> f64 {
         // Time values should never be negative...
@@ -483,7 +483,7 @@ impl Printable {
         }
     }
 
-    /// Prints the common f64 summary statistics.
+    /// Prints the common f64 summary statistics for time samples.
 
     pub fn print_common_float_times(&self, hz: i64, printer: &mut dyn Printer) {
         if self.n > 0 {

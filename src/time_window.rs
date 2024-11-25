@@ -27,15 +27,14 @@
 //!
 //!    // Create an instance to record packet latencies.
 //!    //
-//!    // Assume that retaining 1000 samples is fine, and use the
-//!    // DurationTimer to measure time.  DurationTimer is a wrapper for
-//!    // the standard Rust Duration type.  This example is for a single-
+//!    // Use a DurationTimer to measure time.  DurationTimer is a wrapper
+//!    // for the standard Rust Duration type.  This example is for a single-
 //!    // threaded instances.  See ArcSet for an example of multi-threading
 //!    // for time statistics.
 //!
 //!    let mut timer = DurationTimer::new_box();
 //!
-//!    // Retain 1000 samples.
+//!    // Retain 1000 samples in the window.
 //!
 //!    let window_size = 1000;
 //!

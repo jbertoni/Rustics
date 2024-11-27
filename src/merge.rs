@@ -34,9 +34,8 @@ use super::FloatHistogramBox;
 use super::log_histogram::LogHistogram;
 use super::float_histogram::FloatHistogram;
 
-/// Export is used by various modules to create sums of
-/// Rustics instances of type RunningInteger or
-/// RunningFloat.
+/// Export is used by various modules to create sums of Rustics
+/// instances of type RunningInteger or RunningFloat.
 
 #[derive(Clone)]
 pub struct Export {
@@ -185,7 +184,7 @@ pub fn sum_running(exports: &Vec::<Export>) -> Export {
     }
 }
 
-/// sum_log_histogram() creates a sum of LogHistogram  instances.
+/// sum_log_histogram() sums the addend operand into the sum instance.
 
 pub fn sum_log_histogram(sum:  &mut LogHistogram, addend: &LogHistogram) {
     for i in 0..sum.negative.len() {
@@ -197,7 +196,7 @@ pub fn sum_log_histogram(sum:  &mut LogHistogram, addend: &LogHistogram) {
     }
 }
 
-/// sum_float_histogram() creates a sum of FloatHistogram instances.
+/// sum_float_histogram() sums the addend operand into the sum instance.
 
 pub fn sum_float_histogram(sum:  &mut FloatHistogram, addend: &FloatHistogram) {
     assert!(sum.negative.len() == addend.negative.len());

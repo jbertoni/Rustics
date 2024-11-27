@@ -130,7 +130,7 @@ pub fn pseudo_log_index(value: i64) -> usize {
     log
 }
 
-/// LogHistogram is the implementation type for the current
+/// LogHistogram is the implementation type for the integer
 /// pseudo-log histogram.
 
 #[derive(Clone)]

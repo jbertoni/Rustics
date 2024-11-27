@@ -246,9 +246,13 @@ pub fn min_exponent() -> isize {
     -1022
 }
 
+/// Returns the IEEE f64 exponent bias.
+
 pub fn exponent_bias() -> isize {
     1023
 }
+
+/// Extracts the sign from an f64 value.
 
 pub fn sign(input: f64) -> isize {
     if input.to_bits() & (1_u64 << 63) != 0 {
@@ -287,7 +291,7 @@ pub fn biased_exponent(input: f64) -> isize {
 
     exponent as isize
 }
-/// Compute the min of two f64 values, being careful
+/// Compute the minimum of two f64 values, being careful
 /// about NaNs.
 
 pub fn min_f64(a: f64, b: f64) -> f64 {
@@ -300,7 +304,7 @@ pub fn min_f64(a: f64, b: f64) -> f64 {
     }
 }
 
-/// Computes the max of two f64 values, being careful
+/// Computes the maximum of two f64 values, being careful
 /// about NaNs.
 
 pub fn max_f64(a: f64, b: f64) -> f64 {
@@ -313,7 +317,7 @@ pub fn max_f64(a: f64, b: f64) -> f64 {
     }
 }
 
-/// Returns the hertz of a timer in a box.
+/// Returns the frequency of a timer in a box.
 
 pub fn timer_box_hz(timer:  &TimerBox) -> u128 {
     timer!(*timer).hz()
@@ -328,9 +332,8 @@ pub fn stdout_printer() -> PrinterBox {
     printer_box!(printer)
 }
 
-/// Provides the data for estimating the second and
-/// fourth moments about the mean, as well as the
-/// mean itself.
+/// Provides the data for estimating the second and fourth moments
+/// about the mean, as well as the mean itself.
 
 pub struct StatisticsData {
     pub n:        f64,
@@ -349,9 +352,9 @@ pub struct Statistics {
 }
 
 /// Computes the second and fourth moments about the mean
-/// given the values in StatisticsData.  This is used
-/// when merging multiple Rustics instances for upper-
-/// level HierMember instances.
+/// given the values in StatisticsData.  This is used when
+/// merging multiple Rustics instances for upper-level
+/// HierMember instances.
 ///
 /// The formulae are derived by applying the binomial
 /// theorem to the formulae for the various moments about
@@ -397,14 +400,12 @@ pub struct RecoverData {
     pub moment_4:   f64,
 }
 
-/// This routine converts the data in RecoverData into
-/// estimators of the sum of the squares and 4th power
-/// of each sample.  This is used when merging Rustics
-/// instances for use in a Hier instance.
+/// This routine converts the data in RecoverData into estimators
+/// of the sum of the squares and 4th power of each sample.  This
+/// is used when merging Rustics instances for use in a Hier instance.
 ///
-/// The formulae are derived by applying the binomial
-/// theorem to the definition of the various moments
-/// about the mean.
+/// The formulae are derived by applying the binomial theorem to
+/// the definition of the various moments about the mean.
 
 pub fn recover(data: RecoverData) -> (f64, f64) {
     let n        = data.n;
@@ -441,8 +442,7 @@ pub struct EstimateData {
     pub cubes:      f64,
 }
 
-/// Estimates moment 3 about the mean given the data in
-/// EstimateData.
+/// Estimates moment 3 about the mean.
 ///
 /// I know of no good way to keep a running estimate of
 /// the 3rd moment about the mean, so this is the best
@@ -652,8 +652,8 @@ pub fn parse_printer(print_opts: &PrintOption) -> PrinterBox {
 }
 
 /// Extracts the title in a PrintOption instance, if present, or
-/// creates a default title using the name parameter, if no
-/// title was specified.
+/// creates a default title using the name parameter, if no title
+/// was specified.
 
 pub fn parse_title(print_opts: &PrintOption, name: &str) -> String {
     match print_opts {
@@ -925,9 +925,12 @@ pub trait Rustics {
 
     fn export_stats(&self) -> ExportStats;
 
-    // Functions for printing
+    /// Prints the statistics with the default options.
 
     fn print     (&self);
+
+    /// Prints the statistics with the printer and title as given.
+
     fn print_opts(&self, printer: PrinterOption, title: Option<&str>);
 
     fn set_title (&mut self, title: &str);
@@ -948,9 +951,8 @@ pub trait Rustics {
     fn generic(&self                     ) -> &dyn Any;
 }
 
-/// Defines the data available from the Rustics
-/// export_stats() member, which returns bulk
-/// data.
+/// Defines the data available from the Rustics export_stats()
+/// member, which returns bulk data.
 
 pub struct ExportStats {
     pub printable:          Printable,
@@ -973,7 +975,7 @@ pub trait Histogram {
 
     /// Returns the corresponding LogHistogramBox if possible.
 
-    fn to_log_histogram  (&self) -> Option<LogHistogramBox>;
+    fn to_log_histogram(&self) -> Option<LogHistogramBox>;
 
     /// Returns the corresponding FloatHistogramBox if possible.
 

@@ -229,10 +229,9 @@ impl FloatHistogram {
         self.samples += 1;
     }
 
-    /// This function returns the biased IEEE binary64
-    /// exponent, with the sign of the sample value
-    /// used as a sign for the result.
-    ///
+    /// This function returns the unbiased IEEE binary64
+    /// exponent, with the sign of the sample value used
+    /// as a sign for the result.
 
     pub fn convert_log_mode(&self) -> (isize, isize) {
         let mut mode = 0;
@@ -384,7 +383,7 @@ impl FloatHistogram {
     }
 
     /// Prints the histogram with the options specified.  The HistoOpts struct
-    //  is not fully implemented.
+    /// is not fully implemented.
 
     pub fn print_opts(&self, printer: &mut dyn Printer, histo_opts: &HistoOpts) {
         let header =

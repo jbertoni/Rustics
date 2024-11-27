@@ -222,10 +222,8 @@ impl HierMember for RunningFloat {
     }
 }
 
-/// FloatHier provides an interface from the Hier code to the
-/// RunningFloat impl code that is not in methods.  Most users
-/// should construct a Hier instance via functions like new_hier()
-/// that do the type-specific initialization.
+/// FloatHier provides an interface from the Hier code to
+/// RunningFloat impl code that is not in methods.
 ///
 /// See the module comments for a sample program.
 

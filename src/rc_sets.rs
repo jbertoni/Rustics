@@ -192,7 +192,6 @@ pub struct RcSet {
 }
 
 impl RcSet {
-
     /// Creates a new set.
     ///
     /// The "rustics_hint" and "subsets_hint" parameters are hints as to the number

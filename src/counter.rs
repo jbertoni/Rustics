@@ -223,13 +223,9 @@ impl Rustics for Counter {
         self.count = 0;
     }
 
-    // Functions for printing:
-
     fn print(&self) {
         self.print_opts(None, None);
     }
-
-    /// Prints the counter with a substitute printer or title.
 
     fn print_opts(&self, printer: PrinterOption, title: Option<&str>) {
         let printer_box =
@@ -252,8 +248,6 @@ impl Rustics for Counter {
         Printable::print_integer_units("Count", self.count, printer, &self.units);
         printer.print("");
     }
-
-    /// Sets the title for the counter.
 
     fn set_title(&mut self, title: &str) {
         self.title = String::from(title);

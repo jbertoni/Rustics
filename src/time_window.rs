@@ -128,7 +128,7 @@ impl TimeWindow {
         TimeWindow { printer, integer_window, timer, hz }
    }
 
-    /// Returns the hertz rating of the Timer instance being used
+    /// Returns the frequency of the Timer instance being used
     /// by this instance.
 
     pub fn hz(&self) -> i64 {
@@ -161,14 +161,10 @@ impl Rustics for TimeWindow {
         interval
     }
 
-    /// Records a time sample measured in ticks.
-
     fn record_time(&mut self, sample: i64) {
         assert!(sample >= 0);
         self.integer_window.record_i64(sample);
     }
-
-    /// Records an interval by reading the timer provided.
 
     fn record_interval(&mut self, timer: &mut TimerBox) {
         let timer    = timer_mut!(*timer);
@@ -192,8 +188,6 @@ impl Rustics for TimeWindow {
     fn count(&self) ->u64 {
         self.integer_window.count()
     }
-
-    /// Returns the most common pseudo-log value from the data.
 
     fn log_mode(&self) -> isize {
         self.integer_window.log_mode()

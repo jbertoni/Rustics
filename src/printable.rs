@@ -262,7 +262,7 @@ impl Printable {
         Printable::print_integer_units(name, value, printer, &Units::empty());
     }
 
-    /// Prints an integer statistic with its name and units.
+    /// Prints an integer statistic with its name and units in the standard format.
 
     pub fn print_integer_units(name: &str, value: i64, printer: &mut dyn Printer, units: &Units) {
         let unit_string =
@@ -277,13 +277,14 @@ impl Printable {
         printer.print(&output);
     }
 
-    /// Prints an integer statistic and its name in the standard format.
+    /// Prints an float statistic and its name in the standard format.
 
     pub fn print_float(name: &str, value: f64, printer: &mut dyn Printer) {
         Self::print_float_unit(name, value, "", printer)
     }
 
-    /// Prints a floating point value using a Units descriptor and a given printer.
+    /// Prints a float statistic in the standar format  using a Units
+    /// descriptor and a given printer.
 
     pub fn print_float_units(name: &str, value: f64, printer: &mut dyn Printer, units: &Units) {
         let unit =

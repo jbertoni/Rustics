@@ -289,7 +289,7 @@ impl TimeHier {
 
 // This trait provides the thus bridge between "impl RunningTime"
 // and the Hier implementation.  This code is of interest mainly to
-// developers who are creating a custom type and need examples.
+// developers who are creating a custom Rustics type and need examples.
 
 impl HierGenerator for TimeHier {
     // Creates a member with the given name and printer.

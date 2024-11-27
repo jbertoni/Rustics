@@ -195,7 +195,7 @@ impl FloatWindow {
         sum
     }
 
-    /// Gather the statistics and compute summary statistics
+    /// Gather the samples and compute summary statistics
     /// for the current samples in the window.
 
     pub fn crunch(&self) -> Crunched {
@@ -210,7 +210,7 @@ impl FloatWindow {
         }
 
         let sum  = kbk_sum_sort(&mut samples);
-        let mean =  sum / self.vector.len() as f64;
+        let mean = sum / self.vector.len() as f64;
 
         // Create the vectors of the addends for the moments about
         // the mean.

@@ -339,16 +339,19 @@ impl HierIndex {
 /// The HierExporter trait defines the interface for creating a Rustics
 /// instance that is a sum of other instances.  It can be used in
 /// applications, as well, although the predefined functions probably
-/// cover most use cases.
+/// cover most use cases.  This type is opaque from the point of view
+/// of the Hier code.  The HierGenerator make_exporter(), push(),
+/// and make_from_exporter() members provide the means for
+/// constructing and using a HierExporter instance.
 
 pub trait HierExporter {
     fn as_any    (&self)     -> &dyn Any;
     fn as_any_mut(&mut self) -> &mut dyn Any;
 }
 
-/// Users can traverse Rustics instances in a Hier
-/// instance by implementing this trait and calling one of
-/// the traverse methods, traverse_live() or traverse_all().
+/// Users can traverse Rustics instances in a Hier instance by
+/// implementing this trait and calling one of the traverse methods,
+/// traverse_live(), or traverse_all().
 
 pub trait HierTraverser {
     /// This method is invoked on each Rustics instance in the
@@ -375,7 +378,7 @@ pub trait HierTraverser {
 /// type to support hierarchial statistics.  This code connects the Hier
 /// impl code with the impl code for the underlying Rustics type.  It is
 /// used only to add interfaces for types, so users will need it only if
-/// they implement a custom Rustics type Rustics.
+/// they implement a custom Rustics implementation.
 
 pub trait HierGenerator {
     fn make_from_exporter(&self, name: &str, print_opts: &PrintOption, exports: ExporterRc)
@@ -411,9 +414,8 @@ pub trait HierMember {
 }
 
 //
-// The Hier type implements a type of hierarchical
-// statistics collector using a HierGenerator instance
-// and HierMember instances.
+// The Hier type implements a type of hierarchical statistics
+// collector using a HierGenerator instance and HierMember instances.
 //
 
 /// Hier instances are the concrete type for a statistics
@@ -454,7 +456,7 @@ impl Hier {
     /// The new() function creates a hier instance. It generally
     /// should be called from the constructor for the specific type
     /// for the hierarchy.  For example, the IntegerHier impl provides
-    /// constructors like new_hier() that will invoke this function
+    /// the constructor new_hier() that will invoke this function
     /// to create a RunningInteger hierarchy.
 
     pub fn new(configuration: HierConfig) -> Hier {
@@ -579,7 +581,12 @@ impl Hier {
         let generator = self.generator.borrow_mut();
         let member    = generator.make_member(&self.name, &self.print_opts);
 
+        // Push this level 0 instance into the window.
+
         self.stats[0].push(member);
+
+        // Clear the Rustics instance collecting the most recent
+        // samples, if configured.
 
         if let Some(window) = &mut self.window {
             window.clear();
@@ -720,9 +727,9 @@ impl Hier {
         self.stats[level].all_len()
     }
 
-    /// event_count() returns the total number of statistics samples
-    /// recorded into the Hier instance since its creation or since the
-    /// the last clear_all invocation.
+    /// Returns the total number of statistics samples recorded into
+    /// the Hier instance since its creation or since the the last
+    /// clear_all invocation.
 
     pub fn event_count(&self) -> i64 {
         self.event_count
@@ -1112,7 +1119,7 @@ impl Rustics for Hier {
         }
     }
 
-    /// Deletes all data in the Hier object.
+    /// Deletes all the statistical data in the Hier object.
 
     fn clear(&mut self) {
         self.clear_all();

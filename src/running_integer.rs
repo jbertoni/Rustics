@@ -258,8 +258,8 @@ impl RunningInteger {
         }
     }
 
-    /// Creates a RunningInteger instance by summing data
-    /// from a list of instances.
+    /// Creates a RunningInteger instance by summing data from
+    /// a list of instances.
 
     pub fn new_from_exporter(name: &str, title: &str, print_opts: &PrintOption, import: Export)
             -> RunningInteger {

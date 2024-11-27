@@ -137,7 +137,7 @@ use super::merge::sum_running;
 // RunningFloat instances.
 
 /// FloatExport is used by a Hier instance to make summations of
-//  multiple RunningFloat instances.
+/// multiple RunningFloat instances.
 
 #[derive(Clone, Default)]
 pub struct FloatExporter {
@@ -162,7 +162,7 @@ impl FloatExporter {
         self.addends.push(addend);
     }
 
-    /// Makes a member Rustics instance based on the summed exports.
+    /// Makes a Rustics instance based on the given exports.
 
     pub fn make_member(&mut self, name: &str, print_opts: &PrintOption) -> RunningFloat {
         let title   = name;
@@ -241,6 +241,9 @@ impl RunningFloat {
         }
     }
 
+    /// Creates a new instancer from the data in an exporter.  This is
+    /// used internally by the Hier code.
+
     pub fn new_from_exporter(name: &str, title: &str, print_opts: &PrintOption, import: Export)
             -> RunningFloat {
         let (printer, _title, units, _histo_opts) = parse_print_opts(print_opts, name);
@@ -298,8 +301,8 @@ impl RunningFloat {
         self.infinities
     }
 
-    /// Exports all the statistics kept for a given instance to
-    /// be used to create a sum of many instances.
+    /// Exports all the statistics kept for a given instance.
+    /// This data is used to create a sum of multiple instances.
 
     pub fn export_data(&self) -> Export {
         let count           = self.count;

@@ -183,7 +183,7 @@ impl<T> Window<T> {
     // Just subtract one from "current_index" one unless we're at
     // the start of the array, then we need to wrap.
 
-    /// Returns the index to the oldest live entry.
+    /// Returns the index to the newest live entry.
 
     fn index_newest(&self) -> Option<usize> {
         if self.data.is_empty() {

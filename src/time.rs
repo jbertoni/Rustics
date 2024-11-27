@@ -102,7 +102,7 @@ pub trait Timer {
 
     fn finish(&mut self) -> i64;    // get the elapsed time and set a new start time
 
-    /// hz returns the hertz of the underlying clock.
+    /// hz returns the frequency of the underlying clock.
 
     fn hz(&self) -> u128;           // get the clock hz
 }
@@ -174,7 +174,7 @@ pub trait SimpleClock {
 
     fn get_time(&mut self) -> u128;
 
-    /// Returns the hertz of the clock.
+    /// Returns the frequency of the clock.
 
     fn hz(&self) -> u128;
 }

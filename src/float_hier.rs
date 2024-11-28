@@ -1,7 +1,7 @@
 //
 //  Copyright 2024 Jonathan L Bertoni
 //
-//  This code is available under the Berkeley 2-Clause, Berkely 3-clause,
+//  This code is available under the Berkeley 2-Clause, Berkeley 3-clause,
 //  and MIT licenses.
 //
 
@@ -410,7 +410,7 @@ mod tests {
 
         drop(member);
 
-        // Now try try making an exporter and check basic sanity of as_any_mut.
+        // Now try making an exporter and check basic sanity of as_any_mut.
 
         let exporter_rc     = generator.make_exporter();
         let exporter_clone  = exporter_rc.clone();

@@ -1,7 +1,7 @@
 //
 //  Copyright 2024 Jonathan L Bertoni
 //
-//  This code is available under the Berkeley 2-Clause, Berkely 3-clause,
+//  This code is available under the Berkeley 2-Clause, Berkeley 3-clause,
 //  and MIT licenses.
 //
 
@@ -18,7 +18,7 @@
 //!
 //!     * Samples are of type i64.
 //!
-//!     * For the pseudo-log histogram, the log of a postive number is defined as the logarithm
+//!     * For the pseudo-log histogram, the log of a positive number is defined as the logarithm
 //!       to the base 2, rounding up any fractional part.  Therefore, the pseudo-log of 5 is 3.
 //!       The pseudo-log of a negative number n is defines as -pseudo-log(-n), and the pseudo-log
 //!       of 0 is defined as 0.
@@ -154,7 +154,7 @@
 //!
 //! * Printing
 //!     *  Printer
-//!         * This trait define the interface for printing Rustics instances, so it can be used
+//!         * This trait defines the interface for printing Rustics instances, so it can be used
 //!           to implement custom printers.
 //!
 //!         * See StdioPrinter for a sample implementation.  This type is used as the default
@@ -686,7 +686,7 @@ pub fn parse_histo_opts(print_opts: &PrintOption) -> HistoOpts {
 }
 
 /// Returns the units in a PrintOption instance, if given, or
-/// returns the defaults if no units were specifed.
+/// returns the defaults if no units were specified.
 
 pub fn parse_units(print_opts: &PrintOption) -> Units {
     match print_opts {

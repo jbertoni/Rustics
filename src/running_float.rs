@@ -1,7 +1,7 @@
 //
 //  Copyright 2024 Jonathan L Bertoni
 //
-//  This code is available under the Berkeley 2-Clause, Berkely 3-clause,
+//  This code is available under the Berkeley 2-Clause, Berkeley 3-clause,
 //  and MIT licenses.
 //
 
@@ -241,7 +241,7 @@ impl RunningFloat {
         }
     }
 
-    /// Creates a new instancer from the data in an exporter.  This is
+    /// Creates a new instance from the data in an exporter.  This is
     /// used internally by the Hier code.
 
     pub fn new_from_exporter(name: &str, title: &str, print_opts: &PrintOption, import: Export)

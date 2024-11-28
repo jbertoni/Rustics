@@ -1,7 +1,7 @@
 //
 //  Copyright 2024 Jonathan L Bertoni
 //
-//  This code is available under the Berkeley 2-Clause, Berkely 3-clause,
+//  This code is available under the Berkeley 2-Clause, Berkeley 3-clause,
 //  and MIT licenses.
 //
 
@@ -407,7 +407,7 @@ pub mod tests {
         assert!(stat.max_i64() == sample_count);
         assert!(stat.min_i64() == 1           );
 
-        // precompute() should be a harmess nopl
+        // precompute() should be a harmless nop
 
         stat.precompute();
 
@@ -438,7 +438,7 @@ pub mod tests {
 
         // Now set_id() and id() to check equality.
 
-        let expected = 12034; // Something unliklely.
+        let expected = 12034; // Something unlikely.
 
         stat.set_id(expected);
 

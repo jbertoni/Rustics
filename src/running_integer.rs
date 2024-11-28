@@ -1,7 +1,7 @@
 //
 //  Copyright 2024 Jonathan L Bertoni
 //
-//  This code is available under the Berkeley 2-Clause, Berkely 3-clause,
+//  This code is available under the Berkeley 2-Clause, Berkeley 3-clause,
 //  and MIT licenses.
 //
 
@@ -749,7 +749,7 @@ mod tests {
 
         // Now set_id() and id() to check equality.
 
-        let expected = 12034; // Something unliklely.
+        let expected = 12034; // Something unlikely.
 
         stats.set_id(expected);
 

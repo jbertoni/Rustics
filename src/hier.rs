@@ -1,7 +1,7 @@
 //
 //  Copyright 2024 Jonathan L Bertoni
 //
-//  This code is available under the Berkeley 2-Clause, Berkely 3-clause,
+//  This code is available under the Berkeley 2-Clause, Berkeley 3-clause,
 //  and MIT licenses.
 //
 
@@ -361,8 +361,8 @@ pub trait HierTraverser {
 }
 
 //
-// The HierGenerator trait define the interface that allows a Rustics
-// type to support hierarchial statistics.  This code connects the Hier
+// The HierGenerator trait defines the interface that allows a Rustics
+// type to support hierarchical statistics.  This code connects the Hier
 // impl code with the impl code for the underlying Rustics type.
 //
 // HierGenerator is thus an abstraction of the associated functions
@@ -375,7 +375,7 @@ pub trait HierTraverser {
 //
 
 /// The HierGenerator trait defines the interface that allows a Rustics
-/// type to support hierarchial statistics.  This code connects the Hier
+/// type to support hierarchical statistics.  This code connects the Hier
 /// impl code with the impl code for the underlying Rustics type.  It is
 /// used only to add interfaces for types, so users will need it only if
 /// they implement a custom Rustics implementation.
@@ -1428,7 +1428,7 @@ pub mod tests {
 
     // This is a fairly straightforward test that just pushes a lot of
     // values into a Hier instance.  It is long because it takes a fair
-    // number of operations to force higer-level instances into existence.
+    // number of operations to force higher-level instances into existence.
 
     fn simple_hier_test() {
         let     auto_next      = 4;
@@ -1524,10 +1524,10 @@ pub mod tests {
         assert!(hier_integer.max_i64() == 2 * signed_auto - 1);
         assert!(hier_integer.mean()    == expected_mean      );
 
-        // Record two windows worth of events and check that
-        // our size expectations are correct.  Also, keep the
-        // sum of the last "window" of events so that we can
-        // check the mean.  Only the lawt "window" events should
+        // Record two windows worth of events and check that our
+        // size expectations are correct.  Also, keep the sum of
+        // the last n events, where n is the window size, so that
+        // we can check the mean.  Only the last n events should
         // be used to compute the mean.
 
         let mut sum = 0;

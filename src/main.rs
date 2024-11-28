@@ -1,3 +1,10 @@
+//
+//  Copyright 2024 Jonathan L Bertoni
+//
+//  This code is available under the Berkeley 2-Clause, Berkeley 3-clause,
+//  and MIT licenses.
+//
+
 use rustics::Units;
 use rustics::rc_sets::RcSet;
 use rustics::time::DurationTimer;

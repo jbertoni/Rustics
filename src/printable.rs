@@ -1,7 +1,7 @@
 //
 //  Copyright 2024 Jonathan L Bertoni
 //
-//  This code is available under the Berkeley 2-Clause, Berkely 3-clause,
+//  This code is available under the Berkeley 2-Clause, Berkeley 3-clause,
 //  and MIT licenses.
 //
 
@@ -277,13 +277,13 @@ impl Printable {
         printer.print(&output);
     }
 
-    /// Prints an float statistic and its name in the standard format.
+    /// Print an float statistic and its name in the standard format.
 
     pub fn print_float(name: &str, value: f64, printer: &mut dyn Printer) {
         Self::print_float_unit(name, value, "", printer)
     }
 
-    /// Prints a float statistic in the standar format  using a Units
+    /// Prints a float statistic in the standard format  using a Units
     /// descriptor and a given printer.
 
     pub fn print_float_units(name: &str, value: f64, printer: &mut dyn Printer, units: &Units) {

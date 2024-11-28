@@ -1,7 +1,7 @@
 //
 //  Copyright 2024 Jonathan L Bertoni
 //
-//  This code is available under the Berkeley 2-Clause, Berkely 3-clause,
+//  This code is available under the Berkeley 2-Clause, Berkeley 3-clause,
 //  and MIT licenses.
 //
 
@@ -97,7 +97,7 @@ use super::printable::Printable;
 // to give a reasonable histogram structure.  The pseudo-log of
 // i64::MIN is defined as 63 for convenience.  This function always
 // returns a non-negative index for an array, so the return value is
-// pseudo-log(-n) for negative valeus.  The calling function handles
+// pseudo-log(-n) for negative values.  The calling function handles
 // the negation by using separate arrays for positive and negative
 // pseudo-log values.
 //

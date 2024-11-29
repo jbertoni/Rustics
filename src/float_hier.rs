@@ -198,7 +198,7 @@ use crate::MemberRc;
 use crate::hier_item;
 
 // Provide for downcasting from a Hier member to a Rustics
-// type or "dn Any" to get to the RunningFloat code.
+// type or "dyn Any" to get to the RunningFloat code.
 
 impl HierMember for RunningFloat {
     fn to_rustics(&self) -> &dyn Rustics {

@@ -464,7 +464,7 @@ impl<'a, T> WindowIterator<'a, T> {
     }
 }
 
-// Implement the actual iterator trait.
+// Implements the actual iterator trait.
 
 impl<'a, T> Iterator for WindowIterator<'a, T> {
     type Item = &'a T;

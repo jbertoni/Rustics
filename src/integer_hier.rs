@@ -192,7 +192,7 @@ use crate::MemberRc;
 use crate::hier_item;
 
 // Provide for downcasting from a Hier member to a Rustics
-// type or "dn Any" to get to the RunningInteger code.
+// type or "dyn Any" to get to the RunningInteger code.
 
 impl HierMember for RunningInteger {
     fn to_rustics(&self) -> &dyn Rustics {

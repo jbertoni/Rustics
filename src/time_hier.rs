@@ -210,7 +210,7 @@ use crate::ExporterRc;
 use crate::MemberRc;
 
 // Provide for downcasting from a Hier member to a Rustics
-// type or "dn Any" to get to the RunningTime code.
+// type or "dyn Any" to get to the RunningTime code.
 
 impl HierMember for RunningTime {
     fn to_rustics(&self) -> &dyn Rustics {

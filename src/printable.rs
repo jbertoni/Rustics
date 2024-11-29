@@ -277,7 +277,7 @@ impl Printable {
         printer.print(&output);
     }
 
-    /// Print an float statistic and its name in the standard format.
+    /// Prints a float statistic and its name in the standard format.
 
     pub fn print_float(name: &str, value: f64, printer: &mut dyn Printer) {
         Self::print_float_unit(name, value, "", printer)

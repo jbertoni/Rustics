@@ -38,7 +38,7 @@
 //!
 //!    // Add an instance to record query latencies.  It's a time
 //!    // statistic, so we need a timer.  Here we use an adapter for the
-//!    // rust standard Duration timer.
+//!    // standard rust Duration timer.
 //!
 //!    let timer = DurationTimer::new_box();
 //!
@@ -1033,7 +1033,7 @@ pub mod tests {
 
        // Add an instance to record query latencies.  It's a time
        // statistic, so we need a timer.  Use an adapter for the
-       // rust standard Duration timer.  The add_running_timer
+       // standard rust Duration timer.  The add_running_timer
        // function is a help for creating RunningTime instances.
 
        let timer = DurationTimer::new_box();

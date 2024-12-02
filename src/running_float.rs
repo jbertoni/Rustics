@@ -133,8 +133,7 @@ use super::merge::sum_running;
 
 // FloatExporter instances are used to export statistics from a
 // RunningFloat instance so that multiple RunningFloat instances can
-// be summed.  This is used by FloatHier to allow the Hier code to use
-// RunningFloat instances.
+// be summed.
 
 /// FloatExport is used by a Hier instance to make summations of
 /// multiple RunningFloat instances.
@@ -338,7 +337,7 @@ impl Rustics for RunningFloat {
         panic!("RunningFloat::record_i64: not supported");
     }
 
-    /// Record an f64 sample.  NaN and infinite values are counted
+    /// Records an f64 sample.  NaN and infinite values are counted
     /// but otherwise ignored.
 
     fn record_f64(&mut self, sample: f64) {

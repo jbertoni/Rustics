@@ -5,7 +5,7 @@
 //  and MIT licenses.
 //
 
-//  Sort a set by absolute value to try to improve the accuracy of summation.
+// Sort a set by absolute value to try to improve the accuracy of summation.
 
 fn sort(input: &mut [f64]) {
     input.sort_by(|a, b| a.abs().partial_cmp(&b.abs()).unwrap())
@@ -74,11 +74,11 @@ mod tests {
 
         let result = kbk_sum(&inputs);
 
-        //  Compute the expected value of the sum
+        // Compute the expected value of the sum
 
         let expected = ((limit + 1) * limit) / 2;
 
-        //  Now check what we got.
+        // Now check what we got.
 
         assert!(result == expected as f64);
 
@@ -89,7 +89,7 @@ mod tests {
 
         println!("vector sum 1:  {}", result);
 
-        //  Now add some negative values to the vector.
+        // Now add some negative values to the vector.
 
         for i in 0..=limit {
             inputs.push(-i as f64);
@@ -107,8 +107,8 @@ mod tests {
 
         assert!(result == 0.0);
 
-        //  Run the test example from Wikipedia:
-        //    [ 1, large, -1, large ]
+        // Run the test example from Wikipedia:
+        //   [ 1, large, -1, large ]
 
         let large = (10.0 as f64).powi(100);
 

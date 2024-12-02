@@ -159,7 +159,7 @@
 //!
 //!         * See StdioPrinter for a sample implementation.  This type is used as the default
 //!           printer to send output to stdout.
-//!           
+//!
 //!
 //!     *  Printable
 //!         * The Printable type provides standard formatting for printing data and some support
@@ -223,7 +223,7 @@ pub type PrintOption        = Option<PrintOpts>;
 pub type LogHistogramBox    = Rc<RefCell<LogHistogram>>;
 pub type FloatHistogramBox  = Rc<RefCell<FloatHistogram>>;
 
-/// Extract the mantissa from an f64.
+/// Extracts the mantissa from an f64.
 
 pub fn to_mantissa(input: f64) -> i64 {
     let mantissa_size = 52;
@@ -291,7 +291,7 @@ pub fn biased_exponent(input: f64) -> isize {
 
     exponent as isize
 }
-/// Compute the minimum of two f64 values, being careful
+/// Computes the minimum of two f64 values, being careful
 /// about NaNs.
 
 pub fn min_f64(a: f64, b: f64) -> f64 {
@@ -960,8 +960,8 @@ pub struct ExportStats {
     pub float_histogram:    Option<FloatHistogramBox>,
 }
 
-/// Histogram defines an interface for using a LogHistogram or
-/// FloatHistogram instance.
+/// The Histogram trait defines an interface for using a
+/// LogHistogram or FloatHistogram instance.
 
 pub trait Histogram {
 

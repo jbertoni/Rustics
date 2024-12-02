@@ -59,7 +59,7 @@
 //!
 //!     // Convert a time in ticks to a scaled value and
 //!     // and a string for units.  For example, 1000 ns
-//!     // should return (1.0, "us").
+//!     // should return (1.0, "nanoseconds").
 //!
 //!     for example in examples {
 //!         let (ticks, time, units) = example;
@@ -93,8 +93,8 @@
 // The Printable struct and associated functions are common code for
 // printing statistics.
 //
-// The Printable struct allows passing common values to be printed to
-// generic functions for RunningInteger and IntegerWindow instances.
+// The Printable struct is used to pass values to be printed
+// by standard output routines.
 
 use super::Printer;
 use super::Units;
@@ -122,7 +122,7 @@ pub struct Printable {
 }
 
 impl Printable {
-    /// The commas() function inserts  commas into a string
+    /// The commas() function inserts commas into a string
     /// containing the character form of an integer.  This
     /// input string might or might not have a leading "+" or
     /// "-" sign.
@@ -136,8 +136,8 @@ impl Printable {
         let digits;
         let comma_interval = 3;
 
-        //  A string like "-200" shouldn't be printed as "-,200", so detect and
-        //  handle leading signs that'll cause a comma to be added.  If the
+        // A string like "-200" shouldn't be printed as "-,200", so detect and
+        // handle leading signs that'll cause a comma to be added.  If the
         // string length is 1 mod 3 and the top character is a sign, we need to
         // intervene.
 
@@ -463,8 +463,6 @@ impl Printable {
         let ticks = base.pow(log as u32);
         let ticks = ticks - (ticks / 4);
 
-        // Compute the approximate time interval for this number of ticks.
-
         ticks as f64
     }
 
@@ -584,7 +582,7 @@ mod tests {
 
         assert!(printable.log_mode_to_time() == expected);
 
-        // Negative times aren't actually possible, but check the sanity test.
+        // Negative times aren't actually possible, do a sanity test.
 
         printable.log_mode = -printable.log_mode;
 

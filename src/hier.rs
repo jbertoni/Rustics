@@ -22,7 +22,7 @@
 //!       either the current level 0 Rustics instance, i.e., statistics on the newest samples,
 //!       or from an optionally configured window of the last n events, as specified by the
 //!       window_size parameter in HierConfig.  This window is implemented using a type such as
-//!       TimeWindow, FloatWindow, or an IntegerWindow created through the HierGenerator instance.
+//!       TimeWindow, FloatWindow, or IntegerWindow.
 //!
 //! ## Example
 //!```
@@ -267,10 +267,9 @@ impl HierDescriptor {
     }
 }
 
-// This type is used to describe one level of the Rustics
-// hierarchy.  "period" specifies the number of pushes into this
-// window before a sum Rustics instance is pushed to the upper
-// level.
+// This type is used to describe one level of the Rustics hierarchy.
+// "period" specifies the number of instances in this window that
+// are combined (summed) to create one higher-level rustics instance.
 //
 // "retention" specifies the total number of instances to keep
 // around for queries.  It must be at least "period" instances, but
@@ -371,14 +370,15 @@ pub trait HierTraverser {
 //
 // The HierGenerator implementation for the RunningInteger
 // type is a good example to read if you want to understand
-// this code..
+// this code.
 //
 
 /// The HierGenerator trait defines the interface that allows a Rustics
 /// type to support hierarchical statistics.  This code connects the Hier
 /// impl code with the impl code for the underlying Rustics type.  It is
 /// used only to add interfaces for types, so users will need it only if
-/// they implement a custom Rustics implementation.
+/// they implement a custom Rustics implementation and wish to support
+/// Hier instances based on that type.
 
 pub trait HierGenerator {
     fn make_from_exporter(&self, name: &str, print_opts: &PrintOption, exports: ExporterRc)
@@ -394,11 +394,11 @@ pub trait HierGenerator {
 }
 
 //
-//  The HierMember trait is used to extend a specific type
-//  implementing the Rustics trait to work with the Hier code.
+// The HierMember trait is used to extend a specific type
+// implementing the Rustics trait to work with the Hier code.
 //
-//  The code for the Hier type and the HierGenerator just need to
-//  be able to upcast and downcast into the member types.
+// The code for the Hier type and the HierGenerator just need to
+// be able to upcast and downcast into the member types.
 //
 
 /// The HierMember trait extends a Rustics implementation to interface
@@ -576,7 +576,7 @@ impl Hier {
             level.clear();
         }
 
-        // Create that first level 0 instance.
+        // Create the first level 0 instance.
 
         let generator = self.generator.borrow_mut();
         let member    = generator.make_member(&self.name, &self.print_opts);
@@ -790,15 +790,14 @@ impl Hier {
                 return;
             };
 
-        // Downcast to the Rustics level and print.
+        // Downcast to the Rustics trait and print.
 
         let target = target.borrow();
         target.to_rustics().print_opts(printer_opt, title_opt);
     }
 
-    // Create an exporter for when we need to sum a group of
-    // instances.  The exporter accumulates the sums of all
-    // the data necessary for the actual Rustics implementation.
+    // Use an exporter to create a list of Rustics instances
+    // to be summed to create a higher-level instance.
 
     fn make_and_fill_exporter(&self, level: usize) -> ExporterRc {
         let     generator    = self.generator.borrow();
@@ -807,7 +806,8 @@ impl Hier {
 
         let level = &self.stats[level];
 
-        // Gather the statistics to sum into a new member.
+        // Gather the list of Rustics instances to sum into a new
+        // member.
 
         for stat in level.iter_live() {
             generator.push(&mut *exporter, stat.clone());
@@ -896,7 +896,7 @@ impl Rustics for Hier {
         let borrow  = hier_item_mut!(member);
         let rustics = borrow.to_rustics_mut();
 
-        // Now record the event twice, as needed.
+        // Now record the event in the window, if one is present.
 
         let sample = rustics.record_event_report();
 
@@ -1867,7 +1867,7 @@ pub mod tests {
 
         let dimension_2 = HierDimension::new(0, 100);
 
-        //  Now create the Vec.  Save the dimension instances for future use.
+        // Now create the Vec.  Save the dimension instances for future use.
 
         let dimensions =
             vec![

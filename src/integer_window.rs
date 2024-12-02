@@ -113,12 +113,13 @@ pub struct IntegerWindow {
     vector:         Vec<i64>,
     id:             usize,
 
-    //  These fields must be zeroed or reset in clear():
+    // These fields must be zeroed or reset in clear():
 
     index:          usize,
     stats_valid:    bool,
 
-    //  These fields are computed when stats_valid is false
+    // The precompute() method sets these fields.  They are
+    // valid when stats_valid is true.
 
     mean:           f64,
     sum:            f64,

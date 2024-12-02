@@ -50,8 +50,9 @@
 //!        set.add_running_time("Query Latency", timer.clone());
 //!
 //!    // Assume for this example that the queries recorded to this
-//!    // RunningTime instance are single-threaded, so we can use the
-//!    // record_event() method to query the timer and restart it.
+//!    // RunningTime instance are from a single thread, so we can
+//!    // use the record_event() method to query the timer and restart
+//!    // it.
 //!    //
 //!    // The clock started running when we created the DurationTimer.
 //!    // Applications also can restart the timer using the start() method
@@ -401,9 +402,8 @@ impl ArcSet {
     }
 
     /// Adds a RusticsArc instance to a set.  The user creates the
-    /// Rustics instance and passes it in an Arc.  This is
-    /// a bit more manual than add_running_integer() and similar
-    /// methods.
+    /// Rustics instance and passes it in a box.  This is a bit more
+    /// manual than add_running_integer() and similar methods.
 
     pub fn add_member(&mut self, member: RusticsArc) {
         let work  = member.clone();
@@ -582,7 +582,7 @@ impl ArcSet {
     pub fn remove_stat(&mut self, target_box: RusticsArc) -> bool {
         let mut found       = false;
         let mut i           = 0;
-        let     target_stat = target_box.lock().unwrap(); // can't use arc_item!
+        let     target_stat = target_box.lock().unwrap(); // Can't use arc_item_mut.  Why?
         let     target_id   = target_stat.id();
 
         // We have to unlock the target_box or we'll hang in the loop.
@@ -708,7 +708,7 @@ pub mod tests {
         }
     }
 
-    //  Add Rustics instances to a set.
+    // Add Rustics instances to a set.
 
     fn add_stats(parent: &Mutex<ArcSet>) {
         for i in 0..4 {
@@ -765,17 +765,17 @@ pub mod tests {
         let test_hz     = 1_000_000_000;
         let parent_name = "parent set";
 
-        //  Create the parent set for our test Rustics instances.
+        // Create the parent set for our test Rustics instances.
 
         let set = ArcSet::new_box(&parent_name, 4, 4, &None);
         let set = arc_item_mut!(set);
 
-        //  Create timers for time statistics.
+        // Create timers for time statistics.
 
         let window_timer  = continuing_box();
         let running_timer = continuing_box();
 
-        //  Now create the instances in our set.
+        // Now create the instances in our set.
 
         let window_size = 32;
 
@@ -796,7 +796,7 @@ pub mod tests {
         let mut float_window    = float_window_mutex .lock().unwrap();
         let mut running_float   = running_float_mutex.lock().unwrap();
 
-        //  Create some simple timers to be started manually.
+        // Create some simple timers to be started manually.
 
         let     running_both    = TestTimer::new_box(test_hz);
 
@@ -808,7 +808,7 @@ pub mod tests {
         let     window_test     = ConverterTrait::as_test_timer(window_both.clone());
         let mut window_stat     = ConverterTrait::as_timer     (window_both.clone());
 
-        //  Now record some data in all the instances.
+        // Now record some data in all the instances.
 
         for i in lower..upper {
             let f = i as f64;
@@ -846,7 +846,7 @@ pub mod tests {
             assert!(time_window.max_i64() == expected);
         }
 
-        //  Make sure the titles are being created properly.
+        // Make sure the titles are being created properly.
 
         let set_title = set.title();
 
@@ -856,7 +856,7 @@ pub mod tests {
         assert!(running.title()      == make_title(&"parent set", &"running"     ));
         assert!(window.title()       == make_title(&"parent set", &"window"      ));
 
-        //  Create a subset to check titles in a subtree.
+        // Create a subset to check titles in a subtree.
 
         let     subset      = set.add_subset("subset", 0, 0);
         let mut subset      = subset.lock().unwrap();
@@ -866,7 +866,7 @@ pub mod tests {
         assert!(subset.title()      == make_title(&set_title, "subset"));
         assert!(subset_stat.title() == make_title(&subset.title(), &"subset stat"));
 
-        //  Drop all the locks.
+        // Drop all the locks.
 
         drop(subset       );
         drop(subset_stat  );
@@ -877,12 +877,12 @@ pub mod tests {
         drop(running_float);
         drop(float_window );
 
-        //  Make sure that print completes.
+        // Make sure that print completes.
 
         set.print();
 
-        //  Do a test of the traverser.  Check that we see the correct
-        //  number of members and subsets.
+        // Do a test of the traverser.  Check that we see the correct
+        // number of members and subsets.
 
         let mut traverser = TestTraverser::new();
 
@@ -892,7 +892,7 @@ pub mod tests {
         assert!(traverser.members == 7);
         assert!(traverser.sets    == 2);
 
-        //  Now test removing Rustics instances.
+        // Now test removing Rustics instances.
 
         let subset_1_name = "subset 1";
         let subset_2_name = "subset 2";
@@ -974,7 +974,7 @@ pub mod tests {
             running.record_i64(i);
         }
 
-        //  Drop the locks before trying to print.
+        // Drop the locks before trying to print.
 
         drop(running);
         drop(subset);
@@ -994,15 +994,15 @@ pub mod tests {
             counter.record_i64(1);     // increment by 1
         }
 
-        //  Check the counter value.
+        // Check the counter value.
 
         assert!(counter.count() == 2 * limit as u64);
 
-        //  Drop the lock before printing.
+        // Drop the lock before printing.
 
         drop(counter);
 
-        //  print should still work.
+        // print should still work.
 
         let member = RunningInteger::new("added as member", &None);
         let member = arc_box!(member);
@@ -1235,7 +1235,7 @@ pub mod tests {
         assert!(time_stat   .count() == samples as u64);
         assert!(float_stat  .count() == samples as u64);
 
-        //  Now check that the total sample counter is correct.
+        // Now check that the total sample counter is correct.
 
         let event_count = samples + auto_next;
 

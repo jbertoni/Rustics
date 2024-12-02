@@ -715,7 +715,7 @@ mod tests {
         assert!(running_stat.title()      == make_title(&"parent set", &"running"     ));
         assert!(window_stat.title()       == make_title(&"parent set", &"window"      ));
 
-        //  Test subset titles.
+        // Test subset titles.
 
         let     subset       = set.add_subset("subset", 0, 0);
         let mut subset       = (*subset).borrow_mut();
@@ -727,7 +727,7 @@ mod tests {
         assert!(subset_title        == make_title(&set_title, "subset"         ));
         assert!(subset_stat.title() == make_title(&subset_title, &"subset stat"));
 
-        //  Drop the locks so that we can print the set.
+        // Drop the locks so that we can print the set.
 
         drop(window_stat);
         drop(running_stat);
@@ -797,7 +797,7 @@ mod tests {
         // The last two parameters to new() and add_subset are size hints.
         // They are only hints.
         //
-        //  Create the parent set and add a subset.
+        // Create the parent set and add a subset.
 
         let mut set     = RcSet::new("sample usage parent", 0, 0, &None);
         let     subset  = set.add_subset("subset", 0, 0);
@@ -821,7 +821,7 @@ mod tests {
 
         timer_mut!(*timer).start();
 
-        //  Record some data.
+        // Record some data.
 
         for i in -32..64 {
             running.record_i64(i);
@@ -919,7 +919,7 @@ mod tests {
         assert!(time_stat   .count() == samples as u64);
         assert!(float_stat  .count() == samples as u64);
 
-        //  Now check that the total sample counter is correct.
+        // Now check that the total sample counter is correct.
 
         let event_count = samples + auto_next;
 

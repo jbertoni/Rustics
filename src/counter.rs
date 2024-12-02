@@ -27,15 +27,15 @@
 //!     // are fine for this example.  See the RunningInteger comments
 //!     // for an example of how to set print options.
 //!
-//!     let test_limit  = 20;
-//!     let singular    = "byte".to_string();
-//!     let plural      = "bytes".to_string();
-//!     let units       = Some(Units { singular, plural });
-//!     let printer     = None;
-//!     let title       = None;
-//!     let histo_opts  = None;
-//!     let print_opts  = Some(PrintOpts { printer, title, units, histo_opts });
-//!     let mut counter = Counter::new("test counter", &print_opts);
+//!     let     test_limit = 20;
+//!     let     singular   = "byte".to_string();
+//!     let     plural     = "bytes".to_string();
+//!     let     units      = Some(Units { singular, plural });
+//!     let     printer    = None;
+//!     let     title      = None;
+//!     let     histo_opts = None;
+//!     let     print_opts = Some(PrintOpts { printer, title, units, histo_opts });
+//!     let mut counter    = Counter::new("test counter", &print_opts);
 //!
 //!     // Add some byte counts to the counter.  record_event() adds one,
 //!     // so it can be used to implement an event counter.  record_i64()
@@ -323,8 +323,8 @@ mod tests {
     use crate::tests::check_printer_box;
 
     fn test_simple_counter() {
-        let test_limit  = 20;
-        let test_title  = "Test Counter";
+        let     test_limit  = 20;
+        let     test_title  = "Test Counter";
         let mut counter = Counter::new(test_title, &None);
 
         assert!(counter.title() == test_title);
@@ -405,6 +405,7 @@ mod tests {
     #[should_panic]
     fn record_f64_panic_test() {
         let mut counter = Counter::new("test counter", &None);
+
         counter.record_f64(-1.0);
     }
 

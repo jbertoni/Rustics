@@ -51,7 +51,7 @@
 //!
 //!     let dimension_2 = HierDimension::new(0, 100);
 //!
-//!     //  Now create the Vec of the dimensions.
+//!     // Now create the Vec of the dimensions.
 //!
 //!     let dimensions =
 //!         vec![ dimension_0, dimension_1, dimension_2 ];
@@ -310,7 +310,7 @@ impl HierGenerator for FloatHier {
     }
 
     // Push another instance onto the export list.  We will sum all of
-    // them at some point.
+    // them later.
 
     fn push(&self, exporter: &mut dyn HierExporter, member_rc: MemberRc) {
         let exporter_any   = exporter.as_any_mut();
@@ -393,7 +393,7 @@ mod tests {
     // Do a minimal liveness test of the generic hier implementation.
 
     fn test_simple_running_generator() {
-        //  First, just make a generator and a member, then record one event.
+        // First, just make a generator and a member, then record one event.
 
         let     generator    = FloatHier::new();
         let     member_rc    = generator.make_member("test member", &None);

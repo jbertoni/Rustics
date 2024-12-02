@@ -39,12 +39,12 @@
 //!     let merge_max    = 0;  // not implemented yet
 //!     let no_zero_rows = false;
 //!
-//!     let histo_opts = HistoOpts { merge_min, merge_max, no_zero_rows };
-//!     let histo_opts = Some(histo_opts);
-//!     let printer    = None;
-//!     let title      = None;
-//!     let units      = None;
-//!     let print_opts = PrintOpts { printer, title, units, histo_opts };
+//!     let histo_opts   = HistoOpts { merge_min, merge_max, no_zero_rows };
+//!     let histo_opts   = Some(histo_opts);
+//!     let printer      = None;
+//!     let title        = None;
+//!     let units        = None;
+//!     let print_opts   = PrintOpts { printer, title, units, histo_opts };
 //!
 //!     // Create a histogram.
 //!
@@ -144,7 +144,7 @@ pub fn bucket_divisor() -> isize {
     16
 }
 
-// Define the number of counts printed per row.  This actually
+// Define the number of buckets printed per row.  This actually
 // is hard-coded in the actual format statement.
 
 fn print_roundup() -> usize {
@@ -187,7 +187,7 @@ impl FloatHistogram {
     /// Records one f64 sample into its bucket.
 
     pub fn record(&mut self, sample: f64) {
-        //  NaN values are counted but otherwise ignored.
+        // NaN values are counted but otherwise ignored.
 
         if sample.is_nan() {
             self.nans += 1;

@@ -1950,7 +1950,7 @@ pub mod tests {
         }
 
         // Check the state again.  We need to record one more
-        // events to cause the summation at level 0 into level
+        // event to cause the summation at level 0 into level
         // 1.
 
         let expected_live  = dimension_0.period();

@@ -446,10 +446,10 @@ impl Printable {
         }
     }
 
-    /// log_mode_to_time converts the log_mode of a time-based histogram
+    /// Converts the pseudo-log mode of a time-based histogram
     /// into an approximate time for the bucket.  Note that this
-    /// approximation can be bigger than the maximum value since the
-    /// pseudo-log function rounds up.
+    /// approximation can be bigger than the maximum value since
+    /// the pseudo-log function rounds up.
 
     pub fn log_mode_to_time(&self) -> f64 {
         // Time values should never be negative...

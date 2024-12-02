@@ -31,8 +31,8 @@
 //!     use rustics::time::SimpleClock;
 //!
 //!     // This is an example implementation of the SimpleClock trait.  It
-//!     // simple returns a series of time values incrementing by one in
-//!     // size per invocation.
+//!     // simply returns a series of time values increasing by one tick
+//!     // per invocation.
 //!
 //!     struct ExampleClock {
 //!         current_time: u128,
@@ -87,13 +87,13 @@ use crate::timer_box;
 /// rust Duration type, which returns wall-clock time.
 
 pub trait Timer {
-    /// The start method starts a timing interval.  It may be called
+    /// The start() method starts a timing interval.  It may be called
     /// multiple times on a single instance.  The last invocation of
     /// the start method overrides any previous calls.
 
     fn start(&mut self);            // start or restart a timer
 
-    /// The finish() function is used at the end of a sample interval.
+    /// The finish() method is used at the end of a sample interval.
     /// It returns the interval time in ticks and also starts a new
     /// interval, since the restart cost is nearly zero.  Thus, finish()
     /// can be called multiple times after a start() invocation to return
@@ -102,7 +102,7 @@ pub trait Timer {
 
     fn finish(&mut self) -> i64;    // get the elapsed time and set a new start time
 
-    /// hz returns the frequency of the underlying clock.
+    /// hz() returns the frequency of the underlying clock.
 
     fn hz(&self) -> u128;           // get the clock hz
 }

@@ -101,9 +101,9 @@ impl Counter {
     pub fn new(name: &str, print_opts: &PrintOption) -> Counter {
         let (printer, title, units, _histo_opts) = parse_print_opts(print_opts, name);
 
-        let name    = String::from(name);
-        let count   = 0;
-        let id      = usize::MAX;
+        let name  = String::from(name);
+        let count = 0;
+        let id    = usize::MAX;
 
 
         Counter { name, count, id, printer, title, units }
@@ -438,96 +438,84 @@ mod tests {
     #[should_panic]
     fn log_mode_panic_test() {
         let counter = Counter::new("test counter", &None);
-
-        let _ = counter.log_mode();
+        let _       = counter.log_mode();
     }
 
     #[test]
     #[should_panic]
     fn mean_panic_test() {
         let counter = Counter::new("test counter", &None);
-
-        let _ = counter.mean();
+        let _       = counter.mean();
     }
 
     #[test]
     #[should_panic]
     fn variance_panic_test() {
         let counter = Counter::new("test counter", &None);
-
-        let _ = counter.variance();
+        let _       = counter.variance();
     }
 
     #[test]
     #[should_panic]
     fn standard_deviation_panic_test() {
         let counter = Counter::new("test counter", &None);
-
-        let _ = counter.standard_deviation();
+        let _       = counter.standard_deviation();
     }
 
     #[test]
     #[should_panic]
     fn skewness_panic_test() {
         let counter = Counter::new("test counter", &None);
-
-        let _ = counter.skewness();
+        let _       = counter.skewness();
     }
 
     #[test]
     #[should_panic]
     fn kurtosis_panic_test() {
         let counter = Counter::new("test counter", &None);
-
-        let _ = counter.kurtosis();
+        let _       = counter.kurtosis();
     }
 
     #[test]
     #[should_panic]
     fn max_i64_panic_test() {
         let counter = Counter::new("test counter", &None);
-
-        let _ = counter.max_i64();
+        let _       = counter.max_i64();
     }
 
     #[test]
     #[should_panic]
     fn min_i64_panic_test() {
         let counter = Counter::new("test counter", &None);
-
-        let _ = counter.min_i64();
+        let _       = counter.min_i64();
     }
 
     #[test]
     #[should_panic]
     fn max_f64_panic_test() {
         let counter = Counter::new("test counter", &None);
-
-        let _ = counter.max_f64();
+        let _       = counter.max_f64();
     }
 
     #[test]
     #[should_panic]
     fn min_f64_panic_test() {
         let counter = Counter::new("test counter", &None);
-
-        let _ = counter.min_f64();
+        let _       = counter.min_f64();
     }
 
     #[test]
     #[should_panic]
     fn log_histogram_panic_test() {
         let counter = Counter::new("test counter", &None);
-
-        let _ = counter.log_histogram().unwrap();
+        let _       = counter.log_histogram().unwrap();
     }
 
     #[test]
     #[should_panic]
     fn float_histogram_panic_test() {
         let counter = Counter::new("test counter", &None);
-
-        let _ = counter.float_histogram().unwrap();
+        let _       = counter.float_histogram().unwrap();
     }
 
     fn test_print_output() {

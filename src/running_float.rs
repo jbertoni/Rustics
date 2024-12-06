@@ -319,10 +319,10 @@ impl RunningFloat {
         let max_f64         = self.max;
 
         Export {
-            count,      nans,       infinities,
-            mean,       moment_2,   cubes,
-            moment_4,   min_i64,    max_i64,
-            min_f64,    max_f64,
+            count,            nans,           infinities,
+            mean,             moment_2,       cubes,
+            moment_4,         min_i64,        max_i64,
+            min_f64,          max_f64,
             float_histogram,  log_histogram
         }
     }
@@ -688,9 +688,7 @@ mod tests {
     #[should_panic]
     fn test_export_log_histogram() {
         let float = RunningFloat::new("Test Statistic", &None);
-
         let stats = float.export_stats();
-
         let _     = stats.log_histogram.unwrap();
     }
 
@@ -714,8 +712,7 @@ mod tests {
     #[should_panic]
     fn test_record_event_report() {
         let mut float = RunningFloat::new("Test Statistic", &None);
-
-        let _ = float.record_event_report();
+        let     _     = float.record_event_report();
     }
 
     #[test]
@@ -730,24 +727,21 @@ mod tests {
     #[should_panic]
     fn test_log_mode() {
         let float = RunningFloat::new("Test Statistic", &None);
-
-        let _ = float.log_mode();
+        let _     = float.log_mode();
     }
 
     #[test]
     #[should_panic]
     fn test_min_i64() {
         let float = RunningFloat::new("Test Statistic", &None);
-
-        let _ = float.min_i64();
+        let _     = float.min_i64();
     }
 
     #[test]
     #[should_panic]
     fn test_max_i64() {
         let float = RunningFloat::new("Test Statistic", &None);
-
-        let _ = float.max_i64();
+        let _     = float.max_i64();
     }
 
     fn test_equality() {
@@ -773,15 +767,13 @@ mod tests {
     #[should_panic]
     fn test_to_log_histogram() {
         let float = RunningFloat::new("Test Statistic", &None);
-
-        let _ = float.to_log_histogram().unwrap();
+        let _     = float.to_log_histogram().unwrap();
     }
 
     fn test_title() {
-        let mut float      = RunningFloat::new("Test Statistic", &None);
-        let     test_title = "set_title Test";
-
-        let start_title = float.title();
+        let mut float       = RunningFloat::new("Test Statistic", &None);
+        let     test_title  = "set_title Test";
+        let     start_title = float.title();
 
         float.set_title(test_title);
 
@@ -790,10 +782,8 @@ mod tests {
     }
 
     fn test_histogram() {
-        let mut float      = RunningFloat::new("Test Statistic", &None);
-        // let     histogram  = float.to_float_histogram().unwrap();
-        // let mut histogram  = histogram.borrow_mut();
-        let     samples    = 1000;
+        let mut float   = RunningFloat::new("Test Statistic", &None);
+        let     samples = 1000;
 
         for i in 1..=samples {
             float.record_f64(i as f64);
@@ -802,8 +792,8 @@ mod tests {
         {
             let histogram = float.to_float_histogram().unwrap();
             let histogram = &*histogram.borrow();
+            let sum       = compute_sum(histogram);
 
-            let sum = compute_sum(histogram);
             assert!(sum == samples);
         }
 
@@ -812,8 +802,8 @@ mod tests {
         {
             let histogram = float.to_float_histogram().unwrap();
             let histogram = &*histogram.borrow();
+            let sum       = compute_sum(histogram);
 
-            let sum = compute_sum(histogram);
             assert!(sum == 0);
         }
     }

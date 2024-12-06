@@ -359,7 +359,7 @@ impl RcSet {
 
     pub fn add_integer_window(&mut self, name: &str, window_size: usize, units: Option<Units>)
             -> RusticsRc {
-        let mut member  = IntegerWindow::new(name, window_size, &self.print_opts);
+        let mut member = IntegerWindow::new(name, window_size, &self.print_opts);
 
         if let Some(units) = units {
             member.set_units(units);
@@ -470,8 +470,8 @@ impl RcSet {
     /// Creates a Counter instance and adds it to the set.
 
     pub fn add_counter(&mut self, name: &str, units: Option<Units>) -> RusticsRc {
-        let member     = Counter::new(name, &self.print_opts);
-        let member     = rc_box!(member);
+        let member = Counter::new(name, &self.print_opts);
+        let member = rc_box!(member);
 
         if let Some(units) = units {
             rc_item_mut!(member).set_units(units);
@@ -566,11 +566,11 @@ impl RcSet {
     }
 
     fn make_print_opts(&self, name: &str, print_opts: &PrintOption) -> PrintOption {
-        let     printer    = Some(self.printer.clone());
-        let     title      = Some(make_title(&self.title, name));
-        let     units      = Some(parse_units(print_opts));
-        let     histo_opts = Some(parse_histo_opts(print_opts));
-        let     print_opts = PrintOpts { printer, title, units, histo_opts };
+        let printer    = Some(self.printer.clone());
+        let title      = Some(make_title(&self.title, name));
+        let units      = Some(parse_units(print_opts));
+        let histo_opts = Some(parse_histo_opts(print_opts));
+        let print_opts = PrintOpts { printer, title, units, histo_opts };
 
         Some(print_opts)
     }
@@ -647,7 +647,7 @@ mod tests {
 
     pub fn simple_test() {
         let lower    = -32;
-        let upper    = 32;
+        let upper    =  32;
 
         // Create the parent set for all the Rustics instances.
 
@@ -689,15 +689,15 @@ mod tests {
             float_window_stat .record_f64(f);
             running_float_stat.record_f64(f);
 
-            time_window_stat.record_event();
+            time_window_stat .record_event();
             running_time_stat.record_event();
         }
 
-        let i_max   = upper - 1;
-        let f_max   = i_max as f64;
+        let i_max = upper - 1;
+        let f_max = i_max as f64;
 
-        let i_min   = lower;
-        let f_min   = i_min as f64;
+        let i_min = lower;
+        let f_min = i_min as f64;
 
         assert!(window_stat.max_i64()        == i_max);
         assert!(running_stat.min_i64()       == i_min);
@@ -1320,7 +1320,7 @@ mod tests {
 
         println!("test_arc_printing:  start print 4");
 
-        let printer  = check_printer_box(&expected, true, false);
+        let printer = check_printer_box(&expected, true, false);
 
         set.set_title("");
         set.print_opts(Some(printer.clone()), None);

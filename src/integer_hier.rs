@@ -454,6 +454,7 @@ pub mod tests {
 
             hier.record_i64(sample);
             events += 1;
+
             assert!(hier.count()   == events as u64);
             assert!(hier.min_i64() == 1            );
             assert!(hier.max_i64() == sample       );
@@ -541,8 +542,7 @@ pub mod tests {
     #[should_panic]
     fn hz_panic() {
         let hier = make_test_hier(200, None, None);
-
-        let _ = hier.hz();
+        let _    = hier.hz();
     }
 
     fn test_print_output() {
@@ -623,8 +623,8 @@ pub mod tests {
         let     stats_3   = generator.make_member("Test Stat 3", &None);
         let     stats_4   = generator.make_member("Test Stat 4", &None);
 
-        let samples       = 250;
-        let count         =   4;
+        let     samples   = 250;
+        let     count     =   4;
 
         for i in 0..samples {
             let sample = i as i64 + 1;

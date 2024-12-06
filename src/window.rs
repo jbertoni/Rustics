@@ -131,8 +131,8 @@ impl<T> Window<T> {
             panic!("Window:  The live limit may not exceed the size limit.");
         }
 
-        let data           = Vec::<T>::with_capacity(size_limit);
-        let current_index  = 0;
+        let data          = Vec::<T>::with_capacity(size_limit);
+        let current_index = 0;
 
         Window { size_limit, live_limit, current_index, data }
     }
@@ -833,8 +833,7 @@ mod tests {
     fn test_index_all_limit() {
         let size_limit = 200;
         let window     = Window::<usize>::new(size_limit, size_limit / 2);
-
-        let _  = window.index_all(size_limit + 1);
+        let _          = window.index_all(size_limit + 1);
     }
 
     #[test]

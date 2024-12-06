@@ -491,11 +491,10 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_to_float_histogram() {
-        let size    = 200;
-        let timer   = continuing_box();
-        let stat    = TimeWindow::new("Test Time Window", size, timer, &None);
-
-        let _ = stat.to_float_histogram().unwrap();
+        let size  = 200;
+        let timer = continuing_box();
+        let stat  = TimeWindow::new("Test Time Window", size, timer, &None);
+        let _     = stat.to_float_histogram().unwrap();
     }
 
     #[test]

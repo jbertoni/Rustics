@@ -255,6 +255,7 @@ pub mod tests {
 
         for _i in 1..10 {
             sleep(sleep_time);
+
             let interval = clock.finish();
 
             assert!(interval >= base_interval);

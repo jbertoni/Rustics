@@ -323,8 +323,8 @@ pub fn timer_box_hz(timer:  &TimerBox) -> u128 {
     timer!(*timer).hz()
 }
 
-/// stdout_printer() creates a PrinterBox instance that sends output
-/// to stdout.  This is the default printer for all Rustics types.
+/// Creates a PrinterBox instance that sends output to stdout.
+/// This is the default printer for all Rustics types.
 
 pub fn stdout_printer() -> PrinterBox {
     let printer = StdioPrinter::new(StreamKind::Stdout);
@@ -346,9 +346,9 @@ pub struct StatisticsData {
 /// Contains the return data for compute_statistics.
 
 pub struct Statistics {
-    pub mean:       f64,
-    pub moment_2:   f64,
-    pub moment_4:   f64,
+    pub mean:     f64,
+    pub moment_2: f64,
+    pub moment_4: f64,
 }
 
 /// Computes the second and fourth moments about the mean
@@ -1705,10 +1705,10 @@ mod tests {
         let units      = None;
         let print_opts = Some(PrintOpts { printer, title, histo_opts, units });
 
-        let _     = parse_printer   (&print_opts);
-        let title = parse_title     (&print_opts, "default");
-        let histo = parse_histo_opts(&print_opts);
-        let units = parse_units     (&print_opts);
+        let _          = parse_printer   (&print_opts);
+        let title      = parse_title     (&print_opts, "default");
+        let histo      = parse_histo_opts(&print_opts);
+        let units      = parse_units     (&print_opts);
 
         assert!(!histo.no_zero_rows          );
         assert!( histo.merge_min == 0        );

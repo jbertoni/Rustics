@@ -313,10 +313,10 @@ impl IntegerWindow {
 
     #[cfg(test)]
     pub fn analyze(&self) -> AnalyzeData {
-        let mut copy         = Vec::new();
-        let mut squared      = Vec::new();
-        let mut cubed        = Vec::new();
-        let mut quadded      = Vec::new();
+        let mut copy    = Vec::new();
+        let mut squared = Vec::new();
+        let mut cubed   = Vec::new();
+        let mut quadded = Vec::new();
 
         for sample in &self.vector {
             let sample = *sample as f64;
@@ -349,10 +349,10 @@ impl IntegerWindow {
         let moment_3 = kbk_sum(&moment_3_vec);
         let moment_4 = kbk_sum(&moment_4_vec);
 
-        let min_i64 = self.compute_min();
-        let max_i64 = self.compute_max();
-        let min_f64 = 0.0;
-        let max_f64 = 0.0;
+        let min_i64  = self.compute_min();
+        let max_i64  = self.compute_max();
+        let min_f64  = 0.0;
+        let max_f64  = 0.0;
 
         AnalyzeData {
             n,          sum,        squares,    cubes,      quads,
@@ -675,10 +675,12 @@ pub mod tests {
         assert!(stats.max_i64() == 0);
 
         stats.record_i64(-1);
+
         assert!(stats.min_i64() == -1);
         assert!(stats.max_i64() == -1);
 
         stats.record_i64(1);
+
         assert!(stats.min_i64() == -1);
         assert!(stats.max_i64() ==  1);
 
@@ -686,6 +688,7 @@ pub mod tests {
         assert!(stats.mean()  == 0.0);
 
         stats.clear();
+
         let sample = 4;
 
         for _i in 0..10 {
@@ -732,8 +735,7 @@ pub mod tests {
     #[should_panic]
     fn test_record_event_report() {
         let mut stats = IntegerWindow::new(&"Test Statistics", 20, &None);
-
-        let _ = stats.record_event_report();
+        let     _     = stats.record_event_report();
     }
 
     #[test]
@@ -757,16 +759,14 @@ pub mod tests {
     #[should_panic]
     fn test_min_f64() {
         let stats = IntegerWindow::new(&"Test Statistics", 20, &None);
-
-        let _  = stats.min_f64();
+        let _     = stats.min_f64();
     }
 
     #[test]
     #[should_panic]
     fn test_max_f64() {
         let stats = IntegerWindow::new(&"Test Statistics", 20, &None);
-
-        let _  = stats.max_f64();
+        let _     = stats.max_f64();
     }
 
     #[test]

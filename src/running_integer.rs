@@ -265,17 +265,17 @@ impl RunningInteger {
             -> RunningInteger {
         let (printer, _title, units, _histo_opts) = parse_print_opts(print_opts, name);
 
-        let name            = String::from(name);
-        let title           = title.to_string();
-        let id              = usize::MAX;
-        let count           = import.count;
-        let mean            = import.mean;
-        let moment_2        = import.moment_2;
-        let cubes           = import.cubes;
-        let moment_4        = import.moment_4;
-        let min             = import.min_i64;
-        let max             = import.max_i64;
-        let log_histogram   = import.log_histogram.unwrap();
+        let name          = String::from(name);
+        let title         = title.to_string();
+        let id            = usize::MAX;
+        let count         = import.count;
+        let mean          = import.mean;
+        let moment_2      = import.moment_2;
+        let cubes         = import.cubes;
+        let moment_4      = import.moment_4;
+        let min           = import.min_i64;
+        let max           = import.max_i64;
+        let log_histogram = import.log_histogram.unwrap();
 
         RunningInteger {
             name,       title,      id,
@@ -305,10 +305,10 @@ impl RunningInteger {
         let max_f64         = 0.0;
 
         Export {
-            count,      nans,        infinities,
-            mean,       moment_2,    cubes,
-            moment_4,   min_i64,     max_i64,
-            min_f64,    max_f64,     log_histogram,
+            count,           nans,        infinities,
+            mean,            moment_2,    cubes,
+            moment_4,        min_i64,     max_i64,
+            min_f64,         max_f64,     log_histogram,
             float_histogram
         }
     }
@@ -599,9 +599,9 @@ mod tests {
         let     min        = -256;
         let     max        =  511;
 
-        assert!(stats.name()  == name);
-        assert!(stats.title() == name);
-        assert!(stats.class() == "integer");
+        assert!(stats.name()  == name      );
+        assert!(stats.title() == name      );
+        assert!(stats.class() == "integer" );
         assert!(stats.id()    == usize::MAX);
 
         assert!( stats.int_extremes  ());
@@ -661,8 +661,8 @@ mod tests {
         assert!(stats.min_i64() == -1);
         assert!(stats.max_i64() ==  1);
 
-        assert!(stats.count() == 2  );
-        assert!(stats.mean()  == 0.0);
+        assert!(stats.count()   == 2  );
+        assert!(stats.mean()    == 0.0);
 
         stats.clear();
 

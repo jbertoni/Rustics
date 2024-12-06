@@ -453,8 +453,7 @@ pub mod tests {
     fn test_record_i64() {
         let     timer = continuing_box();
         let mut stat  = RunningTime::new("Panic Test", timer, &None);
-
-        let _ = stat.record_i64(1);
+        let     _     = stat.record_i64(1);
     }
 
     #[test]
@@ -471,8 +470,7 @@ pub mod tests {
     fn test_min_f64() {
         let timer = continuing_box();
         let stat  = RunningTime::new("Panic Test", timer, &None);
-
-        let _ = stat.min_f64();
+        let _     = stat.min_f64();
     }
 
     #[test]
@@ -480,8 +478,7 @@ pub mod tests {
     fn test_max_f64() {
         let timer = continuing_box();
         let stat  = RunningTime::new("Panic Test", timer, &None);
-
-        let _ = stat.max_f64();
+        let _     = stat.max_f64();
     }
 
     #[test]
@@ -489,8 +486,7 @@ pub mod tests {
     fn test_float_histogram() {
         let timer = continuing_box();
         let stat  = RunningTime::new("Panic Test", timer, &None);
-
-        let _ = stat.float_histogram().unwrap();
+        let _     = stat.float_histogram().unwrap();
     }
 
     #[test]
@@ -498,8 +494,7 @@ pub mod tests {
     fn test_to_float() {
         let timer = continuing_box();
         let stat  = RunningTime::new("Panic Test", timer, &None);
-
-        let _ = stat.to_float_histogram().unwrap();
+        let _     = stat.to_float_histogram().unwrap();
     }
 
     fn test_histogram() {

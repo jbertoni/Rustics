@@ -398,10 +398,10 @@ mod tests {
 
     fn make_time_hier(generator:  GeneratorRc, auto_next: i64, window_size: Option<usize>)
             -> Hier {
-        let descriptor    = make_descriptor(auto_next);
-        let class         = "time".to_string();
-        let name          = "test hier".to_string();
-        let print_opts    = None;
+        let descriptor = make_descriptor(auto_next);
+        let class      = "time".to_string();
+        let name       = "test hier".to_string();
+        let print_opts = None;
 
         let configuration =
             HierConfig { descriptor, generator, class, name, window_size, print_opts };

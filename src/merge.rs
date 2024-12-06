@@ -60,16 +60,16 @@ pub struct Export {
 /// The sum_running() function merges a vector of exported statistics.
 
 pub fn sum_running(exports: &Vec::<Export>) -> Export {
-    let mut count           = 0;
-    let mut nans            = 0;
-    let mut infinities      = 0;
-    let mut min_i64         = i64::MAX;
-    let mut max_i64         = i64::MIN;
-    let mut min_f64         = f64::MAX;
-    let mut max_f64         = f64::MIN;
+    let mut count          = 0;
+    let mut nans           = 0;
+    let mut infinities     = 0;
+    let mut min_i64        = i64::MAX;
+    let mut max_i64        = i64::MIN;
+    let mut min_f64        = f64::MAX;
+    let mut max_f64        = f64::MIN;
 
-    let mut log_histogram   = LogHistogram::new();
-    let mut is_log          = false;
+    let mut log_histogram  = LogHistogram::new();
+    let mut is_log         = false;
 
     let mut float_histogram =
         if let Some(float_histogram) = &exports[0].float_histogram {
@@ -83,10 +83,10 @@ pub fn sum_running(exports: &Vec::<Export>) -> Export {
             FloatHistogram::new(&None)
          };
 
-    let mut sum_vec          = Vec::with_capacity(exports.len());
-    let mut squares_vec      = Vec::with_capacity(exports.len());
-    let mut cubes_vec        = Vec::with_capacity(exports.len());
-    let mut quads_vec        = Vec::with_capacity(exports.len());
+    let mut sum_vec     = Vec::with_capacity(exports.len());
+    let mut squares_vec = Vec::with_capacity(exports.len());
+    let mut cubes_vec   = Vec::with_capacity(exports.len());
+    let mut quads_vec   = Vec::with_capacity(exports.len());
 
     // Iterate through each set of exported data, gather merged
     // values.  We recover the squares and fourth powers of
@@ -227,13 +227,12 @@ mod tests {
     use crate::running_float  ::RunningFloat;
 
     fn test_sum_integer() {
-        let mut compare   = LogHistogram::new();
-        let mut stat_1    = RunningInteger::new("merge histogram 1", &None);
-        let mut stat_2    = RunningInteger::new("merge histogram 2", &None);
-        let mut stat_3    = RunningInteger::new("merge histogram 3", &None);
-        let mut stat_4    = RunningInteger::new("merge histogram 4", &None);
-
-        let samples = 1000;
+        let mut compare = LogHistogram::new();
+        let mut stat_1  = RunningInteger::new("merge histogram 1", &None);
+        let mut stat_2  = RunningInteger::new("merge histogram 2", &None);
+        let mut stat_3  = RunningInteger::new("merge histogram 3", &None);
+        let mut stat_4  = RunningInteger::new("merge histogram 4", &None);
+        let     samples = 1000;
 
         for i in 1..=samples {
             let sample_1 = i as i64;
@@ -280,13 +279,13 @@ mod tests {
     }
 
     fn test_sum_float() {
-        let mut compare   = FloatHistogram::new(&None);
-        let mut stat_1    = RunningFloat::new("merge histogram 1", &None);
-        let mut stat_2    = RunningFloat::new("merge histogram 2", &None);
-        let mut stat_3    = RunningFloat::new("merge histogram 3", &None);
-        let mut stat_4    = RunningFloat::new("merge histogram 4", &None);
+        let mut compare = FloatHistogram::new(&None);
+        let mut stat_1  = RunningFloat::new("merge histogram 1", &None);
+        let mut stat_2  = RunningFloat::new("merge histogram 2", &None);
+        let mut stat_3  = RunningFloat::new("merge histogram 3", &None);
+        let mut stat_4  = RunningFloat::new("merge histogram 4", &None);
 
-        let samples = 1000;
+        let     samples = 1000;
 
         for i in 1..=samples {
             let sample_1 = i as f64;

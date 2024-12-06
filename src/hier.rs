@@ -280,8 +280,8 @@ impl HierDescriptor {
 
 #[derive(Clone, Copy)]
 pub struct HierDimension {
-    period:        usize,   // the number of instances to be summed for the next level
-    retention:     usize,   // the number of instances to retain for queries.
+    period:     usize,   // the number of instances to be summed for the next level
+    retention:  usize,   // the number of instances to retain for queries.
 }
 
 impl HierDimension {
@@ -925,10 +925,10 @@ impl Rustics for Hier {
     fn record_interval(&mut self, timer: &mut TimerBox) {
         self.check_and_advance();
 
-        let current      = self.current();
-        let borrow       = hier_item_mut!(current);
-        let rustics      = borrow.to_rustics_mut();
-        let time         = timer_mut!(timer).finish();
+        let current = self.current();
+        let borrow  = hier_item_mut!(current);
+        let rustics = borrow.to_rustics_mut();
+        let time    = timer_mut!(timer).finish();
 
         rustics.record_time(time);
 
@@ -1762,11 +1762,11 @@ pub mod tests {
     }
 
     fn test_time_hier_sanity() {
-        let     printer    = stdout_printer();
-        let     printer    = printer_mut!(printer);
-        let     name       = "time_hier sanity test".to_string();
-        let     timer      = continuing_box();
-        let     print_opts = None;
+        let printer      = stdout_printer();
+        let printer      = printer_mut!(printer);
+        let name         = "time_hier sanity test".to_string();
+        let timer        = continuing_box();
+        let print_opts   = None;
 
         // Create the dimensions.
 
@@ -2138,26 +2138,22 @@ pub mod tests {
     #[should_panic]
     fn test_float_histogram() {
         let hier = make_test_hier(100, None, None);
-
-        let _ = hier.float_histogram().unwrap();
+        let _    = hier.float_histogram().unwrap();
     }
 
     #[test]
     #[should_panic]
     fn test_float_histogram_window() {
         let hier = make_test_hier(100, Some(100), None);
-
-        let _ = hier.float_histogram().unwrap();
+        let _    = hier.float_histogram().unwrap();
     }
 
     #[test]
     #[should_panic]
     fn test_short_dimensions() {
-        let dimensions = Vec::new();
-
+        let dimensions   = Vec::new();
         let auto_advance = Some(2000);
         let descriptor   = HierDescriptor::new(dimensions, auto_advance);
-
         let name         = "Test Hier".to_string();
         let window_size  = None;
         let print_opts   = None;

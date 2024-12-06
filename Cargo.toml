@@ -1,6 +1,6 @@
 [package]
 name = "rustics"
-version = "1.0.2"
+version = "1.0.3"
 authors = ["bertoni"]
 edition = "2021"
 include = ["Cargo.toml", "src/*.rs", "README"]

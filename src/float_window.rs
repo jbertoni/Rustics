@@ -769,8 +769,7 @@ mod tests {
     #[should_panic]
     fn test_record_event_report() {
         let mut stats = FloatWindow::new("Fail", 10, &None);
-
-        let _ = stats.record_event_report();
+        let     _     = stats.record_event_report();
     }
 
     #[test]
@@ -794,40 +793,35 @@ mod tests {
     #[should_panic]
     fn test_max_i64() {
         let stats = FloatWindow::new("Fail", 10, &None);
-
-        let _ = stats.max_i64();
+        let _     = stats.max_i64();
     }
 
     #[test]
     #[should_panic]
     fn test_min_i64() {
         let stats = FloatWindow::new("Fail", 10, &None);
-
-        let _ = stats.min_i64();
+        let _     = stats.min_i64();
     }
 
     #[test]
     #[should_panic]
     fn test_log_mode() {
         let stats = FloatWindow::new("Fail", 10, &None);
-
-        let _ = stats.log_mode();
+        let _     = stats.log_mode();
     }
 
     #[test]
     #[should_panic]
     fn test_log_histogram() {
         let stats = FloatWindow::new("Fail", 10, &None);
-
-        let _ = stats.log_histogram().unwrap();
+        let _     = stats.log_histogram().unwrap();
     }
 
     #[test]
     #[should_panic]
     fn test_to_log_histogram() {
         let stats = FloatWindow::new("Fail", 10, &None);
-
-        let _ = stats.to_log_histogram().unwrap();
+        let _     = stats.to_log_histogram().unwrap();
     }
 
     fn test_print_output() {

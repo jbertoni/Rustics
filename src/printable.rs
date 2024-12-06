@@ -20,15 +20,15 @@
 //!     use rustics::printable::Printable;
 //!
 //!
-//!     let hz       = 1_000_000_000;
-//!     let second   = hz as f64;
-//!     let ms       = second / 1000.0;
-//!     let us       = second / 1000_000.0;
-//!     let ns       = second / 1_000_000_000.0;
-//!     let minute   = second * 60.0;
-//!     let hour     = minute * 60.0;
-//!     let day      = 24.0 * hour;
-//!     let week     = day * 7.0;
+//!     let hz      = 1_000_000_000;
+//!     let second  = hz as f64;
+//!     let ms      = second / 1000.0;
+//!     let us      = second / 1000_000.0;
+//!     let ns      = second / 1_000_000_000.0;
+//!     let minute  = second * 60.0;
+//!     let hour    = minute * 60.0;
+//!     let day     = 24.0 * hour;
+//!     let week    = day * 7.0;
 //!
 //!     let examples =
 //!         [
@@ -317,7 +317,8 @@ impl Printable {
         // force a sign onto the exponent to make things
         // line up.
 
-        let value = format!("{:+e}", value)
+        let value =
+             format!("{:+e}", value)
             .replace('e',   " e+")
             .replace("e+-", " e-") ;
 
@@ -725,7 +726,7 @@ mod tests {
     }
 
     fn test_print_time() {
-        let expected          = [ "    >                +1.00000 e+6  days" ];
+        let     expected      = [ "    >                +1.00000 e+6  days" ];
         let mut check_printer = CheckPrinter::new(&expected, false, false);
 
         let     hz     = 1;

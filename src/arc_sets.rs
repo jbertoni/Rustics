@@ -568,11 +568,11 @@ impl ArcSet {
     // for the set.
 
     fn make_print_opts(&self, name: &str, print_opts: &PrintOption) -> PrintOption {
-        let     printer    = Some(self.printer.clone());
-        let     title      = Some(make_title(&self.title, name));
-        let     units      = Some(parse_units(print_opts));
-        let     histo_opts = Some(parse_histo_opts(print_opts));
-        let     print_opts = PrintOpts { printer, title, units, histo_opts };
+        let printer    = Some(self.printer.clone());
+        let title      = Some(make_title(&self.title, name));
+        let units      = Some(parse_units(print_opts));
+        let histo_opts = Some(parse_histo_opts(print_opts));
+        let print_opts = PrintOpts { printer, title, units, histo_opts };
 
         Some(print_opts)
     }

@@ -359,7 +359,6 @@ pub trait HierTraverser {
     fn visit(&mut self, member: &mut dyn Rustics);
 }
 
-//
 // The HierGenerator trait defines the interface that allows a Rustics
 // type to support hierarchical statistics.  This code connects the Hier
 // impl code with the impl code for the underlying Rustics type.
@@ -371,7 +370,6 @@ pub trait HierTraverser {
 // The HierGenerator implementation for the RunningInteger
 // type is a good example to read if you want to understand
 // this code.
-//
 
 /// The HierGenerator trait defines the interface that allows a Rustics
 /// type to support hierarchical statistics.  This code connects the Hier
@@ -393,13 +391,11 @@ pub trait HierGenerator {
     fn hz            (&self) -> u128;
 }
 
-//
 // The HierMember trait is used to extend a specific type
 // implementing the Rustics trait to work with the Hier code.
 //
 // The code for the Hier type and the HierGenerator just need to
 // be able to upcast and downcast into the member types.
-//
 
 /// The HierMember trait extends a Rustics implementation to interface
 /// with the Hier code.  This trait is of use only if implementing a
@@ -413,10 +409,8 @@ pub trait HierMember {
     fn as_any_mut    (&mut self) -> &mut dyn Any;
 }
 
-//
 // The Hier type implements a type of hierarchical statistics
 // collector using a HierGenerator instance and HierMember instances.
-//
 
 /// Hier instances are the concrete type for a statistics
 /// hierarchy.
@@ -502,18 +496,14 @@ impl Hier {
                 None
             };
 
-        //
         // Create the set of windows that we use to hold all
         // the actual Rustics instances.
-        //
 
         for dimension in &dimensions {
             stats.push(Window::new(dimension.retention, dimension.period));
         }
 
-        //
         // Make the first Rustics instance so that we are ready to record data.
-        //
 
         let member = generator.borrow_mut().make_member(&name, &print_opts);
 

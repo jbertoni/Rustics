@@ -9,10 +9,8 @@ use rustics::Units;
 use rustics::rc_sets::RcSet;
 use rustics::time::DurationTimer;
 
-//
 // This program is a very minimal example of how to use the
 // Rustics library.
-//
 
 fn main() {
     // Create a set, and create two Rustics instances in the set.

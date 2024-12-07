@@ -102,7 +102,6 @@ use super::printable::Printable;
 // pseudo-log values.
 //
 // In addition to the above notes, pseudo-log(0) is defined as 0.
-//
 
 /// pseudo_log_index returns integer indexes for histograms.  The
 /// caller handles the sign.  This function works on the absolute value

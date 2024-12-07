@@ -88,14 +88,12 @@
 //!     }
 //!```
 
-//
 // A window contains at most "size_limit" items.  The window also
 // supports the concept of "live" entries, which are the last
 // "live_limit" entries pushed onto the window.  When the window
 // is full and a new item is pushed, the oldest item is dropped.
 // Thus, this type can be thought of as a window into the
 // last "size_limit" events pushed into the window.
-//
 
 /// The Window struct is used internally and is of interest primarily
 /// to developers creating a new Rustics type.

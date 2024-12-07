@@ -120,12 +120,10 @@ impl Default for HistoOpts {
     }
 }
 
-///
 /// FloatHistogram records a log-like histogram of f64 samples.
 /// The numbers are recorded into buckets based on the exponent,
 /// broken into groups of 16.  For example, exponents 2^1 through
 /// 2^16 form one bucket.
-///
 
 pub struct FloatHistogram {
     pub negative:   Vec<u64>,

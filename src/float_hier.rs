@@ -170,10 +170,8 @@
 //!     float_hier.print_index_opts(index, None, None);
 //!```
 
-//
 // This module provides the interface between RunningFloat and the Hier
 // code.
-//
 
 use std::any::Any;
 use std::cell::RefCell;

@@ -818,7 +818,6 @@ pub trait Rustics {
     /// The record_event_report is the same as record_event, but it
     /// returns the value that is recorded.  This is used by the Hier
     /// code to implement its window function.
-    ///
 
     fn record_event       (&mut self);         // implementation-specific record
     fn record_event_report(&mut self) -> i64;  // implementation-specific record

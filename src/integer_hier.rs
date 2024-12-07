@@ -164,10 +164,8 @@
 //!     integer_hier.print_index_opts(index, None, None);
 //!```
 
-//
 // This module provides the interface between RunningInteger and the Hier
 // code.
-//
 
 use std::any::Any;
 use std::cell::RefCell;

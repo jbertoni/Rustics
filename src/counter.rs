@@ -546,6 +546,6 @@ mod tests {
     #[test]
     fn run_tests() {
         test_simple_counter();
-        test_print_output();
+        test_print_output  ();
     }
 }

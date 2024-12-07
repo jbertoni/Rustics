@@ -392,7 +392,7 @@ mod tests {
 
     // Do a minimal liveness test of the generic hier implementation.
 
-    fn test_simple_running_generator() {
+    fn test_simple_generator() {
         // First, just make a generator and a member, then record one event.
 
         let     generator    = FloatHier::new();
@@ -709,9 +709,9 @@ mod tests {
 
     #[test]
     fn run_tests() {
-        test_simple_running_generator();
-        test_window();
-        test_print_output();
-        test_float_sum();
+        test_simple_generator();
+        test_window          ();
+        test_print_output    ();
+        test_float_sum       ();
     }
 }

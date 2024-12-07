@@ -637,7 +637,7 @@ pub mod tests {
     use crate::tests::check_printer_box;
     use crate::tests::bytes;
 
-    pub fn test_simple_integer_window() {
+    pub fn test_simple_stat() {
         let     window_size = 100;
         let mut stats       = IntegerWindow::new(&"Test Statistics", window_size, &None);
 
@@ -859,9 +859,9 @@ pub mod tests {
 
     #[test]
     fn run_tests() {
-        test_simple_integer_window();
-        test_equality();
-        test_histogram();
+        test_simple_stat ();
+        test_equality    ();
+        test_histogram   ();
         test_print_output();
     }
 }

@@ -1661,7 +1661,7 @@ mod tests {
 
         assert!(result == name);
 
-        let title = "say";
+        let title  = "say";
         let result = make_title(title, name);
 
         assert!(result == "say ==> hello");
@@ -1826,20 +1826,20 @@ mod tests {
 
     #[test]
     pub fn run_lib_tests() {
-        test_time_printing();
-        test_time_window();
-        test_running_time();
-        run_all_histo_tests();
-        test_test_timer();
-        test_test_timer_setup();
-        test_float_functions();
-        test_make_title();
-        test_units();
-        test_parsing();
-        test_stdio_printer();
+        test_time_printing        ();
+        test_time_window          ();
+        test_running_time         ();
+        run_all_histo_tests       ();
+        test_test_timer           ();
+        test_test_timer_setup     ();
+        test_float_functions      ();
+        test_make_title           ();
+        test_units                ();
+        test_parsing              ();
+        test_stdio_printer        ();
         test_check_printer_forgive();
-        test_math();
+        test_math                 ();
         test_verbose_check_printer();
-        test_printers();
+        test_printers             ();
     }
 }

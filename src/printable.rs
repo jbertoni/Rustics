@@ -739,10 +739,10 @@ mod tests {
 
     #[test]
     fn run_tests() {
-        test_commas();
+        test_commas          ();
         test_log_mode_to_time();
-        test_format_float();
-        test_print_time();
-        documentation();
+        test_format_float    ();
+        test_print_time      ();
+        documentation        ();
     }
 }

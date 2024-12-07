@@ -1761,7 +1761,7 @@ pub mod tests {
         assert!(rustics.class() == "integer");
     }
 
-    fn test_time_hier_sanity() {
+    fn test_sanity() {
         let printer      = stdout_printer();
         let printer      = printer_mut!(printer);
         let name         = "time_hier sanity test".to_string();
@@ -1834,10 +1834,9 @@ pub mod tests {
         assert!(rustics.count() == events_per_level_1 as u64);
         assert!(rustics.class() == "time");
 
-        println!("test_time_hier_sanity:  got \"{}\" for class", rustics.class());
+        println!("test_sanity:  got \"{}\" for class", rustics.class());
 
-        let index = HierIndex::new(HierSet::Live, 0, 0);
-
+        let index   = HierIndex::new(HierSet::Live, 0, 0);
         let printer = stdout_printer();
         let title   = "Index Print Title";
 
@@ -2190,9 +2189,9 @@ pub mod tests {
     #[test]
     #[should_panic]
     fn test_one_period() {
-        let dimension_0 = HierDimension::new(1000, 1000);
-        let dimension_1 = HierDimension::new(   1,  200);
-        let dimension_2 = HierDimension::new(   0,  200);
+        let dimension_0  = HierDimension::new(1000, 1000);
+        let dimension_1  = HierDimension::new(   1,  200);
+        let dimension_2  = HierDimension::new(   0,  200);
 
         let dimensions =
             vec![ dimension_0, dimension_1, dimension_2 ];
@@ -2213,9 +2212,9 @@ pub mod tests {
     #[test]
     fn run_tests() {
         simple_hier_test();
-        long_test();
-        test_time_hier_sanity();
-        test_sum();
-        sample_usage();
+        long_test       ();
+        test_sanity     ();
+        test_sum        ();
+        sample_usage    ();
     }
 }

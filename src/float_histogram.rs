@@ -586,9 +586,8 @@ mod tests {
 
         // Create a histogram and accept the default output format.
 
-        let mut histogram = FloatHistogram::new(&Some(print_opts));
-
-        let sample_count = 1000;
+        let mut histogram    = FloatHistogram::new(&Some(print_opts));
+        let     sample_count = 1000;
 
         for i in 0..sample_count {
              histogram.record(-(i as f64));
@@ -732,23 +731,21 @@ mod tests {
     #[should_panic]
     fn test_to_log() {
         let histogram = FloatHistogram::new(&None);
-
-        let _ = histogram.to_log_histogram().unwrap();
+        let _         = histogram.to_log_histogram().unwrap();
     }
 
     #[test]
     #[should_panic]
     fn test_to_float() {
         let histogram = FloatHistogram::new(&None);
-
-        let _ = histogram.to_float_histogram().unwrap();
+        let _         = histogram.to_float_histogram().unwrap();
     }
 
     #[test]
     fn run_tests() {
-        simple_test();
+        simple_test       ();
         test_documentation();
-        test_log_mode();
-        test_float_equals();
+        test_log_mode     ();
+        test_float_equals ();
     }
 }

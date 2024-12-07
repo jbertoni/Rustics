@@ -849,11 +849,11 @@ mod tests {
 
     #[test]
     fn run_tests() {
-        simple_float_test();
+        simple_float_test      ();
         test_standard_deviation();
-        test_equality();
-        test_title();
-        test_histogram();
-        test_print_output();
+        test_equality          ();
+        test_title             ();
+        test_histogram         ();
+        test_print_output      ();
     }
 }

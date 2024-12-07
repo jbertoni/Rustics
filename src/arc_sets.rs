@@ -1295,10 +1295,10 @@ pub mod tests {
         Some(PrintOpts { printer, title, histo_opts, units })
     }
 
-    fn test_arc_printing() {
+    fn test_printing() {
         let     title          = "Printing Set Title";
         let     print_opts     = title_to_print_option(title);
-        let mut set            = ArcSet::new("Printing Set",          0, 0, &print_opts);
+        let mut set            = ArcSet::new("Printing Set",         0, 0, &print_opts);
 
         let     subset_1       = set.add_subset("Printing Subset 1", 0, 0);
         let     subset_2       = set.add_subset("Printing Subset 2", 0, 0);
@@ -1398,7 +1398,7 @@ pub mod tests {
                 ""
             ];
 
-        println!("test_arc_printing:  start print 1");
+        println!("test_printing:  start print 1");
 
         let printer = check_printer_box(&expected, true, false);
 
@@ -1408,8 +1408,8 @@ pub mod tests {
 
         let (current, total) = check_printer_counters(printer.clone());
 
-        println!("test_arc_printing:  end print 1");
-        println!("test_arc_printing:  print 1:  {} vs {}", current, total);
+        println!("test_printing:  end print 1");
+        println!("test_printing:  print 1:  {} vs {}", current, total);
 
         assert!(check_printer_count_match(printer.clone()));
 
@@ -1490,14 +1490,14 @@ pub mod tests {
         let printer = check_printer_box(&expected, true, false);
 
         subset_2.lock().unwrap().set_title("New Subset 2");
-        println!("test_arc_printing:  start print 2");
+        println!("test_printing:  start print 2");
 
         set.print_opts(Some(printer.clone()), None);
 
         let (current, total) = check_printer_counters(printer.clone());
 
-        println!("test_arc_printing:  end print 2");
-        println!("test_arc_printing:  print 2:  {} vs {}", current, total);
+        println!("test_printing:  end print 2");
+        println!("test_printing:  print 2:  {} vs {}", current, total);
 
         assert! (check_printer_count_match(printer.clone()));
 
@@ -1576,14 +1576,14 @@ pub mod tests {
         let title   = "Option Title";
         let printer = check_printer_box(&expected, true, false);
 
-        println!("test_arc_printing:  start print 3");
+        println!("test_printing:  start print 3");
 
         set.print_opts(Some(printer.clone()), Some(title));
 
         let (current, total) = check_printer_counters(printer.clone());
 
-        println!("test_arc_printing:  end print 3");
-        println!("test_arc_printing:  print 3:  {} vs {}", current, total);
+        println!("test_printing:  end print 3");
+        println!("test_printing:  print 3:  {} vs {}", current, total);
 
         assert!(check_printer_count_match(printer.clone()));
 
@@ -1659,7 +1659,7 @@ pub mod tests {
                 ""
             ];
 
-        println!("test_arc_printing:  start print 4");
+        println!("test_printing:  start print 4");
 
         let printer = check_printer_box(&expected, true, false);
 
@@ -1668,18 +1668,18 @@ pub mod tests {
 
         let (current, total) = check_printer_counters(printer.clone());
 
-        println!("test_arc_printing:  end print 4");
-        println!("test_arc_printing:  print 4:  {} vs {}", current, total);
+        println!("test_printing:  end print 4");
+        println!("test_printing:  print 4:  {} vs {}", current, total);
 
         assert!(check_printer_count_match(printer.clone()));
     }
 
     #[test]
     pub fn run_tests() {
-        simple_test();
-        sample_usage();
+        simple_test  ();
+        sample_usage ();
         documentation();
-        test_hier();
-        test_arc_printing();
+        test_hier    ();
+        test_printing();
     }
 }

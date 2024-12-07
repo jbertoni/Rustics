@@ -357,8 +357,8 @@ pub mod tests {
     #[test]
     pub fn run_tests() {
         simple_duration_test();
-        simple_default_test();
-        simple_test_clock();
-        sample_usage();
+        simple_default_test ();
+        simple_test_clock   ();
+        sample_usage        ();
     }
 }

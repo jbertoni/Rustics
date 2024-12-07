@@ -623,10 +623,10 @@ pub mod tests {
 
     #[test]
     fn run_tests() {
-        simple_test();
-        test_equality();
-        test_histogram();
-        test_large_timer();
+        simple_test      ();
+        test_equality    ();
+        test_histogram   ();
+        test_large_timer ();
         test_print_output();
     }
 }

@@ -925,7 +925,7 @@ mod tests {
     #[test]
     fn run_tests() {
         simple_window_test(true);
-        sample_usage(true);
-        test_small_window();
+        sample_usage      (true);
+        test_small_window ();
     }
 }

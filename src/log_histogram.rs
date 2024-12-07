@@ -436,8 +436,8 @@ mod tests {
     #[test]
     fn run_tests() {
         test_log_histogram();
-        test_pseudo_log();
-        test_default();
-        test_log_equals();
+        test_pseudo_log   ();
+        test_default      ();
+        test_log_equals   ();
     }
 }

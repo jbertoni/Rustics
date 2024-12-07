@@ -1335,9 +1335,9 @@ mod tests {
 
     #[test]
     pub fn run_tests() {
-        simple_test();
-        sample_usage();
-        test_hier();
+        simple_test     ();
+        sample_usage    ();
+        test_hier       ();
         test_rc_printing();
     }
 }

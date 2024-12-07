@@ -584,7 +584,7 @@ mod tests {
     use crate::tests::bytes;
     use crate::tests::check_printer_box;
 
-    pub fn test_simple_running_integer() {
+    pub fn test_simple_stat() {
         let     printer    = None;
         let     title      = None;
         let     units      = bytes();
@@ -644,7 +644,7 @@ mod tests {
 
         let expected = 7;
 
-        println!("test_simple_running_integer:  log mode {}, expected {}",
+        println!("test_simple_stat:  log mode {}, expected {}",
             stats.log_mode(), expected);
 
         assert!(stats.log_mode() == expected);
@@ -749,7 +749,7 @@ mod tests {
 
         // Now set_id() and id() to check equality.
 
-        let expected = 12034; // Something unlikely.
+        let expected  = 12034; // Something unlikely.
 
         stats.set_id(expected);
 
@@ -800,8 +800,8 @@ mod tests {
 
     #[test]
     fn run_tests() {
-        test_simple_running_integer();
-        test_equality();
+        test_simple_stat ();
+        test_equality    ();
         test_print_output();
     }
 }

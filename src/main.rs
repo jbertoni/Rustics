@@ -73,6 +73,7 @@ fn main() {
         latencies.borrow_mut().record_interval(&mut timer);
     }
 
+    assert!(latencies.borrow().count() == 2 * sample_count as u64);
     println!("\n\n\n\n === Second print\n");
     set.print();
 }

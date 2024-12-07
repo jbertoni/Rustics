@@ -459,7 +459,7 @@ mod tests {
 
     // Do a minimal liveness test of the generic hier implementation.
 
-    fn test_simple_running_generator() {
+    fn test_simple_stat() {
         // First, just make a generator and a member, then record one event.
 
         let     timer        = continuing_box();
@@ -677,9 +677,9 @@ mod tests {
 
     #[test]
     fn run_tests() {
-        test_simple_running_generator();
+        test_simple_stat ();
         test_new_hier_arc();
-        test_window();
+        test_window      ();
         test_print_output();
     }
 }

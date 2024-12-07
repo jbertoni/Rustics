@@ -865,8 +865,8 @@ mod tests {
 
     #[test]
     fn run_tests() {
-        test_casting_functions();
+        test_casting_functions  ();
         test_simple_float_window();
-        test_print_output();
+        test_print_output       ();
     }
 }

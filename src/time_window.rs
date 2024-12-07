@@ -393,7 +393,6 @@ mod tests {
 
         let timer  = continuing_box();
         let stat_2 = TimeWindow::new("Equality Test 2", size, timer, &None);
-
         let stat_3 = Counter::new("Equality Test 2", &None);
 
         assert!( stat_1.equals(&stat_1));
@@ -412,8 +411,7 @@ mod tests {
         let     size  = 200;
         let     timer = continuing_box();
         let mut stat  = TimeWindow::new("Test Time Window", size, timer, &None);
-
-        let _ = stat.record_i64(1 as i64);
+        let     _     = stat.record_i64(1 as i64);
     }
 
     #[test]
@@ -422,8 +420,7 @@ mod tests {
         let size  = 200;
         let timer = continuing_box();
         let stat  = TimeWindow::new("Test Time Window", size, timer, &None);
-
-        let _ = stat.max_f64();
+        let _     = stat.max_f64();
     }
 
     #[test]
@@ -432,8 +429,7 @@ mod tests {
         let size  = 200;
         let timer = continuing_box();
         let stat  = TimeWindow::new("Test Time Window", size, timer, &None);
-
-        let _ = stat.min_f64();
+        let _     = stat.min_f64();
     }
 
     #[test]
@@ -578,10 +574,10 @@ mod tests {
 
     #[test]
     fn run_tests() {
-        simple_test();
-        test_equality();
-        test_histogram();
+        simple_test      ();
+        test_equality    ();
+        test_histogram   ();
         test_print_output();
-        test_timer_boxes();
+        test_timer_boxes ();
     }
 }

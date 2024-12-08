@@ -216,7 +216,7 @@ impl HierMember for RunningFloat {
     }
 
     fn to_histogram(&self) -> &dyn Histogram {
-        self as &dyn Histogram
+        self
     }
 }
 
@@ -487,6 +487,7 @@ mod tests {
 
             hier.record_f64(sample as f64);
             events += 1;
+
             assert!(hier.count()   == events as u64);
             assert!(hier.min_f64() == 1.0          );
             assert!(hier.max_f64() == sample as f64);
@@ -660,15 +661,15 @@ mod tests {
         generator.push(&mut exporter, stats_3);
         generator.push(&mut exporter, stats_4);
 
-        let exporter     = Rc::from(RefCell::new(exporter));
-        let sum          = generator.make_from_exporter("Test Sum", &None, exporter);
+        let exporter      = Rc::from(RefCell::new(exporter));
+        let sum           = generator.make_from_exporter("Test Sum", &None, exporter);
 
-        let sum_borrow   = sum.borrow();
-        let sum_borrow   = sum_borrow.to_rustics();
+        let sum_borrow    = sum.borrow();
+        let sum_borrow    = sum_borrow.to_rustics();
 
         sum_borrow.print();
 
-        let sum_running  = sum_borrow.generic().downcast_ref::<RunningFloat>().unwrap();
+        let sum_running   = sum_borrow.generic().downcast_ref::<RunningFloat>().unwrap();
 
         assert!(sum_borrow.count() as i64 == count * samples);
 

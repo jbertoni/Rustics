@@ -210,7 +210,7 @@ impl HierMember for RunningInteger {
     }
 
     fn to_histogram(&self) -> &dyn Histogram {
-        self as &dyn Histogram
+        self
     }
 }
 
@@ -363,12 +363,12 @@ pub mod tests {
             period += 2;
         }
 
-        let descriptor    = HierDescriptor::new(dimensions, Some(auto_next));
-        let generator     = IntegerHier::new();
-        let generator     = Rc::from(RefCell::new(generator));
-        let class         = "integer".to_string();
-        let name          = "test hier".to_string();
-        let print_opts    = print_opts;
+        let descriptor = HierDescriptor::new(dimensions, Some(auto_next));
+        let generator  = IntegerHier::new();
+        let generator  = Rc::from(RefCell::new(generator));
+        let class      = "integer".to_string();
+        let name       = "test hier".to_string();
+        let print_opts = print_opts;
 
         let configuration =
             HierConfig { descriptor, generator, class, name, window_size, print_opts };
@@ -431,7 +431,7 @@ pub mod tests {
         let float = events as f64;
         let mean  = (float * (float + 1.0) / 2.0) / float;
 
-        assert!(hier.mean() == mean);
+        assert!(hier.mean()        == mean  );
         assert!(hier.event_count() == events);
         hier.print();
     }

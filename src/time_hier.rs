@@ -228,7 +228,7 @@ impl HierMember for RunningTime {
     }
 
     fn to_histogram(&self) -> &dyn Histogram {
-        self as &dyn Histogram
+        self
     }
 }
 
@@ -240,6 +240,7 @@ impl HierMember for RunningTime {
 #[derive(Clone)]
 pub struct TimeHier {
     timer:  TimerBox,
+    hz:     u128,
 }
 
 /// TimeHierConfig is used to pass the configuration parameters
@@ -261,7 +262,9 @@ impl TimeHier {
     /// users should just invoke new_hier() or use one of the set interfaces.
 
     pub fn new(timer: TimerBox) -> TimeHier  {
-        TimeHier { timer }
+        let hz = timer!(timer).hz();
+
+        TimeHier { timer, hz }
     }
 
     /// new_hier() constructs a new Hier instance from the given
@@ -343,7 +346,7 @@ impl HierGenerator for TimeHier {
     }
 
     fn hz(&self) -> u128 {
-        timer!(self.timer).hz()
+        self.hz
     }
 }
 

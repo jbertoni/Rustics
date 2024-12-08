@@ -775,6 +775,7 @@ impl Hier {
                 target
             } else {
                 let printer = printer_mut!(printer_box);
+
                 printer.print(&title);
                 printer.print(&format!("  That index ({}) is out of bounds.", which));
                 return;

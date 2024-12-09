@@ -8,6 +8,7 @@
 use rustics::Units;
 use rustics::rc_sets::RcSet;
 use rustics::time::DurationTimer;
+use rustics::timer_mut;
 
 // This program is a very minimal example of how to use the
 // Rustics library.
@@ -21,18 +22,22 @@ fn main() {
     let     packet_sizes = set.add_running_integer("Packet Size", units);
 
     let     timer        = DurationTimer::new_box();
-    let     latencies    = set.add_running_time("Packet Latency", timer);
+    let     latencies    = set.add_running_time("Packet Latency", timer.clone());
 
     // Record some hypothetical packet sizes.
 
     let sample_count = 1000;
 
     for i in 1..=sample_count {
+       // receive_packet();
+
        packet_sizes.borrow_mut().record_i64(i);
     }
 
     // Record some hypothetical latencies.  Note that
     // record_event restarts the timer.
+
+    timer_mut!(timer).start();
 
     for _i in 1..=sample_count {
         // receive_packet();

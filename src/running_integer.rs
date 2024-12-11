@@ -106,7 +106,6 @@
 //!    // the samples recorded.
 //!```
 
-
 use std::any::Any;
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -237,17 +236,17 @@ impl RunningInteger {
     pub fn new(name: &str, print_opts: &PrintOption) -> RunningInteger {
         let (printer, title, units, _histo_opts) = parse_print_opts(print_opts, name);
 
-        let name            = name.to_string();
-        let id              = usize::MAX;
-        let count           = 0;
-        let mean            = 0.0;
-        let moment_2        = 0.0;
-        let cubes           = 0.0;
-        let moment_4        = 0.0;
-        let min             = i64::MAX;
-        let max             = i64::MIN;
-        let log_histogram   = LogHistogram::new();
-        let log_histogram   = Rc::from(RefCell::new(log_histogram));
+        let name          = name.to_string();
+        let id            = usize::MAX;
+        let count         = 0;
+        let mean          = 0.0;
+        let moment_2      = 0.0;
+        let cubes         = 0.0;
+        let moment_4      = 0.0;
+        let min           = i64::MAX;
+        let max           = i64::MIN;
+        let log_histogram = LogHistogram::new();
+        let log_histogram = Rc::from(RefCell::new(log_histogram));
 
         RunningInteger {
             name,       title,      id,

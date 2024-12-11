@@ -187,7 +187,7 @@ impl Printable {
         Self::commas(&base)
     }
 
-    /// Converts a time value in clock ticks into a human-
+    /// Converts a time interval in clock ticks into a human-
     /// readable value and unit.  The chosen unit is returned
     /// as a string for printing.
 
@@ -620,29 +620,29 @@ mod tests {
                 (    1_000_000.0,     1.0,  "millisecond" ),
                 (   29_000_000.0,    29.0,  "milliseconds"),
 
-                (        us - ns,   999.0,  "nanoseconds" ),
-                (        ms - us,   999.0,  "microseconds"),
-                (    second - ms,   999.0,  "milliseconds"),
+                (us     - ns,       999.0,  "nanoseconds" ),
+                (ms     - us,       999.0,  "microseconds"),
+                (second - ms,       999.0,  "milliseconds"),
                 (minute - second,    59.0,  "seconds"     ),
-                (  hour - minute,    59.0,  "minutes"     ),
-                (     day - hour,    23.0,  "hours"       ),
+                (hour   - minute,    59.0,  "minutes"     ),
+                (day    - hour,      23.0,  "hours"       ),
 
                 (   3.0 * second,     3.0,  "seconds"     ),
                 (   3.0 * second,     3.0,  "seconds"     ),
                 (   1.5 * second,     1.5,  "seconds"     ),
                 (  42.0 * second,    42.0,  "seconds"     ),
-                (    999.0 * day,   999.0,  "days"        ),
-                (    12.6 * hour,    12.6,  "hours"       ),
-                (           week,     7.0,  "days"        ),
+                ( 999.0 * day,      999.0,  "days"        ),
+                (  12.6 * hour,      12.6,  "hours"       ),
+                (         week,       7.0,  "days"        ),
 
                 (         second,     1.0,  "second"      ),
                 (   2.0 * second,     2.0,  "seconds"     ),
                 (         minute,     1.0,  "minute"      ),
                 (   2.0 * minute,     2.0,  "minutes"     ),
-                (           hour,     1.0,  "hour"        ),
-                (     2.0 * hour,     2.0,  "hours"       ),
-                (            day,     1.0,  "day"         ),
-                (      2.0 * day,     2.0,  "days"        ),
+                (         hour,       1.0,  "hour"        ),
+                (   2.0 * hour,       2.0,  "hours"       ),
+                (         day,        1.0,  "day"         ),
+                (   2.0 * day,        2.0,  "days"        ),
             ];
 
         for example in examples {

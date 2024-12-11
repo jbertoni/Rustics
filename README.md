@@ -10,7 +10,7 @@ statistical types.
 Most modules have sample code in their documentation, and many testing
 modules contain example functions called "sample_usage".  The "main.rs"
 program contains a simple example of using RunningInteger and RunningTime
-instances in a set.
+instances in a set.  You can run it by invoking "cargo run".
 
 At this time, statistics can be gathered for i64 values, time periods (also
 of type i64), and f64 samples.  Statistics can gathered collected as a running

@@ -164,8 +164,8 @@ impl FloatExporter {
     /// Makes a Rustics instance based on the given exports.
 
     pub fn make_member(&mut self, name: &str, print_opts: &PrintOption) -> RunningFloat {
-        let title   = name;
-        let sum     = sum_running(&self.addends);
+        let title = name;
+        let sum   = sum_running(&self.addends);
 
         RunningFloat::new_from_exporter(name, title, print_opts, sum)
     }
@@ -270,21 +270,21 @@ impl RunningFloat {
         }
     }
 
-    fn get_printable(&self) -> Printable {
-        let n           = self.count;
-        let nans        = self.nans;
-        let infinities  = self.infinities;
-        let min_i64     = i64::MIN;
-        let max_i64     = i64::MAX;
-        let min_f64     = self.min;
-        let max_f64     = self.max;
-        let mode_value  = self.histogram.borrow().mode_value();
-        let log_mode    = 0;
-        let mean        = self.mean;
-        let variance    = self.variance();
-        let skewness    = self.skewness();
-        let kurtosis    = self.kurtosis();
-        let units       = self.units.clone();
+    pub fn get_printable(&self) -> Printable {
+        let n          = self.count;
+        let nans       = self.nans;
+        let infinities = self.infinities;
+        let min_i64    = i64::MIN;
+        let max_i64    = i64::MAX;
+        let min_f64    = self.min;
+        let max_f64    = self.max;
+        let mode_value = self.histogram.borrow().mode_value();
+        let log_mode   = 0;
+        let mean       = self.mean;
+        let variance   = self.variance();
+        let skewness   = self.skewness();
+        let kurtosis   = self.kurtosis();
+        let units      = self.units.clone();
 
         Printable {
             n,         nans,  infinities,  min_i64,   max_i64,   min_f64,  max_f64,
@@ -649,9 +649,9 @@ mod tests {
 
         let stats = float.export_stats();
 
-        assert!(stats.printable.n            == end as u64);
-        assert!(stats.printable.nans         == 1);
-        assert!(stats.printable.infinities   == 2);
+        assert!(stats.printable.n          == end as u64);
+        assert!(stats.printable.nans       == 1);
+        assert!(stats.printable.infinities == 2);
 
         let histogram = stats.float_histogram.unwrap();
 

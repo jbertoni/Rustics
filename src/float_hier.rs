@@ -554,10 +554,10 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_hz() {
-        let     auto_next   = 200;
-        let     window_size = None;
-        let     hier        = make_test_hier(auto_next, window_size);
-        let     hier        = hier.lock().unwrap();
+        let auto_next   = 200;
+        let window_size = None;
+        let hier        = make_test_hier(auto_next, window_size);
+        let hier        = hier.lock().unwrap();
 
         let _hz = hier.hz();
     }
@@ -565,12 +565,11 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_log_histogram() {
-        let     auto_next   = 200;
-        let     window_size = None;
-        let     hier        = make_test_hier(auto_next, window_size);
-        let     hier        = hier.lock().unwrap();
-
-        let _ = hier.to_log_histogram().unwrap();
+        let auto_next   = 200;
+        let window_size = None;
+        let hier        = make_test_hier(auto_next, window_size);
+        let hier        = hier.lock().unwrap();
+        let _           = hier.to_log_histogram().unwrap();
     }
 
     fn test_print_output() {
@@ -634,9 +633,9 @@ mod tests {
         let     stats_3   = generator.make_member("Test Stat 3", &None);
         let     stats_4   = generator.make_member("Test Stat 4", &None);
 
-        let samples       = 250;
-        let count         =   4;
-        let samples_f     = samples as f64;
+        let     samples   = 250;
+        let     count     =   4;
+        let     samples_f = samples as f64;
 
         for i in 0..samples {
             let sample_1 = i as f64 + 1.0;

@@ -1356,7 +1356,7 @@ mod tests {
     fn test_time_printing() {
         let hz = 1_000_000_000;
 
-        let ns     =    1;
+        let ns     =    1_u64;
         let us     = 1000 * ns;
         let ms     = 1000 * us;
         let second = 1000 * ms;
@@ -1366,7 +1366,7 @@ mod tests {
 
         let values =
             [
-                  1_u64,
+                  1 * ns,
                  10 * ns,
                 100 * ns,
                   1 * us,

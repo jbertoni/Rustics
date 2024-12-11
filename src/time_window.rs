@@ -496,9 +496,9 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_large_clock() {
-        let size    = 200;
-        let timer   = timer_box!(LargeTimer { });
-        let _       = TimeWindow::new("Test Time Window", size, timer, &None);
+        let size  = 200;
+        let timer = timer_box!(LargeTimer { });
+        let _     = TimeWindow::new("Test Time Window", size, timer, &None);
     }
 
     fn test_print_output() {

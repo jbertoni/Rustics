@@ -49,12 +49,12 @@
 //!             (  3.0 * second,     3.0,  "seconds"),
 //!             (  3.0 * second,     3.0,  "seconds"),
 //!             ( 42.0 * second,    42.0,  "seconds"),
-//!             (          hour,     1.0,  "hour"   ),
-//!             (   12.6 * hour,    12.6,  "hours"  ),
-//!             (           day,     1.0,  "day"    ),
-//!             (     2.0 * day,     2.0,  "days"   ),
-//!             (   999.0 * day,   999.0,  "days"   ),
-//!             (          week,     7.0,  "days"   ),
+//!             (        hour,       1.0,  "hour"   ),
+//!             ( 12.6 * hour,      12.6,  "hours"  ),
+//!             (        day,        1.0,  "day"    ),
+//!             (  2.0 * day,        2.0,  "days"   ),
+//!             (999.0 * day,      999.0,  "days"   ),
+//!             (        week,       7.0,  "days"   ),
 //!         ];
 //!
 //!     // Convert a time in ticks to a scaled value and

@@ -158,7 +158,7 @@ pub struct RunningInteger {
     min:        i64,
     max:        i64,
 
-    log_histogram:  LogHistogramBox,
+    histogram:  LogHistogramBox,
 
     printer:    PrinterBox,
     units:      Units,
@@ -236,22 +236,22 @@ impl RunningInteger {
     pub fn new(name: &str, print_opts: &PrintOption) -> RunningInteger {
         let (printer, title, units, _histo_opts) = parse_print_opts(print_opts, name);
 
-        let name          = name.to_string();
-        let id            = usize::MAX;
-        let count         = 0;
-        let mean          = 0.0;
-        let moment_2      = 0.0;
-        let cubes         = 0.0;
-        let moment_4      = 0.0;
-        let min           = i64::MAX;
-        let max           = i64::MIN;
-        let log_histogram = LogHistogram::new();
-        let log_histogram = Rc::from(RefCell::new(log_histogram));
+        let name      = name.to_string();
+        let id        = usize::MAX;
+        let count     = 0;
+        let mean      = 0.0;
+        let moment_2  = 0.0;
+        let cubes     = 0.0;
+        let moment_4  = 0.0;
+        let min       = i64::MAX;
+        let max       = i64::MIN;
+        let histogram = LogHistogram::new();
+        let histogram = Rc::from(RefCell::new(histogram));
 
         RunningInteger {
             name,       title,      id,
             count,      mean,       moment_2,
-            cubes,      moment_4,   log_histogram,
+            cubes,      moment_4,   histogram,
             min,        max,        printer,
             units
         }
@@ -264,22 +264,22 @@ impl RunningInteger {
             -> RunningInteger {
         let (printer, _title, units, _histo_opts) = parse_print_opts(print_opts, name);
 
-        let name          = String::from(name);
-        let title         = title.to_string();
-        let id            = usize::MAX;
-        let count         = import.count;
-        let mean          = import.mean;
-        let moment_2      = import.moment_2;
-        let cubes         = import.cubes;
-        let moment_4      = import.moment_4;
-        let min           = import.min_i64;
-        let max           = import.max_i64;
-        let log_histogram = import.log_histogram.unwrap();
+        let name      = String::from(name);
+        let title     = title.to_string();
+        let id        = usize::MAX;
+        let count     = import.count;
+        let mean      = import.mean;
+        let moment_2  = import.moment_2;
+        let cubes     = import.cubes;
+        let moment_4  = import.moment_4;
+        let min       = import.min_i64;
+        let max       = import.max_i64;
+        let histogram = import.log_histogram.unwrap();
 
         RunningInteger {
             name,       title,      id,
             count,      mean,       moment_2,
-            cubes,      moment_4,   log_histogram,
+            cubes,      moment_4,   histogram,
             min,        max,        printer,
             units
         }
@@ -296,7 +296,7 @@ impl RunningInteger {
         let moment_2        = self.moment_2;
         let cubes           = self.cubes;
         let moment_4        = self.moment_4;
-        let log_histogram   = Some(self.log_histogram.clone());
+        let log_histogram   = Some(self.histogram.clone());
         let float_histogram = None;
         let min_i64         = self.min;
         let max_i64         = self.max;
@@ -324,7 +324,7 @@ impl RunningInteger {
         let max_i64     = self.max;
         let min_f64     = f64::MIN;
         let max_f64     = f64::MAX;
-        let log_mode    = self.log_histogram.borrow().log_mode() as i64;
+        let log_mode    = self.histogram.borrow().log_mode() as i64;
         let mode_value  = 0.0;
         let mean        = self.mean;
         let variance    = self.variance();
@@ -346,7 +346,7 @@ impl Rustics for RunningInteger {
     fn record_i64(&mut self, sample: i64) {
         self.count += 1;
 
-        self.log_histogram.borrow_mut().record(sample);
+        self.histogram.borrow_mut().record(sample);
 
         let sample_f64 = sample as f64;
 
@@ -412,7 +412,7 @@ impl Rustics for RunningInteger {
     }
 
     fn log_mode(&self) -> isize {
-        self.log_histogram.borrow().log_mode()
+        self.histogram.borrow().log_mode()
     }
 
     fn mean(&self) -> f64 {
@@ -479,11 +479,11 @@ impl Rustics for RunningInteger {
         self.min      = i64::MAX;
         self.max      = i64::MIN;
 
-        self.log_histogram.borrow_mut().clear();
+        self.histogram.borrow_mut().clear();
     }
 
     fn log_histogram(&self) -> Option<LogHistogramBox> {
-        Some(self.log_histogram.clone())
+        Some(self.histogram.clone())
     }
 
     fn float_histogram(&self) -> Option<FloatHistogramBox> {
@@ -515,7 +515,7 @@ impl Rustics for RunningInteger {
         printer.print(title);
         printable.print_common_i64(printer);
         printable.print_common_float(printer);
-        self.log_histogram.borrow().print(printer);
+        self.histogram.borrow().print(printer);
         printer.print("");
     }
 
@@ -547,7 +547,7 @@ impl Rustics for RunningInteger {
 
     fn export_stats(&self) -> ExportStats {
         let printable       = self.get_printable();
-        let log_histogram   = Some(self.log_histogram.clone());
+        let log_histogram   = Some(self.histogram.clone());
         let float_histogram = None;
 
         ExportStats { printable, log_histogram, float_histogram }
@@ -556,15 +556,15 @@ impl Rustics for RunningInteger {
 
 impl Histogram for RunningInteger {
     fn print_histogram(&self, printer: &mut dyn Printer) {
-        self.log_histogram.borrow().print(printer);
+        self.histogram.borrow().print(printer);
     }
 
     fn clear_histogram(&mut self) {
-        self.log_histogram.borrow_mut().clear();
+        self.histogram.borrow_mut().clear();
     }
 
     fn to_log_histogram(&self) -> Option<LogHistogramBox> {
-        Some(self.log_histogram.clone())
+        Some(self.histogram.clone())
     }
 
     fn to_float_histogram(&self) -> Option<FloatHistogramBox> {

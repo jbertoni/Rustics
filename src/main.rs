@@ -18,8 +18,12 @@ fn main() {
 
     let mut set          = RcSet::new("Network Statistics", 2, 0, &None);
 
+    // The first statistic records statistics on packet sizes.
+
     let     units        = Some(Units::new("byte", "bytes"));
     let     packet_sizes = set.add_running_integer("Packet Size", units);
+
+    // The second reports statistics on latency.
 
     let     timer        = DurationTimer::new_box();
     let     latencies    = set.add_running_time("Packet Latency", timer.clone());
@@ -53,7 +57,7 @@ fn main() {
     // We should have seen "sample_count" events.
 
     assert!(packet_sizes.borrow().count() == sample_count as u64);
-    assert!(latencies.borrow().count() == sample_count as u64);
+    assert!(latencies   .borrow().count() == sample_count as u64);
 
     // Compute the expected mean packet size.  We need the sum of
     //     1 + 2 + ... + n
@@ -68,7 +72,7 @@ fn main() {
 
     // Demo the record_interval() interface.  Note that
     // record_interval queries the timer, which also restarts
-    // that timer.
+    // the timer.
 
     let mut timer = DurationTimer::new_box();
 

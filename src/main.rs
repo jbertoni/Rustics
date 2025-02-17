@@ -34,8 +34,9 @@ fn main() {
 
     for i in 1..=sample_count {
        // receive_packet();
+       let packet_size = i; // dummy data for testing
 
-       packet_sizes.borrow_mut().record_i64(i);
+       packet_sizes.borrow_mut().record_i64(packet_size);
     }
 
     // Record some hypothetical latencies.  Note that

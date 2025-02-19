@@ -7,7 +7,7 @@ characterizations of the data, such as the mean and variance.  The trait
 Rustics defines the common interface for all statistical types.
 
 At this time, statistics can be gathered for i64 values, time periods (also of
-type i64), and f64 samples.  Statistics can gathered as a running total of all
+type i64), and f64 samples.  They can be kept as a running total of all
 samples recorded, or as a window covering the last N samples.  The library also
 supports creating sets of structs.
 

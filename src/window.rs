@@ -378,7 +378,7 @@ pub struct WindowIterator<'a, T> {
 }
 
 impl<'a, T> WindowIterator<'a, T> {
-    pub fn new(window: &'a Window<T>, scan_type: ScanType) -> WindowIterator<T> {
+    pub fn new(window: &'a Window<T>, scan_type: ScanType) -> WindowIterator<'a, T> {
         assert!(window.data.len() <= window.size_limit);
 
         if window.data.is_empty() {

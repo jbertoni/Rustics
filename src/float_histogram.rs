@@ -159,7 +159,7 @@ fn buckets() -> isize {
 // Do covered division.
 
 fn roundup(value: usize, multiple: usize) -> usize {
-    ((value + multiple - 1) / multiple) * multiple
+    value.next_multiple_of(multiple)
 }
 
 impl FloatHistogram {

@@ -371,7 +371,7 @@ impl Printable {
         // Now extract the exponent and pad to at least 4 bytes.
 
         let     size     = 4;
-        let mut exponent = value.split(' ').last().unwrap().to_string();
+        let mut exponent = value.split(' ').next_back().unwrap().to_string();
 
         if exponent.len() < size {
             for _i in 0..size - exponent.len() {

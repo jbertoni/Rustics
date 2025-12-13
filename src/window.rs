@@ -310,13 +310,13 @@ impl<T> Window<T> {
 
     /// Iterates over all the items in the window.
 
-    pub fn iter_all(&self) -> WindowIterator<T> {
+    pub fn iter_all(&self) -> WindowIterator<'_, T> {
         WindowIterator::<T>::new(self, ScanType::All)
     }
 
     /// Iterates over all the live items in the window.
 
-    pub fn iter_live(&self) -> WindowIterator<T> {
+    pub fn iter_live(&self) -> WindowIterator<'_, T> {
         WindowIterator::<T>::new(self, ScanType::Live)
     }
 

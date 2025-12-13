@@ -105,7 +105,6 @@ pub struct TimeWindow {
     timer:              TimerBox,
     hz:                 i64,
     printer:            PrinterBox,
-    //units:              Units,
 }
 
 impl TimeWindow {

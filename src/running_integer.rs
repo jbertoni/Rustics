@@ -638,7 +638,6 @@ mod tests {
 
         for _i in 0..10000 {
             stats.record_i64(common_value);
-            events += 1;
         }
 
         let expected = 7;

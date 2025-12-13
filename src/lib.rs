@@ -43,7 +43,7 @@
 //! * Basic Time Statistics Types
 //!     * The base unit of time for displaying statistics is 1 nanosecond.
 //!       Summary statistics like the variance and skewness are based on units
-//!       of nanoseconds.  Measurements like the mean that are units of time
+//!       of nanoseconds.  Measurements like the mean that are in units of time
 //!       are displayed after scaling to larger units as needed to try to
 //!       improve readability.
 //!
